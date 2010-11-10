@@ -1,0 +1,28 @@
+#! /usr/bin/env bash
+#
+# $Id: get-prof-log.in 7098 2010-10-19 00:54:23Z robin $
+#
+# Copies $3/prof.log from the node $1, running on host $2, to the manager 
+
+tag=$1
+host=$2
+path=$3
+
+mkdir -p ${statsdir}/profiling
+
+dstbase=${statsdir}/profiling/prof.$tag
+tmp=$dstbase.$$.log.tmp
+
+# Ignore errors.
+scp $host:$path $tmp >/dev/null 2>&1
+
+if [ -e $tmp ]; then
+   # Rename the file to use the first non-zero timestamp in the filename. 
+   ts=`awk '$1 > 0 {print $1; exit(0); }' <$tmp`
+   if [ "$ts" != "" ]; then
+       mv $tmp $dstbase.$ts.log
+   fi
+fi
+
+
+

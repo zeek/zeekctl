@@ -1,0 +1,90 @@
+#! /usr/bin/env bash 
+#
+# $Id: post-terminate.in 7098 2010-10-19 00:54:23Z robin $
+#
+# Cleans-up after termination.
+#
+# post-terminate <dir> [crash]
+#
+# If $2 is "crash", then the scripts assumes that Bro crashed and will return
+# information about the crash on stdout which is suitable for mailing to the user. 
+
+dir=$1
+
+crash=0
+if [ "$2" == "crash" ]; then
+   crash=1
+fi   
+
+if [ ! -d $dir ]; then
+   echo No $dir
+   exit
+fi
+
+date=`date +%Y-%m-%d-%H-%M-%S`
+tmp=${tmpdir}/post-terminate-$date-$$
+
+if [ "$crash" = "1" ]; then
+   cd $1
+   ${scriptsdir}/crash-diag $dir
+   tmp=$tmp-crash
+   archive_flags="-c" # Don't delete log files in work dir.
+fi    
+
+if [ ! -d ${tmpdir} ]; then 
+   mkdir ${tmpdir} 
+fi
+
+mv $dir $tmp 2>/dev/null
+
+mkdir $dir 2>/dev/null
+
+if [ -d $tmp/.state ]; then
+   mv $tmp/.state $dir 2>/dev/null
+fi   
+
+cd $tmp
+
+if [ "$crash" = "1" ]; then
+   tmpbro=${tmpexecdir}/`basename ${bro}`
+   cp $tmpbro .
+fi
+
+# Run post-processors manually. 
+
+if [ ! -f .startup ]; then
+   echo No .startup
+   exit
+fi
+
+brostart=`cat .startup | tail -1`
+end=`date +%y-%m-%d_%H.%M.%S`
+
+# Old. Remove later. 
+#
+#if [ "$crash" = "1" -a -e .rotate ]; then
+#   start=`cat .rotate | tail -1`
+#fi   
+
+# Likewise old.
+#if [ -e .peer_description ]; then
+#   tag=`cat .peer_description | tail -1`
+#fi   
+
+( for i in *.log; do
+    if [ -s $i ]; then
+       if [ -e .rotated.$i ]; then
+          start=`cat .rotated.$i`
+       else
+          start=$brostart
+       fi
+       
+       ${scriptsdir}/archive-log $archive_flags "$i" "$i" "$start" "$end" 1 "$tag" >/dev/null &
+    fi
+    
+    ${scriptsdir}/remove-link-for-log $i
+
+  done && wait && if [ "$crash" = "0" ]; then rm -rf $tmp; fi ) &
+
+
+

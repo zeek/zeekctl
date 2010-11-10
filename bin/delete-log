@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+#
+# $Id: delete-log 7098 2010-10-19 00:54:23Z robin $
+#
+# Bro postprocessor script to archive log files. 
+# 
+# archive-log <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> [<tag>]
+
+rm -rf $1
+

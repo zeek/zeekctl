@@ -1,0 +1,60 @@
+#! /usr/bin/env bash
+#
+# $Id: crash-diag.in 7098 2010-10-19 00:54:23Z robin $
+#
+# crash-diag <cwd>
+
+(
+
+cd $1
+
+if [ -e stderr.log ]; then
+   echo ==== stderr.log 
+   tail -30 stderr.log 
+else
+   echo ==== No stderr.log.
+fi
+
+if [ -e stdout.log ]; then
+   echo ==== stdout.log 
+   tail -30 stdout.log 
+else
+   echo ==== No stdout.log.
+fi
+
+echo
+
+if [ -e .status ]; then
+   echo ==== .status
+   tail -30 .status
+else
+   echo ==== No .status.
+fi
+
+echo
+
+if [ -e prof.log ]; then
+   echo ==== prof.log 
+   tail -30 prof.log 
+else
+   echo ==== No prof.log.
+fi
+
+echo
+
+core=`ls -t *core* 2>&1`
+
+if which gdb >/dev/null 2>&1; then
+    for c in $core; do 
+        if [ -e $c ]; then
+            echo $c
+            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c
+        fi
+    done
+else
+    echo "No gdb installed."
+fi
+
+) >.crash-diag.log
+
+cat .crash-diag.log
