@@ -6,6 +6,8 @@
 #
 # Gets its arguments via the environment. 
 
+. `dirname $0`/broctl-config.sh
+
 tmp=${tmpdir}/`basename $0`.$$.tmp
 maxlen=8192
 

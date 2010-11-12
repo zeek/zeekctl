@@ -441,7 +441,7 @@ def restart(nodes, clean):
             return 
 
         util.output("installing ...")
-        install.install(False, False)
+        install.install(False)
 
     util.output("starting ...")
     if len(nodes) > 0:

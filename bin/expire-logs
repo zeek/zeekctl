@@ -4,6 +4,8 @@
 #
 # Delete logs older than ${log_expire_interval} days.
 
+. `dirname $0`/broctl-config.sh
+
 base=${logdir}/
 
 file_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.*$'

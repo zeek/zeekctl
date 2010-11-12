@@ -9,6 +9,8 @@
 # 		-s "[Bro Alarm] <notice_type>" <mail_dest>
 #
 
+. `dirname $0`/broctl-config.sh
+
 subject="<No subject>"
 
 while getopts s: opt; do

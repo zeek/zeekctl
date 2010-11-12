@@ -6,6 +6,8 @@
 #
 # port pkts/sec bits/sec cum-pkts cum-bytes (-1 where not available)
 
+. `dirname $0`/broctl-config.sh
+
 cflowcmd=`which cFlowCmd`
 
 if [ "$cflowcmd" == "" ]; then

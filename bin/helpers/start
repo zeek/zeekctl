@@ -4,6 +4,8 @@
 #
 #  start <cwd> <Bro args>
 
+. `dirname $0`/../broctl-config.sh
+
 cd $1 2>/dev/null
 shift 
 

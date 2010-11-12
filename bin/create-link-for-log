@@ -4,6 +4,8 @@
 #
 # Creates a link from `pwd`/$1 into the current archive directory.
 
+. `dirname $0`/broctl-config.sh
+
 if [ ! -e .manager ]; then
    # We only create links on the manager. 
    exit 0

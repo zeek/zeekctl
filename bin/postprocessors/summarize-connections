@@ -8,6 +8,8 @@
 #
 # summarize-conns <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> [<tag>]
 
+. `dirname $0`/../broctl-config.sh
+
 if [ "$2" != "conn.log" ]; then
    exit 0
 fi

@@ -48,19 +48,20 @@ a patch to Bro. Please xref:devversion[see below].
 Installing a Stand-alone Bro
 ----------------------------
 
-This is the default installation. Configure and compile Bro as
+This is the default installation. Configure, compile, and install Bro as
 usual, specifying the target installation path as ``prefix`` (we use
 +/usr/local/bro+ as an example):
 
   > cd /path/to/bro/source/distribution
   > ./configure --prefix=/usr/local/bro
-  > make
+  > make install
 
 - Install _BroControl_:
 
-  > make install-broctl
-
-  (This includes the standard "make install".)
+  > cd /path/to/broctl/source/distribution
+  > ./configure --prefix=/usr/local/bro
+  > cd build
+  > make install
 
 - Add +<prefix>/bin+ to your +PATH+.
 
@@ -159,18 +160,19 @@ With all prerequisites in place, as the Bro user, perform the
 following steps to install a Bro cluster:
 
 - Configure and compile the Bro distribution using the cluster's
-  prefix path as +--prefix+ +--prefix+, and selecting cluster
-  operation with the +--enable-cluster+ option:
+  prefix path as +--prefix+:
 
   > cd /path/to/bro/source/distribution
-  > ./configure --prefix=/usr/local/bro --enable-cluster
-  > make
+  > ./configure --prefix=/usr/local/bro
+  > make install
 
-- Install _BroControl_:
+- Install _BroControl_, selecting cluster operation with the
+  +--enable-cluster+ option:
 
-  > make install-broctl
-
-  (This includes the standard +make install+.)
+  > cd /path/to/broctl/source/distribution
+  > ./configure --prefix=/usr/local/bro
+  > cd build
+  > make install
 
 - Add +<prefix>/bin+ to your +PATH+.
 

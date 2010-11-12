@@ -106,7 +106,7 @@ def _breakLock():
         return False
 
 def _aquireLock():
-    if not config.Config.manager() or config.Installing:
+    if not config.Config.manager():
         # Initial install.
         return True
 
@@ -137,13 +137,8 @@ def _aquireLock():
                 return _aquireLock()
 
         except IOError, e:
-            if not config.Config.installing():
-                error("cannot aquire lock: %s" % e)
-                return False
-            else:
-                # The spool directory may not exist yet so we 
-                # silently ignore the failed lock.
-                return True
+            error("cannot aquire lock: %s" % e)
+            return False
 
     finally:
         try:
@@ -159,8 +154,7 @@ def _releaseLock():
     try:
         os.unlink(config.Config.lockfile)
     except OSError, e:
-        if not config.Config.installing():
-            warn("cannot remove lock file: %s" % e)
+        warn("cannot remove lock file: %s" % e)
 
 def lock():
     global lockCount

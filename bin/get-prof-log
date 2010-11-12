@@ -4,6 +4,8 @@
 #
 # Copies $3/prof.log from the node $1, running on host $2, to the manager 
 
+. `dirname $0`/broctl-config.sh
+
 tag=$1
 host=$2
 path=$3

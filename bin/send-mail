@@ -6,6 +6,8 @@
 #
 # Sends stdin per mail to recipients, adding some common headers/footers
 
+. `dirname $0`/broctl-config.sh
+
 if [ "${sendmail}" != "1" ]; then
    exit 0
 fi

@@ -4,6 +4,8 @@
 #
 # update <destination> <Bro args>
 
+. `dirname $0`/broctl-config.sh
+
 dst=$1
 shift
 args=$@

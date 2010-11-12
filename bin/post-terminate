@@ -9,6 +9,8 @@
 # If $2 is "crash", then the scripts assumes that Bro crashed and will return
 # information about the crash on stdout which is suitable for mailing to the user. 
 
+. `dirname $0`/broctl-config.sh
+
 dir=$1
 
 crash=0

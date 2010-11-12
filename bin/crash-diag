@@ -4,6 +4,8 @@
 #
 # crash-diag <cwd>
 
+. `dirname $0`/broctl-config.sh
+
 (
 
 cd $1

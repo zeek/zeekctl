@@ -4,6 +4,8 @@
 #
 # gdb-attach <screen-session-name> <binary> <pid>
 
+. `dirname $0`/../broctl-config.sh
+
 session=$1
 binary=$2
 pid=$3

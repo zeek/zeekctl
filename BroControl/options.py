@@ -28,8 +28,6 @@ options = [
            "True if shared files are mounted across all nodes via NFS (see FAQ)."),
     Option("SaveTraces", "0", "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
-    Option("DevMode", "0", "bool", Option.USER, False,
-           "Enable development mode, which changes how things are installed by the _install_ command."),
 
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
            "Directory for archived log files."),
@@ -106,8 +104,6 @@ options = [
     # Automatically set.
     Option("BroBase", "", "string", Option.AUTOMATIC, True, 
            "Base path of broctl installation on all nodes."),
-    Option("DistDir", "", "string", Option.AUTOMATIC, True, 
-           "Path to Bro distribution directory."),
     Option("Version", "", "string", Option.AUTOMATIC, True, 
            "Version of the broctl."),
     Option("StandAlone", "0", "bool", Option.AUTOMATIC, True, 

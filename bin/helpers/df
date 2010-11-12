@@ -6,6 +6,8 @@
 #
 # Returns:  <fs> <fs-size> <fs-used> <fs-avail>
 
+. `dirname $0`/../broctl-config.sh
+
 echo 0
 df -h $1 | awk '{print $1, $2, $3, $4}' | tail -1 | awk -f ${helperdir}/to-bytes.awk
 echo ~~~

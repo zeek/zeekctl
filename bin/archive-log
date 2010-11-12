@@ -6,6 +6,8 @@
 # 
 # archive-log <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> [<tag>]
 
+. `dirname $0`/broctl-config.sh
+
 delete=1
 if [ "$1" == "-c" ]; then
     delete=0

@@ -8,6 +8,7 @@ import os
 import sys
 import glob
 import fileinput
+import re
 
 import util
 import execute
@@ -15,118 +16,6 @@ import config
 
 # In all paths given in this file, ${<option>} will replaced with the value of the
 # corresponding configuration option.
-
-# Directories to be created on the manager. Each entry is a pair (path, clean)
-# in which 'clean' is a boolean indicating if True that the path is to be
-# deleted first before it is freshly installed. 
-Dirs = [
-    ("${brobase}", False),
-    ("${brobase}/share", False),
-    ("${staticdir}", True),
-    ("${logdir}", False),
-    ("${bindir}", False),
-    ("${scriptsdir}", False),
-    ("${postprocdir}", False),
-    ("${templatedir}", False),
-    ("${helperdir}", False),
-    ("${cfgdir}", False),
-
-    ("${policydir}", False),
-    ("${defsitepolicypath}", False),
-    ("${policydirsiteinstall}", True),
-    ("${policydirsiteinstallauto}", True),
-    ("${policydirbroctl}", True),
-
-    ("${spooldir}", False),
-    ("${tmpdir}", False),
-    ("${libdir}", False),
-    ("${libdirinternal}", False),
-    ("${libdirinternal}/BroControl", False),
-    ]    
-
-# Additional directories to be createdin development mode.     
-DirsDev = [
-     ("${policydir}/sigs", False),
-     ("${policydir}/time-machine", False),
-     ("${policydir}/xquery", False),
-    ]
-
-# List of files to be installed on the manager. Each entry is a pair
-# (src, dst, replace). 'src' must be a file (globs are ok). 
-# If replace is False, existing files will not be overwritten.
-# If source ends in ".in", it's passed through option substitution and
-# installed without the postfix.
-#
-# Note: all files ending in *.in will be copied first into ${templatedir}, and
-# then from there into their final destination in substitized form. 
-Targets = [ 
-    ("${distdir}/aux/broctl/bin/broctl", "${bindir}", True),
-    ("${distdir}/aux/broctl/aux/trace-summary/trace-summary", "${bindir}", True),
-    ("${distdir}/aux/broctl/aux/capstats/capstats", "${bindir}", True),
-    ("${distdir}/aux/broctl/BroControl/*.py", "${libdirinternal}/BroControl", True),
-    ("${distdir}/aux/broctl/policy/*.bro", "${policydir}/broctl", True),
-    ("${distdir}/aux/broctl/etc/analysis.dat", "${cfgdir}", True),
-    ("${distdir}/aux/broctl/bin/run-bro.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/check-config.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/archive-log.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/delete-log", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/expire-logs.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/post-terminate.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/stat-ctime", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/crash-diag.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/send-mail.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/mail-alarm.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/update.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/remove-log", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/is-alive.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/local-interfaces", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/cflow-stats.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/get-prof-log.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/mail-contents.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/make-archive-name", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/create-link-for-log.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/remove-link-for-log.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/update-stats.in", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/stats-to-csv", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/fmt-time", "${scriptsdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/start.in", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/stop", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/check-pid", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/top.in", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/get-childs", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/df.in", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/cat-file", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/run-cmd", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/to-bytes.awk", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/rmdir", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/is-dir", "${helperdir}", True),
-    ("${distdir}/aux/broctl/bin/helpers/exists", "${helperdir}", True),  
-    ("${distdir}/aux/broctl/bin/postprocessors/summarize-connections.in", "${postprocdir}", True),
-    ("${distdir}/aux/broctl/bin/postprocessors/mail-log.in", "${postprocdir}", True),
-    ("${distdir}/aux/broctl/.python-build/lib/_broccoli_intern.so", "${libdirinternal}", True),
-    ("${distdir}/aux/broctl/.python-build/lib/broccoli.py", "${libdirinternal}", True),
-    ("${distdir}/aux/broctl/.python-build/lib/_SubnetTree.so", "${libdirinternal}", True),
-    ("${distdir}/aux/broctl/.python-build/lib/SubnetTree.py", "${libdirinternal}", True),
-]
-
-# Additional list of files only copied when in development mode. 
-TargetsDev = [
-    # Note that the paths here should match with match Bro's "make install" is
-    # doing.
-    ("${distdir}/src/bro", "${bindir}/bro", True),
-    ("${distdir}/policy/*.bro", "${policydir}", True),
-    ("${distdir}/policy/bro.init", "${policydir}", True),
-    ("${distdir}/policy/sigs/*.sig", "${policydir}/sigs", True),
-    ("${distdir}/policy/time-machine/*.bro", "${policydir}/time-machine", True),
-    ("${distdir}/policy/xquery/*.xq", "${policydir}/xquery", True),
-    ("${distdir}/aux/broccoli/src/.libs/lib*", "${libdir}", True),
-]
-
-# Do not complain if these source files do no exist.
-OptionalTargets = [
-    ("${distdir}/aux/cf/cf", "${bindir}", True),
-    ("${distdir}/aux/hf/hf", "${bindir}", True),
-]
 
 # Diretories/files in form (path, mirror) which are synced from the manager to all nodes. 
 # If 'mirror' is true, the path is fully mirrored recursively, otherwise the 
@@ -144,34 +33,23 @@ Syncs = [
     ("${tmpdir}", False),
     ];    
 
-def _canonTarget(file, dst):
-    manager = config.Config.manager()
-    if execute.isdir(manager, dst):
-        target = os.path.join(dst, os.path.basename(file))
-    else:
-        target = dst
-
-    subst = False
-    if target.endswith(".in"):
-        target = target[:-3]
-        subst = True
-
-    if file.endswith(".in"):
-        subst = True
-
-    return (target, subst)
-
 # Performs the complete broctl installion process.
 # 
 # If local_only is True, nothing is propagated to other nodes.
-# If make_install is True, the install adapts for usage from a "make install",
-# i.e., it will copy all the static files form the broctl distribution; if
-# False, it will perform the "broctl install" command which only updates
-# dynamically generated files plus the site policy. In development mode,
-# "make_install" is always overridden to be True.
-def install(local_only, make_install):
-    if config.Config.devmode == "1":
-        make_install = True
+def install(local_only):
+
+    # Generate shell script that sets BroCtl dynamic variables according
+    # to their current values.  This shell script gets included in all
+    # other scripts.
+    cfg_path = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
+    cfg_file = open(cfg_path, 'w')
+    for substvartuple in config.Config.options():
+        substvar = substvartuple[0]
+        # don't write out if it has an invalid bash variable name
+        if not re.search("-", substvar):
+            substvarvalue = substvartuple[1]
+            cfg_file.write("%s=\"%s\"\n" % (substvar, substvarvalue))
+    cfg_file.close()
 
     config.Config.determineBroVersion()
 
@@ -180,118 +58,16 @@ def install(local_only, make_install):
     # Delete previously installed policy files to not mix things up.
     policies = [config.Config.policydirsiteinstall, config.Config.policydirsiteinstallauto]
 
-    if make_install:
-        policies += [config.Config.subst("${policydir}/broctl")]
-
     for p in policies:
         if os.path.isdir(p):
             util.output("removing old policies in %s ..." % p, False)
             execute.rmdir(manager, p)
             util.output(" done.")
 
-
     util.output("creating policy directories ...", False)
     for p in policies:
         execute.mkdir(manager, p)
     util.output(" done.")
-
-    custom = [(os.path.expanduser(file), "${bindir}", True, False) for file in config.Config.custominstallbin.split()]
-    pp = [(os.path.expanduser(file), "${postprocdir}", True, False) for file in config.Config.auxpostprocessors.split()]
-
-    targets = Targets
-    if config.Config.devmode == "1":
-        targets += TargetsDev
-
-    mandatory = [(src, dst, replace, False) for (src, dst, replace) in targets]
-    optional  = [(src, dst, replace, True) for (src, dst, replace) in OptionalTargets]
-
-    if config.Config.standalone == "0":
-        mandatory += [("${distdir}/aux/broctl/etc/node.cfg.cluster.in", "${cfgdir}/node.cfg.example", False, False)]
-        mandatory += [("${distdir}/aux/broctl/etc/broctl.cfg.cluster.in", "${cfgdir}/broctl.cfg.example", False, False)]
-        mandatory += [("${distdir}/aux/broctl/etc/networks.cfg.in", "${cfgdir}/networks.cfg.example", False, True)]
-        mandatory += [("${distdir}/aux/broctl/policy/local/cluster.local-manager.bro-template", "${defsitepolicypath}/local-manager.bro", False, True)]
-        mandatory += [("${distdir}/aux/broctl/policy/local/cluster.local-worker.bro-template", "${defsitepolicypath}/local-worker.bro", False, True)]
-        mandatory += [("${distdir}/aux/broctl/policy/local/cluster.local.bro-template", "${defsitepolicypath}/local.bro", False, True)]
-    else:
-        mandatory += [("${distdir}/aux/broctl/etc/node.cfg.standalone.in", "${cfgdir}/node.cfg", False, False)]
-        mandatory += [("${distdir}/aux/broctl/etc/broctl.cfg.standalone.in", "${cfgdir}/broctl.cfg", False, False)]
-        mandatory += [("${distdir}/aux/broctl/etc/networks.cfg.in", "${cfgdir}/networks.cfg", False, True)]
-        mandatory += [("${distdir}/aux/broctl/policy/local/standalone.local.bro-template", "${defsitepolicypath}/local.bro", False, True)]
-
-    all_targets = mandatory + optional + custom + pp
-
-    if make_install:
-        util.output("creating installation directories ...", False)
-        # Install the static parts of the broctl distribution. 
-        dirs = Dirs
-        if config.Config.devmode == "1":
-            dirs += DirsDev
-
-        for (dir, clean) in dirs:
-            dir = config.Config.subst(dir)
-            if clean:
-                execute.rmdir(manager, dir)
-
-            execute.mkdir(manager, dir)
-
-        util.output(" done.")
-
-        # Copy files.
-        util.output("installing files ...", False)
-
-        for (src, dst, replace, optional) in all_targets:
-            src = config.Config.subst(src)
-            dst = config.Config.subst(dst)
-
-            files = glob.glob(src)
-            if not files and not optional: 
-                util.warn("file does not exist: %s" % src)
-                continue
-
-            for file in files:
-                (target, subst) = _canonTarget(file, dst)
-
-                if not replace and execute.exists(manager, target):
-                    continue
-
-                if subst:
-                    # Installation copies to template directory only.
-                    # Substitution will be performed later. 
-                    target = config.Config.templatedir
-
-                if not execute.install(manager, file, target):
-                    continue
-
-        if manager:
-            if not execute.mkdir(manager, manager.cwd()):
-                util.warn("cannot create %s on manager" % manager.cwd())
-
-        util.output(" done.")
-
-    # Processing the templates by substitung all variables.
-    for (src, dst, replace, optional) in all_targets:
-        # Doesn't work with globs!
-
-        src = config.Config.subst(src)
-        dst = config.Config.subst(dst)
-        file = os.path.join(config.Config.templatedir, os.path.basename(src))
-
-        if not execute.exists(manager, file):
-            continue
-
-        (target, subst) = _canonTarget(file, dst)
-
-        assert subst
-
-        if not replace and execute.exists(manager, target):
-            continue
-
-        if not execute.install(manager, file, target):
-            continue
-
-        for line in fileinput.input(target, inplace=1):
-            print config.Config.subst(line, make_dest=False),
-        fileinput.close()
 
     # Install local site policy.
 
@@ -305,22 +81,11 @@ def install(local_only, make_install):
                     execute.install(manager, file, dst)
         util.output(" done.")
 
-    if not config.Config.nodes():
-        if config.Config.standalone == "0":
-            return
-
-        # The standalone installs default configs. Start over to read those.
-        util.output("[second install pass]")
-        os.system(config.Config.subst("${bindir}/broctl install"))
-        config.Config.readState()
-        config.Config._readNodes()
-        return
-
     makeLayout()
     makeAnalysisPolicy()
     makeLocalNetworks()
 
-    current = config.Config.subst(os.path.join(config.Config.logdir, "current"), make_dest=False)
+    current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     if not execute.exists(manager, current):
         try:
             os.symlink(manager.cwd(), current)
@@ -425,7 +190,7 @@ def makeLayout():
         print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\", $interface=\"%s\", $proxy=BroCtl::proxies[%d]]," % (s.count, s.addr, nextPort(s), tag, s.interface, p)
     print >>out, "};\n"
 
-    print >>out, "redef BroCtl::log_dir = \"%s\";\n" % config.Config.subst(config.Config.logdir, make_dest=False)
+    print >>out, "redef BroCtl::log_dir = \"%s\";\n" % config.Config.subst(config.Config.logdir)
 	
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:
@@ -539,8 +304,7 @@ def makeLocalNetworks():
     netcfg = config.Config.localnetscfg
 
     if not os.path.exists(netcfg):
-        if not config.Installing:
-            util.warn("list of local networks does not exist in %s" % netcfg)
+        util.warn("list of local networks does not exist in %s" % netcfg)
         return
 
     util.output("generating local-networks.bro ...", False)

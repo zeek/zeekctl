@@ -12,32 +12,18 @@ import time
 import signal
 import platform
 
+# Configured by CMake
 # Base directory of broctl installation.
-# $PREFIX is replaced by 'configure'.
-try:
-    BroBase = os.path.abspath(os.getenv("BROBASE"))
-except AttributeError:
-    BroBase = "$PREFIX"
-
-# Base directory of Bro distribution.              
-# $BRODIST is replaced by 'configure'.
-try:
-    BroDist = os.path.abspath(os.getenv("BRODIST"))
-except AttributeError:
-    BroDist = "$BRODIST"
+BroBase = "@PREFIX@"
 
 # Version of the broctl distribution.
-# $VERSION is replaced by 'configure'.
-Version = "$VERSION"
+Version = "@VERSION@"
 
 # True if we do a stand-alone install. 
-# $STANDALONE is replaced by 'configure'.
-StandAlone = $STANDALONE
+StandAlone = @STANDALONE_BOOL@
 
-# Adjust the PYTHONPATH. (If we're installing the make-wrapper will have already
-# set it correctly.)
-if not "BROCTL_INSTALL" in os.environ:
-    sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
+# Adjust the PYTHONPATH
+sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
 # We need to add the directory of the Broccoli library files
 # to the linker's runtime search path. This is hack which 
@@ -156,19 +142,16 @@ class BroCtlCmdLoop(cmd.Cmd):
         to verify the configuration with xref:cmd_check[+check+]."""
 
         local = False
-        make = False
 
         for arg in args.split():
             if arg == "--local":
                 local = True
-            elif arg == "--make":
-                make = True
             else:
                 self.syntax(args)
                 return
 
         self.lock()
-        install.install(local, make)
+        install.install(local)
 
     def do_start(self, args):
         """- [<nodes>]
@@ -709,7 +692,7 @@ from BroControl import control
 from BroControl import cron
 from BroControl.config import Config
 
-Config = config.Configuration("etc/broctl.cfg", BroBase, BroDist, Version, StandAlone)
+Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone)
 
 util.enableSignals()
 

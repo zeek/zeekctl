@@ -3,8 +3,8 @@
 # $Id: run-bro.in 6860 2009-08-14 19:01:47Z robin $
 #
 # Wrapper script around the actual Bro invocation. 
-#
-# run-bro is automatically generated from run-bro.in. Edit only the latter!
+
+. `dirname $0`/broctl-config.sh
 
 export PATH=${bindir}:${scriptsdir}:$PATH
 

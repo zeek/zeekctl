@@ -83,9 +83,6 @@ class Analysis:
         cnt = 0
 
         if not os.path.exists(cfgfile):
-            if Installing:
-                return
-
             util.error("analysis configuration %s does not exist" % cfgfile)
 
         for line in open(cfgfile):
@@ -155,26 +152,12 @@ class Analysis:
 # - types of analysis which can be toggled via the shell
 
 Config = None # Globally accessible instance of Configuration.
-Installing = False
-BroBase = None
-MakeDestDir = None
 
 class Configuration:    
-    def __init__(self, config, basedir, distdir, version, standalone):
+    def __init__(self, config, basedir, version, standalone):
         global Config
-        global Installing
 
         Config = self
-
-        if "BROCTL_INSTALL" in os.environ:
-            Installing = True
-            
-            global BroBase
-            BroBase = basedir
-            
-            if "MAKE_DESTDIR" in os.environ:
-                global MakeDestDir
-                MakeDestDir = os.environ["MAKE_DESTDIR"]
 
         self.config = {}
         self.state = {}
@@ -184,7 +167,6 @@ class Configuration:
 
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
-        self._setOption("distdir", distdir)
         self._setOption("version", version)
         self._setOption("standalone", standalone and "1" or "0")
 		
@@ -309,23 +291,10 @@ class Configuration:
     # Replace all occurences of "${option}", with option being either
     # broctl.cfg option or a dynamic variable, with the corresponding value. 
     # Defaults to replacement with the empty string for unknown options.
-    def subst(self, str, make_dest=True):
+    def subst(self, str):
         while True:
             m = re.search(r"(\$\{([A-Za-z]+)(:([^}]+))?\})", str)
             if not m:
-                
-                # This is a hack to support make's DESTDIR: if the env variable
-                # MAKE_DESTDIR is set, and the string we return starts with  our
-                # installation prefix, we prepend the var's content. This it not
-                # totally perfect but should do the trick.
-                if Installing and MakeDestDir and MakeDestDir != "":
-                    
-                    if make_dest and str.startswith(BroBase):
-                        str = MakeDestDir + str
-
-                    if not make_dest:
-                        str = str.replace(MakeDestDir, "")
-                    
                 return str
 
             key = m.group(2).lower()
@@ -347,7 +316,7 @@ class Configuration:
     def _readNodes(self):
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
-        if not config.read(self.nodecfg) and not Installing:
+        if not config.read(self.nodecfg):
             util.error("cannot read '%s'" % self.nodecfg)
 
         manager = False
@@ -448,8 +417,7 @@ class Configuration:
                 config[key] = val
 
         except IOError, e:
-            if not Installing:
-                util.error("cannot read '%s'" % file)
+            util.error("cannot read '%s'" % file)
 
         return config
 
@@ -471,19 +439,18 @@ class Configuration:
         try:
             out = open(self.statefile, "w")
         except IOError:
-            if not Installing:
-                util.warn("can't write '%s'" % self.statefile)
+            util.warn("can't write '%s'" % self.statefile)
             return
 
         print >>out, "# Automatically generated. Do not edit.\n"
 
         for (key, val) in self.state.items():
-            print >>out, "%s = %s" % (key, self.subst(str(val), make_dest=False))
+            print >>out, "%s = %s" % (key, self.subst(str(val)))
 
     # Runs Bro to get its version numbers.
     def determineBroVersion(self):
         version = None
-        bro = os.path.join(self.distdir, "src/bro")
+        bro = self.subst("${bindir}/bro")
         if execute.exists(None, bro):
             (success, output) = execute.captureCmd("%s -v 2>&1" % bro)
             if success:
@@ -506,8 +473,4 @@ class Configuration:
 
         self.state["broversion"] = version
         self.state["bro"] = self.subst("${bindir}/bro")
-
-    # Returns true if we're running via "make install"
-    def installing(self):
-        return Installing
 

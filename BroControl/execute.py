@@ -44,8 +44,7 @@ def isLocal(node):
     if not LocalAddrs:
         (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "local-interfaces"))
         if not success:
-            if not config.Config.installing():
-                util.warn("cannot get list of local IP addresses")
+            util.warn("cannot get list of local IP addresses")
 
             try:
                 # This does not work for multi-homed hosts.
