@@ -19,6 +19,9 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
 
   Installation Directories:
     --prefix=PREFIX        installation directory [/usr/local/bro]
+    --python-install-dir   the desired installation directory for
+                           any auxialliary python modules (if present)
+                           [PREFIX/lib/broctl]
 
   Optional Features:
     --enable-cluster       enable cluster installation/functionality
@@ -45,6 +48,7 @@ append_cache_entry () {
 builddir=build
 CMakeCacheEntries=""
 append_cache_entry CMAKE_INSTALL_PREFIX PATH   /usr/local/bro
+append_cache_entry PY_MOD_INSTALL_DIR   PATH   /usr/local/bro/lib/broctl
 append_cache_entry STANDALONE           BOOL   true
 
 # parse arguments
@@ -64,6 +68,7 @@ while [ $# -ne 0 ]; do
             ;;
         --prefix=*)
             append_cache_entry CMAKE_INSTALL_PREFIX PATH   $optarg
+            append_cache_entry PY_MOD_INSTALL_DIR   PATH   $optarg/lib/broctl
             ;;
         --enable-cluster)
             append_cache_entry STANDALONE           BOOL   false

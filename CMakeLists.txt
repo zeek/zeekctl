@@ -38,11 +38,24 @@ if (NOT ${BRO_ROOT_DIR} STREQUAL ${CMAKE_INSTALL_PREFIX})
                     "does not match Bro installation directory ${BRO_ROOT_DIR}")
 endif ()
 find_package(PythonInterp REQUIRED)
-find_package(PyBroccoli)
-find_package(Capstats)
-find_package(TraceSummary)
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/pysubnettree/CMakeLists.txt)
+    add_subdirectory(aux/pysubnettree)
+    set(SubnetTree_FOUND true)
+endif ()
 find_package(SubnetTree REQUIRED)
-find_package(BroAuxTools)
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/capstats/CMakeLists.txt)
+    add_subdirectory(aux/capstats)
+else ()
+    find_package(Capstats)
+endif ()
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/trace-summary/CMakeLists.txt)
+    add_subdirectory(aux/trace-summary)
+else ()
+    find_package(TraceSummary)
+endif ()
 
 ########################################################################
 ## Generate/Configure files
