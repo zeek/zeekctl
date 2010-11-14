@@ -16,6 +16,12 @@
 #  Bro_FOUND                     Bro NIDS is installed
 #  BRO_EXE                       path to the 'bro' binary
 
+if (BRO_EXE AND BRO_ROOT_DIR)
+    # this implies that we're building from the Bro source tree
+    set(Bro_FOUND true)
+    return()
+endif ()
+
 find_program(BRO_EXE bro
              HINTS ${BRO_ROOT_DIR}/bin /usr/local/bro/bin)
 
