@@ -54,6 +54,7 @@ usual, specifying the target installation path as ``prefix`` (we use
 
   > cd /path/to/bro/source/distribution
   > ./configure --prefix=/usr/local/bro
+  > cd build
   > make install
 
 - Install _BroControl_:
@@ -62,6 +63,10 @@ usual, specifying the target installation path as ``prefix`` (we use
   > ./configure --prefix=/usr/local/bro
   > cd build
   > make install
+
+- The installation process can be combined if using a _Bro_ source
+  distribution that includes _BroControl_ sources.  See the
+  ``--enable-broctl`` option of Bro's configure script.
 
 - Add +<prefix>/bin+ to your +PATH+.
 
@@ -164,15 +169,21 @@ following steps to install a Bro cluster:
 
   > cd /path/to/bro/source/distribution
   > ./configure --prefix=/usr/local/bro
+  > cd build
   > make install
 
 - Install _BroControl_, selecting cluster operation with the
   +--enable-cluster+ option:
 
   > cd /path/to/broctl/source/distribution
-  > ./configure --prefix=/usr/local/bro
+  > ./configure --prefix=/usr/local/bro --enable-cluster
   > cd build
   > make install
+
+- The installation process can be combined if using a _Bro_ source
+  distribution that includes _BroControl_ sources.  See the
+  ``--enable-broctl`` and ``--enable-cluster`` option of
+  Bro's configure script.
 
 - Add +<prefix>/bin+ to your +PATH+.
 
@@ -414,22 +425,9 @@ When I'm using the xref:Standalone[standalone mode], do I still need to have +ss
     file system.
 
 What do I need to do when the something in the Bro distribution changes???
-    Just re-run +make broctl-install+. It will reinstall
-    all the files from the distribution, except for any of the
-    template files, as they might have been edited. 
-+
-In addition, _BroControl_ has a "development mode", which makes
-installation easier if distribution files change frequently
-(e.g., becayse you're working from SVN). Development mode
-activated by adding +DevMode=1+ to +etc/broctl.cfg+. Once done,
-_BroControl_'s +install+ command will also install all the files
-from the distribution, just as +make broctl-install+ does. Note
-that you obviously need to keep the distribution around to have
-this work. 
-+
-Note for folks who have used the old "cluster shell": the
-development mode corresponds to the old default behaviour, which
-worked with any +make install-broctl+.
+    After pulling from the main Bro git repository, Just re-run +make install+
+    inside your build directory.  It will reinstall all the files from the
+    distribution that are not up-to-date.
 
 [[devversion]]Anything special to consider when using development versions???
    If you are using a _development version_, _BroControl_ might
