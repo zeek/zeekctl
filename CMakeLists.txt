@@ -32,18 +32,12 @@ endif ()
 ########################################################################
 ## Dependency Configuration
 
-find_package(Bro REQUIRED)
-if (NOT ${BRO_ROOT_DIR} STREQUAL ${CMAKE_INSTALL_PREFIX})
-    message(WARNING "Broctl installation directory ${CMAKE_INSTALL_PREFIX} "
-                    "does not match Bro installation directory ${BRO_ROOT_DIR}")
-endif ()
-find_package(PythonInterp REQUIRED)
+include(FindRequiredPackage)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/pysubnettree/CMakeLists.txt)
     add_subdirectory(aux/pysubnettree)
-    set(SubnetTree_FOUND true)
+    set(SUBNETTREE_FOUND true)
 endif ()
-find_package(SubnetTree REQUIRED)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/capstats/CMakeLists.txt)
     add_subdirectory(aux/capstats)
@@ -55,6 +49,22 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/trace-summary/CMakeLists.txt)
     add_subdirectory(aux/trace-summary)
 else ()
     find_package(TraceSummary)
+endif ()
+
+FindRequiredPackage(Bro)
+FindRequiredPackage(PythonInterp)
+FindRequiredPackage(SubnetTree)
+
+if (MISSING_PREREQS)
+    foreach (prereq ${MISSING_PREREQ_DESCS})
+        message(SEND_ERROR ${prereq})
+    endforeach ()
+    message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
+endif ()
+
+if (NOT ${BRO_ROOT_DIR} STREQUAL ${CMAKE_INSTALL_PREFIX})
+    message(WARNING "Broctl installation directory ${CMAKE_INSTALL_PREFIX} "
+                    "does not match Bro installation directory ${BRO_ROOT_DIR}")
 endif ()
 
 ########################################################################

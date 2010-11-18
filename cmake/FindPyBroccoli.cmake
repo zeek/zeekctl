@@ -7,17 +7,17 @@
 #
 # Variables defined by this module:
 #
-#  PyBroccoli_FOUND             Python successfully imports broccoli bindings
+#  PYBROCCOLI_FOUND             Python successfully imports broccoli bindings
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import broccoli"
                 RESULT_VARIABLE PYBROCCOLI_IMPORT_RESULT)
 
 if (PYBROCCOLI_IMPORT_RESULT)
     # python returned non-zero exit status
-    set(PyBroccoli_FOUND false)
+    set(PYBROCCOLI_FOUND false)
 else ()
-    set(PyBroccoli_FOUND true)
+    set(PYBROCCOLI_FOUND true)
 endif ()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PyBroccoli DEFAULT_MSG PyBroccoli_FOUND)
+find_package_handle_standard_args(PyBroccoli DEFAULT_MSG PYBROCCOLI_FOUND)

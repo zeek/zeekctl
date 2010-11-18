@@ -6,7 +6,7 @@
 #
 # Variables defined by this module:
 #
-#  BroAuxTools_FOUND             Bro auxilliary tools found
+#  BROAUXTOOLS_FOUND             Bro auxilliary tools found
 #  HF_EXE                        path to the 'hf' binary
 #  CF_EXE                        path to the 'cf' binary
 

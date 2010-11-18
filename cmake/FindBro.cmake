@@ -13,12 +13,12 @@
 #
 # Variables defined by this module:
 #
-#  Bro_FOUND                     Bro NIDS is installed
+#  BRO_FOUND                     Bro NIDS is installed
 #  BRO_EXE                       path to the 'bro' binary
 
 if (BRO_EXE AND BRO_ROOT_DIR)
     # this implies that we're building from the Bro source tree
-    set(Bro_FOUND true)
+    set(BRO_FOUND true)
     return()
 endif ()
 

@@ -6,7 +6,7 @@
 #
 # Variables defined by this module:
 #
-#  Capstats_FOUND             capstats binary found
+#  CAPSTATS_FOUND             capstats binary found
 #  Capstats_EXE               path to the capstats executable binary
 
 find_program(CAPSTATS_EXE capstats)
