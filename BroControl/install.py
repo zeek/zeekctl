@@ -33,14 +33,10 @@ Syncs = [
     ("${tmpdir}", False),
     ];    
 
-# Performs the complete broctl installion process.
-# 
-# If local_only is True, nothing is propagated to other nodes.
-def install(local_only):
-
-    # Generate shell script that sets BroCtl dynamic variables according
-    # to their current values.  This shell script gets included in all
-    # other scripts.
+# Generate shell script that sets Broctl dynamic variables according
+# to their current values.  This shell script gets included in all
+# other scripts.
+def generateDynamicVariableScript():
     cfg_path = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
     cfg_file = open(cfg_path, 'w')
     for substvartuple in config.Config.options():
@@ -50,6 +46,11 @@ def install(local_only):
             substvarvalue = substvartuple[1]
             cfg_file.write("%s=\"%s\"\n" % (substvar, substvarvalue))
     cfg_file.close()
+
+# Performs the complete broctl installion process.
+#
+# If local_only is True, nothing is propagated to other nodes.
+def install(local_only):
 
     config.Config.determineBroVersion()
 
@@ -91,6 +92,8 @@ def install(local_only):
             os.symlink(manager.cwd(), current)
         except (IOError, OSError), e:
             pass
+
+    generateDynamicVariableScript()
 
     if local_only:
         return
