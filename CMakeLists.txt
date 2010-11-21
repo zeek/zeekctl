@@ -47,6 +47,7 @@ include(FindRequiredPackage)
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/pysubnettree/CMakeLists.txt)
     add_subdirectory(aux/pysubnettree)
     set(SUBNETTREE_FOUND true)
+    set(SUBNETTREE_PYTHON_MODULE "build from source aux/pysubnettree")
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/aux/capstats/CMakeLists.txt)

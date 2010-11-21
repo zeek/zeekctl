@@ -15,11 +15,12 @@ if (NOT SUBNETTREE_FOUND)
 
     if (SUBNETTREE_IMPORT_RESULT)
         # python returned non-zero exit status
-        set(SUBNETTREE_FOUND false)
+        set(SUBNETTREE_PYTHON_MODULE false)
     else ()
-        set(SUBNETTREE_FOUND true)
+        set(SUBNETTREE_PYTHON_MODULE true)
     endif ()
 endif ()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SubnetTree DEFAULT_MSG SUBNETTREE_FOUND)
+find_package_handle_standard_args(SubnetTree DEFAULT_MSG
+                                  SUBNETTREE_PYTHON_MODULE)

@@ -9,15 +9,17 @@
 #
 #  PYBROCCOLI_FOUND             Python successfully imports broccoli bindings
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import broccoli"
-                RESULT_VARIABLE PYBROCCOLI_IMPORT_RESULT)
+if (NOT PYBROCCOLI_FOUND)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import broccoli"
+                    RESULT_VARIABLE PYBROCCOLI_IMPORT_RESULT)
 
-if (PYBROCCOLI_IMPORT_RESULT)
-    # python returned non-zero exit status
-    set(PYBROCCOLI_FOUND false)
-else ()
-    set(PYBROCCOLI_FOUND true)
+    if (PYBROCCOLI_IMPORT_RESULT)
+        # python returned non-zero exit status
+        set(BROCCOLI_PYTHON_MODULE false)
+    else ()
+        set(BROCCOLI_PYTHON_MODULE true)
+    endif ()
 endif ()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PyBroccoli DEFAULT_MSG PYBROCCOLI_FOUND)
+find_package_handle_standard_args(PyBroccoli DEFAULT_MSG BROCCOLI_PYTHON_MODULE)
