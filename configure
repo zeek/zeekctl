@@ -30,10 +30,7 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --with-bro=PATH        path to Bro install root
 "
 
-sourcedir=`dirname $0`
-if [ "$sourcedir" = "." ]; then
-    sourcedir=`pwd`
-fi
+sourcedir="$( cd "$( dirname "$0" )" && pwd )"
 
 # Function to append a CMake cache entry definition to the
 # CMakeCacheEntries variable
