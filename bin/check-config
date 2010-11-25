@@ -1,0 +1,35 @@
+#! /usr/bin/env bash
+#
+# $Id: check-config.in 7098 2010-10-19 00:54:23Z robin $
+#
+# Just check Bro's configuration for errors.
+#
+# check_config <installed_policies_flag> <dir-to-set-as-cwd> <Bro parameters>
+
+. `dirname $0`/broctl-config.sh
+
+if [ "$1" == "1" ]; then
+   policies=${policydir}
+   export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+else
+   policies=${policydir}
+   export BROPATH=${policydirsiteinstallauto}:${sitepolicypath}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+fi
+
+shift 
+
+cd $1
+shift
+
+export PATH=${bindir}:${scriptsdir}:$PATH
+
+echo $@ >.cmdline
+touch .checking
+
+${bro} $@
+
+exit $?
+
+
+
+
