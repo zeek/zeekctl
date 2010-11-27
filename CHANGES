@@ -1,0 +1,4 @@
+0.4
+    - Moving BroControl to its own git repository.
+    - Converting README to reST format.
+    - Renamed "Capstats" config option to "CapstatsPath".
