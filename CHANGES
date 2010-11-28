@@ -1,4 +1,87 @@
 0.4
-    - Moving BroControl to its own git repository.
-    - Converting README to reST format.
-    - Renamed "Capstats" config option to "CapstatsPath".
+
+- Moving BroControl to its own git repository.
+
+- Converting README to reST format.
+
+- Renamed "Capstats" config option to "CapstatsPath".
+
+- Merge with Subversion repository as of r7098. Incorporated changes:
+
+  o Increasing default timeouts for scan detector significantly.
+
+  o Increasing the manager's max_remote_events_processed to
+    something large, as it would slow down the process too much
+    otherwise and there's no other work to be interleaved with it
+    anyway.
+
+  o Adding debug output to cluster's part of catch-and-release
+    (extends the debugging already present in policy/debug.bro)
+
+  o Fixing typo in util.py. Closes #223.
+
+  o Added note to README pointing to HTML version.
+
+  o Disabling print_hook for proxies' remote.log.
+
+  o broctl's capstats now reports a total as well, and stats.log
+    tracks these totals. Closes #160.
+
+  o Avoiding spurious "waiting for lock" messages in cron mode.
+    Closes #206.
+
+  o Bug fixes for installation on NFS.
+
+  o Bug fix for top command on FreeBSD 8.
+
+  o crash-diag now checks whether gdb is available.
+
+  o trace-summary reports the sample factor in use in its output,
+    and now also applies it to the top-local-networks output (not
+    doing the latter was a bug).
+
+  o Removed the default twice-a-day rotation for conn.log. The
+    default rotation for conn.log now is now once every 24h, just
+    like for all other logs with the exception of mail.log (which is
+    still rotated twice a day, and thus the alarms are still mailed
+    out twice a day).
+
+  o Fixed the problem of logs sometimes being filed into the wrong
+    directory (see the (now gone) FAQ entry in the README).
+
+  o One can now customize the archive naming scheme. See the
+    corresponding FAQ entry in the README.
+
+  o Cleaned up, and extended, collection of cluster statistics.
+
+    ${logdir}/stats now looks like this:
+
+      drwxr-xr-x   4 bro  wheel      59392 Apr  5 17:55 .
+      drwxr-xr-x  96 bro  wheel       2560 Apr  6 12:00 ..
+      -rw-r--r--   1 bro  wheel        576 Apr  6 16:40 meta.dat
+      drwxr-xr-x   2 bro  wheel       2048 Apr  6 16:40 profiling
+      -rw-r--r--   1 bro  wheel  771834825 Apr  6 16:40 stats.log
+      drwxr-xr-x   2 bro  wheel       2048 Apr  6 16:25 www
+
+    stats.log accumulates cluster statistics collected every time
+    "cron" is called.
+
+    - profiling/ keeps the nodes' prof.logs.
+
+    - www/ keeps a subset of stats.log in CSV format for easy plotting.
+
+    - meta.dat contains meta information about the current cluster
+    state (in particular which nodes we have, and when the last
+    stats update was done).
+
+    Note that there is not Web setup yet to actually plot the data
+    in www/.
+
+  o BroControl now automatically maintains links inside today's log
+    archive directory pointing to the current live version of the
+    corresponding log file (if Bro is running). For example:
+
+    smtp.log.11:52:18-current -> /usr/local/cluster/spool/manager/smtp.log
+
+  o Alarms mailed out by BroControl now (1) have the notice msg in the
+    subject; and (2) come with the full mail.log entry in the body.
