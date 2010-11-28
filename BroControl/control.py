@@ -770,7 +770,7 @@ def attachGdb(nodes):
 # Gather capstats from interfaces.
 def getCapstatsOutput(nodes, interval):
 
-    if not config.Config.capstats:
+    if not config.Config.capstatspath:
         if config.Config.cron == "0":
             util.warn("do not have capstats binary available")
         return []
@@ -788,7 +788,7 @@ def getCapstatsOutput(nodes, interval):
     for (addr, interface) in hosts.keys():
         node = hosts[addr, interface]
 
-        capstats = [config.Config.capstats, "-i", interface, "-I", str(interval), "-n", "1"]
+        capstats = [config.Config.capstatspath, "-i", interface, "-I", str(interval), "-n", "1"]
 
 # Unfinished feature: only consider a particular MAC. Works here for capstats
 # but Bro config is not adapted currently so we disable it for now. 
@@ -909,7 +909,7 @@ def capstats(nodes, interval):
             util.output("")
 
     have_cflow = config.Config.cflowaddress and config.Config.cflowuser and config.Config.cflowpassword
-    have_capstats = config.Config.capstats
+    have_capstats = config.Config.capstatspath
 
     if not have_cflow and not have_capstats:
         util.warn("do not have capstats binary available")
