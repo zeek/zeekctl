@@ -133,7 +133,7 @@ options = [
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
     Option("TemplateDir", "${BroBase}/share/broctl/templates", "string", Option.AUTOMATIC, False,
-           "Directory where the *.in templates are copied into."),
+           "Directory where the \*.in templates are copied into."),
 
     Option("LibDir", "${BroBase}/lib", "string", Option.AUTOMATIC, False,
            "Directory for library files."),
@@ -148,7 +148,7 @@ options = [
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False, 
            "Path to trace-summary script; empty if not available."),
-    Option("Capstats", "${bindir}/capstats", "string", Option.AUTOMATIC, False, 
+    Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False, 
            "Path to capstats binary; empty if not available."),
 
     Option("NodeCfg", "${CfgDir}/node.cfg", "string", Option.AUTOMATIC, False,
@@ -229,12 +229,12 @@ def printOptions(cat):
         default = default.replace("{", "\\{")
         description = opt.description.replace("{", "\\{")    
 
-        print "[[opt_%s]] *%s* (%s%s)::\n%s" % (opt.name, opt.name, opt.type, default, description)
+        print ".. _%s:\n\n*%s* (%s%s)\n    %s\n" % (opt.name, opt.name, opt.type, default, description)
 
 
 if __name__ == '__main__':
 
-    print "// Automatically generated. Do not edit."
+    print ".. Automatically generated. Do not edit."
     print
     print "User Options"
     print "~~~~~~~~~~~~"

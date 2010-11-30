@@ -72,7 +72,7 @@ def _logStats(interval):
     top = control.getTopOutput(nodes)
 
     have_cflow = config.Config.cflowaddress and config.Config.cflowuser and config.Config.cflowpassword
-    have_capstats = config.Config.capstats
+    have_capstats = config.Config.capstatspath
     cflow_start = cflow_end = None
     capstats = []
     cflow_rates = []
