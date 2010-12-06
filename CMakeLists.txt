@@ -130,21 +130,42 @@ install(FILES etc/analysis.dat
 if (STANDALONE)
     configure_file(etc/broctl.cfg.standalone.in
                    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
-    install(FILES policy/local/standalone.local.bro-template
-            DESTINATION share/bro/site
-            RENAME local.bro)
-    install(FILES etc/node.cfg.standalone.in
-            DESTINATION ${ETC}
-            RENAME node.cfg)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg
             DESTINATION ${ETC}
             RENAME broctl.cfg)
+
+    # The policy file template is configured into build dir just
+    # to assist running bro from the build directory
+    configure_file(policy/local/standalone.local.bro-template
+                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local.bro
+                   COPY_ONLY)
+    install(FILES policy/local/standalone.local.bro-template
+            DESTINATION share/bro/site
+            RENAME local.bro)
+
+    install(FILES etc/node.cfg.standalone.in
+            DESTINATION ${ETC}
+            RENAME node.cfg)
     install(FILES etc/networks.cfg.in
             DESTINATION ${ETC}
             RENAME networks.cfg)
 else ()
     configure_file(etc/broctl.cfg.cluster.in
                    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example
+            DESTINATION ${ETC})
+
+    # The policy file templates are configured into build dir just
+    # to assist running bro from the build directory
+    configure_file(policy/local/cluster.local.bro-template
+                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local.bro
+                   COPY_ONLY)
+    configure_file(policy/local/cluster.local-worker.bro-template
+                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local-worker.bro
+                   COPY_ONLY)
+    configure_file(policy/local/cluster.local-manager.bro-template
+                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local-manager.bro
+                   COPY_ONLY)
     install(FILES policy/local/cluster.local.bro-template
             DESTINATION share/bro/site
             RENAME local.bro)
@@ -154,11 +175,10 @@ else ()
     install(FILES policy/local/cluster.local-manager.bro-template
             DESTINATION share/bro/site
             RENAME local-manager.bro)
+
     install(FILES etc/node.cfg.cluster.in
             DESTINATION ${ETC}
             RENAME node.cfg.example)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example
-            DESTINATION ${ETC})
     install(FILES etc/networks.cfg.in
             DESTINATION ${ETC}
             RENAME networks.cfg.example)
