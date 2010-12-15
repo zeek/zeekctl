@@ -88,10 +88,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
 ## Install
 
 # copy BroControl package to build dir and compile everything before install
-install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
+install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/BroControl
         ${CMAKE_CURRENT_BINARY_DIR}/BroControl)")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+install(CODE "execute_process(COMMAND \"${PYTHON_EXECUTABLE}\" -c
         \"import compileall; compileall.compile_dir('BroControl')\"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
 

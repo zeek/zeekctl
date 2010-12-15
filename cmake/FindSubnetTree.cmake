@@ -10,7 +10,7 @@
 #  SUBNETTREE_FOUND             Python successfully imports SubnetTree module
 
 if (NOT SUBNETTREE_FOUND)
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import SubnetTree"
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import SubnetTree"
                     RESULT_VARIABLE SUBNETTREE_IMPORT_RESULT)
 
     if (SUBNETTREE_IMPORT_RESULT)

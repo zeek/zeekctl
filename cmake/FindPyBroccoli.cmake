@@ -10,7 +10,7 @@
 #  PYBROCCOLI_FOUND             Python successfully imports broccoli bindings
 
 if (NOT PYBROCCOLI_FOUND)
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import broccoli"
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import broccoli"
                     RESULT_VARIABLE PYBROCCOLI_IMPORT_RESULT)
 
     if (PYBROCCOLI_IMPORT_RESULT)
