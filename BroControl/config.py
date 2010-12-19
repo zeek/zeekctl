@@ -21,7 +21,7 @@ class Node:
 
     # Valid tags in nodes file. The values will be stored 
     # in attributes of the same name.
-    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
+    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1, "readfile": 1 }
 
     def __init__(self, tag):
         self.tag = tag

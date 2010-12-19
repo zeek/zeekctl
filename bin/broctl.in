@@ -205,6 +205,15 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args, expand_all=False)
         if success:
             control.restart(nodes, clean)
+            
+    def do_read(self, args):
+        """- <file_name>
+
+        Reads the pcap format network tracefile into a single Bro instance
+        with the full BroControl configuration.
+        """ 
+        self.lock()
+        control.read(args)
 
     def do_status(self, args):
         """- [<nodes>]

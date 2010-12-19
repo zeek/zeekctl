@@ -133,10 +133,11 @@ def waitForBros(nodes, status, timeout, ensurerunning):
 
 # Build the Bro parameters for the given node. Include
 # script for live operation if live is true.
-def _makeBroParams(node, live):
+# mode is one of "live", "read", or "check".
+def _makeBroParams(node, mode):
     args = []
 
-    if live:
+    if mode == "live":
         try:
             args += ["-i %s " % node.interface]
         except AttributeError:
@@ -146,6 +147,9 @@ def _makeBroParams(node, live):
             args += ["-w trace.pcap"]
 
         args += ["-U .status"]
+
+    elif mode == "read":
+        args += ["-r %s " % node.readfile]
 
     args += ["-p broctl"]
 
@@ -161,9 +165,9 @@ def _makeBroParams(node, live):
 
     args += node.scripts
 
-    if live:
+    if mode == "live":
         args += ["broctl-live"]
-    else:
+    elif mode == "check":
         args += ["broctl-check"]
 
     if node.type == "worker" or node.type == "proxy":
@@ -212,7 +216,7 @@ def _makeCrashReports(nodes):
         node.clearCrashed()
 
 # Starts the given nodes. Returns true if all nodes were successfully started.
-def _startNodes(nodes):
+def _startNodes(nodes, runmode="live"):
 
     result = True
 
@@ -245,7 +249,7 @@ def _startNodes(nodes):
     cmds = []
     envs = []
     for node in nodes:
-        cmds += [(node, "start", [node.cwd()] + _makeBroParams(node, True))]
+        cmds += [(node, "start", [node.cwd()] + _makeBroParams(node, runmode))]
         envs += [_makeEnvParam(node)]
 
     nodes = []
@@ -448,6 +452,26 @@ def restart(nodes, clean):
         _startNodes(nodes)
     else:
         start([])
+
+# Read a tracefile with a single Bro instance
+def read(filename):
+    # TODO: verify that all files exist
+    for node in config.Config.nodes():
+        if node.type == "standalone":
+            node.readfile = filename
+        elif node.type == "worker":
+            # TODO: in the case of workers, the file(s) must be distributed too
+            node.readfile = filename
+
+    # Start all nodes. Do it in the order manager, proxies, workers. 
+    if not _startNodes(config.Config.nodes("manager"), "read"):
+        return
+
+    if not _startNodes(config.Config.nodes("proxies")):
+        return
+
+    if not _startNodes(config.Config.nodes("workers"), "read"):
+        return
 
 # Output status summary for nodes. 
 def status(nodes):
@@ -652,7 +676,7 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
         dashl = list_scripts and ["-l"] or []
 
-        broargs =  " ".join(dashl + _makeBroParams(node, False)) + " terminate"
+        broargs =  " ".join(dashl + _makeBroParams(node, "check")) + " terminate"
         installed_policies = installed and "1" or "0"
 
         cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s" % (installed_policies, cwd, broargs)
@@ -944,7 +968,7 @@ def update(nodes):
         if isrunning:
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
-            args = " ".join(_makeBroParams(node, False))
+            args = " ".join(_makeBroParams(node, "check"))
             cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s" % (node.tag.replace("worker-", "w"), args), env, None)]
             util.output("updating %s ..." % node.tag)
 
