@@ -585,7 +585,7 @@ def getTopOutput(nodes):
             d = {}
             d["pid"] = int(p[0])
             d["proc"] = (p[0] == parents[node.tag] and "parent" or "child") 
-            d["vsize"] = int(p[1])
+            d["vsize"] = int(float(p[1]))
             d["rss"] = int(p[2])
             d["cpu"] = p[3]
             d["cmd"] = " ".join(p[4:])

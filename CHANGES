@@ -1,3 +1,9 @@
+
+In progress:
+
+- Fix for dealing with large vsize values reported by
+  "top" (Craig Leres).
+
 0.4
 
 - Moving BroControl to its own git repository.
