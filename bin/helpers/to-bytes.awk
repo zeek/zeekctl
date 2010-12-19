@@ -4,11 +4,11 @@
 
 {
     for ( i = 1; i <= NF; i++) {
-	    if ( match($i, "^(-?[0-9.]+)By?$") ){ $i = substr($i, RSTART, RLENGTH-1); }
- 	    else if ( match($i, "^(-?[0-9.]+)Ki?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024; }
-	    else if ( match($i, "^(-?[0-9.]+)Mi?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024; }
-	    else if ( match($i, "^(-?[0-9.]+)Gi?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024 * 1024; }
-	    else if ( match($i, "^(-?[0-9.]+)Te?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024 * 1024 * 1024; }
+	    if ( match($i, "^(-?[0-9.]+)B[y+]?$") ){ $i = substr($i, RSTART, RLENGTH-1); }
+ 	    else if ( match($i, "^(-?[0-9.]+)K[i+]?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024; }
+	    else if ( match($i, "^(-?[0-9.]+)M[i+]?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024; }
+	    else if ( match($i, "^(-?[0-9.]+)G[i+]?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024 * 1024; }
+	    else if ( match($i, "^(-?[0-9.]+)T[e+]?$") ){ $i = substr($i, RSTART, RLENGTH-1) * 1024 * 1024 * 1024 * 1024; }
 	    printf("%s ", $i);
 	}
 
