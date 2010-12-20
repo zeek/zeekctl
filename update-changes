@@ -2,17 +2,19 @@
 #
 # Assembles a draft CHANGES entry out of recent commits. The entry is prepended
 # to the current CHANGES file and the user then gets a chance to further edit
-# the it in the editor before it gets committed.
+# the it in the editor before it gets committed. Also updates the VERSION file.
 
 changes=CHANGES
+version=VERSION
 
 tmp=${changes}.tmp
 trap "rm -f $tmp" EXIT
 
-version=`git describe $rev 2>/dev/null | sed 's/^v//g' | sed "s/-[^-]*$//g"`
+version_short=`git describe $rev 2>/dev/null | sed 's/^v//g' | sed "s/-[^-]*$//g"`
+version_full=`git describe $rev 2>/dev/null  | sed 's/^v//g'`
 
-if [ "$version" == "" ]; then
-    echo "can't generate version string"
+if [ "$version_short" == "" ]; then
+    echo "can't generate version_short string"
     exit 1
 fi
 
@@ -24,7 +26,7 @@ echo
 if [ "$last" == "" ]; then
     echo "Warning: cannot find previous entry, assuming all is new ..."
 else
-    echo "New revisions since version" $last
+    echo "New revisions since version_short" $last
 fi
 
 echo
@@ -32,8 +34,9 @@ echo
 last_hash=`echo $last | awk '{print $(NF)}'`
 
 rm -f $tmp
-printf '%s | ' $version >$tmp
+printf '%s | ' $version_short >$tmp
 git show -s "--pretty=tformat:%ci | %H" master >>$tmp
+echo >>$tmp
 
 found=0
 
@@ -66,8 +69,11 @@ eval $EDITOR $tmp
 
 rm -f $changes.bak
 mv $tmp $changes
+echo $version_full >$version
+
+git add $changes $version
+git commit --amend
 
 echo "Old $tmp in saved in ${changes}.bak."
+echo "Set $version to $version_full."
 
-git add $changes
-git commit -e -m "Updating $changes."
