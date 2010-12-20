@@ -1,10 +1,18 @@
+0.4-8 | 2010-12-20 14:03:17 -0800 | 7b71b9fdc1608c539785ac099348e5b3e2badcd0
 
-In progress:
+  * New helper script for maintaing CHANGES file. (Robin Sommer)
 
-- Fix for dealing with large vsize values reported by
-  "top" (Craig Leres).
+0.4-7 | 2010-12-20 12:03:34 -0800 | a05be1242b4e06dca1bb1a38ed871e7e2d78181b
 
-0.4
+  * Fix for dealing with large vsize values reported by "top" (Craig
+    Leres)
+
+  * Fixed the top helper script to assign the command variable
+    appropriately. (Seth Hall)
+
+  * Escape commands given to CMake's execute_process (Jon Siwek)
+
+0.4 | Fri Dec 10 01:35:36 2010 -0800 | df922e8a64a631aadb485b5044fe9ae1046d47ca
 
 - Moving BroControl to its own git repository.
 
