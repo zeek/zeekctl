@@ -4,14 +4,20 @@
 # to the current CHANGES file and the user then gets a chance to further edit
 # the it in the editor before it gets committed. Also updates the VERSION file.
 
+function normed_git_describe
+{
+    # $1 may be emty.
+    echo -n `git describe --always $1 2>/dev/null | sed 's/^v//g' | sed "s/-[^-]*$//g" | sed 's/ //g'`
+}
+
 changes=CHANGES
 version=VERSION
 
 tmp=${changes}.tmp
 trap "rm -f $tmp" EXIT
 
-version_short=`git describe $rev 2>/dev/null | sed 's/^v//g' | sed "s/-[^-]*$//g"`
-version_full=`git describe $rev 2>/dev/null  | sed 's/^v//g'`
+version_short=`normed_git_describe`
+version_full=`git describe 2>/dev/null  | sed 's/^v//g'`
 
 if [ "$version_short" == "" ]; then
     echo "can't generate version_short string"
@@ -19,29 +25,32 @@ if [ "$version_short" == "" ]; then
 fi
 
 # Get the last revision for which we recorded entries.
-last=`cat $changes | egrep '^[0-9].* \| [a-z0-9]+ *$' | head -1`
+last=`cat $changes | awk '{print $1}' | head -1 | sed 's/ //g'`
 
-echo
-
-if [ "$last" == "" ]; then
+if [ "$last" = "" ]; then
     echo "Warning: cannot find previous entry, assuming all is new ..."
 else
-    echo "New revisions since version_short" $last
+    echo "New revisions since" $last
 fi
 
 echo
 
-last_hash=`echo $last | awk '{print $(NF)}'`
-
 rm -f $tmp
 printf '%s | ' $version_short >$tmp
-git show -s "--pretty=tformat:%ci | %H" master >>$tmp
+git show -s "--pretty=tformat:%ci" master >>$tmp
 echo >>$tmp
 
 found=0
 
-for rev in `git rev-list --date-order --no-merges master ^${last_hash}`; do
-   git show -s "--pretty=format:  %H | %aN | %s%n" $rev | cat
+for rev in `git rev-list --date-order --no-merges master`; do
+
+   rev_describe=`normed_git_describe $rev`
+
+   if [ "$rev_describe" == "$last" ]; then
+       break;
+   fi
+
+   git show -s "--pretty=format:  %h | %aN | %s" $rev | cat
 
    author=`git show -s "--pretty=format:%aN" $rev`
    msg=`git show -s "--pretty=format:%B" $rev`
@@ -63,13 +72,14 @@ fi
 cat $changes >>$tmp
 
 echo
+echo
 echo Type Enter to edit new $changes, or CTRL-C to abort without changes. 
 read
 eval $EDITOR $tmp
 
 rm -f $changes.bak
 mv $tmp $changes
-echo $version_full >$version
+echo $version_short >$version
 
 git add $changes $version
 git commit --amend
