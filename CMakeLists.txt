@@ -203,6 +203,12 @@ endif ()
 if (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
     install(CODE "EXECUTE_PROCESS(COMMAND ln -sf ${PREFIX}/spool/broctl-config.sh ${PREFIX}/share/broctl/scripts/broctl-config.sh)")
 endif (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+
+########################################################################
+## Packaging Setup
+
+include(ConfigurePackaging)
+ConfigurePackaging(${VERSION})
         
 ########################################################################
 ## Build Summary
