@@ -417,7 +417,7 @@ class Configuration:
                 config[key] = val
 
         except IOError, e:
-            util.error("cannot read '%s'" % file)
+            util.warn("warning: cannot read '%s' (this is ok on first run)" % file)
 
         return config
 

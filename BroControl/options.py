@@ -130,6 +130,8 @@ options = [
            "Directory for run-time data."),
     Option("PolicyDir", "${BroBase}/share/bro", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
+    Option("PolicyDirBroCtl", "${SpoolDir}/policy/broctl", "string", Option.AUTOMATIC, False,
+           "Directory for additioal broctl policy scripts."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
     Option("TemplateDir", "${BroBase}/share/broctl/templates", "string", Option.AUTOMATIC, False,
@@ -173,12 +175,10 @@ options = [
     Option("DefSitePolicyPath", "${PolicyDir}/site", "string", Option.INTERNAL, False,
            "Default directory to search for local policy files."),           
 
-    Option("PolicyDirSiteInstall", "${PolicyDir}/.site", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstall", "${SpoolDir}/policy/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local policy scripts when installing."),
-    Option("PolicyDirSiteInstallAuto", "${PolicyDir}/.site/auto", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
-    Option("PolicyDirBroCtl", "${PolicyDir}/broctl", "string", Option.AUTOMATIC, False,
-           "Directory where the shell copies the additional broctl policy scripts when installing."),
 
     Option("Scripts-Manager", "cluster-manager", "string", Option.AUTOMATIC, False,
            "Bro scripts loaded on the manager, separated by spaces."),
@@ -202,7 +202,10 @@ options = [
     Option("Cron", "0", "bool", Option.INTERNAL, False,
            "True if we running from the cron command."),
 
-
+    Option("BroCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
+           """Directory where the shell copies the broctl-config.sh
+           configuration file. If this is changed, the symlink created in
+           CMakeLists.txt must be adapted as well."""),
 ]
 
 def printOptions(cat):

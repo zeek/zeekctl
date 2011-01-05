@@ -26,18 +26,28 @@ Syncs = [
     ("${cfgdir}", True),
     ("${libdir}", True),
     ("${bindir}", True),
+    ("${policydirsiteinstall}", True),
+    ("${policydirsiteinstallauto}", True),
     # ("${policydir}", True),
     # ("${staticdir}", True),
     ("${logdir}", False),
     ("${spooldir}", False),
     ("${tmpdir}", False),
-    ];    
+    ("${broctlconfigdir}/broctl-config.sh", True)
+    ]
 
+# In NFS-mode, only these will be synced. 
+NFSSyncs = [    
+    ("${policydirsiteinstall}", True),
+    ("${policydirsiteinstallauto}", True),
+    ("${broctlconfigdir}/broctl-config.sh", True)
+    ]
+    
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
 # other scripts.
 def generateDynamicVariableScript():
-    cfg_path = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
+    cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
     cfg_file = open(cfg_path, 'w')
     for substvartuple in config.Config.options():
         substvar = substvartuple[0]
@@ -145,15 +155,20 @@ def install(local_only):
         for dir in paths:
             dirs += [(n, dir) for n in nodes]
 
+        for dir in [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if not mirror]:
+            dirs += [(n, dir) for n in nodes]
+            
         # We need this only on the manager.
         dirs += [(manager, config.Config.logdir)]
             
         for (node, success) in execute.mkdirs(dirs):
             if not success:
                 util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.tag))
-            
-        util.output("done.")
 
+        paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
+        execute.sync(nodes, paths)
+        util.output("done.")
+                
 # Create Bro-side broctl configuration broctl-layout.bro.        
 
 port = -1

@@ -70,7 +70,7 @@ def mkdirs(dirs):
         # We make local directories directly. 
         if isLocal(node):
             if not exists(node, dir):
-                util.debug(1, "%-10s %s" % ("[local]", "mkdir %s" % dir))
+                util.debug(1, "%-10s %s" % ("[local]", "mkdir -p %s" % dir))
                 os.mkdir(dir)
 
             results += [(node, True)]
@@ -164,8 +164,8 @@ def sync(nodes, paths):
 
     cmds = []
     for n in nodes:
-        args = ["-a", "--delete", "--rsh=\"ssh -o ConnectTimeout=30\""]
-        dst = ["%s:%s/" % (n.host, config.Config.brobase)]
+        args = ["-rRl", "--delete", "--rsh=\"ssh -o ConnectTimeout=30\""]
+        dst = ["%s:/" % n.host]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
         cmds += [(n, cmdline, "", None)]

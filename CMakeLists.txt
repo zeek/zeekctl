@@ -184,15 +184,26 @@ else ()
             RENAME networks.cfg.example)
 endif ()
 
-install(DIRECTORY DESTINATION spool)
-install(DIRECTORY DESTINATION spool/tmp)
-install(DIRECTORY DESTINATION logs)
+if (NOT EXISTS ${PREFIX}/spool)
+    install(DIRECTORY DESTINATION spool OPTIONAL)
+endif ()
+    
+if (NOT EXISTS ${PREFIX}/spool/policy)
+    install(DIRECTORY DESTINATION spool/policy OPTIONAL)
+endif ()
+    
+if (NOT EXISTS ${PREFIX}/spool/tmp)
+    install(DIRECTORY DESTINATION spool/tmp OPTIONAL)
+endif ()
+    
+if (NOT EXISTS ${PREFIX}/logs)
+    install(DIRECTORY DESTINATION logs OPTIONAL)
+endif ()
 
-# The dynamic state will be updated on first `broctl install`
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/broctl.dat)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl.dat
-        DESTINATION spool)
-
+if (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+    install(CODE "EXECUTE_PROCESS(COMMAND ln -sf ${PREFIX}/spool/broctl-config.sh ${PREFIX}/share/broctl/scripts/broctl-config.sh)")
+endif (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+        
 ########################################################################
 ## Build Summary
 

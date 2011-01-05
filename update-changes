@@ -25,7 +25,7 @@ if [ "$version_short" == "" ]; then
 fi
 
 # Get the last revision for which we recorded entries.
-last=`cat $changes | awk '{print $1}' | head -1 | sed 's/ //g'`
+last=`cat $changes | awk '{print $1}' | egrep '[0-9]+\.[0-9]+' | head -1 | sed 's/ //g'`
 
 if [ "$last" = "" ]; then
     echo "Warning: cannot find previous entry, assuming all is new ..."
@@ -50,7 +50,7 @@ for rev in `git rev-list --date-order --no-merges master`; do
        break;
    fi
 
-   git show -s "--pretty=format:  %h | %aN | %s" $rev | cat
+   git show -s "--pretty=tformat:  %h | %aN | %s" $rev | cat
 
    author=`git show -s "--pretty=format:%aN" $rev`
    msg=`git show -s "--pretty=format:%B" $rev`
@@ -72,6 +72,16 @@ fi
 cat $changes >>$tmp
 
 echo
+
+# If we are ahead of origin, we can amend. If not, we need to create a new commit.
+if git status | grep -q "is ahead of 'origin/master'"; then
+    echo CHANGES modifications will be amended to last commit.
+    amend=1
+else
+    echo CHANGES modifications will become a new commit.
+    amend=0
+fi
+
 echo
 echo Type Enter to edit new $changes, or CTRL-C to abort without changes. 
 read
@@ -82,8 +92,13 @@ mv $tmp $changes
 echo $version_short >$version
 
 git add $changes $version
-git commit --amend
+
+if [ "$amend" == "1" ]; then
+    git commit --amend
+else
+    git commit
+fi
 
 echo "Old $tmp in saved in ${changes}.bak."
-echo "Set $version to $version_full."
+echo "Set $version to $version_short."
 
