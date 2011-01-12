@@ -1,3 +1,8 @@
+0.4-12 | 2011-01-12 08:51:11 -0800
+
+  * Making df portably deal with long lines in the OS's df output.
+    (Robin Sommer)
+
 0.4-11 | 2011-01-04 20:30:41 -0800
 
   * Changing some installation paths. "broctl install" copied a
