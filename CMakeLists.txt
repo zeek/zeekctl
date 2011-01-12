@@ -185,10 +185,16 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
               ${PREFIX}/spool/broctl-config.sh
               ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
-        DESTINATION ${PREFIX}/share/broctl/scripts)
+        DESTINATION share/broctl/scripts)
 
 ########################################################################
 ## Packaging Setup
+
+# These variables have to be set in the cache in case a super-project
+# is actually taking care of the CPack configuration setup
+set(CPACK_RPM_PACKAGE_REQUIRES
+    "python >= 2.4.0"
+    CACHE STRING "Additional RPM package requirements" FORCE)
 
 # If this CMake project is a sub-project of another, we will not
 # configure the generic packaging because CPack will fail in the case
