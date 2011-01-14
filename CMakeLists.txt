@@ -87,6 +87,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
 ########################################################################
 ## Install
 
+set(policydir ${BRO_ROOT_DIR}/share/bro)
+
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl
         DESTINATION bin)
 install(DIRECTORY BroControl
@@ -106,25 +108,82 @@ install(DIRECTORY policy/
         PATTERN "*.bro"
         PATTERN "local" EXCLUDE)
 
-# if the install prefix of /usr was given, change the install location
-# of the config file to be /etc instead of /usr/etc
-if (${CMAKE_INSTALL_PREFIX} STREQUAL /usr)
-    set(ETC /etc)
+set(ETC etc)
+
+if (PACKAGING_MODE AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Packaging for Apple-based systems does not go through all this
+    # because many probably find it more convenient for uninstalling
+    # when everything resides under a common prefix (since there's no
+    # native package management system)
+
+    # If the install prefix of /usr was given, change the install location
+    # of the config file to be /etc instead of /usr/etc and the location of
+    # runtime files to be in the appropriate directories under /var.
+    # The runtime directories will be world-writable, so the packaging
+    # post install script will make sure to set the sticky bit to prevent
+    # unprivileged users from removing/renaming files.
+    if (${CMAKE_INSTALL_PREFIX} STREQUAL /usr)
+        set(ETC /etc)
+        set(VAR /var)
+        # TODO: Consult FHS to see if these are appropriate. Also,
+        #       packaging should do something more to protect the
+        #       runtime directories, perhaps require group permissions?
+        set(SPOOL ${VAR}/spool/bro)
+        set(LOGS ${VAR}/log/bro)
+    else ()
+        # FHS says config files go in /etc/opt/bro, but until there's
+        # a compelling reason to do that, they'll be kept along with
+        # everything else under the installation prefix
+        set(VAR /var/opt/bro)
+        set(SPOOL ${VAR}/spool)
+        set(LOGS ${VAR}/logs)
+    endif ()
+
+    set(perms OWNER_READ OWNER_WRITE OWNER_EXECUTE
+              GROUP_READ GROUP_WRITE GROUP_EXECUTE
+              WORLD_READ WORLD_WRITE WORLD_EXECUTE)
+
+    install(DIRECTORY DESTINATION ${SPOOL}
+            DIRECTORY_PERMISSIONS ${perms})
+    install(DIRECTORY DESTINATION ${SPOOL}/tmp
+            DIRECTORY_PERMISSIONS ${perms})
+    install(DIRECTORY DESTINATION ${SPOOL}/policy
+            DIRECTORY_PERMISSIONS ${perms})
+    install(DIRECTORY DESTINATION ${LOGS}
+            DIRECTORY_PERMISSIONS ${perms})
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
+                  ${SPOOL}/broctl-config.sh
+                  ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
+    # configure broctl.cfg point SpoolDir/LogDir to right runtime directories
+    configure_file(etc/broctl.cfg.package.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
 else ()
-    set(ETC etc)
-endif ()
-
-set(policydir ${BRO_ROOT_DIR}/share/bro)
-
-install(FILES etc/analysis.dat
-        DESTINATION ${ETC})
-
-if (STANDALONE)
+    install(DIRECTORY DESTINATION spool)
+    install(DIRECTORY DESTINATION spool/tmp)
+    install(DIRECTORY DESTINATION spool/policy)
+    install(DIRECTORY DESTINATION logs)
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
+                  ${PREFIX}/spool/broctl-config.sh
+                  ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
     configure_file(etc/broctl.cfg.standalone.in
                    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
+endif ()
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
+        DESTINATION share/broctl/scripts)
+
+install(FILES etc/analysis.dat DESTINATION ${ETC})
+set(INSTALLED_CONFIG_FILES
+    "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/analysis.dat"
+    CACHE STRING "" FORCE)
+
+if (STANDALONE)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg
             DESTINATION ${ETC}
             RENAME broctl.cfg)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/broctl.cfg"
+        CACHE STRING "" FORCE)
 
     # The policy file template is configured into build dir just
     # to assist running bro from the build directory
@@ -134,6 +193,9 @@ if (STANDALONE)
     install(FILES policy/local/standalone.local.bro-template
             DESTINATION share/bro/site
             RENAME local.bro)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local.bro"
+        CACHE STRING "" FORCE)
 
     install(FILES etc/node.cfg.standalone.in
             DESTINATION ${ETC}
@@ -141,6 +203,12 @@ if (STANDALONE)
     install(FILES etc/networks.cfg.in
             DESTINATION ${ETC}
             RENAME networks.cfg)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/node.cfg"
+        CACHE STRING "" FORCE)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/networks.cfg"
+        CACHE STRING "" FORCE)
 else ()
     configure_file(etc/broctl.cfg.cluster.in
                    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example)
@@ -167,6 +235,15 @@ else ()
     install(FILES policy/local/cluster.local-manager.bro-template
             DESTINATION share/bro/site
             RENAME local-manager.bro)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local.bro"
+        CACHE STRING "" FORCE)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local-worker.bro"
+        CACHE STRING "" FORCE)
+    set(INSTALLED_CONFIG_FILES
+        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local-manager.bro"
+        CACHE STRING "" FORCE)
 
     install(FILES etc/node.cfg.cluster.in
             DESTINATION ${ETC}
@@ -176,25 +253,11 @@ else ()
             RENAME networks.cfg.example)
 endif ()
 
-install(DIRECTORY DESTINATION spool)
-install(DIRECTORY DESTINATION spool/tmp)
-install(DIRECTORY DESTINATION spool/policy)
-install(DIRECTORY DESTINATION logs)
-
-execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
-              ${PREFIX}/spool/broctl-config.sh
-              ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
-        DESTINATION share/broctl/scripts)
-
 ########################################################################
 ## Packaging Setup
 
-# These variables have to be set in the cache in case a super-project
-# is actually taking care of the CPack configuration setup
-set(CPACK_RPM_PACKAGE_REQUIRES
-    "python >= 2.4.0"
-    CACHE STRING "Additional RPM package requirements" FORCE)
+# CPack RPM Generator may not automatically detect this
+set(CPACK_RPM_PACKAGE_REQUIRES "python >= 2.4.0")
 
 # If this CMake project is a sub-project of another, we will not
 # configure the generic packaging because CPack will fail in the case
