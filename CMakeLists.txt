@@ -62,7 +62,7 @@ else ()
     find_package(TraceSummary)
 endif ()
 
-FindRequiredPackage(Bro)
+find_package(Bro)
 FindRequiredPackage(PythonInterp)
 FindRequiredPackage(SubnetTree)
 
@@ -73,7 +73,12 @@ if (MISSING_PREREQS)
     message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
 endif ()
 
-if (NOT ${BRO_ROOT_DIR} STREQUAL ${CMAKE_INSTALL_PREFIX})
+if (NOT BRO_ROOT_DIR)
+    message(WARNING "A Bro installation was not found, your BroControl "
+                    " installation may not work.  Please review the install "
+                    " summary before proceeding or force a Bro root directory "
+                    " with the --with-bro configure option. ")
+elseif (NOT "${BRO_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
     message(WARNING "Broctl installation directory ${CMAKE_INSTALL_PREFIX} "
                     "does not match Bro installation directory ${BRO_ROOT_DIR}")
 endif ()
@@ -110,11 +115,13 @@ install(DIRECTORY policy/
 
 set(ETC etc)
 
-if (PACKAGING_MODE AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # Packaging for Apple-based systems does not go through all this
-    # because many probably find it more convenient for uninstalling
-    # when everything resides under a common prefix (since there's no
-    # native package management system)
+# Check the install prefixes to determine if we're creating a package
+# Packaging for Apple-based systems does not need special logic
+# because many probably find it more convenient for uninstalling
+# when everything resides under a common prefix (since there's no
+# native package management system)
+if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
+                   ${CMAKE_INSTALL_PREFIX} STREQUAL /opt/bro))
 
     # If the install prefix of /usr was given, change the install location
     # of the config file to be /etc instead of /usr/etc and the location of
@@ -270,11 +277,28 @@ endif ()
 ########################################################################
 ## Build Summary
 
+if (SPOOL)
+    set(spoolDir ${SPOOL})
+else ()
+    set(spoolDir ${CMAKE_INSTALL_PREFIX}/spool)
+endif ()
+
+if (LOGS)
+    set(logDir ${LOGS})
+else ()
+    set(logDir ${CMAKE_INSTALL_PREFIX}/logs)
+endif ()
+
 message(
     "\n=================|  Broctl Install Summary  |==================="
     "\n"
-    "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
     "\nConfiguration:     ${cfgType}"
+    "\n"
+    "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
+    "\nBro root:          ${BRO_ROOT_DIR}"
+    "\nPolicy Dir:        ${policydir}"
+    "\nSpool Dir:         ${spoolDir}"
+    "\nLog Dir:           ${logDir}"
     "\n"
     "\n================================================================\n"
 )

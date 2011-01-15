@@ -27,7 +27,6 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --enable-cluster       enable cluster installation/functionality
 
   Packaging Options (for developers):
-    --package              toggles special build logic for binary packaging
     --ignore-dirs=PATHS    paths to ignore when creating source package
                            (semicolon delimited and quoted when multiple)
     --pkg-name-prefix=NAME use the given name as the package prefix instead
@@ -82,9 +81,6 @@ while [ $# -ne 0 ]; do
             ;;
         --with-bro=*)
             append_cache_entry BRO_ROOT_DIR PATH $optarg
-            ;;
-        --package)
-            append_cache_entry PACKAGING_MODE BOOL true
             ;;
         --ignore-dirs=*)
             append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING $optarg
