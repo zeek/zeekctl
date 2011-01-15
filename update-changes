@@ -4,19 +4,78 @@
 # to the current CHANGES file and the user then gets a chance to further edit
 # the it in the editor before it gets committed. Also updates the VERSION file.
 
-function normed_git_describe
+function my_describe
+{
+    # "git describe" also counts commits on other than the main parent's path. This version doesn't.
+    rev=$1
+
+    if [ "$rev" == "" ]; then
+        rev=HEAD
+    fi
+
+    last_tag="<untagged>"
+    last_tag_rev="<norev>"
+
+    for i in `git rev-list --first-parent $rev`; do
+        tag=`git describe --exact-match $i 2>/dev/null`;
+        if [ "$tag" != "" ]; then
+            last_tag="$tag"
+            last_tag_rev="$i"
+            break;
+        fi
+    done
+
+    cnt=0
+
+    for i in `git rev-list --first-parent $rev`; do
+        if [ "$i" == "$last_tag_rev" ]; then
+            break
+        fi
+
+        cnt=`expr $cnt '+' 1`
+    done
+
+    if [ "$cnt" == "0" ]; then
+        cnt=""
+    else
+        abbr=`git show --abbrev-commit --pretty=oneline $rev | head -1 | cut -d ' ' -f 1`
+        cnt="-$cnt-$abbr"
+    fi
+
+    echo "$last_tag$cnt"
+}
+
+function normed_describe
 {
     # $1 may be emty.
-    echo -n `git describe --always $1 2>/dev/null | sed 's/^v//g' | sed "s/-[^-]*$//g" | sed 's/ //g'`
+    d=`my_describe $1 | sed 's/^v//g' | sed "s/-[^-]*$//g" | sed 's/ //g'`
+
+    if [ "$bro_style" == "1" ]; then
+        d=`echo $d | sed 's/-\([0-9]*\)$/.\\1/'`
+    fi
+
+    echo -n $d
 }
+
+if [ "$1" == "-I" ]; then
+    echo Initializing CHANGES file.
+    init=1
+fi
 
 changes=CHANGES
 version=VERSION
 
+if grep -q -- '-+-+-+-+-+-+-+-+-+-' $changes; then
+    # With Bro's CHANGES file, we use a slightly different style.
+    bro_style=1
+else
+    bro_style=0
+fi
+
 tmp=${changes}.tmp
 trap "rm -f $tmp" EXIT
 
-version_short=`normed_git_describe`
+version_short=`normed_describe`
 version_full=`git describe 2>/dev/null  | sed 's/^v//g'`
 
 if [ "$version_short" == "" ]; then
@@ -24,11 +83,30 @@ if [ "$version_short" == "" ]; then
     exit 1
 fi
 
-# Get the last revision for which we recorded entries.
+if [ "$init" == "1" ]; then
+   echo >>$changes
+   printf '%s | ' $version_short >$changes
+   git show -s "--pretty=tformat:%ci" master >>$changes
+   echo >>$changes
+   echo "  * Starting $changes." >>$changes
+   exit 0
+fi
+
+# Get the last entry for which we recorded entries.
 last=`cat $changes | awk '{print $1}' | egrep '[0-9]+\.[0-9]+' | head -1 | sed 's/ //g'`
 
-if [ "$last" = "" ]; then
-    echo "Warning: cannot find previous entry, assuming all is new ..."
+# Get the corresponding revision.
+not_last_rev=""
+for i in `git rev-list --first-parent HEAD`; do
+    descr=`normed_describe $i`
+    if [ "$descr" == "$last" ]; then
+        not_last_rev="^$i"
+        break;
+    fi
+done
+
+if [ "$last" = "" -o "$not_last_rev" = "" ]; then
+    echo "Warning: cannot locate previous entry, assuming all is new ... ($last/$not_last_rev)"
 else
     echo "New revisions since" $last
 fi
@@ -36,15 +114,21 @@ fi
 echo
 
 rm -f $tmp
-printf '%s | ' $version_short >$tmp
-git show -s "--pretty=tformat:%ci" master >>$tmp
-echo >>$tmp
+
+if [ "$bro_style" != "1" ]; then
+    printf '%s | ' $version_short >$tmp
+    git show -s "--pretty=tformat:%ci" master >>$tmp
+else
+    printf '%s %s' $version_short "`date`" >$tmp
+fi
+
+#echo >>$tmp
 
 found=0
 
-for rev in `git rev-list --date-order --no-merges master`; do
+for rev in `git rev-list --date-order --no-merges $not_last_rev HEAD`; do
 
-   rev_describe=`normed_git_describe $rev`
+   rev_describe=`normed_describe $rev`
 
    if [ "$rev_describe" == "$last" ]; then
        break;
@@ -83,7 +167,7 @@ else
 fi
 
 echo
-echo Type Enter to edit new $changes, or CTRL-C to abort without changes. 
+echo Type Enter to edit new $changes, or CTRL-C to abort without changes.
 read
 eval $EDITOR $tmp
 

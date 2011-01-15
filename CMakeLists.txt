@@ -87,17 +87,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
 ########################################################################
 ## Install
 
-# copy BroControl package to build dir and compile everything before install
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/BroControl
-        ${CMAKE_CURRENT_BINARY_DIR}/BroControl)")
-install(CODE "execute_process(COMMAND \"${PYTHON_EXECUTABLE}\" -c
-        \"import compileall; compileall.compile_dir('BroControl')\"
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl
         DESTINATION bin)
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/BroControl
+install(DIRECTORY BroControl
         DESTINATION lib/broctl)
 install(DIRECTORY bin/
         DESTINATION share/broctl/scripts
@@ -184,25 +176,33 @@ else ()
             RENAME networks.cfg.example)
 endif ()
 
-if (NOT EXISTS ${PREFIX}/spool)
-    install(DIRECTORY DESTINATION spool OPTIONAL)
-endif ()
-    
-if (NOT EXISTS ${PREFIX}/spool/policy)
-    install(DIRECTORY DESTINATION spool/policy OPTIONAL)
-endif ()
-    
-if (NOT EXISTS ${PREFIX}/spool/tmp)
-    install(DIRECTORY DESTINATION spool/tmp OPTIONAL)
-endif ()
-    
-if (NOT EXISTS ${PREFIX}/logs)
-    install(DIRECTORY DESTINATION logs OPTIONAL)
-endif ()
+install(DIRECTORY DESTINATION spool)
+install(DIRECTORY DESTINATION spool/tmp)
+install(DIRECTORY DESTINATION spool/policy)
+install(DIRECTORY DESTINATION logs)
 
-if (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
-    install(CODE "EXECUTE_PROCESS(COMMAND ln -sf ${PREFIX}/spool/broctl-config.sh ${PREFIX}/share/broctl/scripts/broctl-config.sh)")
-endif (NOT EXISTS ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
+              ${PREFIX}/spool/broctl-config.sh
+              ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
+        DESTINATION share/broctl/scripts)
+
+########################################################################
+## Packaging Setup
+
+# These variables have to be set in the cache in case a super-project
+# is actually taking care of the CPack configuration setup
+set(CPACK_RPM_PACKAGE_REQUIRES
+    "python >= 2.4.0"
+    CACHE STRING "Additional RPM package requirements" FORCE)
+
+# If this CMake project is a sub-project of another, we will not
+# configure the generic packaging because CPack will fail in the case
+# that the parent project has already configured packaging
+if ("${PROJECT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    include(ConfigurePackaging)
+    ConfigurePackaging(${VERSION})
+endif ()
         
 ########################################################################
 ## Build Summary
@@ -215,3 +215,17 @@ message(
     "\n"
     "\n================================================================\n"
 )
+
+########################################################################
+## Show warning when installing user is different from the one that configured
+
+install(CODE "
+    if (NOT $ENV{USER} STREQUAL \$ENV{USER})
+        message(STATUS \"ATTENTION: Install is being performed by user \"
+                \"'\$ENV{USER}', but the build directory was configured by \"
+                \"user '$ENV{USER}'. This may result in a permissions error \"
+                \"when writing the install manifest, but you can ignore it \"
+                \"and consider the installation as successful if you don't \"
+                \"care about the install manifest.\")
+    endif ()
+")
