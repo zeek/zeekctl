@@ -19,64 +19,73 @@ redef MANAGER = MANAGER > 0 ? MANAGER : 1;
 
 @load cluster-by-addrs
 @load remote-update
-@load checkpoint 
+@load checkpoint
 @load rotate-logs
 
 # FIXME: Load them here to work around a namespace bug.
 @load conn
 @load port-name
-	
+
 module BroCtl;
 
 export {
-	# Events which are sent by the broctl when dynamically connecting to a
-	# running instance. 
-	const update_events = /.*(configuration_update|request_id|get_peer_status|get_net_stats).*/;
+	# Events sent by the broctl when dynamically connecting to a
+	# running instance.
+	const update_events = /.*(configuration_update|request_id|get_peer_status|get_net_stats).*/ &redef;
 
-    # The following options are configured from broctl-layout.bro.
+	# Events raised by workers and handled by the manager.
+	const worker_events = /.*(print_hook|notice_action|TimeMachine::command|Drop::).*/ &redef;
 
-	# Directory where broctl is archiving logs. 
+	# Events raised by the manager and handled by the workers.
+	const manager_events = /.*(Drop::).*/ &redef;
+
+	# Events raised by the proxies and handled by the manager.
+	const proxy_events = /.*(notice_action).*/ &redef;
+
+	# The following options are configured from broctl-layout.bro.
+
+	# Directory where broctl is archiving logs.
 	const log_dir = "/not/set" &redef;
 
-	# Host where TM is running or 0.0.0.0 if none. 
+	# Host where TM is running or 0.0.0.0 if none.
 	const tm_host = 0.0.0.0 &redef;
 
-	# Host where TM is running or 0.0.0.0 if none. 
+	# Host where TM is running or 0.0.0.0 if none.
 	const tm_port = 47757/tcp &redef;
 
 }
 
 # PROXY record.
 type pnode: record {
-	ip: addr;                       
-	p: port;                        
+	ip: addr;
+	p: port;
 	tag: string;
 };
 
 # WORKER record.
 type snode: record {
-    ip: addr;                       
-	p: port;                        
-	interface: string &optional;    
+    ip: addr;
+	p: port;
+	interface: string &optional;
 	proxy: pnode;                   # proxy ip this worker uses
 	tag: string;
 };
 
 # MANAGER record.
 type mnode: record {
-    ip: addr;                       
-	p: port;                        
+	ip: addr;
+	p: port;
 	tag: string;
 };
 
 export {
 	global manager: mnode &redef;
-    global proxies: table[count] of pnode &redef;
-    global workers: table[count] of snode &redef;
+	global proxies: table[count] of pnode &redef;
+	global workers: table[count] of snode &redef;
 }
 
 @load broctl-layout
-	
+
 event bro_init()
 	{
 	if ( env_var_missing )
@@ -84,7 +93,7 @@ event bro_init()
 		print "None of the broctl environment variables BRO_{MANAGER,WORKER,PROXY} set, aborting.";
 		terminate();
 		}
-	
+
 	local descr = open(".peer_description");
 	print descr, peer_description;
 	}
@@ -92,6 +101,6 @@ event bro_init()
 @load broctl-events
 
 # Change some defaults.
-	
+
 redef enable_syslog = F;
 redef check_for_unused_event_handlers = F;

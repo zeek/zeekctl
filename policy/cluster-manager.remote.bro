@@ -8,27 +8,34 @@
 
 @load broctl
 
-const cluster_events = /.*(print_hook|notice_action|TimeMachine::command|Drop::).*/;
-
 event bro_init() 
 {
 	# Set up remote dests for WORKERS based on central cluster config.
 	for ( n in BroCtl::workers ) 
-		Remote::destinations[fmt("w%d", n)]
-			= [$host=BroCtl::workers[n]$ip, $connect=F, $sync=F, $class=BroCtl::workers[n]$tag, $events=cluster_events];
+		Remote::destinations[fmt("w%d", n)] =
+    			[$host=BroCtl::workers[n]$ip, $connect=F, $sync=F,
+			$class=BroCtl::workers[n]$tag,
+			$events=BroCtl::worker_events];
 
 	# Set up remote dests for PROXIES, just to get ResourceStats.
 	for ( n in BroCtl::proxies ) 
-		Remote::destinations[fmt("p%d", n)]
-			= [$host=BroCtl::proxies[n]$ip, $connect=F, $sync=F, $class=BroCtl::proxies[n]$tag, $events=/.*(notice_action).*/ ];
+		Remote::destinations[fmt("p%d", n)] =
+    			[$host=BroCtl::proxies[n]$ip, $connect=F, $sync=F,
+			$class=BroCtl::proxies[n]$tag,
+			$events=BroCtl::proxy_events];
 
 	# Connections from the manager for configuration updates.
-	Remote::destinations["update"] 
-		=  [$host = BroCtl::manager$ip, $p=BroCtl::manager$p, $sync=F, $events=BroCtl::update_events, $class="update"];
+	Remote::destinations["update"] =
+		[$host = BroCtl::manager$ip, $p=BroCtl::manager$p, $sync=F,
+		$class="update",
+		$events=BroCtl::update_events];
 
-	# Configure Time Machine.
+	# Configure the Time Machine.
 	if ( BroCtl::tm_host != 0.0.0.0 )
-		Remote::destinations["time-machine"] = [$host=BroCtl::tm_host, $p=BroCtl::tm_port, $connect=T, $retry=1min];
+		Remote::destinations["time-machine"] =
+			[$host=BroCtl::tm_host, $p=BroCtl::tm_port,
+			$connect=T, $retry=1min];
 }
+
 
 
