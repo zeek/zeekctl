@@ -78,7 +78,14 @@ This is the default installation:
 
   * ``etc/broctl.cfg`` is the overall *BroControl* configuration.
     Initially, you probably only need to edit the email address for
-    mails sent by the framework; that's the ``MailTo`` line. 
+    mails sent by the framework; that's the ``MailTo`` line.
+    Also, if the user that will be running ``broctl`` differs from
+    the user that performed ``make install``, you may encounter
+    permission problems unless ``SpoolDir`` and ``LogDir`` options
+    are added and point to directories with appropriate
+    write permissions for the user that will run ``broctl`` (refer
+    to the installed spool/ and logs/ directory structure when creating
+    your own).
 
   * In ``etc/nodes.cfg``, you need to specify the network interface
     Bro is to monitor; that's the ``interface`` line. 

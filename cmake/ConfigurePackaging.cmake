@@ -4,7 +4,9 @@
 # Sets CPack version variables by splitting the first macro argument
 # using "." as a delimiter.  If the length of the split list is
 # greater than 2, all remaining elements are tacked on to the patch
-# level version.
+# level version.  Not that the version set by the macro is internal
+# to binary packaging, the file name of our package will reflect the
+# exact version number.
 macro(SetPackageVersion _version)
     string(REPLACE "." " " version_numbers ${_version})
     separate_arguments(version_numbers)
@@ -33,8 +35,10 @@ macro(SetPackageVersion _version)
                ${CPACK_PACKAGE_VERSION_MAJOR})
         string(REGEX REPLACE "[_a-zA-Z-]" "" CPACK_PACKAGE_VERSION_MINOR
                ${CPACK_PACKAGE_VERSION_MINOR})
-        string(REGEX REPLACE "[_a-zA-Z-]" "" CPACK_PACKAGE_VERSION_PATCH
-               ${CPACK_PACKAGE_VERSION_PATCH})
+        if (CPACK_PACKAGE_VERSION_PATCH)
+            string(REGEX REPLACE "[_a-zA-Z-]" "" CPACK_PACKAGE_VERSION_PATCH
+                   ${CPACK_PACKAGE_VERSION_PATCH})
+        endif ()
     endif ()
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -43,8 +47,10 @@ macro(SetPackageVersion _version)
                ${CPACK_PACKAGE_VERSION_MAJOR})
         string(REGEX REPLACE "[-]" "" CPACK_PACKAGE_VERSION_MINOR
                ${CPACK_PACKAGE_VERSION_MINOR})
-        string(REGEX REPLACE "[-]" "" CPACK_PACKAGE_VERSION_PATCH
-               ${CPACK_PACKAGE_VERSION_PATCH})
+        if (CPACK_PACKAGE_VERSION_PATCH)
+            string(REGEX REPLACE "[-]" "" CPACK_PACKAGE_VERSION_PATCH
+                   ${CPACK_PACKAGE_VERSION_PATCH})
+        endif ()
     endif ()
 
     # Minimum supported OS X version
@@ -134,12 +140,56 @@ macro(SetPackageMetadata)
     set(CPACK_RPM_PACKAGE_LICENSE "BSD")
 endmacro(SetPackageMetadata)
 
+# Sets pre and post install scripts for PackageMaker and RPM packages.
+# The main functionality that such scripts offer is a way to make backups
+# of "configuration" files that a user may have modified.
+# A better way to prevent an RPM from not overwriting config files is
+# with the %config(noreplace) .spec attribute, but CPack does not have any
+# good hooks into using that yet, so we re-use the pre/post install scripts
+# See also: http://public.kitware.com/Bug/view.php?id=10294
+macro(SetPackageInstallScripts)
+
+    if (INSTALLED_CONFIG_FILES)
+        # Remove duplicates from the list of installed config files
+        separate_arguments(INSTALLED_CONFIG_FILES)
+        list(REMOVE_DUPLICATES INSTALLED_CONFIG_FILES)
+        # Space delimit the list again
+        foreach (_file ${INSTALLED_CONFIG_FILES})
+            set(_tmp "${_tmp} ${_file}")
+        endforeach ()
+        set(INSTALLED_CONFIG_FILES "${_tmp}" CACHE STRING "" FORCE)
+    endif ()
+
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_preinstall.sh.in)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_preinstall.sh.in
+            ${CMAKE_CURRENT_BINARY_DIR}/package_preinstall.sh
+            @ONLY)
+        set(CPACK_PREFLIGHT_SCRIPT
+            ${CMAKE_CURRENT_BINARY_DIR}/package_preinstall.sh)
+        set(CPACK_RPM_PRE_INSTALL_SCRIPT_FILE
+            ${CMAKE_CURRENT_BINARY_DIR}/package_preinstall.sh)
+    endif ()
+
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_postupgrade.sh.in)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_postupgrade.sh.in
+            ${CMAKE_CURRENT_BINARY_DIR}/package_postupgrade.sh
+            @ONLY)
+        set(CPACK_POSTUPGRADE_SCRIPT
+            ${CMAKE_CURRENT_BINARY_DIR}/package_postupgrade.sh)
+        set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
+            ${CMAKE_CURRENT_BINARY_DIR}/package_postupgrade.sh)
+    endif ()
+endmacro(SetPackageInstallScripts)
+
 # Main macro to configure all the packaging options
 macro(ConfigurePackaging _version)
     SetPackageVersion(${_version})
     SetPackageGenerators()
     SetPackageFileName(${_version})
     SetPackageMetadata()
+    SetPackageInstallScripts()
 
     set(CPACK_SET_DESTDIR true)
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
