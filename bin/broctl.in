@@ -522,7 +522,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         dropped packets."""
 		
         if not args:
-            if config.Config.standalone:
+            if config.Config.standalone == "1" :
                 args = "standalone"
             else:
                 args = "workers"

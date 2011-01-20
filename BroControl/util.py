@@ -102,7 +102,7 @@ def _breakLock():
         os.unlink(config.Config.lockfile)
         return True
 
-    except IOError:
+    except (OSError, IOError):
         return False
 
 def _aquireLock():

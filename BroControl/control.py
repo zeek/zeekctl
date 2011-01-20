@@ -20,10 +20,10 @@ import install
 
 # Convert a number into a string with a unit (e.g., 1024 into "1M").
 def prettyPrintVal(val):
-    for (prefix, unit, factor) in (("", "G", 1024*1024*1024), ("", "M", 1024*1024), ("", "K", 1024), (" ", "", 0)):
+    for (prefix, unit, factor) in (("", "G", 1024*1024*1024), ("", "M", 1024*1024), ("", "K", 1024)):
         if val >= factor:
             return "%s%3.0f%s" % (prefix, val / factor, unit)
-    return val # Should not happen
+    return " %3.0f" % (val)
 
 # Checks multiple nodes in parallel and returns list of tuples (node, isrunning). 
 def isRunning(nodes, setcrashed=True):
