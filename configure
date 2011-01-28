@@ -28,6 +28,12 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
   Optional Features:
     --enable-cluster       enable cluster installation/functionality
 
+  Required Packages in Non-Standard Locations:
+    --with-python=PATH     path to Python interpreter
+    --with-python-lib=PATH path to libpython
+    --with-python-inc=PATH path to Python headers
+    --with-swig=PATH       path to SWIG executable
+
   Packaging Options (for developers):
     --ignore-dirs=PATHS    paths to ignore when creating source package
                            (semicolon delimited and quoted when multiple)
@@ -83,6 +89,19 @@ while [ $# -ne 0 ]; do
             ;;
         --with-bro=*)
             append_cache_entry BRO_ROOT_DIR PATH $optarg
+            ;;
+        --with-python=*)
+            append_cache_entry PYTHON_EXECUTABLE    PATH    $optarg
+            ;;
+        --with-python-lib=*)
+            append_cache_entry PYTHON_LIBRARY       PATH    $optarg
+            ;;
+        --with-python-inc=*)
+            append_cache_entry PYTHON_INCLUDE_DIR   PATH    $optarg
+            append_cache_entry PYTHON_INCLUDE_PATH  PATH    $optarg
+            ;;
+        --with-swig=*)
+            append_cache_entry SWIG_EXECUTABLE      PATH    $optarg
             ;;
         --ignore-dirs=*)
             append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING $optarg
