@@ -1,3 +1,22 @@
+0.4-19 | 2011-01-31 15:26:48 -0800
+
+  * A new option CompressLogs (default on), indicating whether
+    archived logs are to be gzipped. (Robin Sommer)
+
+  * A lot of configure/cmake/install/package tuning. (Jon Siwek)
+
+  * Adding /sbin and /usr/sbin to path local-interfaces script
+    searches for ifconfig. Closes #293. (Robin Sommer)
+
+  * Fixing uncaught exception in lock file handling. (Seth Hall).
+
+  * Making cluster event specifications redefinable. (Seth Hall).
+
+  * Fixing for pretty printing numerical values. (Seth Hall).
+
+  * Fixing "netstats" command distinction between cluster and
+    standalone mode. (Justin Azoff)
+
 0.4-10 | 2011-01-15 14:14:05 -0800
 
   * Changes for CPack binary packaging (Jon Siwek)

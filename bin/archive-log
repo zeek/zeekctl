@@ -51,7 +51,11 @@ for pp in ${postprocdir}/*; do
 done
 
 if [ -e $1 ]; then
-   nice gzip -9 <$1 >$dest.gz 2>/dev/null &
+    if [ "${compresslogs}" == "1" ]; then
+        nice gzip -9 <$1 >$dest.gz 2>/dev/null &
+    else
+        nice cp $1 $dest &
+    fi
 fi   
 
 wait
