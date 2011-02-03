@@ -6,8 +6,8 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [ ! -e .manager ]; then
-   # We only create links on the manager. 
+if [ ! -e .manager -a ! -e .standalone ]; then
+   # We only create links on the manager/standalone.
    exit 0
 fi   
 
