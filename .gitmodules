@@ -1,9 +1,9 @@
 [submodule "aux/capstats"]
 	path = aux/capstats
-	url = git://git.icir.org/capstats
+	url = git://git.bro-ids.org/capstats
 [submodule "aux/pysubnettree"]
 	path = aux/pysubnettree
-	url = git://git.icir.org/pysubnettree
+	url = git://git.bro-ids.org/pysubnettree
 [submodule "aux/trace-summary"]
 	path = aux/trace-summary
-	url = git://git.icir.org/trace-summary
+	url = git://git.bro-ids.org/trace-summary
