@@ -1,4 +1,5 @@
-project(Broctl)
+project(Broctl NONE)
+# Python is checked as a dependency below
 
 ########################################################################
 ## CMake Configuration
