@@ -94,6 +94,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
 ########################################################################
 ## Install
 
+include(InstallPackageConfigFile)
+
 set(policydir ${BRO_ROOT_DIR}/share/bro)
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl
@@ -115,7 +117,7 @@ install(DIRECTORY policy/
         PATTERN "*.bro"
         PATTERN "local" EXCLUDE)
 
-set(ETC etc)
+set(ETC ${PREFIX}/etc)
 
 # Check the install prefixes to determine if we're creating a package
 # Packaging for Apple-based systems does not need special logic
@@ -174,56 +176,46 @@ else ()
     execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
                   ${PREFIX}/spool/broctl-config.sh
                   ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh)
-    configure_file(etc/broctl.cfg.standalone.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
+    if (STANDALONE)
+        configure_file(etc/broctl.cfg.standalone.in
+                       ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
+    else ()
+        configure_file(etc/broctl.cfg.cluster.in
+                       ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
+    endif ()
 endif ()
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
         DESTINATION share/broctl/scripts)
 
-install(FILES etc/analysis.dat DESTINATION ${ETC})
-set(INSTALLED_CONFIG_FILES
-    "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/analysis.dat"
-    CACHE STRING "" FORCE)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/analysis.dat
+    ${ETC}
+    analysis.dat)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg
+    ${ETC}
+    broctl.cfg)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/networks.cfg.in
+    ${ETC}
+    networks.cfg)
 
 if (STANDALONE)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg
-            DESTINATION ${ETC}
-            RENAME broctl.cfg)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/broctl.cfg"
-        CACHE STRING "" FORCE)
-
     # The policy file template is configured into build dir just
     # to assist running bro from the build directory
     configure_file(policy/local/standalone.local.bro-template
                    ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local.bro
                    COPY_ONLY)
-    install(FILES policy/local/standalone.local.bro-template
-            DESTINATION share/bro/site
-            RENAME local.bro)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local.bro"
-        CACHE STRING "" FORCE)
-
-    install(FILES etc/node.cfg.standalone.in
-            DESTINATION ${ETC}
-            RENAME node.cfg)
-    install(FILES etc/networks.cfg.in
-            DESTINATION ${ETC}
-            RENAME networks.cfg)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/node.cfg"
-        CACHE STRING "" FORCE)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/etc/networks.cfg"
-        CACHE STRING "" FORCE)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/standalone.local.bro-template
+        ${PREFIX}/share/bro/site
+        local.bro)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg.standalone.in
+        ${ETC}
+        node.cfg)
 else ()
-    configure_file(etc/broctl.cfg.cluster.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg.example
-            DESTINATION ${ETC})
-
     # The policy file templates are configured into build dir just
     # to assist running bro from the build directory
     configure_file(policy/local/cluster.local.bro-template
@@ -235,31 +227,23 @@ else ()
     configure_file(policy/local/cluster.local-manager.bro-template
                    ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local-manager.bro
                    COPY_ONLY)
-    install(FILES policy/local/cluster.local.bro-template
-            DESTINATION share/bro/site
-            RENAME local.bro)
-    install(FILES policy/local/cluster.local-worker.bro-template
-            DESTINATION share/bro/site
-            RENAME local-worker.bro)
-    install(FILES policy/local/cluster.local-manager.bro-template
-            DESTINATION share/bro/site
-            RENAME local-manager.bro)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local.bro"
-        CACHE STRING "" FORCE)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local-worker.bro"
-        CACHE STRING "" FORCE)
-    set(INSTALLED_CONFIG_FILES
-        "${INSTALLED_CONFIG_FILES} ${PREFIX}/share/bro/site/local-manager.bro"
-        CACHE STRING "" FORCE)
 
-    install(FILES etc/node.cfg.cluster.in
-            DESTINATION ${ETC}
-            RENAME node.cfg.example)
-    install(FILES etc/networks.cfg.in
-            DESTINATION ${ETC}
-            RENAME networks.cfg.example)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local.bro-template
+        ${PREFIX}/share/bro/site
+        local.bro)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local-worker.bro-template
+        ${PREFIX}/share/bro/site
+        local-worker.bro)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local-manager.bro-template
+        ${PREFIX}/share/bro/site
+        local-manager.bro)
+    InstallPackageConfigFile(
+        ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg.cluster.in
+        ${ETC}
+        node.cfg)
 endif ()
 
 ########################################################################
