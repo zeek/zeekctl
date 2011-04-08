@@ -33,10 +33,10 @@ file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 set(PREFIX ${CMAKE_INSTALL_PREFIX})
 
 if (STANDALONE)
-    set(STANDALONE_BOOL "True")
+    set(STANDALONE "True")
     set(cfgType "Standalone")
 else ()
-    set(STANDALONE_BOOL "False")
+    set(STANDALONE "False")
     set(cfgType "Cluster")
 endif ()
 

@@ -40,8 +40,9 @@
     Determines the current load on the network interfaces monitored by
     each of the given worker nodes. The load is measured over the
     specified interval (in seconds), or by default over 10 seconds. This
-    command uses the `capstats <capstats>`_ tool, which is installed along
-    with ``broctl``.
+    command uses the `capstats tool
+    <http://www.bro-ids.org/files/capstats-release/README.html>`_,
+    which is installed along with ``broctl``.
     
     (Note: When using a CFlow and the CFlow command line utility is
     installed as well, the ``capstats`` command can also query the device

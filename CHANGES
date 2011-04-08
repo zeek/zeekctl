@@ -1,3 +1,15 @@
+0.41 | 2011-04-07 21:14:53 -0700
+
+  * Tweaks to the documentation generation. (Robin Sommer)
+    
+  * CMake tweaks. (Jon Siwek)
+
+  * Bugfix: trace-summary sampled in standalone mode rather than cluster
+    mode. (Robin Sommer)
+
+  * Bugfix: Creating links from the log directory to the current log files
+    didn't work in standalone mode. (Robin Sommer)
+
 0.4-19 | 2011-01-31 15:26:48 -0800
 
   * A new option CompressLogs (default on), indicating whether

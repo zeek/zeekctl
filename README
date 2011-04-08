@@ -4,13 +4,9 @@
 .. Please see the README.cmds and README.options for references of
 .. command and options, respective; or view the generated
 .. README.html, which is the complete document.
-   
+  
 BroControl
 ===========
-
-.. |today| date::
-
-Date: |today|
 
 .. contents::
 

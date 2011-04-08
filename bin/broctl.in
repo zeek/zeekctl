@@ -20,7 +20,7 @@ BroBase = "@PREFIX@"
 Version = "@VERSION@"
 
 # True if we do a stand-alone install. 
-StandAlone = @STANDALONE_BOOL@
+StandAlone = "@STANDALONE@"
 
 # Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
@@ -379,8 +379,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         Determines the current load on the network interfaces monitored by
         each of the given worker nodes. The load is measured over the
         specified interval (in seconds), or by default over 10 seconds. This
-        command uses the `capstats <capstats>`_ tool, which is installed along
-        with ``broctl``.
+        command uses the `capstats tool
+        <http://www.bro-ids.org/files/capstats-release/README.html>`_,
+        which is installed along with ``broctl``.
 
         (Note: When using a CFlow and the CFlow command line utility is
         installed as well, the ``capstats`` command can also query the device
@@ -692,7 +693,7 @@ from BroControl import control
 from BroControl import cron
 from BroControl.config import Config
 
-Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone)
+Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone=="True")
 
 util.enableSignals()
 
