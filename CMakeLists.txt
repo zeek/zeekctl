@@ -102,6 +102,8 @@ install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl
         DESTINATION bin)
 install(DIRECTORY BroControl
         DESTINATION lib/broctl)
+install(DIRECTORY BroControl/plugins
+        DESTINATION lib/broctl)
 install(DIRECTORY bin/
         DESTINATION share/broctl/scripts
         FILES_MATCHING

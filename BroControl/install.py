@@ -2,7 +2,7 @@
 #
 # $Id: install.py 7098 2010-10-19 00:54:23Z robin $
 #
-# Functions to install files on all nodes. 
+# Functions to install files on all nodes.
 
 import os
 import sys
@@ -17,8 +17,8 @@ import config
 # In all paths given in this file, ${<option>} will replaced with the value of the
 # corresponding configuration option.
 
-# Diretories/files in form (path, mirror) which are synced from the manager to all nodes. 
-# If 'mirror' is true, the path is fully mirrored recursively, otherwise the 
+# Diretories/files in form (path, mirror) which are synced from the manager to all nodes.
+# If 'mirror' is true, the path is fully mirrored recursively, otherwise the
 # directory is just created.
 Syncs = [
     ("${brobase}", False),
@@ -36,13 +36,13 @@ Syncs = [
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
 
-# In NFS-mode, only these will be synced. 
-NFSSyncs = [    
+# In NFS-mode, only these will be synced.
+NFSSyncs = [
     ("${policydirsiteinstall}", True),
     ("${policydirsiteinstallauto}", True),
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
-    
+
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
 # other scripts.
@@ -139,11 +139,11 @@ def install(local_only):
             if not success:
                 util.warn("cannot create directory %s on %s" % (dir, node.tag))
 
-        paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]                
+        paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
         execute.sync(nodes, paths)
         util.output("done.")
 
-        # Note: the old code created $brobase explicitly but it seems the loop above should 
+        # Note: the old code created $brobase explicitly but it seems the loop above should
         # already take care of that.
 
     else:
@@ -157,10 +157,10 @@ def install(local_only):
 
         for dir in [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if not mirror]:
             dirs += [(n, dir) for n in nodes]
-            
+
         # We need this only on the manager.
         dirs += [(manager, config.Config.logdir)]
-            
+
         for (node, success) in execute.mkdirs(dirs):
             if not success:
                 util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.tag))
@@ -168,8 +168,8 @@ def install(local_only):
         paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
         execute.sync(nodes, paths)
         util.output("done.")
-                
-# Create Bro-side broctl configuration broctl-layout.bro.        
+
+# Create Bro-side broctl configuration broctl-layout.bro.
 
 port = -1
 
@@ -209,7 +209,7 @@ def makeLayout():
     print >>out, "};\n"
 
     print >>out, "redef BroCtl::log_dir = \"%s\";\n" % config.Config.subst(config.Config.logdir)
-	
+
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:
         print >>out, "redef BroCtl::tm_host = %s;\n" % config.Config.timemachinehost
@@ -286,7 +286,7 @@ def makeAnalysisPolicy():
     for (var, val) in booleans:
         print >>out, "@ifdef ( %s )" % var
         print >>out, "redef %s = %s;" % (var, val and "T" or "F");
-        print >>out, "@endif\n" 
+        print >>out, "@endif\n"
     print >>out, "\n"
 
     out.close()
@@ -316,7 +316,7 @@ def readNetworks(file):
     return nets
 
 
-# Create Bro script which contains a list of local networks. 
+# Create Bro script which contains a list of local networks.
 def makeLocalNetworks():
 
     netcfg = config.Config.localnetscfg

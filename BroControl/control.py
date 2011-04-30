@@ -437,8 +437,11 @@ def restart(nodes, clean):
         cleanup(all_nodes, False)
 
         util.output("checking configuration ...")
-        if not checkConfigs(all_nodes):
-            return 
+
+        for (node, success) in checkConfig(all_nodes):
+            if not success:
+                # One failure stops everything.
+                return
 
         util.output("installing ...")
         install.install(False)
@@ -624,7 +627,7 @@ def top(nodes):
 
 def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
-    ok = True
+    results = []
 
     manager = config.Config.manager()
 
@@ -661,12 +664,13 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
 
+        results += [(node, success)]
+
         if not list_scripts:
 
             if success:
                 util.output("%s is ok." % node.tag)
             else:
-                ok = False
                 util.output("%s failed." % node.tag)
                 for line in output:
                     util.output("   %s" % line)
@@ -683,12 +687,11 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
                     util.output("   %s" % line)
 
             if not success:
-                ok = False
                 util.output("%s failed to load all scripts correctly." % node.tag)
 
         execute.rmdir(manager, cwd)
 
-    return ok
+    return results
 
 # Check the configuration for nodes without installing first.
 def checkConfigs(nodes):
@@ -1079,14 +1082,6 @@ def netStats(nodes):
             print "%10s: <error: %s>" % (node.tag, args)
 
 def executeCmd(nodes, cmd):
-
-    for special in "|'\"":
-        cmd = cmd.replace(special, "\\" + special)
-
-    cmds = [(n, "run-cmd", [cmd]) for n in nodes]
-
-    for (node, success, output) in execute.runHelperParallel(cmds):
-      util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))
-
+    execute.executeCmdsParallel(zip(nodes, len(nodes) * cmd))
 
 

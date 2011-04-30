@@ -16,10 +16,10 @@ import options
 import execute
 import util
 
-# One broctl node. 
+# One broctl node.
 class Node:
 
-    # Valid tags in nodes file. The values will be stored 
+    # Valid tags in nodes file. The values will be stored
     # in attributes of the same name.
     _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
 
@@ -34,11 +34,11 @@ class Node:
 
         return ("%15s - " % self.tag) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
 
-    # Returns the working directory for this node. 
+    # Returns the working directory for this node.
     def cwd(self):
         return os.path.join(Config.spooldir, self.tag)
 
-    # Stores the nodes process ID. 
+    # Stores the nodes process ID.
     def setPID(self, pid):
         Config._setState("%s-pid" % self.tag, str(pid))
 
@@ -75,7 +75,7 @@ class Node:
         t = "%s-port" % self.tag
         return t in Config.state and int(Config.state[t]) or -1
 
-# Class managing types of analysis. 
+# Class managing types of analysis.
 class Analysis:
     def __init__(self, cfgfile):
 
@@ -88,7 +88,7 @@ class Analysis:
         for line in open(cfgfile):
             cnt += 1
             line = line.strip()
-            if not line or line.startswith("#"): 
+            if not line or line.startswith("#"):
                 continue
 
             f = line.split()
@@ -153,7 +153,7 @@ class Analysis:
 
 Config = None # Globally accessible instance of Configuration.
 
-class Configuration:    
+class Configuration:
     def __init__(self, config, basedir, version, standalone):
         global Config
 
@@ -169,18 +169,18 @@ class Configuration:
         self._setOption("brobase", basedir)
         self._setOption("version", version)
         self._setOption("standalone", standalone and "1" or "0")
-		
+
 		# Initialize options.
         for opt in options.options:
             if not opt.dontinit:
                 self._setOption(opt.name.lower(), opt.default)
-		
+
 		# Set defaults for options we derive dynamically.
 		self._setOption("mailto", "%s" % os.getenv("USER"))
 		self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
 		self._setOption("home", os.getenv("HOME"))
-		self._setOption("mailalarmsto", self.config["mailto"]) 
-		
+		self._setOption("mailalarmsto", self.config["mailto"])
+
         # Determine operating system.
         (success, output) = execute.captureCmd("uname")
         if not success:
@@ -190,7 +190,7 @@ class Configuration:
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.captureCmd("which time")
         self._setOption("time", output[0].lower().strip())
-		
+
         # Read nodes.cfg and broctl.dat.
         self._readNodes()
         self.readState()
@@ -227,7 +227,7 @@ class Configuration:
         else:
             return self.config.items()
 
-    # Returns a list of Nodes. 
+    # Returns a list of Nodes.
     # - If tag is "global" or "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
     # - If tag is "proxies" or "proxy", all proxy Nodes are returned.
@@ -289,7 +289,7 @@ class Configuration:
         return hosts.values()
 
     # Replace all occurences of "${option}", with option being either
-    # broctl.cfg option or a dynamic variable, with the corresponding value. 
+    # broctl.cfg option or a dynamic variable, with the corresponding value.
     # Defaults to replacement with the empty string for unknown options.
     def subst(self, str):
         while True:
@@ -308,7 +308,7 @@ class Configuration:
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
 
-    # Returns instance of class Analysis. 
+    # Returns instance of class Analysis.
     def analysis(self):
         return self._analysis
 
@@ -339,7 +339,7 @@ class Configuration:
                 if key == "type":
                     # We determine which types are valid by checking for having an
                     # option specifying which scripts to use for it.
-                    cfg = "scripts-%s" % val 
+                    cfg = "scripts-%s" % val
                     if not cfg  in self.config:
                         util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
 
@@ -367,7 +367,7 @@ class Configuration:
 
             # Each node gets a number unique across its type.
             type = self.nodelist[sec].type
-            try: 
+            try:
                 counts[type] += 1
             except KeyError:
                 counts[type] = 1
@@ -396,7 +396,7 @@ class Configuration:
                     util.error("cannot use localhost/127.0.0.1 for manager host in nodes configuration")
 
 
-    # Parses broctl.cfg and returns a dictionary of all entries. 
+    # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):
         config = {}
         try:
@@ -457,7 +457,7 @@ class Configuration:
                 version = output[0]
 
         if not version:
-            # Ok if it's already set. 
+            # Ok if it's already set.
             if "broversion" in self.state:
                 return
 

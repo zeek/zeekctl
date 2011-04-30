@@ -36,9 +36,9 @@ def getBufferedOutput():
     Buffer = None
     return buffer
 
-def output(msg = "", nl = True):
+def output(msg = "", nl = True, prefix="output"):
 
-    debug(1, "[output] %s %s" % (msg, (not nl) and "..." or ""))
+    debug(1, "[%s] %s %s" % (prefix, msg, (not nl) and "..." or ""))
 
     if Buffer:
         out = Buffer

@@ -19,15 +19,15 @@ BroBase = "@PREFIX@"
 # Version of the broctl distribution.
 Version = "@VERSION@"
 
-# True if we do a stand-alone install. 
+# True if we do a stand-alone install.
 StandAlone = "@STANDALONE@"
 
 # Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
 # We need to add the directory of the Broccoli library files
-# to the linker's runtime search path. This is hack which 
-# restarts the script with the new environment. 
+# to the linker's runtime search path. This is hack which
+# restarts the script with the new environment.
 ldpath = "LD_LIBRARY_PATH"
 if platform.system() == "Darwin":
     ldpath = "DYLD_LIBRARY_PATH"
@@ -44,7 +44,7 @@ if not old or not dir in old:
 
 ## End of library hack.
 
-# Turns nodes arguments into a list of node names. 
+# Turns nodes arguments into a list of node names.
 def nodeArgs(args, expand_all=True):
     if not args:
         args = "all"
@@ -78,20 +78,26 @@ class BroCtlCmdLoop(cmd.Cmd):
     def syntax(self, args):
         self.output("Syntax error: %s" % args)
 
+    def default(self, line):
+        m = line.split()
+
+        if not plugin.Registry.runCustomCommand(m[0], " ".join(m[1:])):
+            self.error("unknown command '%s'" % m[0])
+
     def lock(self):
         if not util.lock():
             sys.exit(1)
 
         self._locked = True
         Config.readState()
-        config.Config.config["sigint"] = "0" 
+        config.Config.config["sigint"] = "0"
 
     def precmd(self, line):
         util.debug(1, "%-10s %s" % ("[command]", line))
         self._locked = False
         return line
 
-    def postcmd(self, stop, line):  
+    def postcmd(self, stop, line):
         Config.writeState()
         if self._locked:
             util.unlock()
@@ -130,7 +136,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         for (key, val) in sorted(Config.options()):
             print "%s = %s" % (key, val)
 
-    def do_install(self, args): 
+    def do_install(self, args):
         """
 
         Reinstalls the given nodes, including all configuration files and
@@ -158,11 +164,11 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         Starts the given nodes, or all nodes if none are specified. Nodes
         already running are left untouched.
-        """ 
+        """
 
         self.lock()
-        (success, nodes) = nodeArgs(args, expand_all=False) 
-        if success: 
+        (success, nodes) = nodeArgs(args, expand_all=False)
+        if success:
             control.start(nodes)
 
     def do_stop(self, args):
@@ -170,7 +176,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         Stops the given nodes, or all nodes if none are specified. Nodes not
         running are left untouched.
-        """ 
+        """
         self.lock()
         (success, nodes) = nodeArgs(args, expand_all=False)
         if success:
@@ -232,7 +238,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         format, including CPU usage and memory consumption. If
         executed interactively, the display is updated frequently
         until key ``q`` is pressed. If invoked non-interactively, the
-        status is printed only once.""" 
+        status is printed only once."""
 
         self.lock()
 
@@ -272,12 +278,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         node is found to have crashed (the "crash report"). While the
         information is mainly intended for debugging, it can also help to find
         misconfigurations (which are usually, but not always, caught by the
-        check_ command).""" 
+        check_ command)."""
 
         self.lock()
         (success, nodes) = nodeArgs(args)
         if not success:
-            return 
+            return
 
         for h in nodes:
             control.crashDiag(h)
@@ -286,7 +292,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         """- [<nodes>]
 
         Primarily for debugging, the command attaches a *gdb* to the main Bro
-        process on the given nodes. """ 
+        process on the given nodes. """
 
         self.lock()
         (success, nodes) = nodeArgs(args)
@@ -301,13 +307,13 @@ class BroCtlCmdLoop(cmd.Cmd):
         maintainance tasks, including the logging of various statistical
         information, expiring old log files, checking for dead hosts, and
         restarting nodes which terminated unexpectedly.  While not intended
-        for interactive use, no harm will be caused by executing the command 
+        for interactive use, no harm will be caused by executing the command
         manually: all the maintainance tasks will then just be performed one
         more time."""
 
         if len(args) > 0:
             self.lock()
-            
+
             if args == "enable":
                 config.Config._setState("cronenabled", "1")
                 util.output("cron enabled")
@@ -318,7 +324,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 util.output("cron " + (config.Config.cronenabled == "1"  and "enabled" or "disabled"))
             else:
                 util.output("wrong cron argument")
-                
+
             return
 
         cron.doCron()
@@ -342,7 +348,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            control.checkConfigs(nodes)
+            nodes = plugin.Registry.cmdPreWithNodes("check", nodes)
+            results = control.checkConfigs(nodes)
+            plugin.Registry.cmdPost("check", results)
 
     def do_cleanup(self, args):
         """- [--all] [<nodes>]
@@ -356,7 +364,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         Generally, if you want to reset the installation back into a clean
         state, you can first stop_ all nodes, then execute
         ``cleanup --all``, and finally start_ all nodes
-        again.""" 
+        again."""
 
         cleantmp = False
         try:
@@ -369,7 +377,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if not success:
-            return 
+            return
 
         control.cleanup(nodes, cleantmp)
 
@@ -446,7 +454,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         ============  ===================================================================================
         dns           DNS analysis (``dns.bro``)
         ftp           FTP analysis (``ftp.bro``)
-        http-body     HTTP body analysis (``http-body.bro``). 
+        http-body     HTTP body analysis (``http-body.bro``).
         http-request  Client-side HTTP analysis only (``http-request.bro``)
         http-reply    Client- and server-side HTTP analysis (``http-request.bro``/``http-reply.bro``)
         http-header   HTTP header analysis (``http-headers.bro``)
@@ -506,7 +514,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def do_peerstatus(self, args):
         """- [<nodes>]
-		
+
 		Primarily for debugging, ``peerstatus`` reports statistics about the
         network connections cluster nodes are using to communicate with other
         nodes."""
@@ -518,10 +526,10 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def do_netstats(self, args):
         """- [<nodes>]
-		
+
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
-		
+
         if not args:
             if config.Config.standalone == "1" :
                 args = "standalone"
@@ -535,17 +543,17 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def do_exec(self, args):
         """- <command line>
-		
+
 		Executes the given Unix shell command line on all nodes configured to
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
-		
+
         self.lock()
         control.executeCmd(Config.nodes(), args)
 
     def do_scripts(self, args):
         """- [-p|-c] [<nodes>]
-		
+
 		Primarily for debugging Bro configurations, the ``script`` command lists
         all the Bro scripts loaded by each of the nodes in the order as they
         will be parsed by the node at startup. If ``-p`` is given, all scripts
@@ -554,7 +562,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         from their *original* location, not the copies installed by
         install_. The latter option is useful to check a
         not yet installed configuration."""
-		
+
         paths = False
         check = False
 
@@ -589,7 +597,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands taken a "<nodes>" argument.
-        nodes_cmds = ["check", "cleanup", "df", "diag", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "list-scripts"], 
+        nodes_cmds = ["check", "cleanup", "df", "diag", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "list-scripts"],
 
         args = line.split()
 
@@ -604,7 +612,7 @@ class BroCtlCmdLoop(cmd.Cmd):
     # into the documentation.
     def printReference(self):
         print ".. Automatically generated. Do not edit."
-        print 
+        print
 
         cmds = []
 
@@ -636,24 +644,33 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             output = output.strip()
 
-            print 
+            print
             print ".. _%s:\n\n*%s*%s\n    %s" % (cmd, cmd, args, output)
-            print 
+            print
 
     def do_help(self, args):
         """Prints a brief summary of all commands understood by the shell."""
+
+        plugin_help = ""
+
+        for (cmd, descr) in plugin.Registry.allCustomCommands():
+            if not plugin_help:
+                plugin_help += "\nCommands provided by plugins:\n\n"
+
+            plugin_help += "   %-29s - %s" % (cmd, descr)
+
         self.output(
 """
 BroControl Version %s
 
-   analysis [enable/disable ...] - print or enable/disable types of analysis 
+   analysis [enable/disable ...] - print or enable/disable types of analysis
    capstats <nodes> [secs]       - report interface statistics (needs capstats)
    check <nodes>                 - check configuration before installing it
    cleanup [--all] <nodes>       - delete working dirs on nodes (flushes state)
    config                        - print broctl configuration
    cron                          - perform jobs intended to run from cron
    cron enable|disable|?         - enable/disable \"cron\" jobs
-   df                            - print nodes' current disk usage 
+   df                            - print nodes' current disk usage
    diag <nodes>                  - output diagnostics for nodes
    exec <shell cmd>              - execute shell command on all nodes
    exit                          - exit shell
@@ -665,37 +682,45 @@ BroControl Version %s
    quit                          - exit shell
    restart [--clean] <nodes>     - stop and then restart processing
    scripts [-p|-c] <nodes>       - Lists the Bro scripts the nodes will be loading
-   start <nodes>                 - start processing 
-   status <nodes>                - summarize node status              
-   stop <nodes>                  - stop processing 
+   start <nodes>                 - start processing
+   status <nodes>                - summarize node status
+   stop <nodes>                  - stop processing
    update <nodes>                - update configuration of nodes on the fly
    top <nodes>                   - show Bro processes ala top
+   %s
 
 See Bro Control's Wiki page for more information:
 
     http://www.bro-ids.org/wiki/index.php/BroControl
 
 Send questions to the Bro mailing list at bro@bro-ids.org.
-   """ % Version)
+   """ % (Version, plugin_help))
 
-# Hidden command to print the command documentation.   
+# Hidden command to print the command documentation.
 if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":
     loop = BroCtlCmdLoop()
     loop.printReference()
     sys.exit(0)
 
-# Here so that we don't need the PYTHONPATH to be setup for --print-doc.    
+# Here so that we don't need the PYTHONPATH to be setup for --print-doc.
 from BroControl import util
 from BroControl import config
 from BroControl import execute
 from BroControl import install
 from BroControl import control
 from BroControl import cron
+from BroControl import plugin
 from BroControl.config import Config
 
 Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone=="True")
 
+for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
+    if dir:
+        plugin.Registry.addDir(dir)
+
 util.enableSignals()
+
+plugin.Registry.initPlugins()
 
 loop = BroCtlCmdLoop()
 
@@ -714,3 +739,4 @@ else:
     Interactive = True
     loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % Version)
 
+plugin.Registry.finishPlugins()
