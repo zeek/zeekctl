@@ -6,6 +6,7 @@ import os
 
 import util
 import config
+import node
 
 class PluginRegistry:
     def __init__(self):
@@ -17,9 +18,8 @@ class PluginRegistry:
         """Adds a directory to search for plugins."""
         self._dirs += [dir]
 
-    def initPlugins(self):
-        """Loads all plugins found in any of the added directories and fully
-        initialized them."""
+    def loadPlugins(self):
+        """Loads all plugins found in any of the added directories."""
         self._loadPlugins()
 
         # Init options.
@@ -29,6 +29,8 @@ class PluginRegistry:
             for (cmd, descr) in plugin.commands():
                 self._cmds["%s.%s" % (plugin.prefix(), cmd)] = (plugin, descr)
 
+    def initPlugins(self):
+        """Initialized all loaded plugins."""
         plugins = []
 
         for p in self._plugins:
@@ -51,7 +53,11 @@ class PluginRegistry:
 
         for p in self._plugins:
             try:
-                nodes = p.__class__.__dict__[method](nodes, *args)
+                new_nodes = p.__class__.__dict__[method](p, nodes, *args)
+
+                if new_nodes != None:
+                    nodes = new_nodes
+
             except LookupError:
                 pass
 
@@ -60,13 +66,53 @@ class PluginRegistry:
     def cmdPre(self, cmd, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command *not* taking
         a list of nodes as its first argument. All arguments are passed on.
-        Returns the True if all plugins returned True."""
-        pass
+        Returns the True if all plugins returned True.
+        """
+        method = "cmd_%s_pre" % cmd
 
-    def cmdPost(self, cmd, nodes, *args):
-        """Executes the ``cmd_<XXX>_post`` function for a command. All
-        arguments are passed on."""
-        pass
+        for p in self._plugins:
+            try:
+                p.__class__.__dict__[method](p, *args)
+            except LookupError:
+                pass
+
+    def cmdPostWithNodes(self, cmd, nodes, *args):
+        """Executes the ``cmd_<XXX>_post`` function for a command taking a list
+        of nodes as its first argument. All other arguments are passed on.
+        """
+        method = "cmd_%s_post" % cmd
+
+        for p in self._plugins:
+            try:
+                p.__class__.__dict__[method](p, nodes, *args)
+            except LookupError:
+                pass
+
+    def cmdPostWithResults(self, cmd, results, *args):
+        """Executes the ``cmd_<XXX>_post`` function for a command taking a
+        list of tuples ``(node, bool)`` as its first argument. All other
+        arguments are passed on.
+        """
+        method = "cmd_%s_post" % cmd
+
+        for p in self._plugins:
+            try:
+                p.__class__.__dict__[method](p, results, *args)
+            except LookupError:
+                pass
+
+    def cmdPost(self, cmd, *args):
+        """Executes the ``cmd_<XXX>_post`` function for a command *not* taking
+        a list of nodes as its first argument. All arguments are passed on.
+        Returns the True if all plugins returned True.
+        """
+        method = "cmd_%s_post" % cmd
+
+        for p in self._plugins:
+            try:
+                p.__class__.__dict__[method](p, *args)
+            except LookupError:
+                pass
 
     def runCustomCommand(self, cmd, args):
         """Runs a custom command *cmd* a string *args* as argument. Returns
@@ -90,6 +136,33 @@ class PluginRegistry:
             cmds += [(cmd, descr)]
 
         return cmds
+
+    def addNodeKeys(self):
+        """Adds all plugins' node keys to the list of supported keys in
+        ``Node``.."""
+        for p in self._plugins:
+            for key in p.nodeKeys():
+                key = "%s_%s" % (p.prefix(), key)
+                p.debug("adding node key %s for plugin %s" % (key, p.name()))
+                node.Node.addKey(key)
+
+    def addAnalyses(self, analysis):
+        """Adds all plugins' analyses specification to an ``Analysis``
+        instace."""
+        for p in self._plugins:
+            for (name, descr, mechanism) in p.analyses():
+
+                name = "%s.%s" % (p.prefix(), name)
+
+                # Convert 2-tuple(s) to analysis.dat format.
+                if not isinstance(mechanism, list):
+                    mechanism = [mechanism]
+
+                mechanism = ["%s:%s" % (m[0], m[1]) for m in mechanism]
+                mechanism = ",".join(mechanism)
+
+                p.debug("adding analysis %s for plugin %s (%s)" % (name, p.name(), mechanism))
+                analysis.addAnalysis(name, mechanism, descr)
 
     def _loadPlugins(self):
 
@@ -132,3 +205,4 @@ class PluginRegistry:
 
 
 import plugin
+

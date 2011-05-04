@@ -12,68 +12,12 @@ import re
 
 import ConfigParser
 
-import options
+import doc
 import execute
+import node as node_mod
+import options
+import plugin
 import util
-
-# One broctl node.
-class Node:
-
-    # Valid tags in nodes file. The values will be stored
-    # in attributes of the same name.
-    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
-
-    def __init__(self, tag):
-        self.tag = tag
-
-    def __str__(self):
-        def fmt(v):
-            if type(v) == type([]):
-                v = ",".join(v)
-            return v
-
-        return ("%15s - " % self.tag) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
-
-    # Returns the working directory for this node.
-    def cwd(self):
-        return os.path.join(Config.spooldir, self.tag)
-
-    # Stores the nodes process ID.
-    def setPID(self, pid):
-        Config._setState("%s-pid" % self.tag, str(pid))
-
-    # Returns the stored process ID.
-    def getPID(self):
-        t = "%s-pid" % self.tag
-        if t in Config.state:
-            return Config.state[t]
-        return None
-
-    # Unsets the stored process ID.
-    def clearPID(self):
-        Config._setState("%s-pid" % self.tag, "")
-
-    # Mark node as having terminated unexpectedly.
-    def setCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "1")
-
-    # Unsets the flag for unexpected termination.
-    def clearCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "0")
-
-    # Returns true if node has terminated unexpectedly.
-    def hasCrashed(self):
-        t = "%s-crashed" % self.tag
-        return t in Config.state and Config.state[t] == "1"
-
-    # Set the Bro port this node is using.
-    def setPort(self, port):
-        Config._setState("%s-port" % self.tag, str(port))
-
-    # Get the Bro port this node is using.
-    def getPort(self):
-        t = "%s-port" % self.tag
-        return t in Config.state and int(Config.state[t]) or -1
 
 # Class managing types of analysis.
 class Analysis:
@@ -104,6 +48,13 @@ class Analysis:
 
             self.types[type] = (mechanism, descr)
 
+    # Adds another analysis. This is used by the PluginRegistry for adding
+    # the plugin analyses dynamically. Note that parameter format here must
+    # correspond to that in analysis.dat. If necessary, the registry needs to
+    # translate what a plugins specifies.
+    def addAnalysis(self, name, mechanism, descr):
+        self.types[name] = (mechanism, descr)
+
     # Returns true if we know this kind of analysis.
     def isValid(self, type):
         return type in self.types
@@ -117,16 +68,20 @@ class Analysis:
         except KeyError:
             return True
 
-    # Enable/disable type.
+    # Enable/disable type. Returns previous state.
     def toggle(self, type, enable=True):
         tag = "analysis-%s" % type
+        prev = (not tag in Config.state) or Config.state[tag] != "0"
+
         if enable:
             try:
                 del Config.state[tag]
             except KeyError:
                 pass
         else:
-            Config.state[tag] = 0
+            Config.state[tag] = "0"
+
+        return prev
 
     # Returns tuples (type, status, mechanism, descr) of all known analysis types.
     # 'type' is tag for analysis.
@@ -156,7 +111,6 @@ Config = None # Globally accessible instance of Configuration.
 class Configuration:
     def __init__(self, config, basedir, version, standalone):
         global Config
-
         Config = self
 
         self.config = {}
@@ -191,12 +145,16 @@ class Configuration:
         (success, output) = execute.captureCmd("which time")
         self._setOption("time", output[0].lower().strip())
 
+    def initPostPlugins(self):
+        plugin.Registry.addNodeKeys()
+
         # Read nodes.cfg and broctl.dat.
         self._readNodes()
         self.readState()
 
         # Setup the kinds of analyses which we support.
         self._analysis = Analysis(self.analysiscfg)
+        plugin.Registry.addAnalyses(self._analysis)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
@@ -258,10 +216,10 @@ class Configuration:
                 if type == n.type:
                     nodes += [n]
 
-            elif tag == n.tag or not tag:
+            elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.tag))
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -328,11 +286,14 @@ class Configuration:
         counts = {}
         for sec in config.sections():
 
-            node = Node(sec)
+            node = node_mod.Node(sec)
             self.nodelist[sec] = node
 
             for (key, val) in config.items(sec):
-                if not key in Node._tags:
+
+                key = key.replace(".", "_")
+
+                if not key in node_mod.Node._keys:
                     util.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 

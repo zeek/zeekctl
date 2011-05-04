@@ -70,7 +70,7 @@ def mkdirs(dirs):
         # We make local directories directly.
         if isLocal(node):
             if not exists(node, dir):
-                util.debug(1, "%-10s %s" % ("[local]", "mkdir -p %s" % dir))
+                util.debug(1, "mkdir -p %s" % dir, prefix="local")
                 os.mkdir(dir)
 
             results += [(node, True)]
@@ -196,7 +196,7 @@ def isAlive(host):
 def captureCmd(cmd, env = "", input = None):
 
     cmdline = env + " " + cmd
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
     proc = popen(cmdline, stderr_to_stdout=True)
 
@@ -207,9 +207,10 @@ def captureCmd(cmd, env = "", input = None):
     rc = proc.wait()
     output = [line.strip() for line in proc.fromchild]
 
-    util.debug(1, "%-10s exit code %d" % ("[local]", os.WEXITSTATUS(rc)))
+    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix="local")
 
     return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
 
@@ -258,7 +259,7 @@ def _runLocalCmdInit(id, cmd, env, input):
         env = ""
 
     cmdline = env + " " + cmd
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
     proc = popen(cmdline, stderr_to_stdout=True)
 
@@ -279,9 +280,10 @@ def _runLocalCmdWait(proc):
     rc = proc.wait()
     output = [stripNL(line) for line in proc.fromchild]
 
-    util.debug(1, "%-10s exit code %d" % ("[local]", os.WEXITSTATUS(rc)))
+    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix="local")
 
     return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
 
@@ -396,8 +398,8 @@ def _getConnection(host):
     if not host:
         host = config.Config.manager()
 
-    if host.tag in Connections:
-        p = Connections[host.tag]
+    if host.name in Connections:
+        p = Connections[host.name]
         if p.poll() != None:
             # Terminated.
             global _deadHosts
@@ -416,7 +418,7 @@ def _getConnection(host):
 
         cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, host.host)
 
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
     try:
         p = popen(cmdline)
@@ -424,7 +426,7 @@ def _getConnection(host):
         util.warn("cannot login into %s [IOError: %s]" % (host.host, e))
         return None
 
-    Connections[host.tag] = p
+    Connections[host.name] = p
     return (p.stdin, p.stdout)
 
 def _runHelperInit(host, cmd, args, fullcmd, env):
@@ -440,7 +442,7 @@ def _runHelperInit(host, cmd, args, fullcmd, env):
     else:
         cmdline = fullcmd
 
-    util.debug(1, "%-10s %s" % (("[%s]" % host.host), cmdline))
+    util.debug(1, cmdline, prefix=host.host)
     print >>stdin, cmdline
     stdin.flush()
 
@@ -467,10 +469,10 @@ def _runHelperWait(host):
         util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[0]))
         rc = 1
 
-    util.debug(1, "%-10s exit code %d" % (("[%s]" % host.host), rc))
+    util.debug(1, "exit code %d" % rc, prefix=host.host)
 
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix=host.host)
 
     return (rc == 0, output[1:])
 
@@ -521,10 +523,10 @@ def _sendEventInit(node, event, args, result_event):
         bc.got_result = False
         bc.connect()
     except IOError, e:
-        util.debug(1, "%-10s broccoli: cannot connect" % (("[%s]" % node.tag)))
+        util.debug(1, "broccoli: cannot connect", prefix=node.name)
         return (False, str(e))
 
-    util.debug(1, "%-10s broccoli: %s(%s)" % (("[%s]" % node.tag), event, ", ".join(args)))
+    util.debug(1, "broccoli: %s(%s)" % (event, ", ".join(args)), prefix=node.name)
     bc.send(event, *args)
     return (True, bc)
 
@@ -536,7 +538,7 @@ def _sendEventWait(node, result_event, bc):
 
         cnt += 1
         if cnt > 10:
-            util.debug(1, "%-10s broccoli: timeout during send" % (("[%s]" % node.tag)))
+            util.debug(1, "broccoli: timeout during send", prefix=node.name)
             return (False, "time-out")
 
     if not result_event:
@@ -551,10 +553,10 @@ def _sendEventWait(node, result_event, bc):
 
         cnt += 1
         if cnt > 10:
-            util.debug(1, "%-10s broccoli: timeout during receive" % (("[%s]" % node.tag)))
+            util.debug(1, "broccoli: timeout during receive", prefix=node.name)
             return (False, "time-out")
 
-    util.debug(1, "%-10s broccoli: %s(%s)" % (("[%s]" % node.tag), result_event, ", ".join(bc.result_args)))
+    util.debug(1, "broccoli: %s(%s)" % (result_event, ", ".join(bc.result_args)), prefix=node.name)
     return (True, bc.result_args)
 
 def _event_callback(bc):

@@ -137,7 +137,7 @@ def install(local_only):
 
         for (node, success) in execute.mkdirs(dirs):
             if not success:
-                util.warn("cannot create directory %s on %s" % (dir, node.tag))
+                util.warn("cannot create directory %s on %s" % (dir, node.name))
 
         paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
         execute.sync(nodes, paths)
@@ -163,7 +163,7 @@ def install(local_only):
 
         for (node, success) in execute.mkdirs(dirs):
             if not success:
-                util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.tag))
+                util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
 
         paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
         execute.sync(nodes, paths)
@@ -191,19 +191,19 @@ def makeLayout():
 
     out = open(os.path.join(config.Config.policydirsiteinstallauto, "broctl-layout.bro"), "w")
     print >>out, "# Automatically generated. Do not edit.\n"
-    print >>out, "redef BroCtl::manager = [$ip = %s, $p=%s/tcp, $tag=\"%s\"];\n" % (manager.addr, nextPort(manager), manager.tag);
+    print >>out, "redef BroCtl::manager = [$ip = %s, $p=%s/tcp, $tag=\"%s\"];\n" % (manager.addr, nextPort(manager), manager.name);
 
     proxies = config.Config.nodes("proxy")
     print >>out, "redef BroCtl::proxies = {"
     for p in proxies:
-        tag = p.tag.replace("proxy-", "p")
+        tag = p.name.replace("proxy-", "p")
         print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\"]," % (p.count, p.addr, nextPort(p), tag)
     print >>out, "};\n"
 
     workers = config.Config.nodes("worker")
     print >>out, "redef BroCtl::workers = {"
     for s in workers:
-        tag = s.tag.replace("worker-", "w")
+        tag = s.name.replace("worker-", "w")
         p = s.count % len(proxies) + 1
         print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\", $interface=\"%s\", $proxy=BroCtl::proxies[%d]]," % (s.count, s.addr, nextPort(s), tag, s.interface, p)
     print >>out, "};\n"
@@ -233,6 +233,7 @@ def makeAnalysisPolicy():
     disabled_event_groups = []
     booleans = []
     warns = []
+    unloads = []
 
     analysis = config.Config.analysis()
     redo = False
@@ -260,7 +261,29 @@ def makeAnalysisPolicy():
             elif scheme == "bool-inv":
                 booleans += [(arg, not state)]
 
+            elif scheme == "enable":
+
+                if not analysis.isValid(arg):
+                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
+                    continue
+
+                if not analysis.isEnabled(arg):
+                    analysis.toggle(arg, True)
+                    warns += ["enabled analysis %s with %s" % (arg, type)]
+                    redo = True
+
             elif scheme == "disable":
+
+                if not analysis.isValid(arg):
+                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
+                    continue
+
+                if analysis.isEnabled(arg):
+                    analysis.toggle(arg, False)
+                    warns += ["disabled analysis %s with %s" % (arg, type)]
+                    redo = True
+
+            elif scheme == "link":
                 if state:
                     continue
 
@@ -268,13 +291,19 @@ def makeAnalysisPolicy():
                     util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
                     continue
 
-                if analysis.isEnabled(arg):
-                    warns += ["disabled analysis %s (depends on %s)" % (arg, type)]
-                    analysis.toggle(arg, False)
+                new = analysis.isEnabled(arg)
+                old = analysis.toggle(arg, new)
+
+                if old != new:
+                    state = "enabled" if new else "disabled"
+                    warns += ["%s analysis %s (linked with %s)" % (new, arg, type)]
                     redo = True
 
+            elif scheme == "unload":
+                unloads += [arg]
+
             else:
-                util.warn("error in %s: ignoring unknown mechanism scheme %s" % (config.Config.analysiscfg, scheme))
+                util.warn("error in %s: ignoring unknown analysis mechanism %s" % (config.Config.analysiscfg, scheme))
                 continue
 
     if disabled_event_groups:
@@ -290,6 +319,18 @@ def makeAnalysisPolicy():
     print >>out, "\n"
 
     out.close()
+
+    util.output(" done.")
+
+    if unloads:
+        util.output("generating analysis-policy-unload.bro ...", False)
+        out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy-unload.bro"), "w")
+        print >>out, "# Automatically generated. Do not edit.\n"
+
+        for script in unloads:
+            print >>out, "@unload %s" % script
+
+        out.close()
 
     util.output(" done.")
 

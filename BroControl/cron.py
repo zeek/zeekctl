@@ -63,7 +63,7 @@ def doCron():
 def logAction(node, action):
     t = time.time()
     out = open(config.Config.statslog, "a")
-    print >>out, t, node.tag, "action", action
+    print >>out, t, node, "action", action
     out.close()
 
 def _logStats(interval):
@@ -100,15 +100,15 @@ def _logStats(interval):
                 type = proc["proc"]
                 for (val, key) in proc.items():
                     if val != "proc":
-                        print >>out, t, node.tag, type, val, key
+                        print >>out, t, node, type, val, key
         else:
-            print >>out, t, node.tag, "error", "error", error
+            print >>out, t, node, "error", "error", error
 
     for (node, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
                 # Report if we don't see packets on an interface.
-                tag = "lastpkts-%s" % node.tag
+                tag = "lastpkts-%s" % node.name
 
                 if key == "pkts":
                     if tag in config.Config.state:
@@ -124,10 +124,10 @@ def _logStats(interval):
 
                     config.Config._setState(tag, val)
 
-                print >>out, t, node.tag, "interface", key, val
+                print >>out, t, node, "interface", key, val
 
         else:
-            print >>out, t, node.tag, "error", "error", error
+            print >>out, t, node, "error", "error", error
 
     for (port, error, vals) in cflow_rates:
         if not error:
@@ -195,12 +195,12 @@ def _getProfLogs():
     cmds = []
 
     for node in config.Config.hosts():
-        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.tag, node.host, node.cwd())
+        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.name, node.host, node.cwd())
         cmds += [(node, cmd, [], None)]
 
     for (node, success, output) in execute.runLocalCmdsParallel(cmds):
         if not success:
-            util.output("cannot get prof.log from %s" % node.tag)
+            util.output("cannot get prof.log from %s" % node.name)
 
 def _updateHTTPStats():
     # Get the prof.logs.
@@ -209,7 +209,7 @@ def _updateHTTPStats():
     # Create meta file. 
     meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
     for node in config.Config.hosts():
-        print >>meta, "node", node.tag, node.type, node.host
+        print >>meta, "node", node, node.type, node.host
 
     print >>meta, "time", time.asctime()
     print >>meta, "version", config.Config.version

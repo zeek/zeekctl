@@ -4,7 +4,7 @@
 .. Please see the README.cmds and README.options for references of
 .. command and options, respective; or view the generated
 .. README.html, which is the complete document.
-  
+
 BroControl
 ===========
 
@@ -34,10 +34,10 @@ Running *BroControl* requires the following prerequisites:
     that in a cluster setup, all systems must be running exactly the
     *same* operating system.
 
-  - A version of *Python* >= 2.4. 
+  - A version of *Python* >= 2.4.
 
   - A *bash* (note in particular, that on FreeBSD, *bash* is not
-    installed by default). 
+    installed by default).
 
 .. note:: If you're using a development version, you might need to
    apply a patch to Bro. Please see `development version`_ below.
@@ -84,10 +84,10 @@ This is the default installation:
     your own).
 
   * In ``etc/nodes.cfg``, you need to specify the network interface
-    Bro is to monitor; that's the ``interface`` line. 
+    Bro is to monitor; that's the ``interface`` line.
 
   * In ``etc/networks.cfg``, list all the networks which Bro should
-    consider as local to the monitored enviroment. 
+    consider as local to the monitored enviroment.
 
 - Once you have updated these files, install the modified
   configuration::
@@ -110,7 +110,7 @@ A *Bro Cluster* is a set of systems jointly analyzing the traffic of
 a network link in a coordinated fashion. *BroControl* is able to
 operate such a setup from a central manager system pretty much
 transparently, hiding much of the complexity of the multi-machine
-installation. 
+installation.
 
 A cluster consists of four types of components:
 
@@ -141,7 +141,7 @@ frontend. If not otherwise stated, in the following we use the terms
 physical machines; rather, we use the term "node" to refer to
 physical machines. There may be multiple Bro instances running on
 the same node. For example, it's possible to run a proxy on the same
-node as the manager is operating on. 
+node as the manager is operating on.
 
 In the following, as an example setup, we will assume that our
 cluster consists of four nodes (not counting the frontend). The host
@@ -167,7 +167,7 @@ mentioned above, you need to
     already exists, must have write permission inside this directory
     on all nodes.
 
-  - have ``ssh`` and ``rdist`` installed. 
+  - have ``ssh`` and ``rdist`` installed.
 
 With all prerequisites in place, as the Bro user perform the
 following steps to install a Bro cluster:
@@ -222,11 +222,11 @@ following steps to install a Bro cluster:
 - Install workers and proxies using *BroControl*::
 
     > broctl install
- 
+
   This installation process uses ``ssh`` and ``rdist`` to copy the
   configuration over to the remote machines so, as described above,
   you need to ensure that logging in via SSH works before the install will
-  succeed. 
+  succeed.
 
 - Some tasks need to be run on a regular basis. On the manager node,
   insert a line like this into the crontab of the user running the
@@ -256,7 +256,7 @@ with a single command directly on the shell's command line)::
 
 As the message says, type help_ to see a list of
 all commands. We will now briefly summarize the most important
-commands. A full reference follows link:cmd_reference[below]. 
+commands. A full reference follows link:cmd_reference[below].
 
 Once ``broctl.cfg`` and ``node.cfg`` are set up as described above,
 the monitoring can be started with the start_
@@ -264,7 +264,7 @@ command. In the cluster setup, this will successively start manager,
 proxies, and workers. The status_ command should
 then show all nodes as operating. To stop the monitoring, issue the
 stop_ command. exit_ leaves the
-shell. 
+shell.
 
 On the manager system (and on the standalone system), you find the
 current set of (aggregated) logs in ``logs/current`` (which is a
@@ -313,7 +313,7 @@ Site-specific Customization
 You'll most likely want to adapt the Bro policy to the local
 environment. While some types of analysis can be customized via the
 analysis_ command, much of the more specific
-tuning requires writing local policy files. 
+tuning requires writing local policy files.
 
 By default, it is assumed that you put site-specific policy scripts
 into the ``share/bro/site`` directory. To change the location of
@@ -344,12 +344,12 @@ In general, all of *BroControl*'s policy scripts are loaded before
 any site-specific policy so that you can redefine any of the
 defaults locally. The scripts_ shows precisely
 which policy scripts get loaded by a node; that can be very helpful
-for debugging. 
+for debugging.
 
 Please note that enabling a particular kind of analysis via the
 analysis_ command only has an effect if the
 corresponding Bro scripts are loaded by the local site policy in
-``local.bro``. 
+``local.bro``.
 
 It is also possible to add additional scripts to individual nodes
 only. This works by setting the option ``aux_scripts`` for the
@@ -371,7 +371,7 @@ given set of nodes, or to all nodes if none is given.
 Option Reference
 ----------------
 
-This section summarizes the options that can be set in 
+This section summarizes the options that can be set in
 ``etc/broctl.cfg`` for customizing the behaviour of *BroControl*.
 Usually, one only needs to change the "user options", which are
 listed first. The "internal options" are, as the name suggests,
@@ -379,6 +379,41 @@ primarily used internally and set automatically. They are documented
 here only for reference.
 
 .. include:: README.options
+
+Writing Plugins
+---------------
+
+BroControl provides a plugin interface to extend its functionality. A
+plugin is written in Python and can do any, or all, of the following:
+
+    * Perform actions before or after any of the standard BroControl
+      commands is executed. When running before the actual command, it
+      can filter which nodes to operate or stop the execution
+      alltogether. When running after the command, it gets access to
+      the commands success on a per-node basis (where applicable).
+
+    * Add custom commands to BroControl.
+
+    * Add custom options to BroControl defined in ``broctl.cfg``.
+
+    * Add custom keys to nodes in defined in ``nodes.cfg``.
+
+    * Add custom entries to the ``analysis`` command.
+
+A plugin is written by deriving a new class from BroControl class
+`Plugin`_. The Python script with the new plugin is then copied into a
+plugin directoriy searched by BroControl at startup. By default,
+BroControl searches ``<prefix>/lib/broctl/plugins``; further may be
+configured by setting the PluginDir_ option. Note that any plugin
+script must end in ``*.py`` to be found. BroControl comes with two
+example plugins that can be used as a starting point; see
+``<prefix>/lib/broctl/plugins/*.sample``
+
+In the following, we document the API that is available to plugins. A
+plugin must be derived from the `Plugin`_ class, and can use its
+methods as well as those of the `Node`_ class.
+
+.. include:: README.plugins
 
 Miscellanous
 ------------
@@ -395,15 +430,15 @@ Mails
 
 2. When the ``cron`` command noticies that a node has crashed, it
    restarts it and sends a notification. It may also send a more
-   detailed crash report containing information about the crash. 
+   detailed crash report containing information about the crash.
 
 3. NOTICES with a notice action of ``NOTICE_EMAIL``; see the Bro
-   documentation for how to configure NOTICE priorities. 
+   documentation for how to configure NOTICE priorities.
 
 4. If link:trace_summary[``trace-summary``] is installed, a traffic
-   summary is sent each rotation interval. 
+   summary is sent each rotation interval.
 
-Performance Analysis 
+Performance Analysis
 ~~~~~~~~~~~~~~~~~~~~
 
 *TODO*: ``broctl cron`` logs a number of statistics, which can be
@@ -457,4 +492,4 @@ Questions and Answers
     archived log file. The default script for that task is
     ``<BroBase>/share/broctl/scripts/make-archive-name``, which you
     can use that as a template for creating your own version. See
-    the beginning of that script for instructions. 
+    the beginning of that script for instructions.
