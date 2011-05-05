@@ -2,6 +2,7 @@
 # A simple test plugin exercising most of a plugins capabilities. It just does
 # some debugging output, nothing else.
 #
+# To enable this plugin, add "test.enabled=1" to broctl.cfg.
 
 import BroControl.plugin
 
@@ -17,25 +18,32 @@ class TestPlugin(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
+        if self.getOption("enabled") == "0":
+            return False
+
         foo = self.getOption("foo")
 
-        self.message("Test initialized")
-        self.message("The value of foo is: %s" % foo)
-        self.message("The current value of bar is: %s" % self.getState("bar"))
+        self.message("TestPlugin: Test initialized")
+        self.message("TestPlugin: The value of foo is: %s" % foo)
+        self.message("TestPlugin: The current value of bar is: %s" % self.getState("bar"))
 
         for n in self.nodes():
-            self.message("mykey is: %s" % n.test_mykey)
+            try:
+                self.message("TestPlugin: mykey is: %s" % n.test_mykey)
+            except AttributeError:
+                self.message("TestPlugin: mykey is not set")
 
         for h in self.hosts():
-            self.message("host %s" % h)
+            self.message("TestPlugin: host %s" % h)
 
         return True
 
     def options(self):
-        return [("foo", "string", "1", "Just a test option.")]
+        return [("foo", "string", "1", "Just a test option."),
+                ("enabled", "string", "0", "Set to enable plugin")]
 
     def commands(self):
-        return [("bar", "A test command from the Test plugin.")]
+        return [("bar", "", "A test command from the Test plugin.")]
 
     def nodeKeys(self):
         return ["mykey"]
@@ -58,9 +66,6 @@ class TestPlugin(BroControl.plugin.Plugin):
         if not results:
             return "<empty>"
 
-        if isinstance(results[0], tuple):
-            results = [n[0] for n in results]
-
         return ",".join(["%s/%s" % (str(n[0]), n[1]) for n in results])
 
     def cmd_custom(self, cmd, args):
@@ -70,133 +75,133 @@ class TestPlugin(BroControl.plugin.Plugin):
             bar = "1"
 
         self.setState("bar", str(int(bar) + 1))
-        self.message("My command: %s" % args)
+        self.message("TestPlugin: TestPlugin: My command: %s" % args)
 
     def cmd_check_pre(self, nodes):
-        self.message("Test pre 'check':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))
 
     def cmd_check_post(self, nodes):
-        self.message("Test post 'check': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'check': %s" % self._nodes(nodes))
 
     def cmd_nodes_pre(self):
-        self.message("Test pre 'nodes'")
+        self.message("TestPlugin: Test pre 'nodes'")
 
     def cmd_nodes_post(self):
-        self.message("Test post 'nodes'")
+        self.message("TestPlugin: Test post 'nodes'")
 
     def cmd_config_pre(self):
-        self.message("Test pre 'config'")
+        self.message("TestPlugin: Test pre 'config'")
 
     def cmd_config_post(self):
-        self.message("Test post 'confg'")
+        self.message("TestPlugin: Test post 'confg'")
 
     def cmd_exec_pre(self, cmdline):
-        self.message("Test pre 'exec':  %s" % cmdline)
+        self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
 
     def cmd_exec_post(self, cmdline):
-        self.message("Test post 'exec': %s" % cmdline)
+        self.message("TestPlugin: Test post 'exec': %s" % cmdline)
 
     def cmd_install_pre(self):
-        self.message("Test pre 'install'")
+        self.message("TestPlugin: Test pre 'install'")
 
     def cmd_install_post(self):
-        self.message("Test post 'install'")
+        self.message("TestPlugin: Test post 'install'")
 
     def cmd_cron_pre(self, arg):
-        self.message("Test pre 'cron':  %s" % arg)
+        self.message("TestPlugin: Test pre 'cron':  %s" % arg)
 
     def cmd_cron_post(self, arg):
-        self.message("Test post 'cron': %s" % arg)
+        self.message("TestPlugin: Test post 'cron': %s" % arg)
 
     def cmd_analysis_pre(self, enable, type):
-        self.message("Test pre 'analysis':   %s %s" % (enable, type))
+        self.message("TestPlugin: Test pre 'analysis':   %s %s" % (enable, type))
 
     def cmd_analysis_post(self, enable, type):
-        self.message("Test post 'analysis':  %s %s" % (enable, type))
+        self.message("TestPlugin: Test post 'analysis':  %s %s" % (enable, type))
 
     def cmd_start_pre(self, nodes):
-        self.message("Test pre 'start':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'start':  %s" % self._nodes(nodes))
 
     def cmd_start_post(self, results):
-        self.message("Test post 'start': %s" % self._results(results))
+        self.message("TestPlugin: Test post 'start': %s" % self._results(results))
 
     def cmd_stop_pre(self, nodes):
-        self.message("Test pre 'stop':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'stop':  %s" % self._nodes(nodes))
 
     def cmd_stop_post(self, results):
-        self.message("Test post 'stop': %s" % self._results(results))
+        self.message("TestPlugin: Test post 'stop': %s" % self._results(results))
 
     def cmd_status_pre(self, nodes):
-        self.message("Test pre 'status':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'status':  %s" % self._nodes(nodes))
 
     def cmd_status_post(self, nodes):
-        self.message("Test post 'status': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'status': %s" % self._nodes(nodes))
 
     def cmd_update_pre(self, nodes):
-        self.message("Test pre 'update':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'update':  %s" % self._nodes(nodes))
 
     def cmd_update_post(self, results):
-        self.message("Test post 'update': %s" % self._results(results))
+        self.message("TestPlugin: Test post 'update': %s" % self._results(results))
 
     def cmd_df_pre(self, nodes):
-        self.message("Test pre 'df':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'df':  %s" % self._nodes(nodes))
 
     def cmd_df_post(self, nodes):
-        self.message("Test post 'df': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'df': %s" % self._nodes(nodes))
 
     def cmd_diag_pre(self, nodes):
-        self.message("Test pre 'diag':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'diag':  %s" % self._nodes(nodes))
 
     def cmd_diag_post(self, nodes):
-        self.message("Test post 'diag': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'diag': %s" % self._nodes(nodes))
 
     def cmd_attachgdb_pre(self, nodes):
-        self.message("Test pre 'attachgdb':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'attachgdb':  %s" % self._nodes(nodes))
 
     def cmd_attachgdb_post(self, nodes):
-        self.message("Test post 'attachgdb': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'attachgdb': %s" % self._nodes(nodes))
 
     def cmd_peerstatus_pre(self, nodes):
-        self.message("Test pre 'peerstatus':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'peerstatus':  %s" % self._nodes(nodes))
 
     def cmd_peerstatus_post(self, nodes):
-        self.message("Test post 'peerstatus': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'peerstatus': %s" % self._nodes(nodes))
 
     def cmd_netstats_pre(self, nodes):
-        self.message("Test pre 'netstats':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'netstats':  %s" % self._nodes(nodes))
 
     def cmd_netstats_post(self, nodes):
-        self.message("Test post 'netstats': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'netstats': %s" % self._nodes(nodes))
 
     def cmd_top_pre(self, nodes):
-        self.message("Test pre 'top':  %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test pre 'top':  %s" % self._nodes(nodes))
 
     def cmd_top_post(self, nodes):
-        self.message("Test post 'top': %s" % self._nodes(nodes))
+        self.message("TestPlugin: Test post 'top': %s" % self._nodes(nodes))
 
     def cmd_cleanup_pre(self, nodes, all):
-        self.message("Test pre 'cleanup':  %s (%s)" % (self._nodes(nodes), all))
+        self.message("TestPlugin: Test pre 'cleanup':  %s (%s)" % (self._nodes(nodes), all))
 
     def cmd_cleanup_post(self, nodes, all):
-        self.message("Test post 'cleanup': %s (%s)" % (self._nodes(nodes), all))
+        self.message("TestPlugin: Test post 'cleanup': %s (%s)" % (self._nodes(nodes), all))
 
     def cmd_capstats_pre(self, nodes, interval):
-        self.message("Test pre 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
+        self.message("TestPlugin: Test pre 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
 
     def cmd_capstats_post(self, nodes, interval):
-        self.message("Test post 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
+        self.message("TestPlugin: Test post 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
 
     def cmd_scripts_pre(self, nodes, full_path, check):
-        self.message("Test pre 'scripts':  %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+        self.message("TestPlugin: Test pre 'scripts':  %s (%s/%s)" % (self._nodes(nodes), full_path, check))
 
     def cmd_scripts_post(self, nodes, full_path, check):
-        self.message("Test post 'scripts': %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+        self.message("TestPlugin: Test post 'scripts': %s (%s/%s)" % (self._nodes(nodes), full_path, check))
 
     def cmd_print_pre(self, nodes, id):
-        self.message("Test pre 'print':  %s (%s)" % (self._nodes(nodes), id))
+        self.message("TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id))
 
     def cmd_print_post(self, nodes, id):
-        self.message("Test post 'print': %s (%s)" % (self._nodes(nodes), id))
+        self.message("TestPlugin: Test post 'print': %s (%s)" % (self._nodes(nodes), id))
 
 
 

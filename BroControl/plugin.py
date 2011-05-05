@@ -6,6 +6,7 @@ import pluginreg
 import config
 import util
 import doc
+import execute
 
 Registry = pluginreg.PluginRegistry()
 
@@ -54,12 +55,14 @@ class Plugin:
 
     @doc.api
     def getGlobalOption(self, name):
-        """Returns the value of the global BroControl option *name*. If the
-        user has not set the options, its default value is returned."""
-        if config.Config.hasAttr(name):
+        """Returns the value of the global BroControl option or state
+        attribute *name*. If the user has not set the options, its default
+        value is returned. See the output of ``broctl config`` for a complete
+        list"""
+        if not config.Config.hasAttr(name):
             raise KeyError
 
-        return config.Config.__getattr(name)
+        return config.Config.__getattr__(name)
 
     @doc.api
     def getOption(self, name):
@@ -114,10 +117,10 @@ class Plugin:
         config.Config._setState(name, value)
 
     @doc.api
-    def getNodes(self, names):
+    def parseNodes(self, names):
         """Returns `Node`_ objects for a string of space-separated node names.
-        If a name does not correspond to know node, an error message is
-        printed and the node is skipped from the returned list. If not names
+        If a name does not correspond to a known node, an error message is
+        printed and the node is skipped from the returned list. If no names
         are known, an empty list is returned."""
         nodes = []
 
@@ -147,10 +150,11 @@ class Plugin:
 
     @doc.api
     def execute(self, node, cmd):
-        """Executes a command on the given *node* of type `Node`_. Returns a
-        tuple ``(rc, output)`` in which ``rc`` is the command's exit code and
-        ``output`` the combined stdout/stderr output."""
-        control.executeCmdsParallel([node, cmd])
+        """Executes a command on the host for the given *node* of type
+        `Node`_. Returns a tuple ``(success, output)`` in which ``succes`` is
+        True if the command run successfully and ``output`` the combined stdout/stderr
+        output."""
+        return execute.executeCmdsParallel([node, cmd])
 
     @doc.api
     def nodes(self):
@@ -158,20 +162,29 @@ class Plugin:
         return config.Config.nodes()
 
     @doc.api
-    def hosts(self):
-        """Returns a list of all hosts running at least one node configured in
-        ``nodes.cfg``"""
-        return config.Config.hosts()
+    def hosts(self, nodes=[]):
+        """Returns a list of all hosts running at least one node from the list
+        of Nodes_ objects in *nodes*, or configured in if *nodes* is empty."""
+
+        if not nodes:
+            return config.Config.hosts()
+
+        result = {}
+
+        for n in nodes:
+            result[n.host] = n
+
+        return result.values()
 
     @doc.api
     def executeParallel(self, cmds):
-        """Executes a set of commands in parallel on multiple nodes. ``cmds``
+        """Executes a set of commands in parallel on multiple hosts. ``cmds``
         is a list of tuples ``(node, cmd)``, in which the *node* is `Node`_
         instance and *cmd* a string with the command to execute for it. The
-        method returns a list of tuples ``(node, rc, output)``, in which
-        ``rc`` is the exit code and ``output`` the combined stdout/stderr
-        output for the corresponding ``node``."""
-        control.executeCmdsParallel(cmds)
+        method returns a list of tuples ``(node, success, output)``, in which
+        ``success`` is True if the command run successfully and ``output`` the
+        combined stdout/stderr output for the corresponding ``node``."""
+        return execute.executeCmdsParallel(cmds)
 
     ### Methods that must be overridden by plugins.
 
@@ -252,6 +265,12 @@ class Plugin:
                 A string with the command's name. Note that command name
                 exposed to the user will be prefixed with the plugin's prefix
                 as returned by *name()* (e.g., ``myplugin.mycommand``).
+
+            ``arguments``
+                A string describing the command's arguments in a textual form
+                suitable for use in the ``help`` command summary (e.g.,
+                ``[<nodes>]`` for command taking an optional list of nodes).
+                Empty if no arguments are expected. 
 
             ``description``
                 A string with a description of the command's semantics.
@@ -362,10 +381,24 @@ class Plugin:
     def done(self):
         """Called once just before BroControl terminates. This method can do
         any cleanup the plugin may require.
+
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
         return
+
+    # Per-command help currently not supported by broctl. May add this later.
+    #
+    #@doc.api(override):
+    #def help_custom(self, cmd):
+    #    """Called for getting the ``help`` text for a custom command defined
+    #    by Plugin.commands_. Returns a string with the text, or an empty
+    #    string if no help is available.
+    #
+    #    This method can be overridden by derived classes. The default
+    #    implementation always returns an empty string.
+    #    """
+    #    return ""
 
     @doc.api("override")
     def cmd_nodes_pre(self):
@@ -598,7 +631,7 @@ class Plugin:
         ``cmd`` is the command (with the plugin's prefix), and ``args`` is a
         single *string* with all arguments.
 
-        If the arguments are actually node names, ``getNodes`` can
+        If the arguments are actually node names, ``parseNodes`` can
         be used to get the `Node`_ objects.
 
         This method can be overridden by derived classes. The default

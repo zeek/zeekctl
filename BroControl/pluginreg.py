@@ -26,8 +26,8 @@ class PluginRegistry:
         for plugin in self._plugins:
             plugin._registerOptions()
 
-            for (cmd, descr) in plugin.commands():
-                self._cmds["%s.%s" % (plugin.prefix(), cmd)] = (plugin, descr)
+            for (cmd, args, descr) in plugin.commands():
+                self._cmds["%s.%s" % (plugin.prefix(), cmd)] = (plugin, args, descr)
 
     def initPlugins(self):
         """Initialized all loaded plugins."""
@@ -118,7 +118,13 @@ class PluginRegistry:
         """Runs a custom command *cmd* a string *args* as argument. Returns
         False if no such command is known"""
         try:
-            (plugin, descr) = self._cmds[cmd]
+            (plugin, usage, descr) = self._cmds[cmd]
+
+            prefix = plugin.prefix()
+
+            if cmd.startswith("%s." % prefix):
+                cmd = cmd[len(prefix) + 1:]
+
             plugin.cmd_custom(cmd, args)
             return True
 
@@ -132,8 +138,8 @@ class PluginRegistry:
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            (plugin, descr) = self._cmds[cmd]
-            cmds += [(cmd, descr)]
+            (plugin, args, descr) = self._cmds[cmd]
+            cmds += [(cmd, args, descr)]
 
         return cmds
 

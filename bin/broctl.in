@@ -11,6 +11,7 @@ import readline
 import time
 import signal
 import platform
+import atexit
 
 # Configured by CMake
 # Base directory of broctl installation.
@@ -677,7 +678,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         plugin.Registry.cmdPre("exec", args)
         control.executeCmd(Config.nodes(), args)
-        plugin.Registry.cmdPost("config", args)
+        plugin.Registry.cmdPost("exec", args)
 
         return False
 
@@ -789,11 +790,14 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         plugin_help = ""
 
-        for (cmd, descr) in plugin.Registry.allCustomCommands():
+        for (cmd, args, descr) in plugin.Registry.allCustomCommands():
             if not plugin_help:
                 plugin_help += "\nCommands provided by plugins:\n\n"
 
-            plugin_help += "   %-29s - %s" % (cmd, descr)
+            if args:
+                cmd = "%s %s" % (cmd, args)
+
+            plugin_help += "   %-29s - %s\n" % (cmd, descr)
 
         self.output(
 """
@@ -848,6 +852,12 @@ from BroControl import cron
 from BroControl import plugin
 from BroControl.config import Config
 
+def saveState(loop):
+    # If we're still locked, we might have unsaved changed.
+    if loop._locked:
+        print >>sys.stderr, "abnormal termination, saving state ..."
+        Config.writeState()
+
 Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone=="True")
 
 for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
@@ -861,6 +871,8 @@ plugin.Registry.initPlugins()
 util.enableSignals()
 
 loop = BroCtlCmdLoop()
+
+atexit.register(saveState, loop)
 
 try:
     os.chdir(Config.brobase)

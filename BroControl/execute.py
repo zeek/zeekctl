@@ -296,10 +296,9 @@ def executeCmdsParallel(cmds):
         for special in "|'\"":
             cmd = cmd.replace(special, "\\" + special)
 
-        helpers = [(node, "run-cmd", [cmd])]
+        helpers += [(node, "run-cmd", [cmd])]
 
-    for (node, success, output) in execute.runHelperParallel(helpers):
-      util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))
+    return runHelperParallel(helpers)
 
 # Runs a helper script from bin/helpers, according to the helper
 # protocol.

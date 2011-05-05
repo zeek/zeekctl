@@ -38,7 +38,7 @@ def isRunning(nodes, setcrashed=True):
             results += [(node, False)]
             continue
 
-        cmds += [(node, "check-pid", [pid])]
+        cmds += [(node, "check-pid", [str(pid)])]
 
     for (node, success, output) in execute.runHelperParallel(cmds):
 
@@ -323,6 +323,7 @@ def start(nodes):
 
 def _stopNodes(nodes):
 
+    results = []
     running = []
 
     # Check for crashed nodes.
@@ -331,6 +332,8 @@ def _stopNodes(nodes):
             running += [node]
             util.output("stopping %s ..." % node.name)
         else:
+            results += [(node, True)]
+
             if node.hasCrashed():
                 _makeCrashReports([node])
                 util.output("%s not running (was crashed)" % node.name)
@@ -341,7 +344,7 @@ def _stopNodes(nodes):
     def stop(nodes, signal):
         cmds = []
         for node in nodes:
-            cmds += [(node, "stop", [node.getPID(), str(signal)])]
+            cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
 
         return execute.runHelperParallel(cmds)
 
@@ -391,6 +394,7 @@ def _stopNodes(nodes):
                 # Alright, it's gone.
                 del todo[node.name]
                 terminated += [node]
+                results += [(node, True)]
 
         if len(todo) == 0:
             # All done.
@@ -403,6 +407,8 @@ def _stopNodes(nodes):
 
         time.sleep(1)
         timeout -= 1
+
+    results += [(node, False) for node in todo]
 
     # Do post-terminate cleanup for those which terminated gracefully.
     cleanup = [node for node in terminated if not node.hasCrashed()]
@@ -420,6 +426,8 @@ def _stopNodes(nodes):
 
         node.clearPID()
         node.clearCrashed()
+
+    return results
 
 # Stop Bro processes on nodes.
 def stop(nodes):
@@ -535,10 +543,10 @@ def getTopOutput(nodes):
     for (node, isrunning) in running:
         if isrunning:
             pid = node.getPID()
-            pids[node.name] = [int(pid)]
-            parents[node.name] = pid
+            pids[node.name] = [pid]
+            parents[node.name] = str(pid)
 
-            cmds += [(node, "get-childs", [pid])]
+            cmds += [(node, "get-childs", [str(pid)])]
         else:
             results += [(node, "not running", [{}])]
             continue
@@ -743,7 +751,7 @@ def attachGdb(nodes):
     cmds = []
     for (node, isrunning) in running:
         if isrunning:
-            cmds += [(node, "gdb-attach", ["gdb-%s" % node.name, config.Config.bro, node.getPID()])]
+            cmds += [(node, "gdb-attach", ["gdb-%s" % node.name, config.Config.bro, str(node.getPID())])]
 
     results = execute.runHelperParallel(cmds)
     for (node, success, output) in results:
@@ -1080,6 +1088,5 @@ def netStats(nodes):
             print "%10s: <error: %s>" % (node, args)
 
 def executeCmd(nodes, cmd):
-    execute.executeCmdsParallel(zip(nodes, len(nodes) * cmd))
-
-
+    for (node, success, output) in execute.executeCmdsParallel(zip(nodes, len(nodes) * [cmd])):
+        util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))

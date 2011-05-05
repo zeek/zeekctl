@@ -54,7 +54,7 @@ def generateDynamicVariableScript():
         # don't write out if it has an invalid bash variable name
         if not re.search("-", substvar):
             substvarvalue = substvartuple[1]
-            cfg_file.write("%s=\"%s\"\n" % (substvar, substvarvalue))
+            cfg_file.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
     cfg_file.close()
 
 # Performs the complete broctl installion process.

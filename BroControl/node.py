@@ -4,6 +4,7 @@
 
 import doc
 import config
+import os
 
 class Node:
     """Class representing on node of the BroControl maintained setup. In
@@ -78,7 +79,11 @@ class Node:
         None otherwise."""
         t = "%s-pid" % self.name
         if t in config.Config.state:
-            return config.Config.state[t]
+            try:
+                return int(config.Config.state[t])
+            except ValueError:
+                pass
+                
         return None
 
     def clearPID(self):
