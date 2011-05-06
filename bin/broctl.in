@@ -418,7 +418,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             elif args == "?":
                 plugin.Registry.cmdPre("cron", args, False)
-                util.output("cron " + (config.Config.cronenabled == "1"  and "enabled" or "disabled"))
+                util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
                 plugin.Registry.cmdPost("cron", args, False)
 
             else:
