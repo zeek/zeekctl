@@ -57,15 +57,19 @@ else
    exit 1
 fi
 
-# ulimit -a
-# echo 
+if [ "${havenfs}" != "0" ]; then
+    # In NFS mode, we make a local copy of the binary and then run that.
+    # That avoids synchronization issues when the original is modified.
+    tmpbro=${tmpexecdir}/`basename ${bro}`
+    rm -f $tmpbro
+    cp -p ${bro} $tmpbro
+    sleep 1
+    bro_binary=${tmpbro}
+else
+    bro_binary=${bro}
+fi
 
-tmpbro=${tmpexecdir}/`basename ${bro}`
-
-rm -f $tmpbro
-cp -p ${bro} $tmpbro
-sleep 1
-nohup $tmpbro $@ &
+nohup ${bro_binary} $@ &
 
 child=$!
 

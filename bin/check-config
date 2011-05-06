@@ -16,7 +16,7 @@ else
    export BROPATH=${policydirsiteinstallauto}:${sitepolicypath}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
 fi
 
-shift 
+shift
 
 cd $1
 shift
