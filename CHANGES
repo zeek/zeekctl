@@ -1,3 +1,8 @@
+0.41-2 | 2011-05-02 11:29:07 -0700
+
+  * Symlink install scripted at install time for CMake 2.6
+    compatibility. (Jon Siwek)
+
 0.41 | 2011-04-07 21:14:53 -0700
 
   * Tweaks to the documentation generation. (Robin Sommer)
