@@ -17,6 +17,7 @@ import util
 import config
 import cron
 import install
+import plugin
 import node as node_mod
 
 # Convert a number into a string with a unit (e.g., 1024 into "1M").
@@ -207,6 +208,10 @@ def _makeEnvParam(node):
 
 # Do a "post-terminate crash" for the given nodes.
 def _makeCrashReports(nodes):
+
+    for n in nodes:
+        plugin.Registry.broProcessDied(n)
+
     cmds = []
     for node in nodes:
         cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]

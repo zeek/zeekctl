@@ -6,12 +6,14 @@
 
 import BroControl.plugin
 
-class TestPlugin(BroControl.plugin.Plugin):
+class PsBro(BroControl.plugin.Plugin):
+    def __init__(self):
+        super(PsBro, self).__init__(apiversion=1)
 
     def name(self):
         return "ps"
 
-    def version(self):
+    def pluginVersion(self):
         return 1
 
     def commands(self):

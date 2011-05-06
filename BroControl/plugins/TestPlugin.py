@@ -7,6 +7,8 @@
 import BroControl.plugin
 
 class TestPlugin(BroControl.plugin.Plugin):
+    def __init__(self):
+        super(TestPlugin, self).__init__(apiversion=1)
 
     def name(self):
         return "TestPlugin"
@@ -14,7 +16,7 @@ class TestPlugin(BroControl.plugin.Plugin):
     def prefix(self):
         return "test"
 
-    def version(self):
+    def pluginVersion(self):
         return 1
 
     def init(self):
@@ -68,6 +70,12 @@ class TestPlugin(BroControl.plugin.Plugin):
 
         return ",".join(["%s/%s" % (str(n[0]), n[1]) for n in results])
 
+    def broProcessDied(self, node):
+        self.message("TestPlugin: Bro process died for %s" % node)
+
+    def hostStatusChanged(self, host, status):
+        self.message("TestPlugin: host status changed: %s -> %s" % (host, status))
+
     def cmd_custom(self, cmd, args):
 
         bar = self.getState("bar")
@@ -107,11 +115,11 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_install_post(self):
         self.message("TestPlugin: Test post 'install'")
 
-    def cmd_cron_pre(self, arg):
-        self.message("TestPlugin: Test pre 'cron':  %s" % arg)
+    def cmd_cron_pre(self, arg, watch):
+        self.message("TestPlugin: Test pre 'cron':  %s/%s" % (arg, watch))
 
-    def cmd_cron_post(self, arg):
-        self.message("TestPlugin: Test post 'cron': %s" % arg)
+    def cmd_cron_post(self, arg, watch):
+        self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
 
     def cmd_analysis_pre(self, enable, type):
         self.message("TestPlugin: Test pre 'analysis':   %s %s" % (enable, type))

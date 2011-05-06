@@ -261,7 +261,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 return
 
             util.output("installing ...")
-            self.do_install(args)
+            self.do_install("")
 
             if self.failed():
                 return
@@ -374,45 +374,61 @@ class BroCtlCmdLoop(cmd.Cmd):
         return False
 
     def do_cron(self, args):
-        """- [enable|disable|?]
+        """- [enable|disable|?] | [--no-watch] | 
 
-        As the name implies, this command should be executed regularly via
-        *cron*, as described above. It performs a set of
-        maintainance tasks, including the logging of various statistical
-        information, expiring old log files, checking for dead hosts, and
-        restarting nodes which terminated unexpectedly.  While not intended
-        for interactive use, no harm will be caused by executing the command
-        manually: all the maintainance tasks will then just be performed one
-        more time."""
+        This command has two modes of operation. Without arguments (or just
+        ``--no-watch``), it performs a set of maintainance tasks, including
+        the logging of various statistical information, expiring old log
+        files, checking for dead hosts, and restarting nodes which terminated
+        unexpectedly. The latter can be suppressed with the ``--no-watch``
+        option if no auto-restart is desired. This mode is intended to be run
+        executed regularly via *cron*, as described in the installation
+        instructions. While not intended for interactive use, no harm will be
+        caused by executing the command manually: all the maintainance tasks
+        will then just be performed one more time.
 
-        if len(args) > 0:
+        The second mode is for interactive usage and determines if the regular
+        tasks are indeed performed when ``broctl cron`` is executed. In other
+        words, even with ``broctl cron`` in your crontab, you can still
+        temporarily disable its execution by running ``cron disable``, and
+        then later reenable with ``cron enable``. This can be helpful while
+        working, e.g., on the BroControl configuration and ``cron`` would
+        interfere with that. ``cron ?`` can be used to query the current state.
+        """
+
+        watch = True
+
+        if args == "--no-watch":
+            watch=False
+
+        elif len(args) > 0:
             self.lock()
 
             if args == "enable":
-                plugin.Registry.cmdPre("cron", args)
+                plugin.Registry.cmdPre("cron", args, False)
                 config.Config._setState("cronenabled", "1")
                 util.output("cron enabled")
-                plugin.Registry.cmdPost("cron", args)
+                plugin.Registry.cmdPost("cron", args, False)
 
             elif args == "disable":
-                plugin.Registry.cmdPre("cron", args)
+                plugin.Registry.cmdPre("cron", args, False)
                 config.Config._setState("cronenabled", "0")
                 util.output("cron disabled")
-                plugin.Registry.cmdPost("cron", args)
+                plugin.Registry.cmdPost("cron", args, False)
 
             elif args == "?":
-                plugin.Registry.cmdPre("cron", args)
+                plugin.Registry.cmdPre("cron", args, False)
                 util.output("cron " + (config.Config.cronenabled == "1"  and "enabled" or "disabled"))
-                plugin.Registry.cmdPost("cron", args)
+                plugin.Registry.cmdPost("cron", args, False)
 
             else:
                 util.output("wrong cron argument")
 
             return
 
-        plugin.Registry.cmdPre("cron", None)
-        cron.doCron()
-        plugin.Registry.cmdPost("cron", None)
+        plugin.Registry.cmdPre("cron", "", watch)
+        cron.doCron(watch)
+        plugin.Registry.cmdPost("cron", "", watch)
 
         return False
 

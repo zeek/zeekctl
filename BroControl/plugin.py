@@ -10,11 +10,11 @@ import execute
 
 Registry = pluginreg.PluginRegistry()
 
-class Plugin:
+class Plugin(object):
     """The class ``Plugin`` is the base class for all BroControl plugins.
 
     The class has a number of methods for plugins to override, and every
-    plugin must at least override ``name()`` and ``version()``.
+    plugin must at least override ``name()`` and ``pluginVersion()``.
 
     For each BroControl command ``foo``, there's are two methods,
     ``cmd_foo_pre`` and ``cmd_foo_post``, that are called just before the
@@ -52,6 +52,15 @@ class Plugin:
     it's just a combination of other commands and thus their callbacks are
     run.
     """
+
+    def __init__(self, apiversion):
+        """Must be called by the plugin with the plugin API version it
+        expects to use. The version currently documented here is 1."""
+        self._apiversion = apiversion
+
+    def apiVersion(self):
+        """Returns the plugin  API that the plugin expects to use."""
+        return self._apiversion
 
     @doc.api
     def getGlobalOption(self, name):
@@ -199,7 +208,7 @@ class Plugin:
         raise NotImplementedError
 
     @doc.api("override")
-    def version(self):
+    def pluginVersion(self):
         """
         Returns an integer with a version number for the plugin. Plugins
         should increase their version number with any significant change.
@@ -387,6 +396,38 @@ class Plugin:
         """
         return
 
+    @doc.api("override")
+    def hostStatusChanged(self, host, status):
+        """Called when BroControl's ``cron`` command finds the availability of
+        a cluster system to have changed. Initially, all systems are assumed
+        to be up and running. Once BroControl notices that a system isn't
+        responding (defined as either it doesn't ping at all, or does not
+        accept SSH sessions), it calls this method, passing in a string with
+        the name of the *host* and a boolean *status* set to False. Once the
+        host becomes available again, the method will be called again for the
+        same host with *status* now set to True.
+
+        Note that BroControl's ``cron`` tracks a hosts availability across
+        execution, so if the next time its run the host is still down, this
+        method will be not called again.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        return
+
+    @doc.api("override")
+    def broProcessDied(self, node):
+        """Called when BroControl finds the Bro process for node.Node_ *node*
+        to have terminated unexpectedly. This method will be called just
+        before BroControl prepare the node's "crash report" and before it
+        cleans up the node's spool directory.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        return
+
     # Per-command help currently not supported by broctl. May add this later.
     #
     #@doc.api(override):
@@ -475,10 +516,12 @@ class Plugin:
         pass
 
     @doc.api("override")
-    def cmd_cron_pre(self, arg):
+    def cmd_cron_pre(self, arg, watch):
         """Called just before the ``cron`` command is run. *arg* is None if
         the cron is executed without arguments. Otherwise, it is one of
-        strings ``enable``, ``disable``, or ``?``.
+        strings ``enable``, ``disable``, ``?``. *watch* is a boolean
+        indicating whether ``cron`` should restart abnormally terminated Bro
+        processes; it's only valid if arg is empty.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
@@ -486,7 +529,7 @@ class Plugin:
         pass
 
     @doc.api("override")
-    def cmd_cron_post(self, arg):
+    def cmd_cron_post(self, arg, watch):
         """Called just after the ``cron`` command has finished. Arguments are 
         as with the ``pre`` method.
 

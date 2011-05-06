@@ -13,29 +13,31 @@ import execute
 import control
 import time
 import shutil
+import plugin
 
 # Triggers all activity which is to be done regularly via cron.
-def doCron():
+def doCron(watch):
 
     if config.Config.cronenabled == "0":
         return
 
     config.Config.config["cron"] = "1"  # Flag to indicate that we're running from cron.
-    
+
     if not util.lock():
         return
 
     util.bufferOutput()
 
-    # Check whether nodes are still running an restart if neccessary.
-    for (node, isrunning) in control.isRunning(config.Config.nodes()):
-        if not isrunning and node.hasCrashed():
-            control.start([node])
+    if watch:
+        # Check whether nodes are still running an restart if neccessary.
+        for (node, isrunning) in control.isRunning(config.Config.nodes()):
+            if not isrunning and node.hasCrashed():
+                control.start([node])
 
     # Check for dead hosts.
     _checkHosts()
 
-    # Generate statistics. 
+    # Generate statistics.
     _logStats(5)
 
     # Check available disk space.
@@ -44,7 +46,7 @@ def doCron():
     # Expire old log files.
     _expireLogs()
 
-    # Update the HTTP stats directory. 
+    # Update the HTTP stats directory.
     _updateHTTPStats()
 
     # Run external command if we have one.
@@ -59,7 +61,7 @@ def doCron():
     util.unlock()
 
     config.Config.config["cron"] = "0"
-    
+
 def logAction(node, action):
     t = time.time()
     out = open(config.Config.statslog, "a")
@@ -82,6 +84,7 @@ def _logStats(interval):
 
     if have_capstats:
         capstats = control.getCapstatsOutput(nodes, interval)
+
     elif have_cflow:
         time.sleep(interval)
 
@@ -187,11 +190,12 @@ def _checkHosts():
             previous = config.Config.state[tag]
 
             if alive != previous:
+                plugin.Registry.hostStatusChanged(node.host, alive)
                 util.output("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
         config.Config._setState(tag, alive)
 
-def _getProfLogs():        
+def _getProfLogs():
     cmds = []
 
     for node in config.Config.hosts():
@@ -206,7 +210,7 @@ def _updateHTTPStats():
     # Get the prof.logs.
     _getProfLogs()
 
-    # Create meta file. 
+    # Create meta file.
     meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
     for node in config.Config.hosts():
         print >>meta, "node", node, node.type, node.host
@@ -228,10 +232,10 @@ def _updateHTTPStats():
 
     # Run the update-stats script.
     (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "update-stats"))
-    
+
     if not success:
         util.output("error running update-stats\n\n")
         util.output(output)
-    
+
 
 

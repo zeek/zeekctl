@@ -8,6 +8,9 @@ import util
 import config
 import node
 
+# Note, when changing this, also adapt doc string for Plugin.__init__.
+_CurrentAPIVersion = 1 
+
 class PluginRegistry:
     def __init__(self):
         self._plugins = []
@@ -42,6 +45,18 @@ class PluginRegistry:
     def finishPlugins(self):
         """Shuts all plugins down."""
         pass
+
+    def hostStatusChanged(self, host, status):
+        """Calls all plugins Plugin.hostStatusChanged_ methods; see there for
+        parameter semantics."""
+        for plugin in self._plugins:
+            plugin.hostStatusChanged(host, status)
+
+    def broProcessDied(self, node):
+        """Calls all plugins Plugin.broProcessDied_ methods; see there for
+        parameter semantics."""
+        for plugin in self._plugins:
+            plugin.broProcessDied(node)
 
     def cmdPreWithNodes(self, cmd, nodes, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command taking a list
@@ -194,20 +209,34 @@ class PluginRegistry:
 
         for cls in module.__dict__.values():
             try:
-                if issubclass(cls, plugin.Plugin):
-                    p = cls()
-                    util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
-                        % (p.name(), module.__file__, p.version(), p.prefix()))
-
-                    self._plugins += [p]
-                    found = True
-
+                is_plugin = issubclass(cls, plugin.Plugin)
             except TypeError:
                 # cls is not a class.
-                pass
+                continue
+
+            if is_plugin:
+                found = True
+
+                p = cls()
+
+                try:
+                    p = cls()
+                except Exception, e:
+                    util.output("Error running __init__ for plugin class %s: %s" % (cls.__name__, str(e)))
+                    break
+
+                util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
+                               % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
+
+                if p.apiVersion() != _CurrentAPIVersion:
+                    util.output("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
+                                  % (p.name(), p.apiVersion(), _CurrentAPIVersion))
+                    continue
+
+                self._plugins += [p]
 
         if not found:
-            util.warn("no plugin found in %s" % module.__file__)
+            util.warn("No plugin found in %s" % module.__file__)
 
 
 import plugin
