@@ -592,8 +592,8 @@ def getTopOutput(nodes):
             d = {}
             d["pid"] = int(p[0])
             d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-            d["vsize"] = int(float(p[1]))
-            d["rss"] = int(p[2])
+            d["vsize"] = long(float(p[1])) # May be something like 2.17684e+09
+            d["rss"] = long(float(p[2]))
             d["cpu"] = p[3]
             d["cmd"] = " ".join(p[4:])
             vals += [d]
