@@ -73,11 +73,11 @@ def debug(msglevel, msg, prefix="main"):
 
     if not DebugOut:
         try:
-            DebugOut = open("/X" + config.Config.debuglog, "a")
+            DebugOut = open(config.Config.debuglog, "a")
         except IOError:
             # During the initial install, tmpdir hasn't been setup yet. So we
             # fall back to current dir.
-            fn = os.path.join("/Y" + os.getcwd(), "debug.log")
+            fn = os.path.join(os.getcwd(), "debug.log")
 
             try:
                 DebugOut = open(fn, "a")
