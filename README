@@ -167,7 +167,7 @@ mentioned above, you need to
     already exists, must have write permission inside this directory
     on all nodes.
 
-  - have ``ssh`` and ``rdist`` installed.
+  - have ``ssh`` and ``rsync`` installed.
 
 With all prerequisites in place, as the Bro user perform the
 following steps to install a Bro cluster:

@@ -8,13 +8,8 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [ "$1" == "1" ]; then
-   policies=${policydir}
-   export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
-else
-   policies=${policydir}
-   export BROPATH=${policydirsiteinstallauto}:${sitepolicypath}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
-fi
+use_installed_policies=$1
+source ${scriptsdir}/set-bro-path
 
 shift
 

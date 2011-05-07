@@ -970,6 +970,28 @@ class Plugin(object):
         """
         pass
 
+    @doc.api("override")
+    def cmd_process_pre(self, trace, options, scripts):
+        """Called just before the ``process`` command is run. It receives the
+        *trace* to read from as a string, a list of additional Bro *options*,
+        and a list of additional Bro scripts.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
+    @doc.api("override")
+    def cmd_process_post(self, trace, options, scripts, success):
+        """Called just after the ``process`` command has finished. Arguments
+        are as with the ``pre`` method, plus an additional boolean *success*
+        indicating whether Bro terminated normally.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
     # Internal methods.
 
     def _registerOptions(self):

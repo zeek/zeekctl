@@ -142,7 +142,7 @@ def waitForBros(nodes, status, timeout, ensurerunning):
 
 # Build the Bro parameters for the given node. Include
 # script for live operation if live is true.
-def _makeBroParams(node, live):
+def _makeBroParams(node, live, add_manager=False):
     args = []
 
     if live:
@@ -170,6 +170,9 @@ def _makeBroParams(node, live):
 
     args += node.scripts
 
+    if add_manager:
+        args += config.Config.__getattr__("scripts-manager").split()
+
     if live:
         args += ["broctl-live"]
     else:
@@ -179,7 +182,7 @@ def _makeBroParams(node, live):
         args += config.Config.sitepolicyworker.split()
         args += config.Config.auxscriptsworker.split()
 
-    if node.type == "manager":
+    if node.type == "manager" or add_manager:
         args += config.Config.sitepolicymanager.split()
         args += config.Config.auxscriptsmanager.split()
 
@@ -201,10 +204,7 @@ def _makeBroParams(node, live):
 
 # Build the environment variable for the given node.
 def _makeEnvParam(node):
-    env = ""
-    env = "BRO_%s=%s" % (node.type.upper(), str(node.count))
-
-    return env
+    return "BRO_%s=%s" % (node.type.upper(), str(node.count))
 
 # Do a "post-terminate crash" for the given nodes.
 def _makeCrashReports(nodes):
@@ -658,10 +658,7 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
     cmds = []
     for (node, cwd) in nodes:
 
-        env = ""
-        if node.type == "worker" or node.type == "proxy":
-            env = "BRO_%s=%s" % (node.type.upper(), str(node.count))
-
+        env = _makeEnvParam(node)
         dashl = list_scripts and ["-l"] or []
 
         broargs =  " ".join(dashl + _makeBroParams(node, False)) + " terminate"
@@ -1095,3 +1092,39 @@ def netStats(nodes):
 def executeCmd(nodes, cmd):
     for (node, success, output) in execute.executeCmdsParallel(zip(nodes, len(nodes) * [cmd])):
         util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))
+
+def processTrace(trace, bro_options, bro_scripts):
+
+    standalone = (config.Config.standalone == "1")
+    tag = "standalone" if standalone else "worker"
+    node = config.Config.nodes(tag=tag)[0]
+
+    cwd = os.path.join(config.Config.tmpdir, "testing")
+
+    if not execute.rmdir(config.Config.manager(), cwd):
+        util.output("cannot remove directory %s on manager" % cwd)
+        return False
+
+    if not execute.mkdir(config.Config.manager(), cwd):
+        util.output("cannot create directory %s on manager" % cwd)
+        return False
+
+    env = _makeEnvParam(node)
+
+    bro_args =  " ".join(bro_options + _makeBroParams(node, False, add_manager=(not standalone)))
+    if bro_scripts:
+        bro_args += " " + " ".join(bro_scripts)
+
+    cmd = os.path.join(config.Config.scriptsdir, "run-bro-on-trace") + " %s %s %s %s" % (0, cwd, trace, bro_args)
+    print cmd
+
+    (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
+
+    for line in output:
+        util.output(line)
+
+    util.output("")
+    util.output("### Bro output in %s" % cwd)
+
+    return success
+

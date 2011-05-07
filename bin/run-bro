@@ -8,8 +8,8 @@
 
 export PATH=${bindir}:${scriptsdir}:$PATH
 
-policies=${policydir}
-export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+use_installed_policies=1
+source ${scriptsdir}/set-bro-path
 
 if test `uname` == "FreeBSD" && uname -r | grep -q "^[456]"; then
    export MALLOC_OPTIONS="HR" # Helps performance on FreeBSD < 7

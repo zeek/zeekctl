@@ -1,0 +1,14 @@
+#
+# Sets BROPATH to either the installed policy scripts (if
+# use_installed_policies is 1), or the user-provided originals
+# (otherwise).
+#
+# Should be sourced.
+
+if [ "use_installed_policies" == "1" ]; then
+   policies=${policydir}
+   export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+else
+   policies=${policydir}
+   export BROPATH=${policydirsiteinstallauto}:${sitepolicypath}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+fi

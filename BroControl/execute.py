@@ -24,17 +24,24 @@ except ImportError:
 LocalAddrs = None
 
 # Wrapper around subprocess.POpen()
-def popen(cmdline, stderr_to_stdout=False):
-    stderr = None
+def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
+
+    if donotcaptureoutput:
+        stdout = None
+        stderr = None
+    else:
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+
     if stderr_to_stdout:
         stderr = subprocess.STDOUT
 
     # os.setid makes sure that the child process doesn't receive our CTRL-Cs.
-    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr,
+    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                             close_fds=True, shell=True, preexec_fn=os.setsid)
     # Compatibility with older popen4.
-    proc.tochild = proc.stdin
-    proc.fromchild = proc.stdout
+    proc.tochild = proc.stdin  
+    proc.fromchild = proc.stdout if proc.stdout != None else []
 
     return proc
 
@@ -219,8 +226,8 @@ def captureCmd(cmd, env = "", input = None):
 # Runs command locally and returns tuple (success, output)
 # with success being true if the command terminated with exit code 0,
 # and output being the combinded stdout/stderr output of the command.
-def runLocalCmd(cmd, env = "", input=None):
-    proc = _runLocalCmdInit("single", cmd, env, input)
+def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
+    proc = _runLocalCmdInit("single", cmd, env, input, donotcaptureoutput)
     if not proc:
         return (False, [])
 
@@ -253,7 +260,7 @@ def runLocalCmdsParallel(cmds):
 
     return results
 
-def _runLocalCmdInit(id, cmd, env, input):
+def _runLocalCmdInit(id, cmd, env, input, donotcaptureoutput=False):
 
     if not env:
         env = ""
@@ -261,7 +268,7 @@ def _runLocalCmdInit(id, cmd, env, input):
     cmdline = env + " " + cmd
     util.debug(1, cmdline, prefix="local")
 
-    proc = popen(cmdline, stderr_to_stdout=True)
+    proc = popen(cmdline, stderr_to_stdout=True, donotcaptureoutput=donotcaptureoutput)
 
     if input:
         print >>proc.tochild, input

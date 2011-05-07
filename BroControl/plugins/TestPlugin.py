@@ -211,5 +211,11 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_print_post(self, nodes, id):
         self.message("TestPlugin: Test post 'print': %s (%s)" % (self._nodes(nodes), id))
 
+    def cmd_process_pre(self, trace, options, scripts):
+        self.message("TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts))
+
+    def cmd_process_post(self, trace, options, scripts, success):
+        self.message("TestPlugin: Test post 'process': %s %s -- %s -> %s" % (trace, options, scripts, success))
+
 
 
