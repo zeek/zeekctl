@@ -39,7 +39,11 @@ event remote_connection_handshake_done(p: event_peer)
 
 		local t = globals[id];
 		
-		if ( ! t$redefinable )
+		# Skip it if the variable isn't redefinable or not const.
+		# We don't want to update non-const globals because that's usually
+		# where state is stored and those values will frequently be declared
+		# with &redef so that attributes can be redefined.
+		if ( ! t$redefinable || ! t$constant )
 			next;
 
 		send_id(p, id);
