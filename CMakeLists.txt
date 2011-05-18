@@ -162,6 +162,9 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
             DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${LOGS}
             DIRECTORY_PERMISSIONS ${perms})
+    set(EMPTY_WORLD_DIRS
+        "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${SPOOL}/policy ${LOGS}"
+        CACHE STRING "" FORCE)
     install(CODE "
         execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
                       ${SPOOL}/broctl-config.sh
