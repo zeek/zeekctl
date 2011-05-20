@@ -95,6 +95,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
 ## Install
 
 include(InstallPackageConfigFile)
+include(InstallSymlink)
 
 set(policydir ${BRO_ROOT_DIR}/share/bro)
 
@@ -165,11 +166,8 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
     set(EMPTY_WORLD_DIRS
         "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${SPOOL}/policy ${LOGS}"
         CACHE STRING "" FORCE)
-    install(CODE "
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
-                      ${SPOOL}/broctl-config.sh
-                      ${PREFIX}/share/broctl/scripts/broctl-config.sh)
-    ")
+    InstallSymlink(${SPOOL}/broctl-config.sh
+                   ${PREFIX}/share/broctl/scripts/broctl-config.sh)
     # configure broctl.cfg point SpoolDir/LogDir to right runtime directories
     configure_file(etc/broctl.cfg.package.in
                    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
@@ -178,12 +176,8 @@ else ()
     install(DIRECTORY DESTINATION spool/tmp)
     install(DIRECTORY DESTINATION spool/policy)
     install(DIRECTORY DESTINATION logs)
-    # symlink install has to be scripted at install time for CMake 2.6 compat
-    install(CODE "
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
-                      ${PREFIX}/spool/broctl-config.sh
-                      ${PREFIX}/share/broctl/scripts/broctl-config.sh)
-    ")
+    InstallSymlink(${PREFIX}/spool/broctl-config.sh
+                   ${PREFIX}/share/broctl/scripts/broctl-config.sh)
     if (STANDALONE)
         configure_file(etc/broctl.cfg.standalone.in
                        ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
