@@ -86,32 +86,56 @@ elseif (NOT "${BRO_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
 endif ()
 
 ########################################################################
-## Generate/Configure files
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/broctl.in
-               ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl)
-
-########################################################################
 ## Install
 
 include(InstallPackageConfigFile)
 include(InstallSymlink)
+include(InstallShellScript)
 
 set(policydir ${BRO_ROOT_DIR}/share/bro)
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/broctl
-        DESTINATION bin)
+InstallShellScript(bin bin/broctl.in broctl)
+InstallShellScript(share/broctl/scripts bin/archive-log)
+InstallShellScript(share/broctl/scripts bin/cflow-stats)
+InstallShellScript(share/broctl/scripts bin/check-config)
+InstallShellScript(share/broctl/scripts bin/crash-diag)
+InstallShellScript(share/broctl/scripts bin/create-link-for-log)
+InstallShellScript(share/broctl/scripts bin/delete-log)
+InstallShellScript(share/broctl/scripts bin/expire-logs)
+InstallShellScript(share/broctl/scripts bin/fmt-time)
+InstallShellScript(share/broctl/scripts bin/get-prof-log)
+InstallShellScript(share/broctl/scripts bin/is-alive)
+InstallShellScript(share/broctl/scripts bin/local-interfaces)
+InstallShellScript(share/broctl/scripts bin/mail-alarm)
+InstallShellScript(share/broctl/scripts bin/mail-contents)
+InstallShellScript(share/broctl/scripts bin/make-archive-name)
+InstallShellScript(share/broctl/scripts bin/post-terminate)
+InstallShellScript(share/broctl/scripts bin/remove-link-for-log)
+InstallShellScript(share/broctl/scripts bin/remove-log)
+InstallShellScript(share/broctl/scripts bin/run-bro)
+InstallShellScript(share/broctl/scripts bin/send-mail)
+InstallShellScript(share/broctl/scripts bin/stat-ctime)
+InstallShellScript(share/broctl/scripts bin/stats-to-csv)
+InstallShellScript(share/broctl/scripts bin/update)
+InstallShellScript(share/broctl/scripts bin/update-stats)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/cat-file)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/check-pid)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/df)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/exists)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/gdb-attach)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/get-childs)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/is-dir)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/rmdir)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/run-cmd)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/to-bytes.awk)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
+InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/mail-log)
+InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
+
 install(DIRECTORY BroControl
         DESTINATION lib/broctl)
-install(DIRECTORY bin/
-        DESTINATION share/broctl/scripts
-        FILES_MATCHING
-        PATTERN "*" PERMISSIONS
-                        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                        GROUP_READ GROUP_EXECUTE
-                        WORLD_READ WORLD_EXECUTE
-        PATTERN "broctl.in" EXCLUDE
-        PATTERN "run-cmd.in" EXCLUDE)
 install(DIRECTORY policy/
         DESTINATION share/bro/broctl
         FILES_MATCHING
