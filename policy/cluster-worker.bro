@@ -4,5 +4,5 @@
 @prefixes += cluster-worker
 
 @load broctl
-@load trim-trace-file
-@load analysis-groups
+@load broctl/trim-trace-file
+@load support/remote/analysis-groups
