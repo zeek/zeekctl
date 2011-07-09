@@ -11,41 +11,27 @@
 # "analysis command" only has an effect if the corresponding scripts are
 # loaded by this site policy. 
 
-@load alarm
-@load notice
-@load weird
+@load support/loaded-scripts
 
-@load dpd
-@load detect-protocols
-@load detect-protocols-http
-@load dyn-disable
-@load inactivity        
+@load protocols/conn
+@load protocols/dns
+@load protocols/ftp
+@load protocols/http
+@load protocols/irc
+@load protocols/mime 
+@load protocols/smtp
+@load protocols/ssh
+@load protocols/ssl
+@load protocols/syslog
 
-@load dns
-@load dns-lookup
-@load finger
-@load frag
-@load ftp
-@load icmp
-@load hot
-@load http-request
-@load http-reply
-@load ident
-@load irc   
-@load irc-bot
-@load login
-@load ntp
-@load pop3
-@load portmapper  
-@load scan
-@load smtp
-@load ssh
-@load ssl  
-@load synflood
-@load tcp
-@load tftp
-@load udp
-@load worm
+@load frameworks/metrics
+@load frameworks/notice
+@load frameworks/signatures
+@load frameworks/software
+@load frameworks/reporter
+
+@load tuning/defaults
+
 
 # Uncomment for profiling resource usage.
 # @load profiling 

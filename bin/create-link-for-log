@@ -6,11 +6,6 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [ ! -e .manager -a ! -e .standalone ]; then
-   # We only create links on the manager/standalone.
-   exit 0
-fi   
-
 if [ -e .checking ]; then
    # Just checking configuration, don't create links.
    exit 0

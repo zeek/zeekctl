@@ -3,26 +3,25 @@
 # Script to prettify alarms into a form suitable for mailing out.
 # Output is written to mail.log which can be mailed out via post-processor.
 
-@load site
-@load notice
+@load frameworks/notice
 
 module MailAlarms;
 
-export 	{
+export {
 	# If non-empty, we include only the given Notices into mail.
-	global include_only: set[Notice] &redef;
+	global include_only: set[Notice::Type] &redef;
 
 	# If one of these networks is involved, we mark the entry with a quote 
 	# symbol (i.e., ">"). Many mailers flag such lines in some fashion.
 	global flag_nets: set[subnet] &redef;
 
 	# Skip the notice types for the mails.
-	global ignore: set[Notice] &redef;
+	global ignore: set[Notice::Type] &redef;
 
 	global output = open_log_file( "mail" );
-	}
+}
 
-function do_msg(n: notice_info, line1: string, line2: string, line3: string, host: addr, name: string, dest: string)
+function do_msg(n: Notice::Info, line1: string, line2: string, line3: string, host: addr, name: string, dest: string)
 	{
 	if ( host != 0.0.0.0 )
 		name = fmt("%s = %s", host, name);
@@ -47,13 +46,13 @@ function do_msg(n: notice_info, line1: string, line2: string, line3: string, hos
 		# Mail out an individual alarm. 
 		local mail_cmd =
 			fmt("( echo \"%s\"; echo \"%s\"; echo \"%s\" ) | %s -s \"[Bro Alarm] %s: %s\" %s",
-				line1, line2, line3, mail_script, n$note, str_shell_escape(n$msg), dest);
+				line1, line2, line3, Notice::mail_script, n$note, str_shell_escape(n$msg), dest);
 		
 		system(mail_cmd);
 		}
 	}
 
-function message(msg: string, flag: bool, host: addr, n: notice_info, dest: string)
+function message(msg: string, flag: bool, host: addr, n: Notice::Info, dest: string)
 	{
 	if ( length(include_only) > 0 && n$note !in include_only )
 		return;
@@ -61,14 +60,14 @@ function message(msg: string, flag: bool, host: addr, n: notice_info, dest: stri
 	local location = "";
 
 	if ( host != 0.0.0.0 )
-		location =  is_local_addr(host) ? "(L)" : "(R)";
+		location =  Site::is_local_addr(host) ? "(L)" : "(R)";
 	
 	local line1 = fmt(">%s %D %s %s ", (flag ? ">" : " "), network_time(), n$note, location);
 	local line2 = fmt("   %s", msg);   
 	local line3 = "";
 
-	if ( n?$captured )
-		line3 = fmt("   [TM: %s]", n$captured);
+	#if ( n?$captured )
+	#	line3 = fmt("   [TM: %s]", n$captured);
 
 	if ( host == 0.0.0.0 )
 		{
@@ -86,7 +85,7 @@ function message(msg: string, flag: bool, host: addr, n: notice_info, dest: stri
 		}
 	}
 
-function make_alarm(n: notice_info, dest: string)
+function make_alarm(n: Notice::Info, dest: string)
 	{
 	if ( n$note in ignore )
 		return;
@@ -133,15 +132,15 @@ event bro_init()
     set_buf( output, F );
     }
 
-event notice_alarm(n: notice_info, action: NoticeAction) &priority = -10
-	{
-	if ( is_remote_event() )
-		return;
+#event notice_alarm(n: Notice::Info, action: Notice::Action) &priority = -10
+#	{
+#	if ( is_remote_event() )
+#		return;
+#
+#	make_alarm(n, "");
+#	}
 
-	make_alarm(n, "");
-	}
-
-function broctl_email_notice_to(n: notice_info, dest: string)
+function broctl_email_notice_to(n: Notice::Info, dest: string)
 	{
 	if ( reading_traces() || dest == "" )
 		return;
@@ -153,4 +152,4 @@ function broctl_email_notice_to(n: notice_info, dest: string)
 	}
 
 # Make the alarm mails nicer. 
-redef email_notice_to = broctl_email_notice_to;
+#redef email_notice_to = broctl_email_notice_to;

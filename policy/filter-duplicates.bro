@@ -4,7 +4,7 @@
 
 module FilterDuplicates;
 
-@load notice
+@load frameworks/notice
 
 export {
 	const log_duplicates = T &redef;
@@ -13,38 +13,38 @@ export {
 	# we have seen before; if log_duplicates is true, it also logs
 	# it into "notice.duplicates.log". Return true if we have not 
 	# seen it before.
-	global is_new: function(n: notice_info) : bool;
+	global is_new: function(n: Notice::Info): bool;
 
 	# Per default, a Notice is assumed to be unique. The following table
 	# defines functions finding duplicates on a per-notice bases. These 
 	# functions will be called with two instances of their notice type, and 
 	# must return T if they consider the two to be equal.
-	global filters: table[Notice] of function(n: notice_info): string &redef;
+	const filters: table[Notice::Type] of function(n: Notice::Info): string &redef;
 
 	# Some predefined functions that can be used with the filters table.
     
-		# Filters by matching source addresses.    
-	global match_src: function(n: notice_info) : string;
-		# Filters by matching source addresses and the number attributes.
-	global match_src_num: function(n: notice_info) : string;
-		# Filters by matching source addresses and the port attributes.
-	global match_src_port: function(n: notice_info) : string;
+	# Filters by matching source addresses.    
+	global match_src: function(n: Notice::Info): string;
+	# Filters by matching source addresses and the number attributes.
+	global match_src_num: function(n: Notice::Info): string;
+	# Filters by matching source addresses and the port attributes.
+	global match_src_port: function(n: Notice::Info): string;
 }
 
-function match_src(n: notice_info) : string
+function match_src(n: Notice::Info) : string
 	{
 	local src = n?$src ? fmt("%s", n$src) : "";
 	return fmt("%s#%s", n$note, src);
 	}
 
-function match_src_num(n: notice_info) : string
+function match_src_num(n: Notice::Info) : string
 	{
 	local src = n?$src ? fmt("%s", n$src) : "";
 	local num = n?$src ? fmt("%d", n$n) : "";
 	return fmt("%s#%s#%s", n$note, src, num);
 	}
 
-function match_src_port(n: notice_info) : string
+function match_src_port(n: Notice::Info) : string
 	{
 	local src = n?$src ? fmt("%s", n$src) : "";
 	local p = n?$p ? fmt("%d", n$p) : "";
@@ -61,7 +61,7 @@ event bro_init()
 
 global notices: set[string] &read_expire = 2mins;
 
-function is_new(n: notice_info) : bool
+function is_new(n: Notice::Info) : bool
 	{
 	local idx = n$note;
 	
@@ -74,8 +74,8 @@ function is_new(n: notice_info) : bool
 	if ( key in notices ) 
 		{
 		# A duplicate.
-		if ( log_duplicates )
-			print dupl_log, build_notice_info_string_tagged(n);
+		#if ( log_duplicates )
+		#	print dupl_log, build_notice_info_string_tagged(n);
 	
 		return F;
 		}

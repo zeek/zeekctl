@@ -1,7 +1,5 @@
-# $Id$
-
-# The cluster manager will inform us with these events if he's interested in
-# further connection attempts from that source.
+## The cluster manager will inform us with these events if it's interested in
+## further connection attempts from that source.
 
 global watch_addr_table: set[addr] &read_expire=7days &persistent;
 

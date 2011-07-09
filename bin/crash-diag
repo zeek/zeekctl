@@ -10,12 +10,23 @@
 
 cd $1
 
+if [ -e reporter.log ]; then
+   echo ==== reporter.log 
+   tail -30 reporter.log 
+else
+   echo ==== No reporter.log.
+fi
+
+echo
+
 if [ -e stderr.log ]; then
    echo ==== stderr.log 
    tail -30 stderr.log 
 else
    echo ==== No stderr.log.
 fi
+
+echo
 
 if [ -e stdout.log ]; then
    echo ==== stdout.log 
@@ -40,6 +51,24 @@ if [ -e prof.log ]; then
    tail -30 prof.log 
 else
    echo ==== No prof.log.
+fi
+
+echo
+
+if [ -e loaded_scripts.log ]; then
+   echo ==== loaded_scripts.log 
+   cat loaded_scripts.log 
+else
+   echo ==== No loaded_scripts.log.
+fi
+
+echo
+
+if [ -e packet_filter.log ]; then
+   echo ==== packet_filter.log 
+   tail -30 packet_filter.log 
+else
+   echo ==== No packet_filter.log.
 fi
 
 echo

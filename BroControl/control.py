@@ -188,10 +188,11 @@ def _makeBroParams(node, live):
 
     return args
 
-# Build the environment variable for the given node. 
+# Build the environment variable for the given node.
 def _makeEnvParam(node):
     env = ""
-    env = "BRO_%s=%s" % (node.type.upper(), str(node.count))
+    if node.type != "standalone":
+        env = "CLUSTER_NODE=%s" % node.tag
 
     return env
 
@@ -644,45 +645,22 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
     cmds = []
     for (node, cwd) in nodes:
 
-        env = ""
-        if node.type == "worker" or node.type == "proxy":
-            env = "BRO_%s=%s" % (node.type.upper(), str(node.count))
+        env = _makeEnvParam(node)
 
-        dashl = list_scripts and ["-l"] or []
-
-        broargs =  " ".join(dashl + _makeBroParams(node, False)) + " terminate"
         installed_policies = installed and "1" or "0"
 
-        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s" % (installed_policies, cwd, broargs)
+        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s" % (installed_policies, cwd)
 
         cmds += [((node, cwd), cmd, env, None)]
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
-
-        if not list_scripts:
-
-            if success:
-                util.output("%s is ok." % node.tag)
-            else:
-                ok = False
-                util.output("%s failed." % node.tag)
-                for line in output:
-                    util.output("   %s" % line)
-
+        if success:
+            util.output("%s is ok." % node.tag)
         else:
-            util.output(node.tag)
+            ok = False
+            util.output("%s failed." % node.tag)
             for line in output:
-                if line.find("loading") >= 0:
-
-                    line = line.replace("loading ", "")
-                    if not fullpaths:
-                        line = re.sub("\S+/", "", line)
-
-                    util.output("   %s" % line)
-
-            if not success:
-                ok = False
-                util.output("%s failed to load all scripts correctly." % node.tag)
+                util.output("   %s" % line)
 
         execute.rmdir(manager, cwd)
 
@@ -943,7 +921,7 @@ def update(nodes):
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
             args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s" % (node.tag.replace("worker-", "w"), args), env, None)]
+            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s" % (node.tag, args), env, None)]
             util.output("updating %s ..." % node.tag)
 
     results = execute.runLocalCmdsParallel(cmds)
@@ -986,7 +964,6 @@ def getDf(nodes):
 
         cmds = []
         for node in nodes:
-            
             if dir == "logdir" and node.type != "manager":
                 # Don't need this on the workers/proxies.
                 continue
@@ -1058,7 +1035,7 @@ def _queryNetStats(nodes):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "get_net_stats", [], "get_net_stats_response")]
+            events += [(node, "net_stats_request", [], "net_stats_response")]
 
     return execute.sendEventsParallel(events)
 
@@ -1084,7 +1061,7 @@ def executeCmd(nodes, cmd):
     cmds = [(n, "run-cmd", [cmd]) for n in nodes]
 
     for (node, success, output) in execute.runHelperParallel(cmds):
-      util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))
+      util.output("[%s] %s\n> %s" % (node.tag, (success and " " or "error"), "\n> ".join(output)))
 
 
 

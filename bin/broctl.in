@@ -298,11 +298,11 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         As the name implies, this command should be executed regularly via
         *cron*, as described above. It performs a set of
-        maintainance tasks, including the logging of various statistical
+        maintenance tasks, including the logging of various statistical
         information, expiring old log files, checking for dead hosts, and
         restarting nodes which terminated unexpectedly.  While not intended
         for interactive use, no harm will be caused by executing the command 
-        manually: all the maintainance tasks will then just be performed one
+        manually: all the maintenance tasks will then just be performed one
         more time."""
 
         if len(args) > 0:
@@ -315,7 +315,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 config.Config._setState("cronenabled", "0")
                 util.output("cron disabled")
             elif args == "?":
-                util.output("cron " + (config.Config.cronenabled == "1"  and "enabled" or "disabled"))
+                util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
             else:
                 util.output("wrong cron argument")
                 

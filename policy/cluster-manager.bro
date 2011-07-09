@@ -5,42 +5,22 @@
 @prefixes += cluster-manager
 
 @load broctl
-@load filter-duplicates
-@load notice
-@load remote
-@load mail-alarms
-	
-# Since we don't capture, don't bother with this.
-@unload print-filter
+@load broctl/filter-duplicates
+@load frameworks/notice
+@load broctl/mail-alarms
 
-# Remote-print policy hooks into print() fucntion on remote hosts,
-# and gets a copy to print to local files.
-@load remote-print
+## Set the mail script to be the default script for the cluster deployment.
+redef Notice::mail_script = "mail-alarm";
+
+## Set the template value that the mail script will use to send email.  The
+## default mail-alarm script will replace the value.
+redef Notice::mail_dest = "_broctl_default_";
 
 # This grabs the remote peers (workers) and saves some status info
 # to a local peer_status.log.
-@load save-peer-status
-	
-# We have to listen of course... 
-@load listen-clear
-redef listen_port_clear = BroCtl::manager$p;
+#@load save-peer-status
 
-# The cluster manager does not capture.
-redef interfaces = "";
-
-# Give us a name. 
-redef peer_description = BroCtl::manager$tag;
-
-# We're processing essentially *only* remote events.
-redef max_remote_events_processed = 10000;
-
-# Reraise remote notices locally.
-event notice_action(n: notice_info, action: NoticeAction)
-	{
-	if ( is_remote_event() && FilterDuplicates::is_new(n) )
-		NOTICE(n);
-	}
-
-redef FilterDuplicates::filters += {
-	[Drop::AddressSeenAgain] = FilterDuplicates::match_src,
-};
+#redef FilterDuplicates::filters += {
+#	[Drop::AddressSeenAgain] = FilterDuplicates::match_src,
+#};
+#

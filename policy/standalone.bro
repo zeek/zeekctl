@@ -1,31 +1,28 @@
-# $Id: standalone.bro 7098 2010-10-19 00:54:23Z robin $
-#
-# Configuration for a standalone system.
+## Configuration for a standalone system.
 
-@load site
+@load broctl/mail-alarms
 
-@unload cluster-by-addrs
-@unload cluster-by-conns
+@load broctl/trim-trace-file
+@load support/remote/analysis-groups
 
-@load broctl
-@load notice
-@load remote
-@load mail-alarms
+@load rotate-logs
+
+redef MailAlarms::output &rotate_interval = 12hrs;
+
 	
-@load trim-trace-file	
-@load analysis-groups
-	
-# Even a stand-alone system has to listen so that we can do remote updates.
-@load listen-clear
-redef listen_port_clear = BroCtl::manager$p;
-
-# Give us a name. 
-redef peer_description = "bro";
-
 # Record all packets into trace file.
 redef record_all_packets = T;
 
-@load notice
+redef mail_script = "mail-alarm";
+redef mail_dest = "_broctl_default_"; # Will be replaced by mail script.  
 
+redef log_rotate_interval = 1hrs;
+redef log_rotate_base_time = "0:00";
+redef RotateLogs::default_postprocessor = "archive-log";
 
-
+event file_opened(f: file)
+	{
+	# Create a link from the archive directory to the newly created file.
+	if ( ! bro_is_terminating() )
+		system(fmt("create-link-for-log %s", get_file_name(f)));
+	}
