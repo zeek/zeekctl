@@ -5,4 +5,6 @@
 
 @load broctl
 @load broctl/trim-trace-file
+@load frameworks/cluster
+
 @load support/remote/analysis-groups

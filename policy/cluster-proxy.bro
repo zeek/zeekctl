@@ -3,3 +3,4 @@
 @prefixes += cluster-proxy
 
 @load broctl
+@load frameworks/cluster

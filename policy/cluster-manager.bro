@@ -5,6 +5,7 @@
 @prefixes += cluster-manager
 
 @load broctl
+@load frameworks/cluster
 @load broctl/filter-duplicates
 @load frameworks/notice
 @load broctl/mail-alarms
