@@ -88,7 +88,7 @@ if which gdb >/dev/null 2>&1; then
     for c in $core; do 
         if [ -e $c ]; then
             echo $c
-            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c
+            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c 2>/dev/null
         fi
     done
 else
