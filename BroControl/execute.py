@@ -501,7 +501,7 @@ def sendEventsParallel(events):
 def _sendEventInit(node, event, args, result_event):
 
     try:
-        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="update", 
+        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="control", 
                                  flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False

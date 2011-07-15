@@ -147,40 +147,26 @@ def _makeBroParams(node, live):
 
     args += ["-p broctl"]
 
-    if node.type != "standalone":
-        args += ["-p cluster"]
+    if live:
+        args += ["-p broctl-live"]
     else:
+        args += ["-p broctl-check"]
+
+    if node.type == "standalone":
         args += ["-p standalone"]
 
     for p in config.Config.prefixes.split(":"):
         args += ["-p %s" % p]
 
-    args += ["-p %s" % node.tag]         
-
-    args += node.scripts
-
-    if live:
-        args += ["broctl-live"]
-    else:
-        args += ["broctl-check"]
-
-    if node.type == "worker" or node.type == "proxy":
-        args += config.Config.sitepolicyworker.split()
-        args += config.Config.auxscriptsworker.split()
-
-    if node.type == "manager":
-        args += config.Config.sitepolicymanager.split()
-        args += config.Config.auxscriptsmanager.split()
-
-    if node.type == "standalone":
-        args += config.Config.sitepolicystandalone.split()
-        args += config.Config.auxscriptsstandalone.split()
+    args += ["-p %s" % node.tag]
+    
+    args += ["broctl"]
+    args += ["broctl/nodes/%s" % node.type]
+    args += ["local"]
 
     if "aux_scripts" in node.__dict__:
         args += [node.aux_scripts]
-
-    args += ["analysis-policy"]
-
+    
     if config.Config.broargs:
         args += [config.Config.broargs]
 
@@ -324,9 +310,13 @@ def _stopNodes(nodes):
         cmds = []
         for node in nodes:
             cmds += [(node, "stop", [node.getPID(), str(signal)])] 
-
+        
         return execute.runHelperParallel(cmds)
-
+        #events = []
+        #for node in nodes:
+        #    events += [(node, "Control::shutdown_request", [], "Control::shutdown_response")]
+        #return execute.sendEventsParallel(events)
+        
     # Stop nodes.
     for (node, success, output) in stop(running, 15):
         if not success:
@@ -921,7 +911,7 @@ def update(nodes):
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
             args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s" % (node.tag, args), env, None)]
+            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s/tcp %s" % (node.addr, node.getPort(), args), env, None)]
             util.output("updating %s ..." % node.tag)
 
     results = execute.runLocalCmdsParallel(cmds)
@@ -1009,7 +999,7 @@ def printID(nodes, id):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "request_id", [id], "request_id_response")]
+            events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
     results = execute.sendEventsParallel(events)
 
@@ -1025,7 +1015,7 @@ def _queryPeerStatus(nodes):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "get_peer_status", [], "get_peer_status_response")]
+            events += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
 
     return execute.sendEventsParallel(events)
 
@@ -1035,7 +1025,7 @@ def _queryNetStats(nodes):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "net_stats_request", [], "net_stats_response")]
+            events += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
     return execute.sendEventsParallel(events)
 

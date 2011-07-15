@@ -1,12 +1,8 @@
-# $Id: cluster.local-manager.bro-template 6811 2009-07-06 20:41:10Z robin $
-#
 # Local site policy loaded only by the manager. 
 # 
 # This template comes with a sample notice policy which you will
 # almost certainly want to adapt to your environment. 
 
-@load local 
-	
 #redef notice_action_filters +=
 #    {
 #	# These are all very common.

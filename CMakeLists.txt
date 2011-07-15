@@ -32,14 +32,6 @@ file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX ${CMAKE_INSTALL_PREFIX})
 
-if (STANDALONE)
-    set(STANDALONE "True")
-    set(cfgType "Standalone")
-else ()
-    set(STANDALONE "False")
-    set(cfgType "Cluster")
-endif ()
-
 ########################################################################
 ## Dependency Configuration
 
@@ -137,7 +129,7 @@ InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summar
 install(DIRECTORY BroControl
         DESTINATION lib/broctl)
 install(DIRECTORY policy/
-        DESTINATION share/bro/broctl
+        DESTINATION share/bro
         FILES_MATCHING
         PATTERN "*.bro"
         PATTERN "local" EXCLUDE)
@@ -202,13 +194,8 @@ else ()
     install(DIRECTORY DESTINATION logs)
     InstallSymlink(${PREFIX}/spool/broctl-config.sh
                    ${PREFIX}/share/broctl/scripts/broctl-config.sh)
-    if (STANDALONE)
-        configure_file(etc/broctl.cfg.standalone.in
-                       ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
-    else ()
-        configure_file(etc/broctl.cfg.cluster.in
-                       ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
-    endif ()
+    configure_file(etc/broctl.cfg.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
 endif ()
 
 InstallPackageConfigFile(
@@ -224,50 +211,33 @@ InstallPackageConfigFile(
     ${ETC}
     networks.cfg)
 
-if (STANDALONE)
-    # The policy file template is configured into build dir just
-    # to assist running bro from the build directory
-    configure_file(policy/local/standalone.local.bro-template
-                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local.bro
-                   COPY_ONLY)
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/standalone.local.bro-template
-        ${PREFIX}/share/bro/site
-        local.bro)
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg.standalone.in
-        ${ETC}
-        node.cfg)
-else ()
-    # The policy file templates are configured into build dir just
-    # to assist running bro from the build directory
-    configure_file(policy/local/cluster.local.bro-template
-                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local.bro
-                   COPY_ONLY)
-    configure_file(policy/local/cluster.local-worker.bro-template
-                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local-worker.bro
-                   COPY_ONLY)
-    configure_file(policy/local/cluster.local-manager.bro-template
-                   ${CMAKE_CURRENT_BINARY_DIR}/policy/local/local-manager.bro
-                   COPY_ONLY)
-
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local.bro-template
-        ${PREFIX}/share/bro/site
-        local.bro)
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local-worker.bro-template
-        ${PREFIX}/share/bro/site
-        local-worker.bro)
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/policy/local/cluster.local-manager.bro-template
-        ${PREFIX}/share/bro/site
-        local-manager.bro)
-    InstallPackageConfigFile(
-        ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg.cluster.in
-        ${ETC}
-        node.cfg)
-endif ()
+# The policy file template is configured into build dir just
+# to assist running bro from the build directory
+configure_file(policy/site/local.bro
+               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local.bro
+               COPY_ONLY)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local.bro
+    ${PREFIX}/share/bro/site/
+    local.bro)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg.in
+    ${ETC}
+    node.cfg)
+configure_file(policy/site/local-worker.bro
+               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local-worker.bro
+               COPY_ONLY)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local-worker.bro
+    ${PREFIX}/share/bro/site
+    local-worker.bro)
+configure_file(policy/site/local-manager.bro
+               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local-manager.bro
+               COPY_ONLY)
+InstallPackageConfigFile(
+    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local-manager.bro
+    ${PREFIX}/share/bro/site
+    local-manager.bro)
 
 ########################################################################
 ## Packaging Setup
@@ -300,8 +270,6 @@ endif ()
 
 message(
     "\n=================|  Broctl Install Summary  |==================="
-    "\n"
-    "\nConfiguration:     ${cfgType}"
     "\n"
     "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
     "\nBro root:          ${BRO_ROOT_DIR}"

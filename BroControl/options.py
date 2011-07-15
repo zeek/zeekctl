@@ -68,13 +68,6 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("AuxScriptsManager", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the manager, separated by spaces."),
-    Option("AuxScriptsWorker", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the workers, separated by spaces."),
-    Option("AuxScriptsStandalone", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on a standalone Brothe manage, separated by spaces."),
-
     Option("AuxPostProcessors", "", "string", Option.USER, False,
            "Additional log postprocessors, with paths separated by spaces."),
 
@@ -182,16 +175,7 @@ options = [
     Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
-    Option("Scripts-Manager", "cluster-manager", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the manager, separated by spaces."),
-    Option("Scripts-Worker", "cluster-worker", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the workers, separated by spaces."),
-    Option("Scripts-Proxy", "cluster-proxy", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the proxies, separated by spaces."),
-    Option("Scripts-Standalone", "standalone", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on a standalone Bro, separated by spaces."),
-
-    # Internal, not documented. 
+    # Internal, not documented.
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 

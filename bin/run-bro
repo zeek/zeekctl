@@ -7,9 +7,7 @@
 . `dirname $0`/broctl-config.sh
 
 export PATH=${bindir}:${scriptsdir}:$PATH
-
-policies=${policydir}
-export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:$policies:$policies/sigs:$policies/time-machine:$policies/broctl:$policies/xquery
+export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:${policydir}
 
 if test `uname` == "FreeBSD" && uname -r | grep -q "^[456]"; then
    export MALLOC_OPTIONS="HR" # Helps performance on FreeBSD < 7
@@ -37,6 +35,9 @@ ulimit -d $LIMIT
 ulimit -v $LIMIT
 ulimit -c unlimited
 
+echo "PATH=${PATH}" >.env_vars
+echo "BROPATH=${BROPATH}" >>.env_vars
+echo "CLUSTER_NODE=${CLUSTER_NODE}" >>.env_vars
 echo $@ >.cmdline
 
 date +%s >.startup
@@ -48,7 +49,6 @@ tmpbro=${tmpexecdir}/`basename ${bro}`
 rm -f $tmpbro
 cp -p ${bro} $tmpbro
 sleep 1
-echo $@
 nohup $tmpbro $@ &
 
 child=$!

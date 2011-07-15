@@ -1,5 +1,3 @@
-# $Id: standalone.local.bro-template 6811 2009-07-06 20:41:10Z robin $
-#
 # Template for local site policy. Customize as appropriate. 
 #
 # (Note that enabling a particular kind of analysis via the cluster's 
@@ -23,6 +21,8 @@
 @load frameworks/software
 @load frameworks/reporter
 @load frameworks/cluster
+
+@load misc/loaded-scripts
 
 @load tuning/defaults
 

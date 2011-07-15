@@ -1,12 +1,9 @@
-# $Id: cluster-manager.bro 7098 2010-10-19 00:54:23Z robin $
-#
 # Cluster manager configuration.
 
-@prefixes += cluster-manager
-
-@load broctl
 @load frameworks/cluster
+
 @load broctl/filter-duplicates
+
 @load frameworks/notice
 @load broctl/mail-alarms
 

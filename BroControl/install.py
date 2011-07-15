@@ -184,49 +184,67 @@ def makeLayout():
 
     if not manager:
         return
+    
+    filename = os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro")
+    
+    # If there is a standalone node, delete any cluster-layout file to
+    # avoid the cluster framework from activating and get out of here.
+    if ( len(config.Config.nodes("standalone")) > 0 ):
+        if os.access(filename, os.W_OK):
+            os.unlink(filename)
+        # We do need to establish the port for the manager.
+        util.output("generating standalone-layout.bro ...", False)
+        
+        filename = os.path.join(config.Config.policydirsiteinstallauto, "standalone-layout.bro")
+        out = open(filename, "w")
+        print >>out, "# Automatically generated. Do not edit."
+        # This is the port that standalone nodes listen on for remote control by default.
+        print >>out, "redef Communication::listen_port_clear = %s/tcp;" % nextPort(manager)
+        
+    else:
+        util.output("generating cluster-layout.bro ...", False)
 
-    util.output("generating cluster-layout.bro ...", False)
-
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro"), "w")
+        out = open(filename, "w")
     
-    workers = config.Config.nodes("worker")
-    proxies = config.Config.nodes("proxy")
+        workers = config.Config.nodes("workers")
+        proxies = config.Config.nodes("proxies")
     
-    print >>out, "# Automatically generated. Do not edit."
-    print >>out, "redef Cluster::nodes = {";
+        print >>out, "# Automatically generated. Do not edit."
+        print >>out, "redef Cluster::nodes = {";
     
-    # Control definition.  For now just reuse the manager information.
-    print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
+        # Control definition.  For now just reuse the manager information.
+        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
     
-    # Manager definition
-    print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.tag, manager.addr, nextPort(manager)),
-    for s in workers:
-        print >>out, "\"%s\"" % (s.tag),
-        if s != workers[-1]:
-            print >>out, ",",
-    print >>out, ")],"
-
-    # Proxies definition
-    for p in proxies:
-        print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.tag, p.addr, nextPort(p), manager.tag),
+        # Manager definition
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.tag, manager.addr, nextPort(manager)),
         for s in workers:
             print >>out, "\"%s\"" % (s.tag),
             if s != workers[-1]:
                 print >>out, ",",
         print >>out, ")],"
 
-    # Workers definition
-    for w in workers:
-        p = w.count % len(proxies)
-        print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.tag, w.addr, nextPort(w), w.interface, manager.tag, proxies[p].tag),
-    
-    # Activate time-machine support if configured.
-    if config.Config.timemachinehost:
-        print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
-    
-    print >>out, "};"
+        # Proxies definition
+        for p in proxies:
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.tag, p.addr, nextPort(p), manager.tag),
+            for s in workers:
+                print >>out, "\"%s\"" % (s.tag),
+                if s != workers[-1]:
+                    print >>out, ",",
+            print >>out, ")],"
 
-    print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
+        # Workers definition
+        for w in workers:
+            p = w.count % len(proxies)
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.tag, w.addr, nextPort(w), w.interface, manager.tag, proxies[p].tag),
+    
+        # Activate time-machine support if configured.
+        if config.Config.timemachinehost:
+            print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
+    
+        print >>out, "};"
+
+        # TODO: This is definitely the wrong spot for this.
+        print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
     
     util.output(" done.")
 

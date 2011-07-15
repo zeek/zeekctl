@@ -1,24 +1,21 @@
 ## Configuration for a standalone system.
 
 @load broctl/mail-alarms
-
 @load broctl/trim-trace-file
-@load support/remote/analysis-groups
 
-@load rotate-logs
+@load standalone-layout
 
 redef MailAlarms::output &rotate_interval = 12hrs;
 
-	
 # Record all packets into trace file.
 redef record_all_packets = T;
 
-redef mail_script = "mail-alarm";
-redef mail_dest = "_broctl_default_"; # Will be replaced by mail script.  
+#redef mail_script = "mail-alarm";
+#redef mail_dest = "_broctl_default_"; # Will be replaced by mail script.
 
 redef log_rotate_interval = 1hrs;
 redef log_rotate_base_time = "0:00";
-redef RotateLogs::default_postprocessor = "archive-log";
+#redef RotateLogs::default_postprocessor = "archive-log";
 
 event file_opened(f: file)
 	{
