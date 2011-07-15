@@ -8,8 +8,13 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [ "${sendmail}" != "1" ]; then
+if [ "${sendmail}" == "" ]; then
    exit 0
+fi
+
+if [ ! -e "${sendmail}" ]; then
+    echo "${sendmail} is not executable"
+    exit 1
 fi
 
 if [ $# -lt 1 -o $# -gt 2 ]; then
@@ -52,4 +57,4 @@ cat >>$tmp <<EOF
 
 EOF
 
-sendmail -t -oi <$tmp && rm -f $tmp
+${sendmail} -t -oi <$tmp && rm -f $tmp
