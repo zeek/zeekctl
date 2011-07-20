@@ -1,3 +1,15 @@
+0.41-9 | 2011-06-01 11:35:36 -0700
+
+  * Standardize shell script hashbang on install. (Jon Siwek)
+
+  * Fix binary package broctl-config.sh symlink installation
+    regression. (Jon Siwek)
+
+  * Changes to allow DEB packaging via CPack, addresses #458. (Jon Siwek)
+
+  * Fixed a problem with the "update" command, which could delete data
+    from many global state tables unintentionally. (Seth Hall)
+
 0.41-2 | 2011-05-02 11:29:07 -0700
 
   * Symlink install scripted at install time for CMake 2.6
