@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # $Id: install.py 7098 2010-10-19 00:54:23Z robin $
 #
 # Functions to install files on all nodes.
@@ -187,34 +185,66 @@ def makeLayout():
     if not manager:
         return
 
-    util.output("generating broctl-layout.bro ...", False)
+    filename = os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro")
 
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "broctl-layout.bro"), "w")
-    print >>out, "# Automatically generated. Do not edit.\n"
-    print >>out, "redef BroCtl::manager = [$ip = %s, $p=%s/tcp, $tag=\"%s\"];\n" % (manager.addr, nextPort(manager), manager.name);
+    # If there is a standalone node, delete any cluster-layout file to
+    # avoid the cluster framework from activating and get out of here.
+    if ( len(config.Config.nodes("standalone")) > 0 ):
+        if os.access(filename, os.W_OK):
+            os.unlink(filename)
+        # We do need to establish the port for the manager.
+        util.output("generating standalone-layout.bro ...", False)
 
-    proxies = config.Config.nodes("proxy")
-    print >>out, "redef BroCtl::proxies = {"
-    for p in proxies:
-        tag = p.name.replace("proxy-", "p")
-        print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\"]," % (p.count, p.addr, nextPort(p), tag)
-    print >>out, "};\n"
+        filename = os.path.join(config.Config.policydirsiteinstallauto, "standalone-layout.bro")
+        out = open(filename, "w")
+        print >>out, "# Automatically generated. Do not edit."
+        # This is the port that standalone nodes listen on for remote control by default.
+        print >>out, "redef Communication::listen_port_clear = %s/tcp;" % nextPort(manager)
 
-    workers = config.Config.nodes("worker")
-    print >>out, "redef BroCtl::workers = {"
-    for s in workers:
-        tag = s.name.replace("worker-", "w")
-        p = s.count % len(proxies) + 1
-        print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\", $interface=\"%s\", $proxy=BroCtl::proxies[%d]]," % (s.count, s.addr, nextPort(s), tag, s.interface, p)
-    print >>out, "};\n"
+    else:
+        util.output("generating cluster-layout.bro ...", False)
 
-    print >>out, "redef BroCtl::log_dir = \"%s\";\n" % config.Config.subst(config.Config.logdir)
+        out = open(filename, "w")
 
-    # Activate time-machine support if configured.
-    if config.Config.timemachinehost:
-        print >>out, "redef BroCtl::tm_host = %s;\n" % config.Config.timemachinehost
-        print >>out, "redef BroCtl::tm_port = %s;\n" % config.Config.timemachineport
-        print >>out
+        workers = config.Config.nodes("workers")
+        proxies = config.Config.nodes("proxies")
+
+        print >>out, "# Automatically generated. Do not edit."
+        print >>out, "redef Cluster::nodes = {";
+
+        # Control definition.  For now just reuse the manager information.
+        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
+
+        # Manager definition
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.tag, manager.addr, nextPort(manager)),
+        for s in workers:
+            print >>out, "\"%s\"" % (s.tag),
+            if s != workers[-1]:
+                print >>out, ",",
+        print >>out, ")],"
+
+        # Proxies definition
+        for p in proxies:
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.tag, p.addr, nextPort(p), manager.tag),
+            for s in workers:
+                print >>out, "\"%s\"" % (s.tag),
+                if s != workers[-1]:
+                    print >>out, ",",
+            print >>out, ")],"
+
+        # Workers definition
+        for w in workers:
+            p = w.count % len(proxies)
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.tag, w.addr, nextPort(w), w.interface, manager.tag, proxies[p].tag),
+
+        # Activate time-machine support if configured.
+        if config.Config.timemachinehost:
+            print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
+
+        print >>out, "};"
+
+        # TODO: This is definitely the wrong spot for this.
+        print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
 
     util.output(" done.")
 
@@ -307,7 +337,7 @@ def makeAnalysisPolicy():
                 continue
 
     if disabled_event_groups:
-        print >>out, "redef AnalysisGroups::disabled_groups = {"
+        print >>out, "redef Remote::disabled_analysis_groups = {"
         for g in disabled_event_groups:
             print >>out, "\t\"%s\"," % g
         print >>out, "};\n"
@@ -376,7 +406,7 @@ def makeLocalNetworks():
     if os.path.exists(netcfg):
         nets = readNetworks(netcfg)
 
-        print >>out, "redef local_nets = {"
+        print >>out, "redef Site::local_nets = {"
         for (cidr, tag) in nets:
             print >>out, "\t%s," % cidr,
             if tag != "":

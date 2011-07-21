@@ -10,7 +10,6 @@
 
 use_installed_policies=$1
 source ${scriptsdir}/set-bro-path
-
 shift
 
 cd $1

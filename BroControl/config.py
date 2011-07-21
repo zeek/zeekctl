@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # $Id: config.py 6948 2009-12-03 20:59:41Z robin $
 #
 # Functions to read and access the broctl configuration.
@@ -109,7 +107,7 @@ class Analysis:
 Config = None # Globally accessible instance of Configuration.
 
 class Configuration:
-    def __init__(self, config, basedir, version, standalone):
+    def __init__(self, config, basedir, version):
         global Config
         Config = self
 
@@ -122,18 +120,17 @@ class Configuration:
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
         self._setOption("version", version)
-        self._setOption("standalone", standalone and "1" or "0")
 
-		# Initialize options.
+        # Initialize options.
         for opt in options.options:
             if not opt.dontinit:
                 self._setOption(opt.name.lower(), opt.default)
 
-		# Set defaults for options we derive dynamically.
-		self._setOption("mailto", "%s" % os.getenv("USER"))
-		self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-		self._setOption("home", os.getenv("HOME"))
-		self._setOption("mailalarmsto", self.config["mailto"])
+        # Set defaults for options we derive dynamically.
+        self._setOption("mailto", "%s" % os.getenv("USER"))
+        self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
+        self._setOption("home", os.getenv("HOME"))
+        self._setOption("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
         (success, output) = execute.captureCmd("uname")
@@ -151,6 +148,9 @@ class Configuration:
         # Read nodes.cfg and broctl.dat.
         self._readNodes()
         self.readState()
+
+        # Now that the nodes have been read in, set the standalone config option.
+        self._setOption("standalone", len(self.nodes("standalone"))>0 and "1" or "0")
 
         # Setup the kinds of analyses which we support.
         self._analysis = Analysis(self.analysiscfg)
@@ -201,17 +201,16 @@ class Configuration:
 
             tag = None
 
-        if tag == "proxies":
-            tag = "proxy"
+        elif tag == "proxies":
+            type = "proxy"
 
-        if tag == "workers":
-            tag = "worker"
+        elif tag == "workers":
+            type = "worker"
 
-        if ("scripts-%s" % tag) in self.config:
+        elif (tag) in self.config:
             type = tag
 
         for n in self.nodelist.values():
-
             if type:
                 if type == n.type:
                     nodes += [n]
@@ -279,13 +278,13 @@ class Configuration:
 
         manager = False
         proxy = False
+        worker = False
         standalone = False
 
         file = self.nodecfg
 
         counts = {}
         for sec in config.sections():
-
             node = node_mod.Node(sec)
             self.nodelist[sec] = node
 
@@ -298,24 +297,23 @@ class Configuration:
                     continue
 
                 if key == "type":
-                    # We determine which types are valid by checking for having an
-                    # option specifying which scripts to use for it.
-                    cfg = "scripts-%s" % val
-                    if not cfg  in self.config:
-                        util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
-
-                    self.nodelist[sec].scripts = self.config[cfg].split()
-
                     if val == "manager":
                         if manager:
                             util.error("only one manager can be defined")
                         manager = True
 
-                    if val == "proxy":
+                    elif val == "proxy":
                         proxy = True
 
-                    if val == "standalone":
+                    elif val == "worker":
+                        worker = True
+
+                    elif val == "standalone":
                         standalone = True
+
+                    else:
+                        util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
+
 
                 node.__dict__[key] = val
 

@@ -20,9 +20,6 @@ BroBase = "@PREFIX@"
 # Version of the broctl distribution.
 Version = "@VERSION@"
 
-# True if we do a stand-alone install.
-StandAlone = "@STANDALONE@"
-
 # Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
@@ -670,7 +667,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         dropped packets."""
 
         if not args:
-            if config.Config.standalone == "1" :
+            if len(config.Config.nodes("standalone")) >0:
                 args = "standalone"
             else:
                 args = "workers"
@@ -923,7 +920,7 @@ def saveState(loop):
         print >>sys.stderr, "abnormal termination, saving state ..."
         Config.writeState()
 
-Config = config.Configuration("etc/broctl.cfg", BroBase, Version, StandAlone=="True")
+Config = config.Configuration("etc/broctl.cfg", BroBase, Version)
 
 for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
     if dir:

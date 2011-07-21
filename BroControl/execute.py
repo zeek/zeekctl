@@ -40,7 +40,7 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
     proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                             close_fds=True, shell=True, preexec_fn=os.setsid)
     # Compatibility with older popen4.
-    proc.tochild = proc.stdin  
+    proc.tochild = proc.stdin
     proc.fromchild = proc.stdout if proc.stdout != None else []
 
     return proc
@@ -523,7 +523,7 @@ def sendEventsParallel(events):
 def _sendEventInit(node, event, args, result_event):
 
     try:
-        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="update",
+        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="control",
                                  flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False

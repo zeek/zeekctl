@@ -37,43 +37,24 @@ ulimit -d $LIMIT
 ulimit -v $LIMIT
 ulimit -c unlimited
 
+echo "PATH=${PATH}" >.env_vars
+echo "BROPATH=${BROPATH}" >>.env_vars
+echo "CLUSTER_NODE=${CLUSTER_NODE}" >>.env_vars
 echo $@ >.cmdline
 
 date +%s >.startup
 date >>.startup
 date +%y-%m-%d_%H.%M.%S >>.startup # Bro default format when rotating files. 
 
-if [ "$BRO_WORKER" != "" ]; then
-   touch .worker
-elif [ "$BRO_PROXY" != "" ]; then
-   touch .proxy
-elif [ "$BRO_MANAGER" != "" ]; then
-   touch .manager
-elif [ "$BRO_STANDALONE" != "" ]; then
-   touch .standalone
-else
-   echo "None of the environment variables BRO_{MANAGER,PROXY,WORKER,STANDALONE} set." 1>&2
-   echo -1 >.pid
-   exit 1
-fi
+tmpbro=${tmpexecdir}/`basename ${bro}`
 
-if [ "${havenfs}" != "0" ]; then
-    # In NFS mode, we make a local copy of the binary and then run that.
-    # That avoids synchronization issues when the original is modified.
-    tmpbro=${tmpexecdir}/`basename ${bro}`
-    rm -f $tmpbro
-    cp -p ${bro} $tmpbro
-    sleep 1
-    bro_binary=${tmpbro}
-else
-    bro_binary=${bro}
-fi
-
-nohup ${bro_binary} $@ &
+rm -f $tmpbro
+cp -p ${bro} $tmpbro
+sleep 1
+nohup $tmpbro $@ &
 
 child=$!
 
 echo $child >.pid
 wait $child
 child=""
-

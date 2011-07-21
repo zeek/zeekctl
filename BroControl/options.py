@@ -35,23 +35,25 @@ options = [
     Option("CompressLogs", "1", "bool", Option.USER, False,
            "True to gzip archived log files."),
 
-    Option("SendMail", "1", "bool", Option.USER, False,
-           "True if shell may send mails."),
+    Option("SendMail", "/usr/sbin/sendmail", "string", Option.USER, False,
+           "Location of the sendmail binary.  Make this string blank to prevent email from being sent."),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
            "General Subject prefix for broctl-generated mails."),
-    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
-           "Subject prefix for individual alerts triggered by NOTICE_EMAIL."),
+
     Option("MailReplyTo", "", "string", Option.USER, False,
            "Reply-to address for broctl-generated mails."),
     Option("MailTo", "<user>", "string", Option.USER, True,
            "Destination address for broctl-generated non-alarm mails. Default is to use the same address as +MailTo+."),
-    Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
-           "Destination address for broctl-generated alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
     Option("MailAlarms", "1", "bool", Option.USER, False,
            "True if Bro should send mails for NOTICE_EMAIL alerts."),
+    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
+           "Subject prefix for individual alerts triggered by Notice::ACTION_EMAIL."),
+    Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
+           "Destination address for broctl-generated alarm mails."),
+
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
     Option("LogExpireInterval", "30", "int", Option.USER, False,
@@ -67,13 +69,6 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("AuxScriptsManager", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the manager, separated by spaces."),
-    Option("AuxScriptsWorker", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the workers, separated by spaces."),
-    Option("AuxScriptsStandalone", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on a standalone Brothe manage, separated by spaces."),
-
     Option("AuxPostProcessors", "", "string", Option.USER, False,
            "Additional log postprocessors, with paths separated by spaces."),
 
@@ -82,7 +77,7 @@ options = [
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
            "Local policy file for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Local policy file for standalone Bro."),
+           "Local policy file for all Bro instances."),
 
     Option("CustomInstallBin", "", "string", Option.USER, False,
            "Additional executables to be installed into ${BinDir}, including full path and separated by spaces."),
@@ -184,15 +179,6 @@ options = [
            "Directory where the shell copies local policy scripts when installing."),
     Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
-
-    Option("Scripts-Manager", "cluster-manager", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the manager, separated by spaces."),
-    Option("Scripts-Worker", "cluster-worker", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the workers, separated by spaces."),
-    Option("Scripts-Proxy", "cluster-proxy", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the proxies, separated by spaces."),
-    Option("Scripts-Standalone", "standalone", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on a standalone Bro, separated by spaces."),
 
     # Internal, not documented.
     Option("SigInt", "0", "bool", Option.INTERNAL, False,

@@ -87,7 +87,7 @@ This is the default installation:
     Bro is to monitor; that's the ``interface`` line.
 
   * In ``etc/networks.cfg``, list all the networks which Bro should
-    consider as local to the monitored enviroment.
+    consider as local to the monitored environment. 
 
 - Once you have updated these files, install the modified
   configuration::
@@ -120,7 +120,7 @@ A cluster consists of four types of components:
 
   Worker nodes.
        Workers are doing the actual analysis, with each seeing a
-       slice of the overall traffic as splitted up by the frontends.
+       slice of the overall traffic as split by the frontend(s).
 
   One or more proxies.
        Proxies relay the communication between worker nodes.
@@ -156,7 +156,7 @@ mentioned above, you need to
 
   - have the same user account set up on all nodes. On the worker
     nodes, this user must have access to target network interface in
-    promiscious mode. ``ssh`` access from the manager node to this
+    promiscuous mode. ``ssh`` access from the manager node to this
     user account must be setup on all machines, and must work
     without asking for a password/passphrase.
 
@@ -212,7 +212,7 @@ following steps to install a Bro cluster:
 
 - Create a network configuration file that lists all of the networks
   which the cluster should consider as local to the monitored
-  enviroment. Once, again the installation installs a template for
+  environment. Once, again the installation installs a template for
   editing::
 
     > cd /usr/local/bro
@@ -274,13 +274,13 @@ respectively. The manager/stand-alone logs are archived in
 ``logs/``, by default once a day. Logs files of workers and proxies
 are discarded at the same rotation interval.
 
-Whenenver the *BroControl* configuration is modified in any way
+Whenever the *BroControl* configuration is modified in any way
 (including changes to configuration files and site-specific policy
 scripts), install_ installs the new version.
 *No changes will take effect until install_ is
 run*. Before you run install_,
 check_ can be used to check for any potential
-erros in the new configuration, e.g., typos in scripts. If
+errors in the new configuration, e.g., typos in scripts. If
 check_ does not report any problems, doing
 install_ will pretty likely not break anything.
 
@@ -301,7 +301,7 @@ scripts, as in any Bro setup. This is described
 link:site_tuning[below]. Some general types of analysis can however
 be enabled/disabled via the analysis_ command.
 
-*BroControl* provides various options to control the behaviour of
+*BroControl* provides various options to control the behavior of
 the setup. These options can be set by editing ``etc/broctl.cfg``.
 The config_ command gives list of all options
 with their current values. A list of the most important options also
@@ -322,7 +322,7 @@ SitePolicyPath_ in ``broctl.cfg`` to a
 different path.
 
 During the initial install, sample policy scripts are installed in
-``share/bro/site``, which you can edit as appropiate. In the
+``share/bro/site``, which you can edit as appropriate. In the
 stand-alone setup, this is just a single file called ``local.bro``.
 In the cluster setup, there are three: ``local-manager.bro`` and
 ``local-worker.bro`` are loaded by the manager and the workers (plus
@@ -330,15 +330,14 @@ proxies), respectively. In turn, both of these load ``local.bro``,
 which contains all configuration code shared by all nodes. If in
 doubt, put your customizations into ``local.bro`` so that all nodes
 see it. If you want to change which local scripts are loaded by the
-nodes, you can set SitePolicyManager_
-for the manager and SitePolicyWorker_
+nodes, you can set SitePolicyManager_ for the manager and SitePolicyWorker_
 for the workers.
 
 In the cluster setup, the main exception to putting everything into
 ``local.bro`` is notice filtering, which should be done only on the
 manager. The example ``local-manager.bro`` comes with an example
 setup to configure notice policy and notice actions. You should to
-adapt thiese to the local environment.
+adapt these to the local environment.
 
 In general, all of *BroControl*'s policy scripts are loaded before
 any site-specific policy so that you can redefine any of the
@@ -355,13 +354,15 @@ It is also possible to add additional scripts to individual nodes
 only. This works by setting the option ``aux_scripts`` for the
 corresponding node(s) in ``etc/nodes.cfg``. For example, one could
 add a script ``experimental.bro`` to a single worker for trying out
-new experimental code.
+new experimental code.  Alternatively, the node tag can be used as a prefix
+as in the example ``worker-1.local.bro``.  The prefix will be automatically
+given to each node automatically by *BroControl*.
 
 Command Reference
 -----------------
 
 The following summary lists all commands supported by *BroControl*.
-All commands may be either entered interactively or specificed on
+All commands may be either entered interactively or specified on
 the shell's command line. If not specified otherwise, commands
 taking *[<nodes>]* as arguments apply their action either to the
 given set of nodes, or to all nodes if none is given.
@@ -373,6 +374,8 @@ Option Reference
 
 This section summarizes the options that can be set in
 ``etc/broctl.cfg`` for customizing the behaviour of *BroControl*.
+This section summarizes the options that can be set in 
+``etc/broctl.cfg`` for customizing the behavior of *BroControl*.
 Usually, one only needs to change the "user options", which are
 listed first. The "internal options" are, as the name suggests,
 primarily used internally and set automatically. They are documented
@@ -421,14 +424,14 @@ Miscellanous
 Mails
 ~~~~~
 
-*BroControl* sents four types of mails to the address given in
+*BroControl* sends four types of mails to the address given in
 ``MailTo``:
 
 1. When logs are rotated (per default once a day), a list of all
-   alerts during the last rotation interval is sent. This can be
+   alarms during the last rotation interval is sent. This can be
    disabled by setting ``MailAlarms=0``.
 
-2. When the ``cron`` command noticies that a node has crashed, it
+2. When the ``cron`` command notices that a node has crashed, it
    restarts it and sends a notification. It may also send a more
    detailed crash report containing information about the crash.
 
@@ -442,7 +445,7 @@ Performance Analysis
 ~~~~~~~~~~~~~~~~~~~~
 
 *TODO*: ``broctl cron`` logs a number of statistics, which can be
-analyzed/plotted for understanding the cluster's run-time behaviour.
+analyzed/plotted for understanding the clusters run-time behavior.
 
 Questions and Answers
 ---------------------

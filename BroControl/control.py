@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # $Id: control.py 7098 2010-10-19 00:54:23Z robin $
 #
 # Functions to control the nodes' operations.
@@ -158,42 +156,25 @@ def _makeBroParams(node, live, add_manager=False):
 
     args += ["-p broctl"]
 
-    if node.type != "standalone":
-        args += ["-p cluster"]
+    if live:
+        args += ["-p broctl-live"]
     else:
+        args += ["-p broctl-check"]
+
+    if node.type == "standalone":
         args += ["-p standalone"]
 
     for p in config.Config.prefixes.split(":"):
         args += ["-p %s" % p]
 
-    args += ["-p %s" % node.name]
+    args += ["-p %s" % node.tag]
 
-    args += node.scripts
-
-    if add_manager:
-        args += config.Config.__getattr__("scripts-manager").split()
-
-    if live:
-        args += ["broctl-live"]
-    else:
-        args += ["broctl-check"]
-
-    if node.type == "worker" or node.type == "proxy":
-        args += config.Config.sitepolicyworker.split()
-        args += config.Config.auxscriptsworker.split()
-
-    if node.type == "manager" or add_manager:
-        args += config.Config.sitepolicymanager.split()
-        args += config.Config.auxscriptsmanager.split()
-
-    if node.type == "standalone":
-        args += config.Config.sitepolicystandalone.split()
-        args += config.Config.auxscriptsstandalone.split()
+    args += ["broctl"]
+    args += ["broctl/nodes/%s" % node.type]
+    args += ["local"]
 
     if "aux_scripts" in node.__dict__:
         args += [node.aux_scripts]
-
-    args += ["analysis-policy"]
 
     if config.Config.broargs:
         args += [config.Config.broargs]
@@ -204,7 +185,11 @@ def _makeBroParams(node, live, add_manager=False):
 
 # Build the environment variable for the given node.
 def _makeEnvParam(node):
-    return "BRO_%s=%s" % (node.type.upper(), str(node.count))
+    env = ""
+    if node.type != "standalone":
+        env = "CLUSTER_NODE=%s" % node.tag
+
+    return env
 
 # Do a "post-terminate crash" for the given nodes.
 def _makeCrashReports(nodes):
@@ -352,6 +337,10 @@ def _stopNodes(nodes):
             cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
 
         return execute.runHelperParallel(cmds)
+        #events = []
+        #for node in nodes:
+        #    events += [(node, "Control::shutdown_request", [], "Control::shutdown_response")]
+        #return execute.sendEventsParallel(events)
 
     # Stop nodes.
     for (node, success, output) in stop(running, 15):
@@ -659,41 +648,21 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
     for (node, cwd) in nodes:
 
         env = _makeEnvParam(node)
-        dashl = list_scripts and ["-l"] or []
 
-        broargs =  " ".join(dashl + _makeBroParams(node, False)) + " terminate"
         installed_policies = installed and "1" or "0"
 
-        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s" % (installed_policies, cwd, broargs)
+        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s" % (installed_policies, cwd)
 
         cmds += [((node, cwd), cmd, env, None)]
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
-
-        results += [(node, success)]
-
-        if not list_scripts:
-
-            if success:
-                util.output("%s is ok." % node.name)
-            else:
-                util.output("%s failed." % node.name)
-                for line in output:
-                    util.output("   %s" % line)
-
+        if success:
+            util.output("%s is ok." % node.tag)
         else:
-            util.output(node.name)
+            ok = False
+            util.output("%s failed." % node.tag)
             for line in output:
-                if line.find("loading") >= 0:
-
-                    line = line.replace("loading ", "")
-                    if not fullpaths:
-                        line = re.sub("\S+/", "", line)
-
-                    util.output("   %s" % line)
-
-            if not success:
-                util.output("%s failed to load all scripts correctly." % node.name)
+                util.output("   %s" % line)
 
         execute.rmdir(manager, cwd)
 
@@ -954,8 +923,8 @@ def update(nodes):
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
             args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.name, os.path.join(config.Config.scriptsdir, "update") + " %s %s" % (node.name.replace("worker-", "w"), args), env, None)]
-            util.output("updating %s ..." % node.name)
+            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s/tcp %s" % (node.addr, node.getPort(), args), env, None)]
+            util.output("updating %s ..." % node.tag)
 
     results = execute.runLocalCmdsParallel(cmds)
 
@@ -999,7 +968,6 @@ def getDf(nodes):
 
         cmds = []
         for node in nodes:
-
             if dir == "logdir" and node.type != "manager":
                 # Don't need this on the workers/proxies.
                 continue
@@ -1045,7 +1013,7 @@ def printID(nodes, id):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "request_id", [id], "request_id_response")]
+            events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
     results = execute.sendEventsParallel(events)
 
@@ -1061,7 +1029,7 @@ def _queryPeerStatus(nodes):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "get_peer_status", [], "get_peer_status_response")]
+            events += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
 
     return execute.sendEventsParallel(events)
 
@@ -1071,7 +1039,7 @@ def _queryNetStats(nodes):
     events = []
     for (node, isrunning) in running:
         if isrunning:
-            events += [(node, "get_net_stats", [], "get_net_stats_response")]
+            events += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
     return execute.sendEventsParallel(events)
 
@@ -1090,8 +1058,8 @@ def netStats(nodes):
             print "%10s: <error: %s>" % (node, args)
 
 def executeCmd(nodes, cmd):
-    for (node, success, output) in execute.executeCmdsParallel(zip(nodes, len(nodes) * [cmd])):
-        util.output("[%s] %s\n> %s" % (node.host, (success and " " or "error"), "\n> ".join(output)))
+    for (node, success, output) in execute.runHelperParallel(cmds):
+        util.output("[%s] %s\n> %s" % (node.tag, (success and " " or "error"), "\n> ".join(output)))
 
 def processTrace(trace, bro_options, bro_scripts):
 
