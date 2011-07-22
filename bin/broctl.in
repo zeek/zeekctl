@@ -410,63 +410,61 @@ class BroCtlCmdLoop(cmd.Cmd):
         requiring a restart_). However, such dynamic
         updates work only for a *subset* of Bro's full configuration. The
         following changes can be applied on the fly: (1) The value of all
-        script variables defined as ``&redef`` can be changed; and (2) all
-        configuration changes performed via the analysis_
-        command can be put into effect. More extensive script changes are not
-        possible during runtime and always require a restart; if you change
-        more than just the values of ``&redef`` variables and still issue
-        ``update``, the results are undefined and can lead to crashes. Also note
-        that before running ``update``, you still need to do an
-        install_ (preferably after
-        check_), as otherwise ``update`` will not see the
-        changes and resend the old configuration.  """
+        const variables defined with the ``&redef`` attribute can be changed.  
+        More extensive script changes are not possible during runtime and
+        always require a restart; if you change more than just the values of
+        ``&redef``-able consts and still issue ``update``, the results are
+        undefined and can lead to crashes. Also note that before running
+        ``update``, you still need to do an install_ (preferably after
+        check_), as otherwise ``update`` will not see the changes and resend
+        the old configuration. """
 
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
             control.update(nodes)
 
-    def do_analysis(self, args):
-        """- enable|disable <type>
-
-        This command enables or disables certain kinds of analysis without the
-        need for doing any changes to Bro scripts. Currently, the analyses
-        shown in the table below can be controlled (in parentheses the
-        corresponding Bro scripts; the effect of enabling/disabling is similar
-        to loading or not loading these scripts, respectively). The list might
-        be extended in the future. Any changes performed via this command are
-        applied by update_ and therefore do not require a
-        restart of the nodes.
-
-        ============  ===================================================================================
-        Type          Description
-        ============  ===================================================================================
-        dns           DNS analysis (``dns.bro``)
-        ftp           FTP analysis (``ftp.bro``)
-        http-body     HTTP body analysis (``http-body.bro``). 
-        http-request  Client-side HTTP analysis only (``http-request.bro``)
-        http-reply    Client- and server-side HTTP analysis (``http-request.bro``/``http-reply.bro``)
-        http-header   HTTP header analysis (``http-headers.bro``)
-        scan          Scan detection (``scan.bro``)
-        smtp          SMTP analysis (``smtp.bro``)
-        ============  ===================================================================================
-        """
-
-        self.lock()
-        args = args.split()
-
-        if len(args) > 1:
-            if args[0].lower() == "enable":
-                control.toggleAnalysis(args[1:], True)
-
-            elif args[0].lower() == "disable":
-                control.toggleAnalysis(args[1:], False)
-
-            else:
-                self.syntax("'enable' or 'disable' expected")
-                return
-
-        control.showAnalysis()
+    #def do_analysis(self, args):
+    #    """- enable|disable <type>
+    #
+    #    This command enables or disables certain kinds of analysis without the
+    #    need for doing any changes to Bro scripts. Currently, the analyses
+    #    shown in the table below can be controlled (in parentheses the
+    #    corresponding Bro scripts; the effect of enabling/disabling is similar
+    #    to loading or not loading these scripts, respectively). The list might
+    #    be extended in the future. Any changes performed via this command are
+    #    applied by update_ and therefore do not require a
+    #    restart of the nodes.
+    #
+    #    ============  ===================================================================================
+    #    Type          Description
+    #    ============  ===================================================================================
+    #    dns           DNS analysis (``dns.bro``)
+    #    ftp           FTP analysis (``ftp.bro``)
+    #    http-body     HTTP body analysis (``http-body.bro``). 
+    #    http-request  Client-side HTTP analysis only (``http-request.bro``)
+    #    http-reply    Client- and server-side HTTP analysis (``http-request.bro``/``http-reply.bro``)
+    #    http-header   HTTP header analysis (``http-headers.bro``)
+    #    scan          Scan detection (``scan.bro``)
+    #    smtp          SMTP analysis (``smtp.bro``)
+    #    ============  ===================================================================================
+    #    """
+    #
+    #    self.lock()
+    #    args = args.split()
+    #
+    #    if len(args) > 1:
+    #        if args[0].lower() == "enable":
+    #            control.toggleAnalysis(args[1:], True)
+    #
+    #        elif args[0].lower() == "disable":
+    #            control.toggleAnalysis(args[1:], False)
+    #
+    #        else:
+    #            self.syntax("'enable' or 'disable' expected")
+    #            return
+    #
+    #    control.showAnalysis()
 
     def do_df(self, args):
         """- [<nodes>]
@@ -643,7 +641,6 @@ class BroCtlCmdLoop(cmd.Cmd):
 """
 BroControl Version %s
 
-   analysis [enable/disable ...] - print or enable/disable types of analysis 
    capstats <nodes> [secs]       - report interface statistics (needs capstats)
    check <nodes>                 - check configuration before installing it
    cleanup [--all] <nodes>       - delete working dirs on nodes (flushes state)

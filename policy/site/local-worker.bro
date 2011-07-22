@@ -1,1 +1,2 @@
-# Local site policy loaded only by the workers (and the proxy).
+##! Local site policy loaded only by the workers if BroControl is running Bro
+##! in a clustered configuration (see node.cfg). 

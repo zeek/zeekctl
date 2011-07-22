@@ -91,8 +91,9 @@ def install(local_only):
         util.output(" done.")
 
     makeLayout()
-    makeAnalysisPolicy()
+    #makeAnalysisPolicy()
     makeLocalNetworks()
+    makeConfig()
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     if not execute.exists(manager, current):
@@ -167,10 +168,8 @@ def install(local_only):
         execute.sync(nodes, paths)
         util.output("done.")
                 
-# Create Bro-side broctl configuration broctl-layout.bro.        
-
+# Create Bro-side broctl configuration broctl-layout.bro.
 port = -1
-
 def makeLayout():
     def nextPort(node):
         global port
@@ -186,7 +185,6 @@ def makeLayout():
         return
     
     filename = os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro")
-    
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
     if ( len(config.Config.nodes("standalone")) > 0 ):
@@ -242,93 +240,90 @@ def makeLayout():
             print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
     
         print >>out, "};"
-
-        # TODO: This is definitely the wrong spot for this.
-        print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
     
     util.output(" done.")
 
 # Create Bro script to enable the selected types of analysis.
-def makeAnalysisPolicy():
-    manager = config.Config.manager()
-
-    if not manager:
-        return
-
-    util.output("generating analysis-policy.bro ...", False)
-
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy.bro"), "w")
-    print >>out, "# Automatically generated. Do not edit.\n"
-
-    disabled_event_groups = []
-    booleans = []
-    warns = []
-
-    analysis = config.Config.analysis()
-    redo = False
-
-    for (type, state, mechanisms, descr) in analysis.all():
-
-        for mechanism in mechanisms.split(","):
-
-            try:
-                i = mechanism.index(":")
-                scheme = mechanism[0:i]
-                arg = mechanism[i+1:]
-            except ValueError:
-                util.warn("error in %s: ignoring mechanism %s" % (config.Config.analysiscfg, mechanism))
-                continue
-
-            if scheme == "events":
-                # Default is on so only need to record those which are disabled.
-                if not state:
-                    disabled_event_groups += [type]
-
-            elif scheme == "bool":
-                booleans += [(arg, state)]
-
-            elif scheme == "bool-inv":
-                booleans += [(arg, not state)]
-
-            elif scheme == "disable":
-                if state:
-                    continue
-
-                if not analysis.isValid(arg):
-                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
-                    continue
-
-                if analysis.isEnabled(arg):
-                    warns += ["disabled analysis %s (depends on %s)" % (arg, type)]
-                    analysis.toggle(arg, False)
-                    redo = True
-
-            else:
-                util.warn("error in %s: ignoring unknown mechanism scheme %s" % (config.Config.analysiscfg, scheme))
-                continue
-
-    if disabled_event_groups:
-        print >>out, "redef Remote::disabled_analysis_groups = {"
-        for g in disabled_event_groups:
-            print >>out, "\t\"%s\"," % g
-        print >>out, "};\n"
-
-    for (var, val) in booleans:
-        print >>out, "@ifdef ( %s )" % var
-        print >>out, "redef %s = %s;" % (var, val and "T" or "F");
-        print >>out, "@endif\n" 
-    print >>out, "\n"
-
-    out.close()
-
-    util.output(" done.")
-
-    for w in warns:
-        util.warn(w)
-
-    if redo:
-        # Second pass.
-        makeAnalysisPolicy()
+#def makeAnalysisPolicy():
+#    manager = config.Config.manager()
+#
+#    if not manager:
+#        return
+#
+#    util.output("generating analysis-policy.bro ...", False)
+#
+#    out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy.bro"), "w")
+#    print >>out, "# Automatically generated. Do not edit.\n"
+#
+#    disabled_event_groups = []
+#    booleans = []
+#    warns = []
+#
+#    analysis = config.Config.analysis()
+#    redo = False
+#
+#    for (type, state, mechanisms, descr) in analysis.all():
+#
+#        for mechanism in mechanisms.split(","):
+#
+#            try:
+#                i = mechanism.index(":")
+#                scheme = mechanism[0:i]
+#                arg = mechanism[i+1:]
+#            except ValueError:
+#                util.warn("error in %s: ignoring mechanism %s" % (config.Config.analysiscfg, mechanism))
+#                continue
+#
+#            if scheme == "events":
+#                # Default is on so only need to record those which are disabled.
+#                if not state:
+#                    disabled_event_groups += [type]
+#
+#            elif scheme == "bool":
+#                booleans += [(arg, state)]
+#
+#            elif scheme == "bool-inv":
+#                booleans += [(arg, not state)]
+#
+#            elif scheme == "disable":
+#                if state:
+#                    continue
+#
+#                if not analysis.isValid(arg):
+#                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
+#                    continue
+#
+#                if analysis.isEnabled(arg):
+#                    warns += ["disabled analysis %s (depends on %s)" % (arg, type)]
+#                    analysis.toggle(arg, False)
+#                    redo = True
+#
+#            else:
+#                util.warn("error in %s: ignoring unknown mechanism scheme %s" % (config.Config.analysiscfg, scheme))
+#                continue
+#
+#    if disabled_event_groups:
+#        print >>out, "redef Remote::disabled_analysis_groups = {"
+#        for g in disabled_event_groups:
+#            print >>out, "\t\"%s\"," % g
+#        print >>out, "};\n"
+#
+#    for (var, val) in booleans:
+#        print >>out, "@ifdef ( %s )" % var
+#        print >>out, "redef %s = %s;" % (var, val and "T" or "F");
+#        print >>out, "@endif\n" 
+#    print >>out, "\n"
+#
+#    out.close()
+#
+#    util.output(" done.")
+#
+#    for w in warns:
+#        util.warn(w)
+#
+#    if redo:
+#        # Second pass.
+#        makeAnalysisPolicy()
 
 # Reads in a list of networks from file.
 def readNetworks(file):
@@ -375,5 +370,21 @@ def makeLocalNetworks():
 
     util.output(" done.")
 
+
+def makeConfig():
+    manager = config.Config.manager()
+
+    if not manager:
+        return
+
+    util.output("generating broctl-config.bro ...", False)
+    filename = os.path.join(config.Config.policydirsiteinstallauto, "broctl-config.bro")
+    out = open(filename, "w")
+    print >>out, "# Automatically generated. Do not edit."
+    print >>out, "redef Notice::mail_dest = \"%s\";" % config.Config.mailto
+    print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
+    print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
+    out.close()
+    util.output(" done.")
 
 

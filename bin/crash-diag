@@ -10,20 +10,17 @@
 
 cd $1
 
-if [ -e .cmdline ]; then
-   echo ==== .cmdline
-   tail -30 .cmdline
-else
-   echo ==== No .cmdline
-fi
+core=`ls -t *core* 2>&1`
 
-echo
-
-if [ -e .env_vars ]; then
-   echo ==== .env_vars
-   tail -30 .env_vars
+if which gdb >/dev/null 2>&1; then
+    for c in $core; do 
+        if [ -e $c ]; then
+            echo $c
+            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c 2>/dev/null
+        fi
+    done
 else
-   echo ==== No .env_vars
+    echo "No gdb installed."
 fi
 
 echo
@@ -55,6 +52,24 @@ fi
 
 echo
 
+if [ -e .cmdline ]; then
+   echo ==== .cmdline
+   tail -30 .cmdline
+else
+   echo ==== No .cmdline
+fi
+
+echo
+
+if [ -e .env_vars ]; then
+   echo ==== .env_vars
+   tail -30 .env_vars
+else
+   echo ==== No .env_vars
+fi
+
+echo
+
 if [ -e .status ]; then
    echo ==== .status
    tail -10 .status
@@ -78,21 +93,6 @@ if [ -e packet_filter.log ]; then
    tail -30 packet_filter.log 
 else
    echo ==== No packet_filter.log
-fi
-
-echo
-
-core=`ls -t *core* 2>&1`
-
-if which gdb >/dev/null 2>&1; then
-    for c in $core; do 
-        if [ -e $c ]; then
-            echo $c
-            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c 2>/dev/null
-        fi
-    done
-else
-    echo "No gdb installed."
 fi
 
 echo
