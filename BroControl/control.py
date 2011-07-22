@@ -937,21 +937,21 @@ def update(nodes):
     return [(config.Config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
 
 # Enable/disable types of analysis.
-def toggleAnalysis(types, enable=True):
+#def toggleAnalysis(types, enable=True):
+#
+#    ana = config.Config.analysis()
+#
+#    for t in types:
+#        if ana.isValid(t.lower()):
+#            ana.toggle(t.lower(), enable)
+#        else:
+#            util.output("unknown analysis type '%s'" % t)
 
-    ana = config.Config.analysis()
 
-    for t in types:
-        if ana.isValid(t.lower()):
-            ana.toggle(t.lower(), enable)
-        else:
-            util.output("unknown analysis type '%s'" % t)
-
-
-# Print summary of analysis status.
-def showAnalysis():
-    for (tag, status, mechanism, descr) in config.Config.analysis().all():
-        print "%15s is %s  -  %s" % (tag, (status and "enabled " or "disabled"), descr)
+## Print summary of analysis status.
+#def showAnalysis():
+#    for (tag, status, mechanism, descr) in config.Config.analysis().all():
+#        print "%15s is %s  -  %s" % (tag, (status and "enabled " or "disabled"), descr)
 
 # Gets disk space on all volumes relevant to broctl installation.
 # Returns dict which for each node has a list of tuples (fs, total, used, avail).

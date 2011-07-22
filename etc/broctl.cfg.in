@@ -1,19 +1,24 @@
-# $Id: broctl.cfg.cluster.in 6811 2009-07-06 20:41:10Z robin $
-#
-# Global cluster configuration file. 
-#
+# Global BroControl configuration file. 
 
-# Directories with local policies which are to be installed in addition
-# to the distribution's scripts. ':' separates multiple directories.
-#
-SitePolicyPath = ${policydir}/site
-
-# Local script prefixes (use this instead of the @prefix statement.)
-# Multiple prefixes are separated by a colon.
-Prefixes = local
-
-# Sends all mails to this address.
+# Sends all emails from Bro to this address.
 MailTo = root@localhost
 
-# Logs debug information into spool/debug.log
-Debug = 1
+# Location of the "sendmail" program for sending email.
+SendMail = /usr/sbin/sendmail
+
+# Location of the spool directory where files and data that are currently 
+# being written are stored.
+SpoolDir = ${SPOOL}
+
+# Location of the log directory.  This is longer term storage for rotated logs.
+LogDir = ${LOGS}
+
+# Logs older than this many days will be deleted by BroControl.
+LogExpireInterval = 30
+
+# Percent of disk holding various logs when BroControl should start sending
+# out warning emails.
+MinDiskSpace = 5
+
+# Logs debug information into spool/debug.log.
+# Debug = 1

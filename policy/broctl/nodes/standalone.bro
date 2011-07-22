@@ -1,21 +1,15 @@
-## Configuration for a standalone system.
-
-@load broctl/mail-alarms
-@load broctl/trim-trace-file
+##! Configuration for a standalone system used with BroControl.
 
 @load standalone-layout
+@load frameworks/notice
 
-redef MailAlarms::output &rotate_interval = 12hrs;
-
-# Record all packets into trace file.
+## Record all packets into trace file.
+## This will only be happen if the -w flag is given on the command line.
+@load misc/trim-trace-file
 redef record_all_packets = T;
 
-#redef mail_script = "mail-alarm";
-#redef mail_dest = "_broctl_default_"; # Will be replaced by mail script.
-
-redef log_rotate_interval = 1hrs;
-redef log_rotate_base_time = "0:00";
-#redef RotateLogs::default_postprocessor = "archive-log";
+redef Log::default_rotation_interval = 1hrs;
+redef Log::default_rotation_postprocessor = "archive-log";
 
 event file_opened(f: file)
 	{
