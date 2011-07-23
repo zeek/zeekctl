@@ -154,8 +154,6 @@ options = [
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
            "File definining the local networks."),
-    #Option("AnalysisCfg", "${CfgDir}/analysis.dat", "string", Option.AUTOMATIC, False,
-    #       "Configuration file defining types of analysis which can be toggled on-the-fly."),
     Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,

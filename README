@@ -290,16 +290,14 @@ restart of the affected nodes. The restart_
 command triggers this. Some changes however can be put into effect
 on-the-fly without restarting any of the nodes by using the
 update_ command (again only after doing
-install_ first). Such dynamic updates work with
-all changes done via the analysis_ command
-(see below) as well as generally with all policy which only modify
-global variables declared as *redefinable* (i.e., with Bro's
+install_ first). Such dynamic updates generally work with
+all changes done which only modify
+const variables declared as *redefinable* (i.e., with Bro's
 *&redef* attribute).
 
 Generally, site-specific tuning needs to be done with local policy
 scripts, as in any Bro setup. This is described
-link:site_tuning[below]. Some general types of analysis can however
-be enabled/disabled via the analysis_ command.
+link:site_tuning[below].
 
 *BroControl* provides various options to control the behavior of
 the setup. These options can be set by editing ``etc/broctl.cfg``.
@@ -311,8 +309,7 @@ Site-specific Customization
 ---------------------------
 
 You'll most likely want to adapt the Bro policy to the local
-environment. While some types of analysis can be customized via the
-analysis_ command, much of the more specific
+environment and much of the more specific
 tuning requires writing local policy files. 
 
 By default, it is assumed that you put site-specific policy scripts
@@ -344,11 +341,6 @@ any site-specific policy so that you can redefine any of the
 defaults locally. The scripts_ shows precisely
 which policy scripts get loaded by a node; that can be very helpful
 for debugging. 
-
-Please note that enabling a particular kind of analysis via the
-analysis_ command only has an effect if the
-corresponding Bro scripts are loaded by the local site policy in
-``local.bro``. 
 
 It is also possible to add additional scripts to individual nodes
 only. This works by setting the option ``aux_scripts`` for the
