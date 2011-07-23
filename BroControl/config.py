@@ -80,7 +80,6 @@ class Node:
 # - the global broctl configuration from broctl.cfg
 # - the node configuration from nodes.cfg
 # - dynamic state variables which are kept across restarts in spool/broctl.dat
-# - types of analysis which can be toggled via the shell
 
 Config = None # Globally accessible instance of Configuration.
 
@@ -127,9 +126,6 @@ class Configuration:
 
         # Now that the nodes have been read in, set the standalone config option.
         self._setOption("standalone", len(self.nodes("standalone"))>0 and "1" or "0")
-
-        # Setup the kinds of analyses which we support.
-        self._analysis = Analysis(self.analysiscfg)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
@@ -239,10 +235,6 @@ class Configuration:
                 value = ""
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
-
-    # Returns instance of class Analysis. 
-    def analysis(self):
-        return self._analysis
 
     # Parse nodes.cfg.
     def _readNodes(self):
