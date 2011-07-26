@@ -466,9 +466,11 @@ def status(nodes):
         if success:
             peers[node.tag] = []
             for f in args[0].split():
-                (key, val) = f.split("=")
-                if key == "peer" and val != "":
-                    peers[node.tag] += [val]
+                keyval = f.split("=")
+                if len(keyval) > 1:
+                    (key, val) = keyval
+                    if key == "peer" and val != "":
+                        peers[node.tag] += [val]
         else:
             peers[node.tag] = None
 
