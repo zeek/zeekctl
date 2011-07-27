@@ -478,9 +478,11 @@ def status(nodes):
         if success:
             peers[node.name] = []
             for f in args[0].split():
-                (key, val) = f.split("=")
-                if key == "peer" and val != "":
-                    peers[node.name] += [val]
+                keyval = f.split("=")
+                if len(keyval) > 1:
+                    (key, val) = keyval
+                    if key == "peer" and val != "":
+                        peers[node.tag] += [val]
         else:
             peers[node.name] = None
 
@@ -935,23 +937,6 @@ def update(nodes):
             util.output("%s: %s" % (tag, output[0]))
 
     return [(config.Config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
-
-# Enable/disable types of analysis.
-#def toggleAnalysis(types, enable=True):
-#
-#    ana = config.Config.analysis()
-#
-#    for t in types:
-#        if ana.isValid(t.lower()):
-#            ana.toggle(t.lower(), enable)
-#        else:
-#            util.output("unknown analysis type '%s'" % t)
-
-
-## Print summary of analysis status.
-#def showAnalysis():
-#    for (tag, status, mechanism, descr) in config.Config.analysis().all():
-#        print "%15s is %s  -  %s" % (tag, (status and "enabled " or "disabled"), descr)
 
 # Gets disk space on all volumes relevant to broctl installation.
 # Returns dict which for each node has a list of tuples (fs, total, used, avail).

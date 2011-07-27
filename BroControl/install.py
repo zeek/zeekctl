@@ -91,7 +91,6 @@ def install(local_only):
         util.output(" done.")
 
     makeLayout()
-    #makeAnalysisPolicy()
     makeLocalNetworks()
     makeConfig()
 
@@ -246,130 +245,6 @@ def makeLayout():
         print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
 
     util.output(" done.")
-
-## Create Bro script to enable the selected types of analysis.
-#def makeAnalysisPolicy():
-#    manager = config.Config.manager()
-#
-#    if not manager:
-#        return
-#
-#    util.output("generating analysis-policy.bro ...", False)
-#
-#    out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy.bro"), "w")
-#    print >>out, "# Automatically generated. Do not edit.\n"
-#
-#    disabled_event_groups = []
-#    booleans = []
-#    warns = []
-#    unloads = []
-#
-#    analysis = config.Config.analysis()
-#    redo = False
-#
-#    for (type, state, mechanisms, descr) in analysis.all():
-#
-#        for mechanism in mechanisms.split(","):
-#
-#            try:
-#                i = mechanism.index(":")
-#                scheme = mechanism[0:i]
-#                arg = mechanism[i+1:]
-#            except ValueError:
-#                util.warn("error in %s: ignoring mechanism %s" % (config.Config.analysiscfg, mechanism))
-#                continue
-#
-#            if scheme == "events":
-#                # Default is on so only need to record those which are disabled.
-#                if not state:
-#                    disabled_event_groups += [type]
-#
-#            elif scheme == "bool":
-#                booleans += [(arg, state)]
-#
-#            elif scheme == "bool-inv":
-#                booleans += [(arg, not state)]
-#
-#            elif scheme == "enable":
-#
-#                if not analysis.isValid(arg):
-#                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
-#                    continue
-#
-#                if not analysis.isEnabled(arg):
-#                    analysis.toggle(arg, True)
-#                    warns += ["enabled analysis %s with %s" % (arg, type)]
-#                    redo = True
-#
-#            elif scheme == "disable":
-#
-#                if not analysis.isValid(arg):
-#                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
-#                    continue
-#
-#                if analysis.isEnabled(arg):
-#                    analysis.toggle(arg, False)
-#                    warns += ["disabled analysis %s with %s" % (arg, type)]
-#                    redo = True
-#
-#            elif scheme == "link":
-#                if state:
-#                    continue
-#
-#                if not analysis.isValid(arg):
-#                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
-#                    continue
-#
-#                new = analysis.isEnabled(arg)
-#                old = analysis.toggle(arg, new)
-#
-#                if old != new:
-#                    state = "enabled" if new else "disabled"
-#                    warns += ["%s analysis %s (linked with %s)" % (new, arg, type)]
-#                    redo = True
-#
-#            elif scheme == "unload":
-#                unloads += [arg]
-#
-#            else:
-#                util.warn("error in %s: ignoring unknown analysis mechanism %s" % (config.Config.analysiscfg, scheme))
-#                continue
-#
-#    if disabled_event_groups:
-#        print >>out, "redef Remote::disabled_analysis_groups = {"
-#        for g in disabled_event_groups:
-#            print >>out, "\t\"%s\"," % g
-#        print >>out, "};\n"
-#
-#    for (var, val) in booleans:
-#        print >>out, "@ifdef ( %s )" % var
-#        print >>out, "redef %s = %s;" % (var, val and "T" or "F");
-#        print >>out, "@endif\n"
-#    print >>out, "\n"
-#
-#    out.close()
-#
-#    util.output(" done.")
-#
-#    if unloads:
-#        util.output("generating analysis-policy-unload.bro ...", False)
-#        out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy-unload.bro"), "w")
-#        print >>out, "# Automatically generated. Do not edit.\n"
-#
-#        for script in unloads:
-#            print >>out, "@unload %s" % script
-#
-#        out.close()
-#
-#    util.output(" done.")
-#
-#    for w in warns:
-#        util.warn(w)
-#
-#    if redo:
-#        # Second pass.
-#        makeAnalysisPolicy()
-
 
 # Reads in a list of networks from file.
 def readNetworks(file):

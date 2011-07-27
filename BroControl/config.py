@@ -17,83 +17,63 @@ import options
 import plugin
 import util
 
-# Class managing types of analysis.
-class Analysis:
-    def __init__(self, cfgfile):
+# One broctl node. 
+class Node:
+    # Valid tags in nodes file. The values will be stored 
+    # in attributes of the same name.
+    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
 
-        self.types = {}
-        cnt = 0
+    def __init__(self, tag):
+        self.tag = tag
 
-        if not os.path.exists(cfgfile):
-            util.error("analysis configuration %s does not exist" % cfgfile)
+    def __str__(self):
+        def fmt(v):
+            if type(v) == type([]):
+                v = ",".join(v)
+            return v
 
-        for line in open(cfgfile):
-            cnt += 1
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+        return ("%15s - " % self.tag) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
 
-            f = line.split()
-            if len(f) < 2:
-                util.warn("cannot parse line %d in %s" % (cnt, cfgfile))
-                continue
+    # Returns the working directory for this node. 
+    def cwd(self):
+        return os.path.join(Config.spooldir, self.tag)
 
-            type = f[0]
-            mechanism = f[1]
-            descr = ""
-            if len(f) > 2:
-                descr = " ".join(f[2:])
+    # Stores the nodes process ID. 
+    def setPID(self, pid):
+        Config._setState("%s-pid" % self.tag, str(pid))
 
-            self.types[type] = (mechanism, descr)
+    # Returns the stored process ID.
+    def getPID(self):
+        t = "%s-pid" % self.tag
+        if t in Config.state:
+            return Config.state[t]
+        return None
 
-    # Adds another analysis. This is used by the PluginRegistry for adding
-    # the plugin analyses dynamically. Note that parameter format here must
-    # correspond to that in analysis.dat. If necessary, the registry needs to
-    # translate what a plugins specifies.
-    def addAnalysis(self, name, mechanism, descr):
-        self.types[name] = (mechanism, descr)
+    # Unsets the stored process ID.
+    def clearPID(self):
+        Config._setState("%s-pid" % self.tag, "")
 
-    # Returns true if we know this kind of analysis.
-    def isValid(self, type):
-        return type in self.types
+    # Mark node as having terminated unexpectedly.
+    def setCrashed(self):
+        Config._setState("%s-crashed" % self.tag, "1")
 
-    # Returns true if type is enabled.
-    # Default is yes if we haven't disabled it.
-    def isEnabled(self, type):
-        tag = "analysis-%s" % type
-        try:
-            return int(Config.state[tag]) != 0
-        except KeyError:
-            return True
+    # Unsets the flag for unexpected termination.
+    def clearCrashed(self):
+        Config._setState("%s-crashed" % self.tag, "0")
 
-    # Enable/disable type. Returns previous state.
-    def toggle(self, type, enable=True):
-        tag = "analysis-%s" % type
-        prev = (not tag in Config.state) or Config.state[tag] != "0"
+    # Returns true if node has terminated unexpectedly.
+    def hasCrashed(self):
+        t = "%s-crashed" % self.tag
+        return t in Config.state and Config.state[t] == "1"
 
-        if enable:
-            try:
-                del Config.state[tag]
-            except KeyError:
-                pass
-        else:
-            Config.state[tag] = "0"
+    # Set the Bro port this node is using.
+    def setPort(self, port):
+        Config._setState("%s-port" % self.tag, str(port))
 
-        return prev
-
-    # Returns tuples (type, status, mechanism, descr) of all known analysis types.
-    # 'type' is tag for analysis.
-    # 'status' is True if analysis is activated.
-    # 'mechanism' gives the method how to control the analysis within Bro (see etc/analysis.dat).
-    # 'descr' is textual dscription for the kind of analysis.
-    def all(self):
-        result = []
-        keys = self.types.keys()
-        keys.sort()
-        for type in keys:
-            (mechanism, descr) = self.types[type]
-            result += [(type, self.isEnabled(type), mechanism, descr)]
-        return result
+    # Get the Bro port this node is using.
+    def getPort(self):
+        t = "%s-port" % self.tag
+        return t in Config.state and int(Config.state[t]) or -1
 
 # Class storing the broctl configuration.
 #
@@ -102,7 +82,6 @@ class Analysis:
 # - the global broctl configuration from broctl.cfg
 # - the node configuration from nodes.cfg
 # - dynamic state variables which are kept across restarts in spool/broctl.dat
-# - types of analysis which can be toggled via the shell
 
 Config = None # Globally accessible instance of Configuration.
 
@@ -151,10 +130,6 @@ class Configuration:
 
         # Now that the nodes have been read in, set the standalone config option.
         self._setOption("standalone", len(self.nodes("standalone"))>0 and "1" or "0")
-
-        # Setup the kinds of analyses which we support.
-        self._analysis = Analysis(self.analysiscfg)
-        plugin.Registry.addAnalyses(self._analysis)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
@@ -264,10 +239,6 @@ class Configuration:
                 value = ""
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
-
-    # Returns instance of class Analysis.
-    def analysis(self):
-        return self._analysis
 
     # Parse nodes.cfg.
     def _readNodes(self):
