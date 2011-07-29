@@ -131,7 +131,7 @@ install(DIRECTORY policy/
         DESTINATION share/bro
         FILES_MATCHING
         PATTERN "*.bro"
-        PATTERN "local" EXCLUDE)
+        PATTERN "site/*.bro" EXCLUDE)
 
 set(ETC ${PREFIX}/etc)
 
