@@ -839,12 +839,6 @@ BroControl Version %s
    update <nodes>                - update configuration of nodes on the fly
    top <nodes>                   - show Bro processes ala top
    %s
-
-See Bro Control's Wiki page for more information:
-
-    http://www.bro-ids.org/wiki/index.php/BroControl
-
-Send questions to the Bro mailing list at bro@bro-ids.org.
    """ % (Version, plugin_help))
 
 # Hidden command to print the command documentation.
