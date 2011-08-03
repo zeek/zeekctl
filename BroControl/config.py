@@ -71,7 +71,12 @@ class Configuration:
         self.readState()
 
         # Now that the nodes have been read in, set the standalone config option.
-        self._setOption("standalone", len(self.nodes("standalone"))>0 and "1" or "0")
+        standalone = "0"
+        for node in self.nodes("all"):
+            if node.type == "standalone":
+                standalone = "1"
+
+        self._setOption("standalone", standalone)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
@@ -124,7 +129,7 @@ class Configuration:
         elif tag == "workers":
             type = "worker"
 
-        elif (tag) in self.config:
+        elif tag in self.config:
             type = tag
 
         for n in self.nodelist.values():
