@@ -17,64 +17,6 @@ import options
 import plugin
 import util
 
-# One broctl node. 
-class Node:
-    # Valid tags in nodes file. The values will be stored 
-    # in attributes of the same name.
-    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
-
-    def __init__(self, tag):
-        self.tag = tag
-
-    def __str__(self):
-        def fmt(v):
-            if type(v) == type([]):
-                v = ",".join(v)
-            return v
-
-        return ("%15s - " % self.tag) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
-
-    # Returns the working directory for this node. 
-    def cwd(self):
-        return os.path.join(Config.spooldir, self.tag)
-
-    # Stores the nodes process ID. 
-    def setPID(self, pid):
-        Config._setState("%s-pid" % self.tag, str(pid))
-
-    # Returns the stored process ID.
-    def getPID(self):
-        t = "%s-pid" % self.tag
-        if t in Config.state:
-            return Config.state[t]
-        return None
-
-    # Unsets the stored process ID.
-    def clearPID(self):
-        Config._setState("%s-pid" % self.tag, "")
-
-    # Mark node as having terminated unexpectedly.
-    def setCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "1")
-
-    # Unsets the flag for unexpected termination.
-    def clearCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "0")
-
-    # Returns true if node has terminated unexpectedly.
-    def hasCrashed(self):
-        t = "%s-crashed" % self.tag
-        return t in Config.state and Config.state[t] == "1"
-
-    # Set the Bro port this node is using.
-    def setPort(self, port):
-        Config._setState("%s-port" % self.tag, str(port))
-
-    # Get the Bro port this node is using.
-    def getPort(self):
-        t = "%s-port" % self.tag
-        return t in Config.state and int(Config.state[t]) or -1
-
 # Class storing the broctl configuration.
 #
 # This class provides access to four types of configuration/state:

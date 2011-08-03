@@ -214,18 +214,18 @@ def makeLayout():
         print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
 
         # Manager definition
-        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.tag, manager.addr, nextPort(manager)),
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.name, manager.addr, nextPort(manager)),
         for s in workers:
-            print >>out, "\"%s\"" % (s.tag),
+            print >>out, "\"%s\"" % (s.name),
             if s != workers[-1]:
                 print >>out, ",",
         print >>out, ")],"
 
         # Proxies definition
         for p in proxies:
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.tag, p.addr, nextPort(p), manager.tag),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, p.addr, nextPort(p), manager.name),
             for s in workers:
-                print >>out, "\"%s\"" % (s.tag),
+                print >>out, "\"%s\"" % (s.name),
                 if s != workers[-1]:
                     print >>out, ",",
             print >>out, ")],"
@@ -233,7 +233,7 @@ def makeLayout():
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.tag, w.addr, nextPort(w), w.interface, manager.tag, proxies[p].tag),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, w.addr, nextPort(w), w.interface, manager.name, proxies[p].name),
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:

@@ -83,7 +83,7 @@ class Node:
                 return int(config.Config.state[t])
             except ValueError:
                 pass
-                
+
         return None
 
     def clearPID(self):

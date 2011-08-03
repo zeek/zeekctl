@@ -167,7 +167,7 @@ def _makeBroParams(node, live, add_manager=False):
     for p in config.Config.prefixes.split(":"):
         args += ["-p %s" % p]
 
-    args += ["-p %s" % node.tag]
+    args += ["-p %s" % node.name]
 
     args += ["broctl"]
     args += ["broctl/nodes/%s" % node.type]
@@ -187,7 +187,7 @@ def _makeBroParams(node, live, add_manager=False):
 def _makeEnvParam(node):
     env = ""
     if node.type != "standalone":
-        env = "CLUSTER_NODE=%s" % node.tag
+        env = "CLUSTER_NODE=%s" % node.name
 
     return env
 
@@ -482,7 +482,7 @@ def status(nodes):
                 if len(keyval) > 1:
                     (key, val) = keyval
                     if key == "peer" and val != "":
-                        peers[node.tag] += [val]
+                        peers[node.name] += [val]
         else:
             peers[node.name] = None
 
@@ -659,10 +659,10 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
         if success:
-            util.output("%s is ok." % node.tag)
+            util.output("%s is ok." % node.name)
         else:
             ok = False
-            util.output("%s failed." % node.tag)
+            util.output("%s failed." % node.name)
             for line in output:
                 util.output("   %s" % line)
 
@@ -925,8 +925,8 @@ def update(nodes):
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
             args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.tag, os.path.join(config.Config.scriptsdir, "update") + " %s %s/tcp %s" % (node.addr, node.getPort(), args), env, None)]
-            util.output("updating %s ..." % node.tag)
+            cmds += [(node.name, os.path.join(config.Config.scriptsdir, "update") + " %s %s/tcp %s" % (node.addr, node.getPort(), args), env, None)]
+            util.output("updating %s ..." % node.name)
 
     results = execute.runLocalCmdsParallel(cmds)
 
@@ -1044,7 +1044,7 @@ def netStats(nodes):
 
 def executeCmd(nodes, cmd):
     for (node, success, output) in execute.runHelperParallel(cmds):
-        util.output("[%s] %s\n> %s" % (node.tag, (success and " " or "error"), "\n> ".join(output)))
+        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), "\n> ".join(output)))
 
 def processTrace(trace, bro_options, bro_scripts):
 
