@@ -9,7 +9,7 @@ import config
 import node
 
 # Note, when changing this, also adapt doc string for Plugin.__init__.
-_CurrentAPIVersion = 1 
+_CurrentAPIVersion = 1
 
 class PluginRegistry:
     def __init__(self):
@@ -29,16 +29,18 @@ class PluginRegistry:
         for plugin in self._plugins:
             plugin._registerOptions()
 
-            for (cmd, args, descr) in plugin.commands():
-                self._cmds["%s.%s" % (plugin.prefix(), cmd)] = (plugin, args, descr)
-
     def initPlugins(self):
         """Initialized all loaded plugins."""
         plugins = []
 
         for p in self._plugins:
-            if p.init():
-                plugins += [p]
+            if not p.init():
+                continue
+
+            plugins += [p]
+
+            for (cmd, args, descr) in p.commands():
+                self._cmds["%s.%s" % (p.prefix(), cmd)] = (p, args, descr)
 
         self._plugins = plugins
 
@@ -186,7 +188,6 @@ class PluginRegistry:
                 analysis.addAnalysis(name, mechanism, descr)
 
     def _loadPlugins(self):
-
         sys.path.append(config.Config.libdirinternal)
 
         for path in self._dirs:
