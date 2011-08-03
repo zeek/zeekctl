@@ -233,11 +233,11 @@ class BroCtlCmdLoop(cmd.Cmd):
         except IndexError:
             pass
 
-        self.lock()
         (success, nodes) = nodeArgs(args, expand_all=False)
         if success:
             util.output("stopping ...")
             self.do_stop(args)
+            self.postcmd(False, args) # Need to call manually.
 
             if self.failed():
                 return
@@ -246,25 +246,29 @@ class BroCtlCmdLoop(cmd.Cmd):
                 # Can't delete the tmp here because log archival might still be
                 # going on there in the background.
                 util.output("cleaning up ...")
-                do_cleanup("--keep-tmp " + args)
+                self.do_cleanup("--keep-tmp " + args)
+                self.postcmd(False, "--keep-tmp " + args)
 
                 if self.failed():
                     return
 
-            util.output("checking configurations...")
-            self.do_check(args)
+                util.output("checking configurations...")
+                self.do_check(args)
+                self.postcmd(False, args)
 
-            if self.failed():
-                return
+                if self.failed():
+                    return
 
-            util.output("installing ...")
-            self.do_install("")
+                util.output("installing ...")
+                self.do_install("")
+                self.postcmd(False, args)
 
-            if self.failed():
-                return
+                if self.failed():
+                    return
 
             util.output("starting ...")
             self.do_start(args)
+            self.postcmd(False, args)
 
     def do_status(self, args):
         """- [<nodes>]

@@ -75,7 +75,7 @@ class Node:
 
     @doc.api
     def getPID(self):
-        """Returnns the process ID of the node's Bro process if running, and
+        """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
         t = "%s-pid" % self.name
         if t in config.Config.state:

@@ -219,7 +219,6 @@ def _makeCrashReports(nodes):
 
 # Starts the given nodes.
 def _startNodes(nodes):
-
     results = []
 
     filtered = []
@@ -433,7 +432,6 @@ def _stopNodes(nodes):
 
 # Stop Bro processes on nodes.
 def stop(nodes):
-
     if len(nodes) > 0:
         # User picked nodes to stop.
         return _stopNodes(nodes)
