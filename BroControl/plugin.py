@@ -305,70 +305,6 @@ class Plugin(object):
         return []
 
     @doc.api("override")
-    def analyses(self):
-        """Returns a custom list of analyses to be controlled by the
-        ``analysis`` command.
-
-        Each analysis entry is a 4-tuple consistent of the following items:
-
-            ``name``
-                A string with a short name for the analysis.
-
-            ``description``
-                A string describing the analysis.
-
-            ``mechanism``
-
-                A 2-tuple of strings defining mechanism to use for toggling
-                the analysis. Possible values are:
-
-                ``("unload", "<script>")``
-                    A Bro script that will be *unloaded* when the
-                    analysis is disabled. Note that it will *not* be
-                    automatically loaded when the analysis is enabled,
-                    that still needs to be done by the normal
-                    site-specific policy.
-
-                ``("bool", "<var>")``
-                    A Bro script-level variable ``<var>`` of boolean type
-                    controls whether the analysis is performed. BroControl
-                    will set the boolean to True if the analysis is enabled,
-                    and to False if it disabled.
-
-                ``("bool-inv", "<var>")``
-                    Like ``bool:<var>``, except that semantics are inverted:
-                    BroControl will set the boolean to True if the analysis is
-                    disabled, and to False if it enabled.
-
-                ``("events", "<group>")``
-                    Defines a Bro event group that corresponds to this
-                    analysis. BroControl will enable the event group if the
-                    analysis is enables, and disable it otherwise.
-
-                ``("link", "<name>")``
-                    Links another analysis controlled by the ``analysis``
-                    command to this one. If this one is enabled, the other
-                    will be enabled as well. If this one is disabled, the
-                    other will be disabled as well.
-
-                ``("enable", "<name>")``
-                    If analysis is enabled, the analysis ``<name>>`` is so as
-                    well.
-
-                ``("disable", "<name>")``
-                    If analysis is disabled, the analysis ``<name>>`` is so as
-                    well.
-
-                ``mechanism`` can also be a list of such 2-tuples to specify
-                more than one entry for an analysis.
-
-        This method can be overridden by derived classes. The implementation
-        must not call the parent class' implementation. The default
-        implementation returns an empty list.
-        """
-        return []
-
-    @doc.api("override")
     def init(self):
         """Called once just before BroControl starts executing any commands.
         This method can do any initialization that the plugin may require.
@@ -532,27 +468,6 @@ class Plugin(object):
     def cmd_cron_post(self, arg, watch):
         """Called just after the ``cron`` command has finished. Arguments are 
         as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_analysis_pre(self, enable, type):
-        """Called just before the ``analysis`` command is run. *enable* is a
-        boolean that is True if an analysis being enabled, and False if
-        disabled. *type* is a string with the name of the analysis.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_analysis_post(self, enable, type):
-        """Called just after the ``analysis`` command has finished.  Arguments
-        are as with the ``pre`` method.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

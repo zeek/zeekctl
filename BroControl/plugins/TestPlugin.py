@@ -2,7 +2,7 @@
 # A simple test plugin exercising most of a plugins capabilities. It just does
 # some debugging output, nothing else.
 #
-# To enable this plugin, add "test.enabled=1" to broctl.cfg.
+# The plugin is off by default. To enable it, add "test.enabled=1" to broctl.cfg.
 
 import BroControl.plugin
 
@@ -49,9 +49,6 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def nodeKeys(self):
         return ["mykey"]
-
-    def analyses(self):
-        return [("foobar", "Just a dummy test analysis.", ("unload", "icmp"))]
 
     def _nodes(self, nodes):
 
@@ -120,12 +117,6 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def cmd_cron_post(self, arg, watch):
         self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
-
-    def cmd_analysis_pre(self, enable, type):
-        self.message("TestPlugin: Test pre 'analysis':   %s %s" % (enable, type))
-
-    def cmd_analysis_post(self, enable, type):
-        self.message("TestPlugin: Test post 'analysis':  %s %s" % (enable, type))
 
     def cmd_start_pre(self, nodes):
         self.message("TestPlugin: Test pre 'start':  %s" % self._nodes(nodes))
