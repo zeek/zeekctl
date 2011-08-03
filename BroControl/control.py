@@ -1052,7 +1052,7 @@ def netStats(nodes):
             print "%10s: <error: %s>" % (node, args)
 
 def executeCmd(nodes, cmd):
-    for (node, success, output) in execute.runHelperParallel(cmds):
+    for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
         util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), "\n> ".join(output)))
 
 def processTrace(trace, bro_options, bro_scripts):
