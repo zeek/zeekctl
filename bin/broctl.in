@@ -693,9 +693,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
 
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("scripts", paths, check)
+            nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, paths, check)
             control.listScripts(nodes, paths, check)
-            plugin.Registry.cmdPostWithNodes("scripts", paths, check)
+            plugin.Registry.cmdPostWithNodes("scripts", nodes, paths, check)
 
         return False
 
