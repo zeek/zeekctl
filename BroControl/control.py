@@ -817,7 +817,8 @@ def getCapstatsOutput(nodes, interval):
             results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
 
     # Add pseudo-node for totals
-    results += [(node_mod.Node("$total"), None, totals)]
+    if len(nodes) > 1:
+        results += [(node_mod.Node("$total"), None, totals)]
 
     return results
 
@@ -865,7 +866,7 @@ def capstats(nodes, interval):
     def output(tag, data):
 
         def outputOne(tag, vals):
-            util.output("%-12s " % tag, nl=False)
+            util.output("%-20s " % tag, nl=False)
 
             if not error:
                 util.output("%-10s " % vals["kpps"], nl=False)
@@ -875,7 +876,7 @@ def capstats(nodes, interval):
             else:
                 util.output("<%s> " % error)
 
-        util.output("\n%-12s %-10s %-10s (%ds average)" % (tag, "kpps", "mbps", interval))
+        util.output("\n%-20s %-10s %-10s (%ds average)" % (tag, "kpps", "mbps", interval))
         util.output("-" * 30)
 
         totals = None
@@ -907,7 +908,7 @@ def capstats(nodes, interval):
         cflow_start = getCFlowStatus()
 
     if have_capstats:
-        capstats = [(node.name, error, vals) for (node, error, vals) in getCapstatsOutput(nodes, interval)]
+        capstats = [("%s/%s" % (node.host, node.interface), error, vals) for (node, error, vals) in getCapstatsOutput(nodes, interval)]
 
     else:
         time.sleep(interval)
