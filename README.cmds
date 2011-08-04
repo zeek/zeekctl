@@ -1,32 +1,6 @@
 .. Automatically generated. Do not edit.
 
 
-.. _analysis:
-
-*analysis* *enable|disable <type>*
-    This command enables or disables certain kinds of analysis without the
-    need for doing any changes to Bro scripts. Currently, the analyses
-    shown in the table below can be controlled (in parentheses the
-    corresponding Bro scripts; the effect of enabling/disabling is similar
-    to loading or not loading these scripts, respectively). The list might
-    be extended in the future. Any changes performed via this command are
-    applied by update_ and therefore do not require a
-    restart of the nodes.
-    
-    ============  ===================================================================================
-    Type          Description
-    ============  ===================================================================================
-    dns           DNS analysis (``dns.bro``)
-    ftp           FTP analysis (``ftp.bro``)
-    http-body     HTTP body analysis (``http-body.bro``).
-    http-request  Client-side HTTP analysis only (``http-request.bro``)
-    http-reply    Client- and server-side HTTP analysis (``http-request.bro``/``http-reply.bro``)
-    http-header   HTTP header analysis (``http-headers.bro``)
-    scan          Scan detection (``scan.bro``)
-    smtp          SMTP analysis (``smtp.bro``)
-    ============  ===================================================================================
-
-
 .. _attachgdb:
 
 *attachgdb* *[<nodes>]*
@@ -89,15 +63,25 @@
 
 .. _cron:
 
-*cron* *[<nodes>]*
-    As the name implies, this command should be executed regularly via
-    *cron*, as described above. It performs a set of
-    maintainance tasks, including the logging of various statistical
-    information, expiring old log files, checking for dead hosts, and
-    restarting nodes which terminated unexpectedly.  While not intended
-    for interactive use, no harm will be caused by executing the command
-    manually: all the maintainance tasks will then just be performed one
-    more time.
+*cron* *[enable|disable|?] | [--no-watch] | *
+    This command has two modes of operation. Without arguments (or just
+    ``--no-watch``), it performs a set of maintainance tasks, including
+    the logging of various statistical information, expiring old log
+    files, checking for dead hosts, and restarting nodes which terminated
+    unexpectedly. The latter can be suppressed with the ``--no-watch``
+    option if no auto-restart is desired. This mode is intended to be run
+    executed regularly via *cron*, as described in the installation
+    instructions. While not intended for interactive use, no harm will be
+    caused by executing the command manually: all the maintainance tasks
+    will then just be performed one more time.
+    
+    The second mode is for interactive usage and determines if the regular
+    tasks are indeed performed when ``broctl cron`` is executed. In other
+    words, even with ``broctl cron`` in your crontab, you can still
+    temporarily disable its execution by running ``cron disable``, and
+    then later reenable with ``cron enable``. This can be helpful while
+    working, e.g., on the BroControl configuration and ``cron`` would
+    interfere with that. ``cron ?`` can be used to query the current state.
 
 
 .. _df:
@@ -185,6 +169,25 @@
     print the corresponding table from ``ssh.bro``.)
 
 
+.. _process:
+
+*process*
+    - <trace> [options] [-- scripts]]
+    
+    Runs Bro offline on a given trace file using the same configuration as
+    when running live. It does however use the potentially
+    not-yet-installed policy files in SitePolicyPath_. Additional Bro
+    command line flags and scripts can be given, the latter must be
+    prefixed by ``--``.
+    
+    Upon completion, the command prints a path where the log files can be
+    found. Subsequent runs of this command may delete these logs.
+    
+    In cluster mode, Bro is run with *both* manager and worker scripts
+    loaded into a single instance. While that doesn't fully reproduce the
+    live setup, it is often sufficient for debugging analysis scripts.
+
+
 .. _quit:
 
 *quit*
@@ -260,14 +263,12 @@
     requiring a restart_). However, such dynamic
     updates work only for a *subset* of Bro's full configuration. The
     following changes can be applied on the fly: (1) The value of all
-    script variables defined as ``&redef`` can be changed; and (2) all
-    configuration changes performed via the analysis_
-    command can be put into effect. More extensive script changes are not
-    possible during runtime and always require a restart; if you change
-    more than just the values of ``&redef`` variables and still issue
-    ``update``, the results are undefined and can lead to crashes. Also note
-    that before running ``update``, you still need to do an
-    install_ (preferably after
-    check_), as otherwise ``update`` will not see the
-    changes and resend the old configuration.
+    const variables defined with the ``&redef`` attribute can be changed.
+    More extensive script changes are not possible during runtime and
+    always require a restart; if you change more than just the values of
+    ``&redef``-able consts and still issue ``update``, the results are
+    undefined and can lead to crashes. Also note that before running
+    ``update``, you still need to do an install_ (preferably after
+    check_), as otherwise ``update`` will not see the changes and resend
+    the old configuration.
 

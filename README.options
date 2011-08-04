@@ -7,21 +7,6 @@ User Options
 *AuxPostProcessors* (string, default _empty_)
     Additional log postprocessors, with paths separated by spaces.
 
-.. _AuxScriptsManager:
-
-*AuxScriptsManager* (string, default _empty_)
-    Additional Bro scripts loaded on the manager, separated by spaces.
-
-.. _AuxScriptsStandalone:
-
-*AuxScriptsStandalone* (string, default _empty_)
-    Additional Bro scripts loaded on a standalone Brothe manage, separated by spaces.
-
-.. _AuxScriptsWorker:
-
-*AuxScriptsWorker* (string, default _empty_)
-    Additional Bro scripts loaded on the workers, separated by spaces.
-
 .. _BroArgs:
 
 *BroArgs* (string, default _empty_)
@@ -80,7 +65,7 @@ User Options
 .. _MailAlarmPrefix:
 
 *MailAlarmPrefix* (string, default "ALERT:")
-    Subject prefix for individual alerts triggered by NOTICE_EMAIL.
+    Subject prefix for individual alerts triggered by Notice::ACTION_EMAIL.
 
 .. _MailAlarms:
 
@@ -139,8 +124,8 @@ User Options
 
 .. _SendMail:
 
-*SendMail* (bool, default 1)
-    True if shell may send mails.
+*SendMail* (string, default "/usr/sbin/sendmail")
+    Location of the sendmail binary.  Make this string blank to prevent email from being sent.
 
 .. _SitePluginPath:
 
@@ -160,7 +145,7 @@ User Options
 .. _SitePolicyStandalone:
 
 *SitePolicyStandalone* (string, default "local.bro")
-    Local policy file for standalone Bro.
+    Local policy file for all Bro instances.
 
 .. _SitePolicyWorker:
 
@@ -185,11 +170,6 @@ User Options
 
 Internal Options
 ~~~~~~~~~~~~~~~~
-
-.. _AnalysisCfg:
-
-*AnalysisCfg* (string, default "$\{CfgDir}/analysis.dat")
-    Configuration file defining types of analysis which can be toggled on-the-fly.
 
 .. _BinDir:
 
@@ -285,26 +265,6 @@ Internal Options
 
 *PostProcDir* (string, default "$\{BroBase}/share/broctl/scripts/postprocessors")
     Directory for log postprocessors.
-
-.. _Scripts-Manager:
-
-*Scripts-Manager* (string, default "cluster-manager")
-    Bro scripts loaded on the manager, separated by spaces.
-
-.. _Scripts-Proxy:
-
-*Scripts-Proxy* (string, default "cluster-proxy")
-    Bro scripts loaded on the proxies, separated by spaces.
-
-.. _Scripts-Standalone:
-
-*Scripts-Standalone* (string, default "standalone")
-    Bro scripts loaded on a standalone Bro, separated by spaces.
-
-.. _Scripts-Worker:
-
-*Scripts-Worker* (string, default "cluster-worker")
-    Bro scripts loaded on the workers, separated by spaces.
 
 .. _ScriptsDir:
 

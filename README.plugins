@@ -7,7 +7,7 @@ class **Plugin**
      The class ``Plugin`` is the base class for all BroControl plugins.
      
      The class has a number of methods for plugins to override, and every
-     plugin must at least override ``name()`` and ``version()``.
+     plugin must at least override ``name()`` and ``pluginVersion()``.
      
      For each BroControl command ``foo``, there's are two methods,
      ``cmd_foo_pre`` and ``cmd_foo_post``, that are called just before the
@@ -33,13 +33,17 @@ class **Plugin**
      tuple ``(node, bool)`` with *node* being the actual `Node`_, and the boolean
      indicating whether the command was succesful for it.
      
-     Note that if plugin prevent a command from execution either completely or
+     Note that if plugin prevents a command from execution either completely or
      partially, it should report its reason via the ``message*(`` or
      ``error()`` methods.
      
      If multiple plugins hook into the same command, all their
      ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
      executed on the intersection of all ``cmd_<XXX>_pre`` results.
+     
+     Finally, note that the ``restart`` command doesn't have its own method as
+     it's just a combination of other commands and thus their callbacks are
+     run.
 
      .. _Plugin.debug:
 
@@ -57,36 +61,30 @@ class **Plugin**
 
      **execute** (self, node, cmd)
 
-         Executes a command on the given *node* of type `Node`_. Returns a
-         tuple ``(rc, output)`` in which ``rc`` is the command's exit code and
-         ``output`` the combined stdout/stderr output.
+         Executes a command on the host for the given *node* of type
+         `Node`_. Returns a tuple ``(success, output)`` in which ``succes`` is
+         True if the command run successfully and ``output`` the combined stdout/stderr
+         output.
 
      .. _Plugin.executeParallel:
 
      **executeParallel** (self, cmds)
 
-         Executes a set of commands in parallel on multiple nodes. ``cmds``
+         Executes a set of commands in parallel on multiple hosts. ``cmds``
          is a list of tuples ``(node, cmd)``, in which the *node* is `Node`_
          instance and *cmd* a string with the command to execute for it. The
-         method returns a list of tuples ``(node, rc, output)``, in which
-         ``rc`` is the exit code and ``output`` the combined stdout/stderr
-         output for the corresponding ``node``.
+         method returns a list of tuples ``(node, success, output)``, in which
+         ``success`` is True if the command run successfully and ``output`` the
+         combined stdout/stderr output for the corresponding ``node``.
 
      .. _Plugin.getGlobalOption:
 
      **getGlobalOption** (self, name)
 
-         Returns the value of the global BroControl option *name*. If the
-         user has not set the options, its default value is returned.
-
-     .. _Plugin.getNodes:
-
-     **getNodes** (self, names)
-
-         Returns `Node`_ objects for a string of space-separated node names.
-         If a name does not correspond to know node, an error message is
-         printed and the node is skipped from the returned list. If not names
-         are known, an empty list is returned.
+         Returns the value of the global BroControl option or state
+         attribute *name*. If the user has not set the options, its default
+         value is returned. See the output of ``broctl config`` for a complete
+         list
 
      .. _Plugin.getOption:
 
@@ -114,10 +112,10 @@ class **Plugin**
 
      .. _Plugin.hosts:
 
-     **hosts** (self)
+     **hosts** (self, nodes)
 
-         Returns a list of all hosts running at least one node configured in
-         ``nodes.cfg``
+         Returns a list of all hosts running at least one node from the list
+         of Nodes_ objects in *nodes*, or configured in if *nodes* is empty.
 
      .. _Plugin.message:
 
@@ -131,6 +129,15 @@ class **Plugin**
 
          Returns a list of all configured `Node`_ objects.
 
+     .. _Plugin.parseNodes:
+
+     **parseNodes** (self, names)
+
+         Returns `Node`_ objects for a string of space-separated node names.
+         If a name does not correspond to a known node, an error message is
+         printed and the node is skipped from the returned list. If no names
+         are known, an empty list is returned.
+
      .. _Plugin.setState:
 
      **setState** (self, name, value)
@@ -142,73 +149,64 @@ class **Plugin**
          Note that a plugin cannot change any global BroControl state
          variables.
 
-     .. _Plugin.analyses:
+     .. _Plugin.broProcessDied:
 
-     **analyses** (self)
+     **broProcessDied** (self, node)
 
-         Returns a custom list of analyses to be controlled by the
-         ``analysis`` command.
+         Called when BroControl finds the Bro process for node.Node_ *node*
+         to have terminated unexpectedly. This method will be called just
+         before BroControl prepare the node's "crash report" and before it
+         cleans up the node's spool directory.
          
-         Each analysis entry is a 4-tuple consistent of the following items:
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_attachgdb_post:
+
+     **cmd_attachgdb_post** (self, nodes)
+
+         Called just after the ``attachgdb`` command has finished. Arguments
+          are as with the ``pre`` method.
          
-             ``name``
-                 A string with a short name for the analysis.
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_attachgdb_pre:
+
+     **cmd_attachgdb_pre** (self, nodes)
+
+         Called just before the ``attachgdb`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
          
-             ``description``
-                 A string describing the analysis.
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_capstats_post:
+
+     **cmd_capstats_post** (self, nodes, interval)
+
+         Called just after the ``capstats`` command has finished. Arguments
+         are as with the ``pre`` method.
          
-             ``mechanism``
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_capstats_pre:
+
+     **cmd_capstats_pre** (self, nodes, interval)
+
+         Called just before the ``capstats`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command. *integer* is an integer with the measurement interval in
+         seconds.
          
-                 A 2-tuple of strings defining mechanism to use for toggling
-                 the analysis. Possible values are:
-         
-                 ``("unload", "<script>")``
-                     A Bro script that will be *unloaded* when the
-                     analysis is disabled. Note that it will *not* be
-                     automatically loaded when the analysis is enabled,
-                     that still needs to be done by the normal
-                     site-specific policy.
-         
-                 ``("bool", "<var>")``
-                     A Bro script-level variable ``<var>`` of boolean type
-                     controls whether the analysis is performed. BroControl
-                     will set the boolean to True if the analysis is enabled,
-                     and to False if it disabled.
-         
-                 ``("bool-inv", "<var>")``
-                     Like ``bool:<var>``, except that semantics are inverted:
-                     BroControl will set the boolean to True if the analysis is
-                     disabled, and to False if it enabled.
-         
-                 ``("events", "<group>")``
-                     Defines a Bro event group that corresponds to this
-                     analysis. BroControl will enable the event group if the
-                     analysis is enables, and disable it otherwise.
-         
-                 ``("link", "<name>")``
-                     Links another analysis controlled by the ``analysis``
-                     command to this one. If this one is enabled, the other
-                     will be enabled as well. If this one is disabled, the
-                     other will be disabled as well.
-         
-                 ``("enable", "<name>")``
-                     If analysis is enabled, the analysis ``<name>>`` is so as
-                     well.
-         
-                 ``("disable", "<name>")``
-                     If analysis is disabled, the analysis ``<name>>`` is so as
-                     well.
-         
-                 ``mechanism`` can also be a list of such 2-tuples to specify
-                 more than one entry for an analysis.
-         
-         This method can be overridden by derived classes. The implementation
-         must not call the parent class' implementation. The default
-         implementation returns an empty list.
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
 
      .. _Plugin.cmd_check_post:
 
-     **cmd_check_post** (self, nodes)
+     **cmd_check_post** (self, results)
 
          Called just after the ``check`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
@@ -228,6 +226,69 @@ class **Plugin**
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
+     .. _Plugin.cmd_cleanup_post:
+
+     **cmd_cleanup_post** (self, nodes, all)
+
+         Called just after the ``cleanup`` command has finished. Arguments
+         are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_cleanup_pre:
+
+     **cmd_cleanup_pre** (self, nodes, all)
+
+         Called just before the ``cleanup`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command. *all* is boolean indicating whether the ``--all``
+         argument has been given.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_config_post:
+
+     **cmd_config_post** (self)
+
+         Called just after the ``config`` command has finished.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_config_pre:
+
+     **cmd_config_pre** (self)
+
+         Called just before the ``config`` command is run.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_cron_post:
+
+     **cmd_cron_post** (self, arg, watch)
+
+         Called just after the ``cron`` command has finished. Arguments are 
+         as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_cron_pre:
+
+     **cmd_cron_pre** (self, arg, watch)
+
+         Called just before the ``cron`` command is run. *arg* is None if
+         the cron is executed without arguments. Otherwise, it is one of
+         strings ``enable``, ``disable``, ``?``. *watch* is a boolean
+         indicating whether ``cron`` should restart abnormally terminated Bro
+         processes; it's only valid if arg is empty.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
      .. _Plugin.cmd_custom:
 
      **cmd_custom** (self, cmd, args)
@@ -236,8 +297,348 @@ class **Plugin**
          ``cmd`` is the command (with the plugin's prefix), and ``args`` is a
          single *string* with all arguments.
          
-         If the arguments are actually node names, ``getNodes`` can
+         If the arguments are actually node names, ``parseNodes`` can
          be used to get the `Node`_ objects.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_df_post:
+
+     **cmd_df_post** (self, nodes)
+
+         Called just after the ``df`` command has finished. Arguments are as
+          with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_df_pre:
+
+     **cmd_df_pre** (self, nodes)
+
+         Called just before the ``df`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_diag_post:
+
+     **cmd_diag_post** (self, nodes)
+
+         Called just after the ``diag`` command has finished. Arguments are
+         as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_diag_pre:
+
+     **cmd_diag_pre** (self, nodes)
+
+         Called just before the ``diag`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_exec_post:
+
+     **cmd_exec_post** (self, cmdline)
+
+         Called just after the ``exec`` command has finished. Arguments are
+         as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_exec_pre:
+
+     **cmd_exec_pre** (self, cmdline)
+
+         Called just before the ``exec`` command is run. *cmdline* is a
+         string with the command line to execute.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_install_post:
+
+     **cmd_install_post** (self)
+
+         Called just after the ``install`` command has finished.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_install_pre:
+
+     **cmd_install_pre** (self)
+
+         Called just before the ``install`` command is run.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_netstats_post:
+
+     **cmd_netstats_post** (self, nodes)
+
+         Called just after the ``netstats`` command has finished. Arguments
+          are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_netstats_pre:
+
+     **cmd_netstats_pre** (self, nodes)
+
+         Called just before the ``netstats`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_nodes_post:
+
+     **cmd_nodes_post** (self)
+
+         Called just after the ``nodes`` command has finished.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_nodes_pre:
+
+     **cmd_nodes_pre** (self)
+
+         Called just before the ``nodes`` command is run.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_peerstatus_post:
+
+     **cmd_peerstatus_post** (self, nodes)
+
+         Called just after the ``peerstatus`` command has finished. 
+         Arguments are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_peerstatus_pre:
+
+     **cmd_peerstatus_pre** (self, nodes)
+
+         Called just before the ``peerstatus`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_print_post:
+
+     **cmd_print_post** (self, nodes, id)
+
+         Called just after the ``print`` command has finished. Arguments are
+         as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_print_pre:
+
+     **cmd_print_pre** (self, nodes, id)
+
+         Called just before the ``print`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command. *is* is a string with the name of the ID to printed.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_process_post:
+
+     **cmd_process_post** (self, trace, options, scripts, success)
+
+         Called just after the ``process`` command has finished. Arguments
+         are as with the ``pre`` method, plus an additional boolean *success*
+         indicating whether Bro terminated normally.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_process_pre:
+
+     **cmd_process_pre** (self, trace, options, scripts)
+
+         Called just before the ``process`` command is run. It receives the
+         *trace* to read from as a string, a list of additional Bro *options*,
+         and a list of additional Bro scripts.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_restart_post:
+
+     **cmd_restart_post** (self, results)
+
+         Called just after the ``restart`` command has finished. It receives
+         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+         was executed for, along with their success status. The remaining
+         arguments are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_restart_pre:
+
+     **cmd_restart_pre** (self, nodes, clean)
+
+         Called just before the ``restart`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command. *clean* is boolean indicating whether the ``--clean``
+         argument has been given.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_scripts_post:
+
+     **cmd_scripts_post** (self, nodes, full_path, check)
+
+         Called just after the ``scripts`` command has finished. Arguments
+         are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_scripts_pre:
+
+     **cmd_scripts_pre** (self, nodes, full_path, check)
+
+         Called just before the ``scripts`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command. ``full_path`` and ``check`` are boolean indicating
+         whether the ``-p`` and ``-c`` options were given, respectively.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_start_post:
+
+     **cmd_start_post** (self, results)
+
+         Called just after the ``start`` command has finished. It receives
+         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+         was executed for, along with their success status.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_start_pre:
+
+     **cmd_start_pre** (self, nodes)
+
+         Called just before the ``start`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_status_post:
+
+     **cmd_status_post** (self, nodes)
+
+         Called just after the ``status`` command has finished.  Arguments
+         are as with the ``pre`` method.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_status_pre:
+
+     **cmd_status_pre** (self, nodes)
+
+         Called just before the ``status`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_stop_post:
+
+     **cmd_stop_post** (self, results)
+
+         Called just after the ``stop`` command has finished. It receives
+         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+         was executed for, along with their success status.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_stop_pre:
+
+     **cmd_stop_pre** (self, nodes)
+
+         Called just before the ``stop`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_top_post:
+
+     **cmd_top_post** (self, nodes)
+
+         Called just after the ``top`` command has finished. Arguments are
+         as with the ``pre`` method. Note that when ``top`` is run
+         interactively to auto-refresh continously, this method will be called
+         once after each update.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_top_pre:
+
+     **cmd_top_pre** (self, nodes)
+
+         Called just before the ``top`` command is run. It receives the list
+         of nodes, and returns the list of nodes that should proceed with the
+         command. Note that when ``top`` is run interactively to auto-refresh
+         continously, this method will be called once before each update.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_update_post:
+
+     **cmd_update_post** (self, results)
+
+         Called just after the ``update`` command has finished. It receives
+         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+         was executed for, along with their success status.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_update_pre:
+
+     **cmd_update_pre** (self, nodes)
+
+         Called just before the ``update`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
          
          This method can be overridden by derived classes. The default
          implementation does nothing.
@@ -257,6 +658,12 @@ class **Plugin**
                  exposed to the user will be prefixed with the plugin's prefix
                  as returned by *name()* (e.g., ``myplugin.mycommand``).
          
+             ``arguments``
+                 A string describing the command's arguments in a textual form
+                 suitable for use in the ``help`` command summary (e.g.,
+                 ``[<nodes>]`` for command taking an optional list of nodes).
+                 Empty if no arguments are expected. 
+         
              ``description``
                  A string with a description of the command's semantics.
          
@@ -271,6 +678,27 @@ class **Plugin**
 
          Called once just before BroControl terminates. This method can do
          any cleanup the plugin may require.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.hostStatusChanged:
+
+     **hostStatusChanged** (self, host, status)
+
+         Called when BroControl's ``cron`` command finds the availability of
+         a cluster system to have changed. Initially, all systems are assumed
+         to be up and running. Once BroControl notices that a system isn't
+         responding (defined as either it doesn't ping at all, or does not
+         accept SSH sessions), it calls this method, passing in a string with
+         the name of the *host* and a boolean *status* set to False. Once the
+         host becomes available again, the method will be called again for the
+         same host with *status* now set to True.
+         
+         Note that BroControl's ``cron`` tracks a hosts availability across
+         execution, so if the next time its run the host is still down, this
+         method will be not called again.
+         
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -348,6 +776,16 @@ class **Plugin**
          must not call the parent class' implementation. The default
          implementation returns an empty list.
 
+     .. _Plugin.pluginVersion:
+
+     **pluginVersion** (self)
+
+         Returns an integer with a version number for the plugin. Plugins
+         should increase their version number with any significant change.
+         
+         This method must be overridden by derived classes. The implementation
+         must not call the parent class' implementation.
+
      .. _Plugin.prefix:
 
      **prefix** (self)
@@ -359,16 +797,6 @@ class **Plugin**
          must not call the parent class' implementation. The default
          implementation returns a lower-cased version of *name()*.
 
-     .. _Plugin.version:
-
-     **version** (self)
-
-         Returns an integer with a version number for the plugin. Plugins
-         should increase their version number with any significant change.
-         
-         This method must be overridden by derived classes. The implementation
-         must not call the parent class' implementation.
-
 .. _Node:
 
 Class ``Node``
@@ -376,9 +804,9 @@ Class ``Node``
 
 class **Node**
      Class representing on node of the BroControl maintained setup. In
-     standaline, there's always exactly one node of type ``standalone`. In a
-     cluster setup, there is exactly one of type ``manager``, and zero or more
-     of type ``proxy`` and ``worker``.
+     standalone mode, there's always exactly one node of type ``standalone`. In
+     a cluster setup, there is exactly one of type ``manager``, and zero or
+     more of type ``proxy`` and ``worker``.
      
      In addition to the methods described above, a ``Node`` object has a number
      keys with values that are set via ``nodes.cfg`` and can be accessed
@@ -426,7 +854,7 @@ class **Node**
 
      **getPID** (self)
 
-         Returnns the process ID of the node's Bro process if running, and
+         Returns the process ID of the node's Bro process if running, and
          None otherwise.
 
      .. _Node.getPort:
