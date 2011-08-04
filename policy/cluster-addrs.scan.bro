@@ -1,4 +1,3 @@
-# $Id: cluster-addrs.scan.bro 6811 2009-07-06 20:41:10Z robin $
 
 # Backscatter.
 redef distinct_backscatter_peers &persistent &synchronized;

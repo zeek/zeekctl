@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: mail-log.in 7098 2010-10-19 00:54:23Z robin $
-#
 # Formats Bro's mail.log, archives, encrypts and mails it (if requested).
 #
 # It's called as a Bro postprocessor so its arguments are:

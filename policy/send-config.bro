@@ -1,5 +1,3 @@
-# $Id: send-config.bro 6813 2009-07-07 18:54:12Z robin $
-#
 # Sends the current values of all &redef'able globals to a remote Bro
 # and then terminates processing.
 #

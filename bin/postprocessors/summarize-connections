@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: summarize-connections.in 7098 2010-10-19 00:54:23Z robin $
-#
 # Bro postprocessor script to summarize connection summaries. 
 #
 # Needs trace-summary script.

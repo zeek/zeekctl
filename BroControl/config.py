@@ -1,5 +1,3 @@
-# $Id: config.py 6948 2009-12-03 20:59:41Z robin $
-#
 # Functions to read and access the broctl configuration.
 
 import os

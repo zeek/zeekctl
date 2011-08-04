@@ -1,5 +1,3 @@
-# $Id: cluster-proxy.bro 7098 2010-10-19 00:54:23Z robin $
-#
 # Common PROXY config.
 
 @prefixes += cluster-proxy

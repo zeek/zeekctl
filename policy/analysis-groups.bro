@@ -1,5 +1,3 @@
-# $Id: analysis-groups.bro 6813 2009-07-07 18:54:12Z robin $
-#
 # This script allows to selectively enable/disable event groups. No events will be
 # raised for all memmbers of a disabled event group.
 

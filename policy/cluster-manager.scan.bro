@@ -1,5 +1,3 @@
-# $Id: cluster-manager.scan.bro 6811 2009-07-06 20:41:10Z robin $
-
 redef FilterDuplicates::filters += {
     [AddressScan] = FilterDuplicates::match_src_num,
     [PortScan] = FilterDuplicates::match_src_num,

@@ -1,5 +1,3 @@
-# $Id: capture-unknown-protocols.bro 6811 2009-07-06 20:41:10Z robin $
-#
 # Capture the content of connections running a "foreign" protocol 
 # on a well-known port.
 

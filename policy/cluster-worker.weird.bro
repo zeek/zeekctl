@@ -1,5 +1,3 @@
-# $Id: cluster-worker.weird.bro 6811 2009-07-06 20:41:10Z robin $
-#
 # Important weird events are forwarded via NOTICE mechanism,
 # so we are not remote printing the worker weird.log.
 # (If one is never going to look at the worker weird log, it could be

@@ -1,5 +1,3 @@
-# $Id: broctl-events.bro 6903 2009-09-04 23:34:56Z robin $
-#
 # Events which are sent by broctl.
 
 module BroCtl;

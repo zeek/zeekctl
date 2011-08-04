@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: top.in 7098 2010-10-19 00:54:23Z robin $
-#
 #  top 
 #
 #  Outputs one line per active process as follows:

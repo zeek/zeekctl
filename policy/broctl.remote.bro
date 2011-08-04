@@ -1,5 +1,3 @@
-# $Id: broctl.remote.bro 6811 2009-07-06 20:41:10Z robin $
-
 @load broctl
 
 # Configure Time Machine.

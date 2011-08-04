@@ -1,5 +1,3 @@
-# $Id: cluster.local.bro-template 6813 2009-07-07 18:54:12Z robin $
-#
 # Template for local site policy loaded manager and workers.
 # Customize as appropiate. 
 #

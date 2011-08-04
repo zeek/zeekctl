@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: rmdir 6811 2009-07-06 20:41:10Z robin $
-#
 # rmdir <dir>
 
 if [ -d $1 ]; then

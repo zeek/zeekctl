@@ -1,5 +1,3 @@
-# $Id: to-bytes.awk 6811 2009-07-06 20:41:10Z robin $
-
 # Converts strings such as 12K, 42M, etc. into bytes. 
 # If def_factor is set, it's applied to values without any unit.
 

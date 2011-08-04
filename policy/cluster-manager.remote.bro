@@ -1,5 +1,3 @@
-# $Id: cluster-manager.remote.bro 6860 2009-08-14 19:01:47Z robin $
-#
 # This is the MANAGER remote configuration.
 #
 # The manager is passive (the workers connect to us), and once connected

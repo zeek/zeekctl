@@ -1,5 +1,3 @@
-# $Id: cron.py 7098 2010-10-19 00:54:23Z robin $
-#
 # Tasks which are to be done on a regular basis from cron.
 
 import os

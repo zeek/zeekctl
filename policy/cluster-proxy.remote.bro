@@ -1,5 +1,3 @@
-# $Id: cluster-proxy.remote.bro 7098 2010-10-19 00:54:23Z robin $
-
 # Do not copy the proxies's remote.log to the manager
 redef Remote::rm_log &disable_print_hook;
 

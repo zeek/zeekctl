@@ -1,5 +1,3 @@
-# $Id: standalone.remote.bro 6860 2009-08-14 19:01:47Z robin $
-#
 # We only need to accept update connections from the shell.
 # 
 

@@ -1,5 +1,3 @@
-# $Id: networks.cfg.in 6811 2009-07-06 20:41:10Z robin $
-#
 # List of local networks in CIDR notation, optionally followed by a descriptive tag.
 # 
 

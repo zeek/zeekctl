@@ -1,5 +1,3 @@
-# $Id$
-
 # The cluster manager will inform us with these events if he's interested in
 # further connection attempts from that source.
 

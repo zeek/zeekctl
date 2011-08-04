@@ -1,5 +1,3 @@
-# $Id: remote-update.bro 6811 2009-07-06 20:41:10Z robin $
-#
 # Code to be executed when we're dynamically updated on the fly. 
 
 @load analysis-groups

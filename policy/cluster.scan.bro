@@ -1,5 +1,3 @@
-# $Id: cluster.scan.bro 7098 2010-10-19 00:54:23Z robin $
-
 redef addr_scan_trigger = 3;  
 redef ignore_scanners_threshold = 500; 
 

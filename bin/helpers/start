@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: start.in 6811 2009-07-06 20:41:10Z robin $
-#
 #  start <cwd> <Bro args>
 
 . `dirname $0`/../broctl-config.sh

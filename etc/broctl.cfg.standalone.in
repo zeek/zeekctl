@@ -1,5 +1,3 @@
-# $Id: broctl.cfg.standalone.in 6811 2009-07-06 20:41:10Z robin $
-#
 # Global configuration file for a non-cluster, single-instance setup.
 #
 

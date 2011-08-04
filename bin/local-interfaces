@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: local-interfaces 6811 2009-07-06 20:41:10Z robin $
-#
 # Returns a list of the IP addresses associated with local interfaces.
 
 # On Linux, ifconfig is often not in the user's standard PATH.

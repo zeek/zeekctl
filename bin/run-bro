@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: run-bro.in 6860 2009-08-14 19:01:47Z robin $
-#
 # Wrapper script around the actual Bro invocation. 
 
 . `dirname $0`/broctl-config.sh

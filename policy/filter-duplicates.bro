@@ -1,5 +1,3 @@
-# $Id: filter-duplicates.bro 6868 2009-08-17 04:18:02Z robin $
-#
 # Script to filter out duplicate alarms reported by multiple backends. 
 
 module FilterDuplicates;

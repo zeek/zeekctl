@@ -1,5 +1,3 @@
-# $Id: trim-trace-file.bro 6811 2009-07-06 20:41:10Z robin $
-#
 # Deletes the -w tracefile at regular intervals and starts from scratch. Separate 
 # from rotate-logs.bro because we might want to have a shorter rotation interval 
 # for this one due to its size.

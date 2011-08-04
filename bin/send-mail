@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: send-mail.in 6811 2009-07-06 20:41:10Z robin $
-#
 # Usage: send-mail subject [destination] <txt
 #
 # Sends stdin per mail to recipients, adding some common headers/footers

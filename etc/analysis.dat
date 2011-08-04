@@ -1,5 +1,3 @@
-# $Id: analysis.dat 6811 2009-07-06 20:41:10Z robin $
-#
 # Types of analysis which we can enable/disable via the cluster shell. 
 #
 # Format: <tag>  <mechanism>   <descr>

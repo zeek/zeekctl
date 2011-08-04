@@ -1,5 +1,3 @@
-# $Id: node.cfg.standalone.in 6811 2009-07-06 20:41:10Z robin $
-#
 # Node configuration for a non-cluster, single-instance setup.
 #
 

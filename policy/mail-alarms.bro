@@ -1,5 +1,3 @@
-# $Id: mail-alarms.bro 7098 2010-10-19 00:54:23Z robin $
-#
 # Script to prettify alarms into a form suitable for mailing out.
 # Output is written to mail.log which can be mailed out via post-processor.
 

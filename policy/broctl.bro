@@ -1,5 +1,3 @@
-# $Id: broctl.bro 7098 2010-10-19 00:54:23Z robin $
-#
 # Data structures to define the three types of nodes (workers, proxies, and manager).
 
 const BROCTL = T;

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: update.in 6860 2009-08-14 19:01:47Z robin $
-#
 # update <destination> <Bro args>
 
 . `dirname $0`/broctl-config.sh

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash 
 #
-# $Id: post-terminate.in 7098 2010-10-19 00:54:23Z robin $
-#
 # Cleans-up after termination.
 #
 # post-terminate <dir> [crash]

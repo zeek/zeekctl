@@ -1,5 +1,3 @@
-# $Id: cluster-worker.bro 7098 2010-10-19 00:54:23Z robin $
-#
 # This is the cluster WORKER top-level policy for configuration settings that are 
 # common to all worker node (as everything currently is except setting WORKER id).
 

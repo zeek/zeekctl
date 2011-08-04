@@ -1,5 +1,3 @@
-# $Id: cluster-worker.remote.bro 6860 2009-08-14 19:01:47Z robin $
-#
 # Remote config for cluster analysis WORKERS.
 
 # Do not copy the worker's remote.log to the manager

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: df.in 6811 2009-07-06 20:41:10Z robin $
-#
 # df <path>
 #
 # Returns:  <fs> <fs-size> <fs-used> <fs-avail>
