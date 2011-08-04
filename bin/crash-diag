@@ -10,52 +10,100 @@
 
 cd $1
 
-if [ -e stderr.log ]; then
-   echo ==== stderr.log 
-   tail -30 stderr.log 
+core=`ls -t *core* 2>&1`
+
+if which gdb >/dev/null 2>&1; then
+    for c in $core; do
+        if [ -e $c ]; then
+            echo $c
+            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c 2>/dev/null
+        fi
+    done
 else
-   echo ==== No stderr.log.
+    echo "No gdb installed."
 fi
 
-if [ -e stdout.log ]; then
-   echo ==== stdout.log 
-   tail -30 stdout.log 
+echo
+
+if [ -e reporter.log ]; then
+   echo ==== reporter.log
+   tail -10 reporter.log
 else
-   echo ==== No stdout.log.
+   echo ==== No reporter.log
+fi
+
+echo
+
+if [ -e stderr.log ]; then
+   echo ==== stderr.log
+   tail -10 stderr.log
+else
+   echo ==== No stderr.log
+fi
+
+echo
+
+if [ -e stdout.log ]; then
+   echo ==== stdout.log
+   tail -10 stdout.log
+else
+   echo ==== No stdout.log
+fi
+
+echo
+
+if [ -e .cmdline ]; then
+   echo ==== .cmdline
+   tail -30 .cmdline
+else
+   echo ==== No .cmdline
+fi
+
+echo
+
+if [ -e .env_vars ]; then
+   echo ==== .env_vars
+   tail -30 .env_vars
+else
+   echo ==== No .env_vars
 fi
 
 echo
 
 if [ -e .status ]; then
    echo ==== .status
-   tail -30 .status
+   tail -10 .status
 else
-   echo ==== No .status.
+   echo ==== No .status
 fi
 
 echo
 
 if [ -e prof.log ]; then
-   echo ==== prof.log 
-   tail -30 prof.log 
+   echo ==== prof.log
+   tail -10 prof.log
 else
-   echo ==== No prof.log.
+   echo ==== No prof.log
 fi
 
 echo
 
-core=`ls -t *core* 2>&1`
-
-if which gdb >/dev/null 2>&1; then
-    for c in $core; do 
-        if [ -e $c ]; then
-            echo $c
-            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c
-        fi
-    done
+if [ -e packet_filter.log ]; then
+   echo ==== packet_filter.log
+   tail -30 packet_filter.log
 else
-    echo "No gdb installed."
+   echo ==== No packet_filter.log
 fi
+
+echo
+
+if [ -e loaded_scripts.log ]; then
+   echo ==== loaded_scripts.log
+   cat loaded_scripts.log
+else
+   echo ==== No loaded_scripts.log
+fi
+
 
 ) >.crash-diag.log
 

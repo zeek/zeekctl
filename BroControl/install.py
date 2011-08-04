@@ -1,6 +1,6 @@
 # $Id: install.py 7098 2010-10-19 00:54:23Z robin $
 #
-# Functions to install files on all nodes. 
+# Functions to install files on all nodes.
 
 import os
 import sys
@@ -15,8 +15,8 @@ import config
 # In all paths given in this file, ${<option>} will replaced with the value of the
 # corresponding configuration option.
 
-# Diretories/files in form (path, mirror) which are synced from the manager to all nodes. 
-# If 'mirror' is true, the path is fully mirrored recursively, otherwise the 
+# Diretories/files in form (path, mirror) which are synced from the manager to all nodes.
+# If 'mirror' is true, the path is fully mirrored recursively, otherwise the
 # directory is just created.
 Syncs = [
     ("${brobase}", False),
@@ -34,13 +34,13 @@ Syncs = [
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
 
-# In NFS-mode, only these will be synced. 
-NFSSyncs = [    
+# In NFS-mode, only these will be synced.
+NFSSyncs = [
     ("${policydirsiteinstall}", True),
     ("${policydirsiteinstallauto}", True),
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
-    
+
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
 # other scripts.
@@ -52,7 +52,7 @@ def generateDynamicVariableScript():
         # don't write out if it has an invalid bash variable name
         if not re.search("-", substvar):
             substvarvalue = substvartuple[1]
-            cfg_file.write("%s=\"%s\"\n" % (substvar, substvarvalue))
+            cfg_file.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
     cfg_file.close()
 
 # Performs the complete broctl installion process.
@@ -91,8 +91,8 @@ def install(local_only):
         util.output(" done.")
 
     makeLayout()
-    makeAnalysisPolicy()
     makeLocalNetworks()
+    makeConfig()
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     if not execute.exists(manager, current):
@@ -135,13 +135,13 @@ def install(local_only):
 
         for (node, success) in execute.mkdirs(dirs):
             if not success:
-                util.warn("cannot create directory %s on %s" % (dir, node.tag))
+                util.warn("cannot create directory %s on %s" % (dir, node.name))
 
-        paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]                
+        paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
         execute.sync(nodes, paths)
         util.output("done.")
 
-        # Note: the old code created $brobase explicitly but it seems the loop above should 
+        # Note: the old code created $brobase explicitly but it seems the loop above should
         # already take care of that.
 
     else:
@@ -155,22 +155,20 @@ def install(local_only):
 
         for dir in [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if not mirror]:
             dirs += [(n, dir) for n in nodes]
-            
+
         # We need this only on the manager.
         dirs += [(manager, config.Config.logdir)]
-            
+
         for (node, success) in execute.mkdirs(dirs):
             if not success:
-                util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.tag))
+                util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
 
         paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
         execute.sync(nodes, paths)
         util.output("done.")
-                
-# Create Bro-side broctl configuration broctl-layout.bro.        
 
+# Create Bro-side broctl configuration broctl-layout.bro.
 port = -1
-
 def makeLayout():
     def nextPort(node):
         global port
@@ -185,118 +183,70 @@ def makeLayout():
     if not manager:
         return
 
-    util.output("generating broctl-layout.bro ...", False)
+    filename = os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro")
 
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "broctl-layout.bro"), "w")
-    print >>out, "# Automatically generated. Do not edit.\n"
-    print >>out, "redef BroCtl::manager = [$ip = %s, $p=%s/tcp, $tag=\"%s\"];\n" % (manager.addr, nextPort(manager), manager.tag);
+    # If there is a standalone node, delete any cluster-layout file to
+    # avoid the cluster framework from activating and get out of here.
+    if ( len(config.Config.nodes("standalone")) > 0 ):
+        if os.access(filename, os.W_OK):
+            os.unlink(filename)
+        # We do need to establish the port for the manager.
+        util.output("generating standalone-layout.bro ...", False)
 
-    proxies = config.Config.nodes("proxy")
-    print >>out, "redef BroCtl::proxies = {"
-    for p in proxies:
-        tag = p.tag.replace("proxy-", "p")
-        print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\"]," % (p.count, p.addr, nextPort(p), tag)
-    print >>out, "};\n"
+        filename = os.path.join(config.Config.policydirsiteinstallauto, "standalone-layout.bro")
+        out = open(filename, "w")
+        print >>out, "# Automatically generated. Do not edit."
+        # This is the port that standalone nodes listen on for remote control by default.
+        print >>out, "redef Communication::listen_port_clear = %s/tcp;" % nextPort(manager)
 
-    workers = config.Config.nodes("worker")
-    print >>out, "redef BroCtl::workers = {"
-    for s in workers:
-        tag = s.tag.replace("worker-", "w")
-        p = s.count % len(proxies) + 1
-        print >>out, "\t[%d] = [$ip = %s, $p=%s/tcp, $tag=\"%s\", $interface=\"%s\", $proxy=BroCtl::proxies[%d]]," % (s.count, s.addr, nextPort(s), tag, s.interface, p)
-    print >>out, "};\n"
+    else:
+        util.output("generating cluster-layout.bro ...", False)
 
-    print >>out, "redef BroCtl::log_dir = \"%s\";\n" % config.Config.subst(config.Config.logdir)
-	
-    # Activate time-machine support if configured.
-    if config.Config.timemachinehost:
-        print >>out, "redef BroCtl::tm_host = %s;\n" % config.Config.timemachinehost
-        print >>out, "redef BroCtl::tm_port = %s;\n" % config.Config.timemachineport
-        print >>out
+        out = open(filename, "w")
 
-    util.output(" done.")
+        workers = config.Config.nodes("workers")
+        proxies = config.Config.nodes("proxies")
 
-# Create Bro script to enable the selected types of analysis.
-def makeAnalysisPolicy():
-    manager = config.Config.manager()
+        print >>out, "# Automatically generated. Do not edit."
+        print >>out, "redef Cluster::nodes = {";
 
-    if not manager:
-        return
+        # Control definition.  For now just reuse the manager information.
+        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
 
-    util.output("generating analysis-policy.bro ...", False)
+        # Manager definition
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.name, manager.addr, nextPort(manager)),
+        for s in workers:
+            print >>out, "\"%s\"" % (s.name),
+            if s != workers[-1]:
+                print >>out, ",",
+        print >>out, ")],"
 
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "analysis-policy.bro"), "w")
-    print >>out, "# Automatically generated. Do not edit.\n"
+        # Proxies definition
+        for p in proxies:
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, p.addr, nextPort(p), manager.name),
+            for s in workers:
+                print >>out, "\"%s\"" % (s.name),
+                if s != workers[-1]:
+                    print >>out, ",",
+            print >>out, ")],"
 
-    disabled_event_groups = []
-    booleans = []
-    warns = []
+        # Workers definition
+        for w in workers:
+            p = w.count % len(proxies)
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, w.addr, nextPort(w), w.interface, manager.name, proxies[p].name),
 
-    analysis = config.Config.analysis()
-    redo = False
+        # Activate time-machine support if configured.
+        if config.Config.timemachinehost:
+            print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
 
-    for (type, state, mechanisms, descr) in analysis.all():
+        print >>out, "};"
 
-        for mechanism in mechanisms.split(","):
-
-            try:
-                i = mechanism.index(":")
-                scheme = mechanism[0:i]
-                arg = mechanism[i+1:]
-            except ValueError:
-                util.warn("error in %s: ignoring mechanism %s" % (config.Config.analysiscfg, mechanism))
-                continue
-
-            if scheme == "events":
-                # Default is on so only need to record those which are disabled.
-                if not state:
-                    disabled_event_groups += [type]
-
-            elif scheme == "bool":
-                booleans += [(arg, state)]
-
-            elif scheme == "bool-inv":
-                booleans += [(arg, not state)]
-
-            elif scheme == "disable":
-                if state:
-                    continue
-
-                if not analysis.isValid(arg):
-                    util.warn("error in %s: unknown type '%s'" % (config.Config.analysiscfg, arg))
-                    continue
-
-                if analysis.isEnabled(arg):
-                    warns += ["disabled analysis %s (depends on %s)" % (arg, type)]
-                    analysis.toggle(arg, False)
-                    redo = True
-
-            else:
-                util.warn("error in %s: ignoring unknown mechanism scheme %s" % (config.Config.analysiscfg, scheme))
-                continue
-
-    if disabled_event_groups:
-        print >>out, "redef AnalysisGroups::disabled_groups = {"
-        for g in disabled_event_groups:
-            print >>out, "\t\"%s\"," % g
-        print >>out, "};\n"
-
-    for (var, val) in booleans:
-        print >>out, "@ifdef ( %s )" % var
-        print >>out, "redef %s = %s;" % (var, val and "T" or "F");
-        print >>out, "@endif\n" 
-    print >>out, "\n"
-
-    out.close()
+        # TODO: This is definitely the wrong spot for this.
+        #
+        # This doesn't work at all right now ... -Robin
+        #print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
 
     util.output(" done.")
-
-    for w in warns:
-        util.warn(w)
-
-    if redo:
-        # Second pass.
-        makeAnalysisPolicy()
 
 # Reads in a list of networks from file.
 def readNetworks(file):
@@ -314,7 +264,7 @@ def readNetworks(file):
     return nets
 
 
-# Create Bro script which contains a list of local networks. 
+# Create Bro script which contains a list of local networks.
 def makeLocalNetworks():
 
     netcfg = config.Config.localnetscfg
@@ -333,7 +283,7 @@ def makeLocalNetworks():
     if os.path.exists(netcfg):
         nets = readNetworks(netcfg)
 
-        print >>out, "redef local_nets = {"
+        print >>out, "redef Site::local_nets = {"
         for (cidr, tag) in nets:
             print >>out, "\t%s," % cidr,
             if tag != "":
@@ -343,5 +293,21 @@ def makeLocalNetworks():
 
     util.output(" done.")
 
+
+def makeConfig():
+    manager = config.Config.manager()
+
+    if not manager:
+        return
+
+    util.output("generating broctl-config.bro ...", False)
+    filename = os.path.join(config.Config.policydirsiteinstallauto, "broctl-config.bro")
+    out = open(filename, "w")
+    print >>out, "# Automatically generated. Do not edit."
+    print >>out, "redef Notice::mail_dest = \"%s\";" % config.Config.mailto
+    print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
+    print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
+    out.close()
+    util.output(" done.")
 
 

@@ -25,9 +25,6 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
                            any auxialliary python modules (if present)
                            [PREFIX/lib/broctl]
 
-  Optional Features:
-    --enable-cluster       enable cluster installation/functionality
-
   Required Packages in Non-Standard Locations:
     --with-python=PATH     path to Python interpreter
     --with-python-lib=PATH path to libpython
@@ -63,7 +60,6 @@ builddir=build
 CMakeCacheEntries=""
 append_cache_entry CMAKE_INSTALL_PREFIX PATH   /usr/local/bro
 append_cache_entry PY_MOD_INSTALL_DIR   PATH   /usr/local/bro/lib/broctl
-append_cache_entry STANDALONE           BOOL   true
 append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING
 
 # parse arguments
@@ -84,9 +80,6 @@ while [ $# -ne 0 ]; do
         --prefix=*)
             append_cache_entry CMAKE_INSTALL_PREFIX PATH   $optarg
             append_cache_entry PY_MOD_INSTALL_DIR   PATH   $optarg/lib/broctl
-            ;;
-        --enable-cluster)
-            append_cache_entry STANDALONE           BOOL   false
             ;;
         --with-bro=*)
             append_cache_entry BRO_ROOT_DIR PATH $optarg

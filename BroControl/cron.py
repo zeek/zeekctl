@@ -11,29 +11,31 @@ import execute
 import control
 import time
 import shutil
+import plugin
 
 # Triggers all activity which is to be done regularly via cron.
-def doCron():
+def doCron(watch):
 
     if config.Config.cronenabled == "0":
         return
 
     config.Config.config["cron"] = "1"  # Flag to indicate that we're running from cron.
-    
+
     if not util.lock():
         return
 
     util.bufferOutput()
 
-    # Check whether nodes are still running an restart if neccessary.
-    for (node, isrunning) in control.isRunning(config.Config.nodes()):
-        if not isrunning and node.hasCrashed():
-            control.start([node])
+    if watch:
+        # Check whether nodes are still running an restart if neccessary.
+        for (node, isrunning) in control.isRunning(config.Config.nodes()):
+            if not isrunning and node.hasCrashed():
+                control.start([node])
 
     # Check for dead hosts.
     _checkHosts()
 
-    # Generate statistics. 
+    # Generate statistics.
     _logStats(5)
 
     # Check available disk space.
@@ -42,7 +44,7 @@ def doCron():
     # Expire old log files.
     _expireLogs()
 
-    # Update the HTTP stats directory. 
+    # Update the HTTP stats directory.
     _updateHTTPStats()
 
     # Run external command if we have one.
@@ -57,11 +59,11 @@ def doCron():
     util.unlock()
 
     config.Config.config["cron"] = "0"
-    
+
 def logAction(node, action):
     t = time.time()
     out = open(config.Config.statslog, "a")
-    print >>out, t, node.tag, "action", action
+    print >>out, t, node, "action", action
     out.close()
 
 def _logStats(interval):
@@ -80,6 +82,7 @@ def _logStats(interval):
 
     if have_capstats:
         capstats = control.getCapstatsOutput(nodes, interval)
+
     elif have_cflow:
         time.sleep(interval)
 
@@ -98,15 +101,15 @@ def _logStats(interval):
                 type = proc["proc"]
                 for (val, key) in proc.items():
                     if val != "proc":
-                        print >>out, t, node.tag, type, val, key
+                        print >>out, t, node, type, val, key
         else:
-            print >>out, t, node.tag, "error", "error", error
+            print >>out, t, node, "error", "error", error
 
     for (node, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
                 # Report if we don't see packets on an interface.
-                tag = "lastpkts-%s" % node.tag
+                tag = "lastpkts-%s" % node.name
 
                 if key == "pkts":
                     if tag in config.Config.state:
@@ -122,10 +125,10 @@ def _logStats(interval):
 
                     config.Config._setState(tag, val)
 
-                print >>out, t, node.tag, "interface", key, val
+                print >>out, t, node, "interface", key, val
 
         else:
-            print >>out, t, node.tag, "error", "error", error
+            print >>out, t, node, "error", "error", error
 
     for (port, error, vals) in cflow_rates:
         if not error:
@@ -185,29 +188,30 @@ def _checkHosts():
             previous = config.Config.state[tag]
 
             if alive != previous:
+                plugin.Registry.hostStatusChanged(node.host, alive)
                 util.output("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
         config.Config._setState(tag, alive)
 
-def _getProfLogs():        
+def _getProfLogs():
     cmds = []
 
     for node in config.Config.hosts():
-        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.tag, node.host, node.cwd())
+        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.name, node.host, node.cwd())
         cmds += [(node, cmd, [], None)]
 
     for (node, success, output) in execute.runLocalCmdsParallel(cmds):
         if not success:
-            util.output("cannot get prof.log from %s" % node.tag)
+            util.output("cannot get prof.log from %s" % node.name)
 
 def _updateHTTPStats():
     # Get the prof.logs.
     _getProfLogs()
 
-    # Create meta file. 
+    # Create meta file.
     meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
     for node in config.Config.hosts():
-        print >>meta, "node", node.tag, node.type, node.host
+        print >>meta, "node", node, node.type, node.host
 
     print >>meta, "time", time.asctime()
     print >>meta, "version", config.Config.version
@@ -226,10 +230,10 @@ def _updateHTTPStats():
 
     # Run the update-stats script.
     (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "update-stats"))
-    
+
     if not success:
         util.output("error running update-stats\n\n")
         util.output(output)
-    
+
 
 

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: top.in 7098 2010-10-19 00:54:23Z robin $
-#
 #  top 
 #
 #  Outputs one line per active process as follows:
@@ -10,10 +8,13 @@
 
 . `dirname $0`/../broctl-config.sh
 
-cmd_linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %dK %dK %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
+cmd_linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
 cmd_freebsd='top -u -b all | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$11, \$12)}"'
 cmd_freebsd_nonsmp='top -u -b all | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$10, \$11)}"'
-cmd_darwin='top -l 1 | awk "/^ *[0-9]+ /{printf(\"%d %dK %dK %d %s\\n\", \$1, \$11, \$10, \$3, \$2)}"'
+# top on Mac OS X is different.  It doesn't give CPU utilization until the second 
+# sample so we are getting two samples with zero delay between them.  The
+# grep command at the end removes the first sample from the output.
+cmd_darwin='top -l 2 -s0 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$12, \$11, \$3, \$2)}" | sed "s/\+//g" | egrep  -A 1000 "^1.*launchd"'
 cmd_netbsd='top -b -u  | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
 
 eval cmd="\$cmd_${os}"

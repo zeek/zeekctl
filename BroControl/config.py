@@ -10,135 +10,12 @@ import re
 
 import ConfigParser
 
-import options
+import doc
 import execute
+import node as node_mod
+import options
+import plugin
 import util
-
-# One broctl node. 
-class Node:
-
-    # Valid tags in nodes file. The values will be stored 
-    # in attributes of the same name.
-    _tags = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
-
-    def __init__(self, tag):
-        self.tag = tag
-
-    def __str__(self):
-        def fmt(v):
-            if type(v) == type([]):
-                v = ",".join(v)
-            return v
-
-        return ("%15s - " % self.tag) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
-
-    # Returns the working directory for this node. 
-    def cwd(self):
-        return os.path.join(Config.spooldir, self.tag)
-
-    # Stores the nodes process ID. 
-    def setPID(self, pid):
-        Config._setState("%s-pid" % self.tag, str(pid))
-
-    # Returns the stored process ID.
-    def getPID(self):
-        t = "%s-pid" % self.tag
-        if t in Config.state:
-            return Config.state[t]
-        return None
-
-    # Unsets the stored process ID.
-    def clearPID(self):
-        Config._setState("%s-pid" % self.tag, "")
-
-    # Mark node as having terminated unexpectedly.
-    def setCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "1")
-
-    # Unsets the flag for unexpected termination.
-    def clearCrashed(self):
-        Config._setState("%s-crashed" % self.tag, "0")
-
-    # Returns true if node has terminated unexpectedly.
-    def hasCrashed(self):
-        t = "%s-crashed" % self.tag
-        return t in Config.state and Config.state[t] == "1"
-
-    # Set the Bro port this node is using.
-    def setPort(self, port):
-        Config._setState("%s-port" % self.tag, str(port))
-
-    # Get the Bro port this node is using.
-    def getPort(self):
-        t = "%s-port" % self.tag
-        return t in Config.state and int(Config.state[t]) or -1
-
-# Class managing types of analysis. 
-class Analysis:
-    def __init__(self, cfgfile):
-
-        self.types = {}
-        cnt = 0
-
-        if not os.path.exists(cfgfile):
-            util.error("analysis configuration %s does not exist" % cfgfile)
-
-        for line in open(cfgfile):
-            cnt += 1
-            line = line.strip()
-            if not line or line.startswith("#"): 
-                continue
-
-            f = line.split()
-            if len(f) < 2:
-                util.warn("cannot parse line %d in %s" % (cnt, cfgfile))
-                continue
-
-            type = f[0]
-            mechanism = f[1]
-            descr = ""
-            if len(f) > 2:
-                descr = " ".join(f[2:])
-
-            self.types[type] = (mechanism, descr)
-
-    # Returns true if we know this kind of analysis.
-    def isValid(self, type):
-        return type in self.types
-
-    # Returns true if type is enabled.
-    # Default is yes if we haven't disabled it.
-    def isEnabled(self, type):
-        tag = "analysis-%s" % type
-        try:
-            return int(Config.state[tag]) != 0
-        except KeyError:
-            return True
-
-    # Enable/disable type.
-    def toggle(self, type, enable=True):
-        tag = "analysis-%s" % type
-        if enable:
-            try:
-                del Config.state[tag]
-            except KeyError:
-                pass
-        else:
-            Config.state[tag] = 0
-
-    # Returns tuples (type, status, mechanism, descr) of all known analysis types.
-    # 'type' is tag for analysis.
-    # 'status' is True if analysis is activated.
-    # 'mechanism' gives the method how to control the analysis within Bro (see etc/analysis.dat).
-    # 'descr' is textual dscription for the kind of analysis.
-    def all(self):
-        result = []
-        keys = self.types.keys()
-        keys.sort()
-        for type in keys:
-            (mechanism, descr) = self.types[type]
-            result += [(type, self.isEnabled(type), mechanism, descr)]
-        return result
 
 # Class storing the broctl configuration.
 #
@@ -147,14 +24,12 @@ class Analysis:
 # - the global broctl configuration from broctl.cfg
 # - the node configuration from nodes.cfg
 # - dynamic state variables which are kept across restarts in spool/broctl.dat
-# - types of analysis which can be toggled via the shell
 
 Config = None # Globally accessible instance of Configuration.
 
-class Configuration:    
-    def __init__(self, config, basedir, version, standalone):
+class Configuration:
+    def __init__(self, config, basedir, version):
         global Config
-
         Config = self
 
         self.config = {}
@@ -166,19 +41,18 @@ class Configuration:
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
         self._setOption("version", version)
-        self._setOption("standalone", standalone and "1" or "0")
-		
-		# Initialize options.
+
+        # Initialize options.
         for opt in options.options:
             if not opt.dontinit:
                 self._setOption(opt.name.lower(), opt.default)
-		
-		# Set defaults for options we derive dynamically.
-		self._setOption("mailto", "%s" % os.getenv("USER"))
-		self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-		self._setOption("home", os.getenv("HOME"))
-		self._setOption("mailalarmsto", self.config["mailto"]) 
-		
+
+        # Set defaults for options we derive dynamically.
+        self._setOption("mailto", "%s" % os.getenv("USER"))
+        self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
+        self._setOption("home", os.getenv("HOME"))
+        self._setOption("mailalarmsto", self.config["mailto"])
+
         # Determine operating system.
         (success, output) = execute.captureCmd("uname")
         if not success:
@@ -188,13 +62,21 @@ class Configuration:
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.captureCmd("which time")
         self._setOption("time", output[0].lower().strip())
-		
+
+    def initPostPlugins(self):
+        plugin.Registry.addNodeKeys()
+
         # Read nodes.cfg and broctl.dat.
         self._readNodes()
         self.readState()
 
-        # Setup the kinds of analyses which we support.
-        self._analysis = Analysis(self.analysiscfg)
+        # Now that the nodes have been read in, set the standalone config option.
+        standalone = "0"
+        for node in self.nodes("all"):
+            if node.type == "standalone":
+                standalone = "1"
+
+        self._setOption("standalone", standalone)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
@@ -225,7 +107,7 @@ class Configuration:
         else:
             return self.config.items()
 
-    # Returns a list of Nodes. 
+    # Returns a list of Nodes.
     # - If tag is "global" or "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
     # - If tag is "proxies" or "proxy", all proxy Nodes are returned.
@@ -241,25 +123,24 @@ class Configuration:
 
             tag = None
 
-        if tag == "proxies":
-            tag = "proxy"
+        elif tag == "proxies":
+            type = "proxy"
 
-        if tag == "workers":
-            tag = "worker"
+        elif tag == "workers":
+            type = "worker"
 
-        if ("scripts-%s" % tag) in self.config:
+        elif tag in self.config:
             type = tag
 
         for n in self.nodelist.values():
-
             if type:
                 if type == n.type:
                     nodes += [n]
 
-            elif tag == n.tag or not tag:
+            elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.tag))
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -287,7 +168,7 @@ class Configuration:
         return hosts.values()
 
     # Replace all occurences of "${option}", with option being either
-    # broctl.cfg option or a dynamic variable, with the corresponding value. 
+    # broctl.cfg option or a dynamic variable, with the corresponding value.
     # Defaults to replacement with the empty string for unknown options.
     def subst(self, str):
         while True:
@@ -306,10 +187,6 @@ class Configuration:
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
 
-    # Returns instance of class Analysis. 
-    def analysis(self):
-        return self._analysis
-
     # Parse nodes.cfg.
     def _readNodes(self):
         self.nodelist = {}
@@ -319,40 +196,42 @@ class Configuration:
 
         manager = False
         proxy = False
+        worker = False
         standalone = False
 
         file = self.nodecfg
 
         counts = {}
         for sec in config.sections():
-
-            node = Node(sec)
+            node = node_mod.Node(sec)
             self.nodelist[sec] = node
 
             for (key, val) in config.items(sec):
-                if not key in Node._tags:
+
+                key = key.replace(".", "_")
+
+                if not key in node_mod.Node._keys:
                     util.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 
                 if key == "type":
-                    # We determine which types are valid by checking for having an
-                    # option specifying which scripts to use for it.
-                    cfg = "scripts-%s" % val 
-                    if not cfg  in self.config:
-                        util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
-
-                    self.nodelist[sec].scripts = self.config[cfg].split()
-
                     if val == "manager":
                         if manager:
                             util.error("only one manager can be defined")
                         manager = True
 
-                    if val == "proxy":
+                    elif val == "proxy":
                         proxy = True
 
-                    if val == "standalone":
+                    elif val == "worker":
+                        worker = True
+
+                    elif val == "standalone":
                         standalone = True
+
+                    else:
+                        util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
+
 
                 node.__dict__[key] = val
 
@@ -365,7 +244,7 @@ class Configuration:
 
             # Each node gets a number unique across its type.
             type = self.nodelist[sec].type
-            try: 
+            try:
                 counts[type] += 1
             except KeyError:
                 counts[type] = 1
@@ -386,6 +265,15 @@ class Configuration:
                     util.error("%s: more than one node defined in stand-alone setup" % file)
 
         for n in self.nodelist.values():
+            if not n.name:
+                util.error("node configured without a name")
+
+            if not n.host:
+                util.error("no host given for node %s" % n.name)
+
+            if not n.type:
+                util.error("no type given for node %s" % n.name)
+
             if n.type == "manager":
                 if not execute.isLocal(n):
                     util.error("script must be run on manager node")
@@ -393,8 +281,7 @@ class Configuration:
                 if n.addr == "127.0.0.1" and n.type != "standalone":
                     util.error("cannot use localhost/127.0.0.1 for manager host in nodes configuration")
 
-
-    # Parses broctl.cfg and returns a dictionary of all entries. 
+    # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):
         config = {}
         try:
@@ -415,7 +302,7 @@ class Configuration:
                 config[key] = val
 
         except IOError, e:
-            util.warn("warning: cannot read '%s' (this is ok on first run)" % file)
+            util.warn("cannot read '%s' (this is ok on first run)" % file)
 
         return config
 
@@ -455,7 +342,7 @@ class Configuration:
                 version = output[0]
 
         if not version:
-            # Ok if it's already set. 
+            # Ok if it's already set.
             if "broversion" in self.state:
                 return
 

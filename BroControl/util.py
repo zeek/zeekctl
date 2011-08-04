@@ -34,9 +34,9 @@ def getBufferedOutput():
     Buffer = None
     return buffer
 
-def output(msg = "", nl = True):
+def output(msg = "", nl = True, prefix="output"):
 
-    debug(1, "[output] %s %s" % (msg, (not nl) and "..." or ""))
+    debug(1, msg, prefix=prefix)
 
     if Buffer:
         out = Buffer
@@ -47,17 +47,19 @@ def output(msg = "", nl = True):
     if nl:
         out.write("\n")
 
-def error(msg):
-    output("error: %s" % msg)
+def error(msg, prefix=None):
+    output("error: %s" % msg, prefix=prefix)
     sys.exit(1)
 
-def warn(msg):
+def warn(msg, prefix=None):
     output("warning: %s" % msg)
 
-DebugOut = None    
+DebugOut = None
 
-def debug(msglevel, msg):
+def debug(msglevel, msg, prefix="main"):
     global DebugOut
+
+    msg = "%-10s %s" % ("[%s]" % prefix, str(msg).strip())
 
     try:
         level = int(config.Config.debug)
@@ -73,7 +75,14 @@ def debug(msglevel, msg):
         except IOError:
             # During the initial install, tmpdir hasn't been setup yet. So we
             # fall back to current dir.
-            DebugOut = open("debug.log", "a")
+            fn = os.path.join(os.getcwd(), "debug.log")
+
+            try:
+                DebugOut = open(fn, "a")
+            except IOError, e:
+                # Can't use error() here as that would recurse.
+                print >>sys.stderr, "Error, can't open %s: %s" % (fn, e.strerror)
+                sys.exit(1)
 
     print >>DebugOut, time.strftime(config.Config.timefmt, time.localtime(time.time())), msg
     DebugOut.flush()
@@ -84,7 +93,7 @@ def sendMail(subject, body):
     if not success:
         warn("cannot send mail")
 
-lockCount = 0        
+lockCount = 0
 
 def _breakLock():
     try:
@@ -143,7 +152,7 @@ def _aquireLock():
             os.unlink(tmpfile)
         except OSError:
             pass
-        except IOError: 
+        except IOError:
             pass
 
     return False
@@ -163,12 +172,12 @@ def lock():
         return True
 
     if not _aquireLock():
-        
+
         if config.Config.cron == "1":
             do_output = 0
         else:
             do_output = 2
-            
+
         if do_output:
             output("waiting for lock ...", nl=False)
 
@@ -206,7 +215,7 @@ def unlock():
 
 # Keyboard interrupt handler.
 def sigIntHandler(signum, frame):
-    config.Config.config["sigint"] = "1" 
+    config.Config.config["sigint"] = "1"
 
 def enableSignals():
     signal.signal(signal.SIGINT, sigIntHandler)
@@ -220,7 +229,7 @@ def disableSignals():
 _Stdscr = None
 
 def _finishCurses():
-    curses.nocbreak(); 
+    curses.nocbreak();
     curses.echo()
     curses.endwin()
 
@@ -229,14 +238,14 @@ def _initCurses():
     atexit.register(_finishCurses)
     _Stdscr = curses.initscr()
 
-def enterCurses():    
+def enterCurses():
     if not _Stdscr:
         _initCurses()
 
     curses.cbreak()
     curses.noecho()
     _Stdscr.nodelay(1)
-    
+
     signal.signal(signal.SIGWINCH, signal.SIG_IGN)
 
 def leaveCurses():
@@ -267,7 +276,7 @@ def printLines(lines):
         except:
             pass
         y += 1
-        
+
     try:
         _Stdscr.insnstr(y, 0, "", 0)
     except:

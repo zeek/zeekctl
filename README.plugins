@@ -1,0 +1,445 @@
+.. _Plugin:
+
+Class ``Plugin``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class **Plugin**
+     The class ``Plugin`` is the base class for all BroControl plugins.
+     
+     The class has a number of methods for plugins to override, and every
+     plugin must at least override ``name()`` and ``version()``.
+     
+     For each BroControl command ``foo``, there's are two methods,
+     ``cmd_foo_pre`` and ``cmd_foo_post``, that are called just before the
+     command is executed and just after it has finished, respectivey. The
+     arguments these methods receive correspond to their command-line
+     parameters, and are further documented belows.
+     
+     The ``cmd_<XXX>_pre`` methods have the ability to prevent the command's
+     execution, either completely or partially for those commands that take
+     nodes as parameters. In the latter case, the method receives a list of
+     nodes that the command is to be run on, and it can filter that list and
+     returns modified version of nodes actually to use. The standard case would
+     be returning simply the unmodified ``nodes`` parameter. To completely
+     block the command's execution, return an empty list. To just not execute
+     the command for a subset, remove them affected ones.  For commands that do
+     not receive nodes as arguments, the return value is interpreted as boolean
+     indicated whether command execution should proceed (True) or not (False).
+     
+     The ``cmd_<XXX>_post`` methods likewise receive the commands arguments as
+     their parameter, as documented below. For commands taking nodes, the list
+     corresponds to those nodes for which the command was actually executed
+     (i.e., after any ``cmd_<XXX>_pre`` filtering). Each node is given as a
+     tuple ``(node, bool)`` with *node* being the actual `Node`_, and the boolean
+     indicating whether the command was succesful for it.
+     
+     Note that if plugin prevent a command from execution either completely or
+     partially, it should report its reason via the ``message*(`` or
+     ``error()`` methods.
+     
+     If multiple plugins hook into the same command, all their
+     ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
+     executed on the intersection of all ``cmd_<XXX>_pre`` results.
+
+     .. _Plugin.debug:
+
+     **debug** (self, msg)
+
+         Logs a debug message in BroControl' debug log if enabled.
+
+     .. _Plugin.error:
+
+     **error** (self, msg)
+
+         Reports an error to the user.
+
+     .. _Plugin.execute:
+
+     **execute** (self, node, cmd)
+
+         Executes a command on the given *node* of type `Node`_. Returns a
+         tuple ``(rc, output)`` in which ``rc`` is the command's exit code and
+         ``output`` the combined stdout/stderr output.
+
+     .. _Plugin.executeParallel:
+
+     **executeParallel** (self, cmds)
+
+         Executes a set of commands in parallel on multiple nodes. ``cmds``
+         is a list of tuples ``(node, cmd)``, in which the *node* is `Node`_
+         instance and *cmd* a string with the command to execute for it. The
+         method returns a list of tuples ``(node, rc, output)``, in which
+         ``rc`` is the exit code and ``output`` the combined stdout/stderr
+         output for the corresponding ``node``.
+
+     .. _Plugin.getGlobalOption:
+
+     **getGlobalOption** (self, name)
+
+         Returns the value of the global BroControl option *name*. If the
+         user has not set the options, its default value is returned.
+
+     .. _Plugin.getNodes:
+
+     **getNodes** (self, names)
+
+         Returns `Node`_ objects for a string of space-separated node names.
+         If a name does not correspond to know node, an error message is
+         printed and the node is skipped from the returned list. If not names
+         are known, an empty list is returned.
+
+     .. _Plugin.getOption:
+
+     **getOption** (self, name)
+
+         Returns the value of one of the plugin's options, *name*. The
+         returned value will always be a string.
+         
+         An option has a default value (see *options()*), which can be
+         overridden by a user in ``broctl.cfg``. An option's value cannot be
+         changed by the plugin.
+
+     .. _Plugin.getState:
+
+     **getState** (self, name)
+
+         Returns the current value of one of the plugin's state variables,
+         *name*. The returned value will always be a string. If it has not yet
+         been set, an empty string will be returned.
+         
+         Different from options, state variables can be set by the plugin and
+         are persistent across restarts. They are not visible to the user.
+         
+         Note that a plugin cannot query any global BroControl state variables.
+
+     .. _Plugin.hosts:
+
+     **hosts** (self)
+
+         Returns a list of all hosts running at least one node configured in
+         ``nodes.cfg``
+
+     .. _Plugin.message:
+
+     **message** (self, msg)
+
+         Reports a message to the user.
+
+     .. _Plugin.nodes:
+
+     **nodes** (self)
+
+         Returns a list of all configured `Node`_ objects.
+
+     .. _Plugin.setState:
+
+     **setState** (self, name, value)
+
+         Sets the one of the plugin's state variables, *name*, to *value*.
+         *value* must be a string. The change is permanent and will be recorded
+         to disk.
+         
+         Note that a plugin cannot change any global BroControl state
+         variables.
+
+     .. _Plugin.analyses:
+
+     **analyses** (self)
+
+         Returns a custom list of analyses to be controlled by the
+         ``analysis`` command.
+         
+         Each analysis entry is a 4-tuple consistent of the following items:
+         
+             ``name``
+                 A string with a short name for the analysis.
+         
+             ``description``
+                 A string describing the analysis.
+         
+             ``mechanism``
+         
+                 A 2-tuple of strings defining mechanism to use for toggling
+                 the analysis. Possible values are:
+         
+                 ``("unload", "<script>")``
+                     A Bro script that will be *unloaded* when the
+                     analysis is disabled. Note that it will *not* be
+                     automatically loaded when the analysis is enabled,
+                     that still needs to be done by the normal
+                     site-specific policy.
+         
+                 ``("bool", "<var>")``
+                     A Bro script-level variable ``<var>`` of boolean type
+                     controls whether the analysis is performed. BroControl
+                     will set the boolean to True if the analysis is enabled,
+                     and to False if it disabled.
+         
+                 ``("bool-inv", "<var>")``
+                     Like ``bool:<var>``, except that semantics are inverted:
+                     BroControl will set the boolean to True if the analysis is
+                     disabled, and to False if it enabled.
+         
+                 ``("events", "<group>")``
+                     Defines a Bro event group that corresponds to this
+                     analysis. BroControl will enable the event group if the
+                     analysis is enables, and disable it otherwise.
+         
+                 ``("link", "<name>")``
+                     Links another analysis controlled by the ``analysis``
+                     command to this one. If this one is enabled, the other
+                     will be enabled as well. If this one is disabled, the
+                     other will be disabled as well.
+         
+                 ``("enable", "<name>")``
+                     If analysis is enabled, the analysis ``<name>>`` is so as
+                     well.
+         
+                 ``("disable", "<name>")``
+                     If analysis is disabled, the analysis ``<name>>`` is so as
+                     well.
+         
+                 ``mechanism`` can also be a list of such 2-tuples to specify
+                 more than one entry for an analysis.
+         
+         This method can be overridden by derived classes. The implementation
+         must not call the parent class' implementation. The default
+         implementation returns an empty list.
+
+     .. _Plugin.cmd_check_post:
+
+     **cmd_check_post** (self, nodes)
+
+         Called just after the ``check`` command has finished. It receives
+         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+         was executed for, along with their success status.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_check_pre:
+
+     **cmd_check_pre** (self, nodes)
+
+         Called just before the ``check`` command is run. It receives the
+         list of nodes, and returns the list of nodes that should proceed with
+         the command.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.cmd_custom:
+
+     **cmd_custom** (self, cmd, args)
+
+         Called when command defined by the ``commands`` method is executed.
+         ``cmd`` is the command (with the plugin's prefix), and ``args`` is a
+         single *string* with all arguments.
+         
+         If the arguments are actually node names, ``getNodes`` can
+         be used to get the `Node`_ objects.
+         
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.commands:
+
+     **commands** (self)
+
+         Returns a set of custom commands provided by the
+         plugin.
+         
+         The return value is a list of 2-tuples each having the following
+         elements:
+         
+             ``command``
+                 A string with the command's name. Note that command name
+                 exposed to the user will be prefixed with the plugin's prefix
+                 as returned by *name()* (e.g., ``myplugin.mycommand``).
+         
+             ``description``
+                 A string with a description of the command's semantics.
+         
+         
+         This method can be overridden by derived classes. The implementation
+         must not call the parent class' implementation. The default
+         implementation returns an empty list.
+
+     .. _Plugin.done:
+
+     **done** (self)
+
+         Called once just before BroControl terminates. This method can do
+         any cleanup the plugin may require.
+         This method can be overridden by derived classes. The default
+         implementation does nothing.
+
+     .. _Plugin.init:
+
+     **init** (self)
+
+         Called once just before BroControl starts executing any commands.
+         This method can do any initialization that the plugin may require.
+         
+         Note that at when this method executes, BroControl guarantees that all
+         internals are fully set up (e.g., user-defined options are available).
+         This may not be the case when the class ``__init__`` method runs.
+         
+         Returns a boolean, indicating whether the plugin should be used. If it
+         returns ``False``, the plugin will be removed and no other methods
+         called.
+         
+         This method can be overridden by derived classes. The default
+         implementation always returns True.
+
+     .. _Plugin.name:
+
+     **name** (self)
+
+         Returns a a strings with a descriptive *name* for the plugin (e.g.,
+         ``"TestPlugin"``). The name must not contain any white-space.
+         
+         This method must be overridden by derived classes. The implementation
+         must not call the parent class' implementation.
+
+     .. _Plugin.nodeKeys:
+
+     **nodeKeys** (self)
+
+         Returns a list of custom keys for ``node.cfg``. The value for a
+         keys will be available from the `Node`_ object as attribute
+         ``<prefix>_<key>`` (e.g., ``node.test_mykw``). If not set, the
+         attribute will be set to None.
+         
+         This method can be overridden by derived classes. The implementation
+         must not call the parent class' implementation. The default
+         implementation returns an empty list.
+
+     .. _Plugin.options:
+
+     **options** (self)
+
+         Returns a set of local configuration options provided by the
+         plugin.
+         
+         The return value is a list of 4-tuples each having the following
+         elements:
+         
+             ``name``
+                 A string with name of the option (e.g., ``Path``). Option
+                 names are case-insensitive. Note that the option name exposed
+                 to the user will be prefixed with your plugin's prefix as
+                 returned by *name()* (e.g., ``myplugin.Path``).
+         
+             ``type``
+                 A string with type of the option, which must be one of
+                 ``"bool"``, ``"string"``, or ``"int"``.
+         
+             ``default``
+                 A string with the option's default value. Note that this must
+                 always be a string, even for non-string types. For booleans,
+                 use ``"0"`` for False and ``"1"`` for True. For integers, give
+                 the value as a string ``"42"``.
+         
+             ``description``
+                 A string with a description of the option semantics.
+         
+         This method can be overridden by derived classes. The implementation
+         must not call the parent class' implementation. The default
+         implementation returns an empty list.
+
+     .. _Plugin.prefix:
+
+     **prefix** (self)
+
+         Returns a string with a prefix for the plugin's options and
+         commands names (e.g., "myplugin")``).
+         
+         This method can be overridden by derived classes. The implementation
+         must not call the parent class' implementation. The default
+         implementation returns a lower-cased version of *name()*.
+
+     .. _Plugin.version:
+
+     **version** (self)
+
+         Returns an integer with a version number for the plugin. Plugins
+         should increase their version number with any significant change.
+         
+         This method must be overridden by derived classes. The implementation
+         must not call the parent class' implementation.
+
+.. _Node:
+
+Class ``Node``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class **Node**
+     Class representing on node of the BroControl maintained setup. In
+     standaline, there's always exactly one node of type ``standalone`. In a
+     cluster setup, there is exactly one of type ``manager``, and zero or more
+     of type ``proxy`` and ``worker``.
+     
+     In addition to the methods described above, a ``Node`` object has a number
+     keys with values that are set via ``nodes.cfg`` and can be accessed
+     directly via corresponding Python attributes (e.g., ``node.name``):
+     
+         ``name`` (string)
+             The name of the node, which corresponds to the ``[<name>]``
+             section in ``nodes.cfg``.
+     
+         ``type`` (string)
+             The type of the node, which will be one of ``standalone``,
+             ``manager``, ``proxy``, and ``worker``.
+     
+         ``host`` (string)
+             The hostname of the system the node is running on.
+     
+         ``interface`` (string)
+             The network interface for Bro to use; empty if not set.
+     
+         ``aux_scripts`` (string)
+             Any node-specific Bro script configured for this node.
+     
+     Any attribute that is not defined in ``nodes.cfg`` will be empty.
+     
+     In addition, plugins can override `Plugin.nodeKeys`_ to define their own
+     node keys, which can then be likewise set in ``nodes.cfg``. They key names
+     will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
+     ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
+     ``node.cfg``.
+
+     .. _Node.cwd:
+
+     **cwd** (self)
+
+         Returns a string with node's working directory.
+
+     .. _Node.describe:
+
+     **describe** (self)
+
+         Returns an extended string representation of the node including all
+         its keys with values.
+
+     .. _Node.getPID:
+
+     **getPID** (self)
+
+         Returnns the process ID of the node's Bro process if running, and
+         None otherwise.
+
+     .. _Node.getPort:
+
+     **getPort** (self)
+
+         Returns an integer with the port that this node's communication
+         system is listening on for incoming connections, or -1 if no such port
+         has been set yet.
+
+     .. _Node.hasCrashed:
+
+     **hasCrashed** (self)
+
+         Returns True if the node's Bro process has exited abnormally.
+

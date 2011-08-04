@@ -24,6 +24,7 @@ distclean:
 
 generate-docs:
 	@python BroControl/options.py >README.options
+	@python BroControl/doc.py >README.plugins
 	@python bin/broctl.in --print-doc >README.cmds
 
 docs:

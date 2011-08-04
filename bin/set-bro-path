@@ -1,0 +1,17 @@
+#
+# Sets BROPATH to either the installed policy scripts (if
+# use_installed_policies is 1), or the user-provided originals
+# (otherwise).
+#
+# Should be sourced.
+
+BROPATH=${policydirsiteinstallauto}:${policydir}
+
+if [ "use_installed_policies" == "1" ]; then
+   export BROPATH=${policydirsiteinstall}:$BROPATH
+else
+   export BROPATH=${sitepolicypath}:$BROPATH
+fi
+
+
+

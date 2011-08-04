@@ -1,0 +1,25 @@
+## Global BroControl configuration file.
+
+# Recipient address for all emails send out by Bro and BroControl.
+MailTo = root@localhost
+
+# Location of the spool directory where files and data that are currently being
+# written are stored.
+SpoolDir = ${SPOOL}
+
+# Location of the log directory.  This is longer term storage for rotated logs.
+LogDir = ${LOGS}
+
+# Expiration interval for log files in LogDir. Files older than this many days
+# will be deleted.
+LogExpireInterval = 30
+
+# Lower threshold for space available on the disk that holds SpoolDir. If less
+# space is available, BroControl starts sending out warning emails.
+MinDiskSpace = 5
+
+# Location of the "sendmail" program for sending email.
+SendMail = /usr/sbin/sendmail
+
+# Logs debug information into spool/debug.log.
+# Debug = 1

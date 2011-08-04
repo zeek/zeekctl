@@ -1,14 +1,13 @@
 # $Id: options.py 7098 2010-10-19 00:54:23Z robin $
 #
-# Configuration options. 
+# Configuration options.
 #
 # If started directly, will print option reference documentation.
 
 class Option:
-
     # Options category.
     USER = 1       # Standard user-configurable option.
-    INTERNAL = 2   # internal, don't expose to user. 
+    INTERNAL = 2   # internal, don't expose to user.
     AUTOMATIC = 3  # Set automatically, unlikely to be changed.
 
     def __init__(self, name, default, type, category, dontinit, description):
@@ -21,10 +20,10 @@ class Option:
 
 options = [
     # User options.
-    Option("Debug", "0", "bool", Option.USER, False, 
+    Option("Debug", "0", "bool", Option.USER, False,
            "Enable extensive debugging output in spool/debug.log."),
 
-    Option("HaveNFS", "0", "bool", Option.USER, False, 
+    Option("HaveNFS", "0", "bool", Option.USER, False,
            "True if shared files are mounted across all nodes via NFS (see FAQ)."),
     Option("SaveTraces", "0", "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
@@ -33,26 +32,28 @@ options = [
            "Directory for archived log files."),
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
            "Script to generate filenames for archived log files."),
-    Option("CompressLogs", "1", "bool", Option.USER, False, 
+    Option("CompressLogs", "1", "bool", Option.USER, False,
            "True to gzip archived log files."),
 
-    Option("SendMail", "1", "bool", Option.USER, False,
-           "True if shell may send mails."),
+    Option("SendMail", "/usr/sbin/sendmail", "string", Option.USER, False,
+           "Location of the sendmail binary.  Make this string blank to prevent email from being sent."),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
            "General Subject prefix for broctl-generated mails."),
-    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
-           "Subject prefix for individual alerts triggered by NOTICE_EMAIL."),
+
     Option("MailReplyTo", "", "string", Option.USER, False,
            "Reply-to address for broctl-generated mails."),
     Option("MailTo", "<user>", "string", Option.USER, True,
            "Destination address for broctl-generated non-alarm mails. Default is to use the same address as +MailTo+."),
-    Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
-           "Destination address for broctl-generated alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
     Option("MailAlarms", "1", "bool", Option.USER, False,
            "True if Bro should send mails for NOTICE_EMAIL alerts."),
+    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
+           "Subject prefix for individual alerts triggered by Notice::ACTION_EMAIL."),
+    Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
+           "Destination address for broctl-generated alarm mails."),
+
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
     Option("LogExpireInterval", "30", "int", Option.USER, False,
@@ -68,13 +69,6 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("AuxScriptsManager", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the manager, separated by spaces."),
-    Option("AuxScriptsWorker", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on the workers, separated by spaces."),
-    Option("AuxScriptsStandalone", "", "string", Option.USER, False,
-           "Additional Bro scripts loaded on a standalone Brothe manage, separated by spaces."),
-
     Option("AuxPostProcessors", "", "string", Option.USER, False,
            "Additional log postprocessors, with paths separated by spaces."),
 
@@ -83,7 +77,7 @@ options = [
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
            "Local policy file for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Local policy file for standalone Bro."),
+           "Local policy file for all Bro instances."),
 
     Option("CustomInstallBin", "", "string", Option.USER, False,
            "Additional executables to be installed into ${BinDir}, including full path and separated by spaces."),
@@ -97,22 +91,22 @@ options = [
            "If a cFlow load-balander is used, the user name for accessing its configuration interface."),
     Option("CFlowPassword", "", "string", Option.USER, False,
            "If a cFlow load-balander is used, the password for accessing its configuration interface."),
-		   
+
     Option("TimeMachineHost", "", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the address of the host it is running on."),
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., +47757/tcp+."),
 
     # Automatically set.
-    Option("BroBase", "", "string", Option.AUTOMATIC, True, 
+    Option("BroBase", "", "string", Option.AUTOMATIC, True,
            "Base path of broctl installation on all nodes."),
-    Option("Version", "", "string", Option.AUTOMATIC, True, 
+    Option("Version", "", "string", Option.AUTOMATIC, True,
            "Version of the broctl."),
-    Option("StandAlone", "0", "bool", Option.AUTOMATIC, True, 
+    Option("StandAlone", "0", "bool", Option.AUTOMATIC, True,
            "True if running in stand-alone mode (see elsewhere)."),
-    Option("OS", "", "string", Option.AUTOMATIC, True, 
+    Option("OS", "", "string", Option.AUTOMATIC, True,
            "Name of operation systems as reported by uname."),
-    Option("Time", "", "string", Option.AUTOMATIC, True, 
+    Option("Time", "", "string", Option.AUTOMATIC, True,
            "Path to time binary."),
 
     Option("HaveBroccoli", "", "bool", Option.AUTOMATIC, False,
@@ -149,18 +143,18 @@ options = [
            "Directory where binaries are copied before execution."),
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
            "Directory where statistics are kepts."),
+    Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
+           "Directory where standard plugins are located."),
 
-    Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False, 
+    Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
            "Path to trace-summary script; empty if not available."),
-    Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False, 
+    Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False,
            "Path to capstats binary; empty if not available."),
 
     Option("NodeCfg", "${CfgDir}/node.cfg", "string", Option.AUTOMATIC, False,
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
            "File definining the local networks."),
-    Option("AnalysisCfg", "${CfgDir}/analysis.dat", "string", Option.AUTOMATIC, False,
-           "Configuration file defining types of analysis which can be toggled on-the-fly."),
     Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,
@@ -172,33 +166,26 @@ options = [
            "Log file for statistics."),
 
     Option("SitePolicyPath", "${PolicyDir}/site", "string", Option.USER, False,
-           "Directories to search for local policy files, separated by colons."),           
+           "Directories to search for local policy files, separated by colons."),
+    Option("SitePluginPath", "", "string", Option.USER, False,
+           "Directories to search for custom plugins, separated by colons."),
 
     Option("DefSitePolicyPath", "${PolicyDir}/site", "string", Option.INTERNAL, False,
-           "Default directory to search for local policy files."),           
+           "Default directory to search for local policy files."),
 
     Option("PolicyDirSiteInstall", "${SpoolDir}/policy/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local policy scripts when installing."),
     Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
-    Option("Scripts-Manager", "cluster-manager", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the manager, separated by spaces."),
-    Option("Scripts-Worker", "cluster-worker", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the workers, separated by spaces."),
-    Option("Scripts-Proxy", "cluster-proxy", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on the proxies, separated by spaces."),
-    Option("Scripts-Standalone", "standalone", "string", Option.AUTOMATIC, False,
-           "Bro scripts loaded on a standalone Bro, separated by spaces."),
-
-    # Internal, not documented. 
+    # Internal, not documented.
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 
     Option("Cron-Enabled", "1", "bool", Option.INTERNAL, False,
            "True if cron command is enabled; if False, cron is silently ignored."),
 
-    Option("Home", "", "string", Option.INTERNAL, False, 
+    Option("Home", "", "string", Option.INTERNAL, False,
            "User's home directory."),
 
     Option("Cron", "0", "bool", Option.INTERNAL, False,
@@ -226,13 +213,13 @@ def printOptions(cat):
             opt.default = '"%s"' % opt.default
 
         if not opt.default and opt.type == "string":
-            opt.default = "_empty_"      
-			
+            opt.default = "_empty_"
+
         if opt.default:
             default = ", default %s" % opt.default
 
         default = default.replace("{", "\\{")
-        description = opt.description.replace("{", "\\{")    
+        description = opt.description.replace("{", "\\{")
 
         print ".. _%s:\n\n*%s* (%s%s)\n    %s\n" % (opt.name, opt.name, opt.type, default, description)
 

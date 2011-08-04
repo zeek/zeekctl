@@ -1,7 +1,7 @@
 # $Id: execute.py 7098 2010-10-19 00:54:23Z robin $
 #
 # These modules provides a set of functions to execute actions on a host.
-# If the host is local, it's done direcly; if it's remote we log in via SSH. 
+# If the host is local, it's done direcly; if it's remote we log in via SSH.
 
 import os
 import sys
@@ -21,26 +21,33 @@ try:
 except ImportError:
     haveBroccoli = False
 
-LocalAddrs = None 
+LocalAddrs = None
 
 # Wrapper around subprocess.POpen()
-def popen(cmdline, stderr_to_stdout=False):
-    stderr = None
+def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
+
+    if donotcaptureoutput:
+        stdout = None
+        stderr = None
+    else:
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+
     if stderr_to_stdout:
         stderr = subprocess.STDOUT
 
     # os.setid makes sure that the child process doesn't receive our CTRL-Cs.
-    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr, 
+    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                             close_fds=True, shell=True, preexec_fn=os.setsid)
     # Compatibility with older popen4.
     proc.tochild = proc.stdin
-    proc.fromchild = proc.stdout
+    proc.fromchild = proc.stdout if proc.stdout != None else []
 
     return proc
 
 # Returns true if given node corresponds to the host we're running on.
 def isLocal(node):
-    global LocalAddrs 
+    global LocalAddrs
     if not LocalAddrs:
         (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "local-interfaces"))
         if not success:
@@ -67,17 +74,17 @@ def mkdirs(dirs):
     fullcmds = []
 
     for (node, dir) in dirs:
-        # We make local directories directly. 
+        # We make local directories directly.
         if isLocal(node):
             if not exists(node, dir):
-                util.debug(1, "%-10s %s" % ("[local]", "mkdir -p %s" % dir))
+                util.debug(1, "mkdir -p %s" % dir, prefix="local")
                 os.mkdir(dir)
 
             results += [(node, True)]
 
         else:
             cmds += [(node, [], [])]
-                # Need to be careful here as our helper scripts may not be installed yet. 
+                # Need to be careful here as our helper scripts may not be installed yet.
             fullcmds += [("test -d %s || mkdir -p %s 2>/dev/null; echo $?; echo ~~~" % (dir, dir))]
 
     for (node, success, output) in runHelperParallel(cmds, fullcmds=fullcmds):
@@ -95,7 +102,7 @@ def rmdirs(dirs):
     cmds = []
 
     for (node, dir) in dirs:
-        # We remove local directories directly. 
+        # We remove local directories directly.
         if isLocal(node):
             (success, output) = captureCmd("rm -rf %s" % dir)
             results += [(node, success)]
@@ -146,20 +153,20 @@ def install(host, src, dst):
             os.remove(dst)
 
         util.debug(1, "cp %s %s" % (src, dst))
-        
+
         try:
             shutil.copy2(src, dst)
         except OSError:
             # Python 2.6 has a bug where this may fail on NFS. So we just
             # ignore errors.
             pass
-            
+
         return True
     else:
         util.error("install() not yet supported for remote hosts")
         return False
 
-# rsyns paths from localhost to destination hosts. 
+# rsyns paths from localhost to destination hosts.
 def sync(nodes, paths):
 
     cmds = []
@@ -174,7 +181,7 @@ def sync(nodes, paths):
         if not success:
             util.warn("error rsyncing to %s: %s" % (id.host, output))
 
-# Checks whether the given host is alive.    
+# Checks whether the given host is alive.
 _deadHosts = {}
 
 def isAlive(host):
@@ -191,12 +198,12 @@ def isAlive(host):
     return success
 
 # Runs command locally and returns tuple (success, output)
-# with success being true if the command terminated with exit code 0, 
-# and output being the combinded stdout/stderr output of the command. 
+# with success being true if the command terminated with exit code 0,
+# and output being the combinded stdout/stderr output of the command.
 def captureCmd(cmd, env = "", input = None):
 
     cmdline = env + " " + cmd
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
     proc = popen(cmdline, stderr_to_stdout=True)
 
@@ -207,26 +214,27 @@ def captureCmd(cmd, env = "", input = None):
     rc = proc.wait()
     output = [line.strip() for line in proc.fromchild]
 
-    util.debug(1, "%-10s exit code %d" % ("[local]", os.WEXITSTATUS(rc)))
+    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix="local")
 
     return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
 
 ## FIXME: Replace "captureCmd" with "runLocalCmd".
 
 # Runs command locally and returns tuple (success, output)
-# with success being true if the command terminated with exit code 0, 
-# and output being the combinded stdout/stderr output of the command. 
-def runLocalCmd(cmd, env = "", input=None):
-    proc = _runLocalCmdInit("single", cmd, env, input)
+# with success being true if the command terminated with exit code 0,
+# and output being the combinded stdout/stderr output of the command.
+def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
+    proc = _runLocalCmdInit("single", cmd, env, input, donotcaptureoutput)
     if not proc:
         return (False, [])
 
     return _runLocalCmdWait(proc)
 
 # Same as above but runs a set of local commands in parallel.
-# Cmds is a list of (id, cmd, envs, input) tuples, where id is 
+# Cmds is a list of (id, cmd, envs, input) tuples, where id is
 # an arbitrary cookie identifying each command.
 # Returns a list of (id, success, output) tuples.
 # 'output' is None (vs. []) if we couldn't connect to host.
@@ -252,15 +260,15 @@ def runLocalCmdsParallel(cmds):
 
     return results
 
-def _runLocalCmdInit(id, cmd, env, input):
+def _runLocalCmdInit(id, cmd, env, input, donotcaptureoutput=False):
 
     if not env:
         env = ""
 
     cmdline = env + " " + cmd
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
-    proc = popen(cmdline, stderr_to_stdout=True)
+    proc = popen(cmdline, stderr_to_stdout=True, donotcaptureoutput=donotcaptureoutput)
 
     if input:
         print >>proc.tochild, input
@@ -279,16 +287,30 @@ def _runLocalCmdWait(proc):
     rc = proc.wait()
     output = [stripNL(line) for line in proc.fromchild]
 
-    util.debug(1, "%-10s exit code %d" % ("[local]", os.WEXITSTATUS(rc)))
+    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix="local")
 
     return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
 
+
+# Runs arbitrary commands in parallel on nodes. Input is list of (node, cmd).
+def executeCmdsParallel(cmds):
+    helpers = []
+
+    for (node, cmd) in cmds:
+        for special in "|'\"":
+            cmd = cmd.replace(special, "\\" + special)
+
+        helpers += [(node, "run-cmd", [cmd])]
+
+    return runHelperParallel(helpers)
+
 # Runs a helper script from bin/helpers, according to the helper
-# protocol. 
-# If fullcmd is given, this is the exact & complete command line (incl. paths). 
-# Otherwise, cmd is just the helper's name (wo/ path) and args are the 
+# protocol.
+# If fullcmd is given, this is the exact & complete command line (incl. paths).
+# Otherwise, cmd is just the helper's name (wo/ path) and args are the
 # arguments. Env is an optional enviroment variable of the form
 # "key=val". Return value as for captureCmd().
 # 'output' is None (vs. []) if we couldn't connect to host.
@@ -310,7 +332,7 @@ def runHelper(host, cmd=None, args=None, fullcmd=None, env = ""):
 
 # Same as above but runs commands on a set of hosts in parallel.
 # Cmds is a list of (node, cmd, args) tuples.
-# Fullcmds, if given, is a parallel list of full command lines. 
+# Fullcmds, if given, is a parallel list of full command lines.
 # Envs, if given, is a parallel list of env variables.
 # Returns a list of (node, success, output) tuples.
 # 'output' is None (vs. []) if we couldn't connect to host.
@@ -355,7 +377,7 @@ def runHelperParallel(cmds, fullcmds = None, envs = None):
     finally:
         util.enableSignals()
 
-# Helpers for running helpers. 
+# Helpers for running helpers.
 #
 # We keep the SSH sessions open across calls to runHelper.
 Connections = {}
@@ -364,7 +386,7 @@ WhoAmI = None
 # FIXME: This is an ugly hack. The __del__ method produces
 # strange unhandled exceptions in the child at termination
 # of the main process. Not sure if disabling the cleanup
-# altogether is a good thing but right now that's the 
+# altogether is a good thing but right now that's the
 # only fix I can come up with.
 def _emptyDel(self):
     pass
@@ -382,8 +404,8 @@ def _getConnection(host):
     if not host:
         host = config.Config.manager()
 
-    if host.tag in Connections:
-        p = Connections[host.tag]
+    if host.name in Connections:
+        p = Connections[host.name]
         if p.poll() != None:
             # Terminated.
             global _deadHosts
@@ -396,13 +418,13 @@ def _getConnection(host):
     if isLocal(host):
         cmdline = "sh"
     else:
-        # Check whether host is alive. 
+        # Check whether host is alive.
         if not isAlive(host.host):
             return None
 
         cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, host.host)
 
-    util.debug(1, "%-10s %s" % ("[local]", cmdline))
+    util.debug(1, cmdline, prefix="local")
 
     try:
         p = popen(cmdline)
@@ -410,7 +432,7 @@ def _getConnection(host):
         util.warn("cannot login into %s [IOError: %s]" % (host.host, e))
         return None
 
-    Connections[host.tag] = p
+    Connections[host.name] = p
     return (p.stdin, p.stdout)
 
 def _runHelperInit(host, cmd, args, fullcmd, env):
@@ -426,7 +448,7 @@ def _runHelperInit(host, cmd, args, fullcmd, env):
     else:
         cmdline = fullcmd
 
-    util.debug(1, "%-10s %s" % (("[%s]" % host.host), cmdline))
+    util.debug(1, cmdline, prefix=host.host)
     print >>stdin, cmdline
     stdin.flush()
 
@@ -453,10 +475,10 @@ def _runHelperWait(host):
         util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[0]))
         rc = 1
 
-    util.debug(1, "%-10s exit code %d" % (("[%s]" % host.host), rc))
+    util.debug(1, "exit code %d" % rc, prefix=host.host)
 
     for line in output:
-        util.debug(2, "           > %s" % line)
+        util.debug(2, "           > %s" % line, prefix=host.host)
 
     return (rc == 0, output[1:])
 
@@ -471,7 +493,7 @@ def _runHelperWait(host):
 #   result_event: name of a event the node sends back. None if no event is sent back.
 #
 # Returns a list of tuples (node, success, results_args).
-#   If success is True, result_args is a list of arguments as shipped with the result event, 
+#   If success is True, result_args is a list of arguments as shipped with the result event,
 #   or [] if no result_event was specified.
 #   If success is False, results_args is a string with an error message.
 
@@ -501,28 +523,28 @@ def sendEventsParallel(events):
 def _sendEventInit(node, event, args, result_event):
 
     try:
-        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="update", 
+        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="control",
                                  flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False
         bc.connect()
     except IOError, e:
-        util.debug(1, "%-10s broccoli: cannot connect" % (("[%s]" % node.tag)))
+        util.debug(1, "broccoli: cannot connect", prefix=node.name)
         return (False, str(e))
 
-    util.debug(1, "%-10s broccoli: %s(%s)" % (("[%s]" % node.tag), event, ", ".join(args)))
+    util.debug(1, "broccoli: %s(%s)" % (event, ", ".join(args)), prefix=node.name)
     bc.send(event, *args)
     return (True, bc)
 
 def _sendEventWait(node, result_event, bc):
-    # Wait until we have sent the event out. 
+    # Wait until we have sent the event out.
     cnt = 0
     while bc.processInput():
         time.sleep(1)
 
         cnt += 1
         if cnt > 10:
-            util.debug(1, "%-10s broccoli: timeout during send" % (("[%s]" % node.tag)))
+            util.debug(1, "broccoli: timeout during send", prefix=node.name)
             return (False, "time-out")
 
     if not result_event:
@@ -537,10 +559,10 @@ def _sendEventWait(node, result_event, bc):
 
         cnt += 1
         if cnt > 10:
-            util.debug(1, "%-10s broccoli: timeout during receive" % (("[%s]" % node.tag)))
+            util.debug(1, "broccoli: timeout during receive", prefix=node.name)
             return (False, "time-out")
 
-    util.debug(1, "%-10s broccoli: %s(%s)" % (("[%s]" % node.tag), result_event, ", ".join(bc.result_args)))
+    util.debug(1, "broccoli: %s(%s)" % (result_event, ", ".join(bc.result_args)), prefix=node.name)
     return (True, bc.result_args)
 
 def _event_callback(bc):

@@ -42,6 +42,11 @@ User Options
 *CFlowUser* (string, default _empty_)
     If a cFlow load-balander is used, the user name for accessing its configuration interface.
 
+.. _CompressLogs:
+
+*CompressLogs* (bool, default 1)
+    True to gzip archived log files.
+
 .. _CronCmd:
 
 *CronCmd* (string, default _empty_)
@@ -136,6 +141,11 @@ User Options
 
 *SendMail* (bool, default 1)
     True if shell may send mails.
+
+.. _SitePluginPath:
+
+*SitePluginPath* (string, default _empty_)
+    Directories to search for custom plugins, separated by colons.
 
 .. _SitePolicyManager:
 
@@ -246,6 +256,11 @@ Internal Options
 *OS* (string, default _empty_)
     Name of operation systems as reported by uname.
 
+.. _PluginDir:
+
+*PluginDir* (string, default "$\{LibDirInternal}/plugins")
+    Directory where standard plugins are located.
+
 .. _PolicyDir:
 
 *PolicyDir* (string, default "$\{BroBase}/share/bro")
@@ -253,17 +268,17 @@ Internal Options
 
 .. _PolicyDirBroCtl:
 
-*PolicyDirBroCtl* (string, default "$\{PolicyDir}/broctl")
-    Directory where the shell copies the additional broctl policy scripts when installing.
+*PolicyDirBroCtl* (string, default "$\{SpoolDir}/policy/broctl")
+    Directory for additioal broctl policy scripts.
 
 .. _PolicyDirSiteInstall:
 
-*PolicyDirSiteInstall* (string, default "$\{PolicyDir}/.site")
+*PolicyDirSiteInstall* (string, default "$\{SpoolDir}/policy/site")
     Directory where the shell copies local policy scripts when installing.
 
 .. _PolicyDirSiteInstallAuto:
 
-*PolicyDirSiteInstallAuto* (string, default "$\{PolicyDir}/.site/auto")
+*PolicyDirSiteInstallAuto* (string, default "$\{SpoolDir}/policy/auto")
     Directory where the shell copies auto-generated local policy scripts when installing.
 
 .. _PostProcDir:
