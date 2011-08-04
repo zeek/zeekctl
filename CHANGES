@@ -1,3 +1,39 @@
+
+0.41-63 | 2011-08-03 22:10:40 -0700
+
+  * Revamped how the work is split between Bro and BroControl. Much of
+    functionality previously found in BroControl policy scripts has
+    moved over to Bro. (Seth Hall)
+
+  * Adapted BroControl to Bro 2.0 policy scripts.
+
+  * A new plugin interface allows external Python code to hook into
+    BroControl processing. See README for more information. (Robin
+    Sommer)
+
+    Two example plugins are shipped: (1) "ps.bro" shows all Bro
+    processes currently running on any cluster node, even if not
+    managed by BroControl; (2) "TestPlugin" is a demo plugin
+    demonstrating all the functionality a plugin can use (but doesn't
+    do anything sensible with it).
+
+  * A new offline mode for processing a trace. The new command
+    "process <trace>" runs Bro offline on the given trace, using the
+    current BroControl configuration. One can optionally give give
+    further Bro command line options and scripts. In cluster mode the
+    the Bro process loads both manager and worker configurations
+    simultaniously.
+
+    Addresses #273. (Robin Sommer)
+
+  * Removed the "analysis" command. (Seth Hall)
+
+  * Installation does no longer differentiate between standalone and
+    cluster mode. node.cfg now fully controls this. (Seth Hall)
+
+  * Tons of little fixes, improvements, and polishing (Seth Hall, Jon
+    Siwek, and Robin Sommer)
+
 0.41-9 | 2011-06-01 11:35:36 -0700
 
   * Standardize shell script hashbang on install. (Jon Siwek)
@@ -18,7 +54,7 @@
 0.41 | 2011-04-07 21:14:53 -0700
 
   * Tweaks to the documentation generation. (Robin Sommer)
-    
+
   * CMake tweaks. (Jon Siwek)
 
   * Bugfix: trace-summary sampled in standalone mode rather than cluster

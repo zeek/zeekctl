@@ -1,14 +1,19 @@
 ..	-*- mode: rst-mode -*-
 ..
 .. NOTE: This README contains only parts of the BroControl documentation.
-.. Please see the README.cmds and README.options for references of
-.. command and options, respective; or view the generated
-.. README.html, which is the complete document.
+.. Please see the other README.* and README.options for more, or view the
+.. generated README.html, which is the complete document.
+
+.. Version number is filled in automatically.
+.. |version| replace:: 0.41-63
 
 BroControl
 ===========
 
+:Version: |version|
+
 .. contents::
+
 
 This document summarizes installation and use of *BroControl*, Bro's
 interactive shell for operating Bro installations. *Bro Control* has
