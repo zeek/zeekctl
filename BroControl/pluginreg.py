@@ -136,17 +136,16 @@ class PluginRegistry:
         False if no such command is known"""
         try:
             (plugin, usage, descr) = self._cmds[cmd]
-
-            prefix = plugin.prefix()
-
-            if cmd.startswith("%s." % prefix):
-                cmd = cmd[len(prefix) + 1:]
-
-            plugin.cmd_custom(cmd, args)
-            return True
-
         except LookupError:
             return False
+
+        prefix = plugin.prefix()
+
+        if cmd.startswith("%s." % prefix):
+            cmd = cmd[len(prefix) + 1:]
+
+        plugin.cmd_custom(cmd, args)
+        return True
 
     def allCustomCommands(self):
         """Returns a list of string tuples *(cmd, descr)* listing all commands

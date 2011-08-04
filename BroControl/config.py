@@ -265,13 +265,21 @@ class Configuration:
                     util.error("%s: more than one node defined in stand-alone setup" % file)
 
         for n in self.nodelist.values():
+            if not n.name:
+                util.error("node configured without a name")
+
+            if not n.host:
+                util.error("no host given for node %s" % n.name)
+
+            if not n.type:
+                util.error("no type given for node %s" % n.name)
+
             if n.type == "manager":
                 if not execute.isLocal(n):
                     util.error("script must be run on manager node")
 
                 if n.addr == "127.0.0.1" and n.type != "standalone":
                     util.error("cannot use localhost/127.0.0.1 for manager host in nodes configuration")
-
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):

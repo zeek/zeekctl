@@ -242,7 +242,9 @@ def makeLayout():
         print >>out, "};"
 
         # TODO: This is definitely the wrong spot for this.
-        print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
+        #
+        # This doesn't work at all right now ... -Robin
+        #print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
 
     util.output(" done.")
 

@@ -48,19 +48,34 @@ class PsBro(BroControl.plugin.Plugin):
 
         cmd = "POSIXLY_CORRECT=1 ps axco user,pid,ppid,%cpu,%mem,vsz,rss,tt,state,start,time,command | grep 'PID\\\\|bro$'"
         cmds = [(n, cmd) for n in host_nodes.values()]
+        cmds.sort(key=lambda n: n[0].name)
 
         # Run them in parallel and print output.
-        for (n, success, output) in self.executeParallel(cmds):
+
+        def startNode(n, success, output, first_node):
+            if first_node:
+                print "       ", output[0]
+
             if not success:
                 print ">>>", n.host, "failed"
             else:
                 print ">>>", n.host
 
-            print "       ", output[0]
+
+        first_node = True
+
+        for (n, success, output) in self.executeParallel(cmds):
+            startNode(n, success, output, first_node)
 
             for line in output[1:]:
+
+                first_line = False
                 m = line.split()
                 (pid, ppid) = (int(m[1]), int(m[2]))
-                known = (pid in pids[n.host] or ppid in pids[n.host])
+                try:
+                    known = (pid in pids[n.host] or ppid in pids[n.host])
+                except KeyError:
+                    known = False
                 print "   ", "(+)" if known else "(-)", line.strip()
 
+            first_node = False

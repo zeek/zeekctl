@@ -151,7 +151,7 @@ def waitForBros(nodes, status, timeout, ensurerunning):
 def _makeBroParams(node, live, add_manager=False):
     args = []
 
-    if live:
+    if live and node.interface:
         try:
             args += ["-i %s " % node.interface]
         except AttributeError:
@@ -879,7 +879,7 @@ def capstats(nodes, interval):
 
         totals = None
 
-        for (port, error, vals) in data:
+        for (port, error, vals) in sorted(data):
 
             if error:
                 util.output(error)
@@ -906,7 +906,12 @@ def capstats(nodes, interval):
         cflow_start = getCFlowStatus()
 
     if have_capstats:
-        capstats = [("%s/%s" % (node.host, node.interface), error, vals) for (node, error, vals) in getCapstatsOutput(nodes, interval)]
+        capstats = []
+        for (node, error, vals) in getCapstatsOutput(nodes, interval):
+            if str(node) == "$total":
+                capstats += [(node, error, vals)]
+            elif node.interface:
+                capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
 
     else:
         time.sleep(interval)
