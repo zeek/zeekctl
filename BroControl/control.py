@@ -160,8 +160,7 @@ def _makeBroParams(node, live, add_manager=False):
         if config.Config.savetraces == "1":
             args += ["-w trace.pcap"]
 
-        args += ["-U .status"]
-
+    args += ["-U .status"]
     args += ["-p broctl"]
 
     if live:
