@@ -1,4 +1,9 @@
 
+0.41-68 | 2011-08-05 12:49:30 -0700
+
+  * Install example config files dynamically when the distribution
+    version differs from existing version on disk. (Jon Siwek)
+
 0.41-63 | 2011-08-03 22:10:40 -0700
 
   * Revamped how the work is split between Bro and BroControl. Much of
