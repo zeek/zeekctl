@@ -8,6 +8,9 @@
 
 . `dirname $0`/broctl-config.sh
 
+# Tell the BroControl script code that this is only a check.
+export BROCTL_CHECK=1
+
 use_installed_policies=$1
 source ${scriptsdir}/set-bro-path
 shift

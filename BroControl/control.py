@@ -165,8 +165,6 @@ def _makeBroParams(node, live, add_manager=False):
 
     if live:
         args += ["-p broctl-live"]
-    else:
-        args += ["-p broctl-check"]
 
     if node.type == "standalone":
         args += ["-p standalone"]
