@@ -9,7 +9,7 @@ redef record_all_packets = T;
 
 # Log rotation support.
 redef Log::default_rotation_interval = 24 hrs;
-redef Log::default_rotation_postprocessor = "delete-log";
+redef Log::default_rotation_postprocessor_cmd = "delete-log";
 
 ### The cluster manager will inform us with these events if it's interested in
 ### further connection attempts from that source.

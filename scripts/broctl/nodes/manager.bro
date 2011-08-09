@@ -2,6 +2,10 @@
 
 @load base/frameworks/cluster
 
+# Log rotation support.
+redef Log::default_rotation_interval = 1 hrs;
+redef Log::default_rotation_postprocessor_cmd = "archive-log";
+
 #redef FilterDuplicates::filters += {
 #	[Drop::AddressSeenAgain] = FilterDuplicates::match_src,
 #};
