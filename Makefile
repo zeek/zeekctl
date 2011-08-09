@@ -22,13 +22,9 @@ dist: configured
 distclean:
 	rm -rf $(BUILD)
 
-generate-docs:
-	@python BroControl/options.py >README.options
-	@python BroControl/doc.py >README.plugins
-	@python bin/broctl.in --print-doc >README.cmds
-
-docs:
-	rst2html.py README >README.html
+.PHONY : doc
+doc:
+	cd doc && make
 
 .PHONY : configured
 configured:
