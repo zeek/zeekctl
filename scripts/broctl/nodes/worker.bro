@@ -1,6 +1,6 @@
 ##! Configuration for a worker cluster node used with BroControl.
 
-@load frameworks/cluster
+@load base/frameworks/cluster
 
 ## Record all packets into trace file.
 ## This will only be happen if the -w flag is given on the command line.

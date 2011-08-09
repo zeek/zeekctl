@@ -1,7 +1,6 @@
 ##! Configuration for a manager cluster node used with BroControl.
 
-@load frameworks/cluster
-@load frameworks/notice
+@load base/frameworks/cluster
 
 #redef FilterDuplicates::filters += {
 #	[Drop::AddressSeenAgain] = FilterDuplicates::match_src,
