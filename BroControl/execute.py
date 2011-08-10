@@ -150,7 +150,11 @@ def install(host, src, dst):
             return False
 
         if os.path.isfile(dst):
-            os.remove(dst)
+            try:
+                os.remove(dst)
+            except OSError, e:
+                print 'install: os.remove(%s): %s' % (dst, e.strerror)
+                sys.exit(1)
 
         util.debug(1, "cp %s %s" % (src, dst))
 
