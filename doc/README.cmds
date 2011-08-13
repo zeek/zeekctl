@@ -63,7 +63,7 @@
 
 .. _cron:
 
-*cron* *[enable|disable|?] | [--no-watch] | *
+*cron* *[enable|disable|?] | [--no-watch] |*
     This command has two modes of operation. Without arguments (or just
     ``--no-watch``), it performs a set of maintainance tasks, including
     the logging of various statistical information, expiring old log

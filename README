@@ -4,7 +4,7 @@
 .. from doc/README.main. Edit that one.
 
 .. Version number is filled in automatically.
-.. |version| replace:: 0.41-68
+.. |version| replace:: 0.41-73
 
 BroControl
 ===========
@@ -428,7 +428,7 @@ given set of nodes, or to all nodes if none is given.
 
 .. _cron:
 
-*cron* *[enable|disable|?] | [--no-watch] | *
+*cron* *[enable|disable|?] | [--no-watch] |*
     This command has two modes of operation. Without arguments (or just
     ``--no-watch``), it performs a set of maintainance tasks, including
     the logging of various statistical information, expiring old log
@@ -1172,7 +1172,7 @@ class **Plugin**
 
      **broProcessDied** (self, node)
 
-         Called when BroControl finds the Bro process for node.Node_ *node*
+         Called when BroControl finds the Bro process for Node_ *node*
          to have terminated unexpectedly. This method will be called just
          before BroControl prepare the node's "crash report" and before it
          cleans up the node's spool directory.
