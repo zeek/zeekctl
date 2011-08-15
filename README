@@ -13,6 +13,8 @@ BroControl
 
 .. contents::
 
+.. note:: This document does not yet reflect all the recent changes in
+    the current development versions.
 
 This document summarizes installation and use of *BroControl*, Bro's
 interactive shell for operating Bro installations. *Bro Control* has
@@ -42,9 +44,6 @@ Running *BroControl* requires the following prerequisites:
 
   - A *bash* (note in particular, that on FreeBSD, *bash* is not
     installed by default).
-
-.. note:: If you're using a development version, you might need to
-   apply a patch to Bro. Please see `development version`_ below.
 
 Installing a Stand-alone Bro
 ----------------------------
