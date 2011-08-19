@@ -656,7 +656,7 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
         installed_policies = installed and "1" or "0"
 
-        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s" % (installed_policies, cwd)
+        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s" % (installed_policies, cwd, " ".join(_makeBroParams(node, False)))
 
         cmds += [((node, cwd), cmd, env, None)]
 

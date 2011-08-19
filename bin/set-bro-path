@@ -7,7 +7,7 @@
 
 BROPATH=${policydirsiteinstallauto}:${policydir}:${policydir}/policy:${policydir}/site
 
-if [ "use_installed_policies" == "1" ]; then
+if [ "$use_installed_policies" == "1" ]; then
    export BROPATH=${policydirsiteinstall}:$BROPATH
 else
    export BROPATH=${sitepolicypath}:$BROPATH
