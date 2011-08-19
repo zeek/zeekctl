@@ -78,7 +78,7 @@ def mkdirs(dirs):
         if isLocal(node):
             if not exists(node, dir):
                 util.debug(1, "mkdir -p %s" % dir, prefix="local")
-                os.mkdir(dir)
+                os.makedirs(dir)
 
             results += [(node, True)]
 
