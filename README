@@ -4,7 +4,7 @@
 .. from doc/README.main. Edit that one.
 
 .. Version number is filled in automatically.
-.. |version| replace:: 0.41-68
+.. |version| replace:: 0.41-73
 
 BroControl
 ===========
@@ -13,6 +13,8 @@ BroControl
 
 .. contents::
 
+.. note:: This document does not yet reflect all the recent changes in
+    the current development versions.
 
 This document summarizes installation and use of *BroControl*, Bro's
 interactive shell for operating Bro installations. *Bro Control* has
@@ -42,9 +44,6 @@ Running *BroControl* requires the following prerequisites:
 
   - A *bash* (note in particular, that on FreeBSD, *bash* is not
     installed by default).
-
-.. note:: If you're using a development version, you might need to
-   apply a patch to Bro. Please see `development version`_ below.
 
 Installing a Stand-alone Bro
 ----------------------------
@@ -428,7 +427,7 @@ given set of nodes, or to all nodes if none is given.
 
 .. _cron:
 
-*cron* *[enable|disable|?] | [--no-watch] | *
+*cron* *[enable|disable|?] | [--no-watch] |*
     This command has two modes of operation. Without arguments (or just
     ``--no-watch``), it performs a set of maintainance tasks, including
     the logging of various statistical information, expiring old log
@@ -1172,7 +1171,7 @@ class **Plugin**
 
      **broProcessDied** (self, node)
 
-         Called when BroControl finds the Bro process for node.Node_ *node*
+         Called when BroControl finds the Bro process for Node_ *node*
          to have terminated unexpectedly. This method will be called just
          before BroControl prepare the node's "crash report" and before it
          cleans up the node's spool directory.

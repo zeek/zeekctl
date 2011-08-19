@@ -354,7 +354,7 @@ class Plugin(object):
 
     @doc.api("override")
     def broProcessDied(self, node):
-        """Called when BroControl finds the Bro process for node.Node_ *node*
+        """Called when BroControl finds the Bro process for Node_ *node*
         to have terminated unexpectedly. This method will be called just
         before BroControl prepare the node's "crash report" and before it
         cleans up the node's spool directory.

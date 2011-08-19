@@ -1,0 +1,493 @@
+..	-*- mode: rst-mode -*-
+..
+.. NOTE: Do not edit the top-level README directly, it is build automatically
+.. from doc/README.main. Edit that one.
+
+.. Version number is filled in automatically.
+.. |version| replace:: 0.41-73
+
+BroControl
+===========
+
+:Version: |version|
+
+.. contents::
+
+.. note:: This document does not yet reflect all the recent changes in
+    the current development versions.
+
+This document summarizes installation and use of *BroControl*, Bro's
+interactive shell for operating Bro installations. *Bro Control* has
+two modes of operation: a *stand-alone* mode for managing a
+traditional, single-system Bro setup; and a *cluster* mode for
+maintaining a multi-system setup of coordinated Bro instances
+load-balancing the work across a set of independent machines. Below,
+we describe the installation process separately for the two modes.
+Once installed, the operation is pretty similar for both types; just
+keep in mind that if this documents refers to "nodes" and you're in
+a stand-alone setup, there's is only a single one and no
+worker/proxies.)
+
+Prerequisites
+-------------
+
+Running *BroControl* requires the following prerequisites:
+
+  - A Unix system. FreeBSD, Linux, and MacOS are supported and
+    should work out of the box. Note however that FreeBSD usually
+    sees more testing as it is Bro's primary development platform.
+    Other Unix systems will quite likely require some tweaking. Note
+    that in a cluster setup, all systems must be running exactly the
+    *same* operating system.
+
+  - A version of *Python* >= 2.4.
+
+  - A *bash* (note in particular, that on FreeBSD, *bash* is not
+    installed by default).
+
+Installing a Stand-alone Bro
+----------------------------
+
+This is the default installation:
+
+- Configure, compile, and install Bro as usual, specifying the
+  target installation path as ``prefix`` (we use ``/usr/local/bro``
+  as an example)::
+
+  > cd /path/to/bro/source/distribution
+  > ./configure --prefix=/usr/local/bro
+  > cd build
+  > make install
+
+- Install *BroControl*::
+
+  > cd /path/to/broctl/source/distribution
+  > ./configure --prefix=/usr/local/bro
+  > cd build
+  > make install
+
+- The installation process can be combined if using a *Bro* source
+  distribution that includes *BroControl* sources.  See the
+  ``--enable-broctl`` option of Bro's configure script.
+
+- Add ``<prefix>/bin`` to your ``PATH``.
+
+- The installation installs three configuration files which you
+  should edit:
+
+  * ``etc/broctl.cfg`` is the overall *BroControl* configuration.
+    Initially, you probably only need to edit the email address for
+    mails sent by the framework; that's the ``MailTo`` line.
+    Also, if the user that will be running ``broctl`` differs from
+    the user that performed ``make install``, you may encounter
+    permission problems unless ``SpoolDir`` and ``LogDir`` options
+    are added and point to directories with appropriate
+    write permissions for the user that will run ``broctl`` (refer
+    to the installed spool/ and logs/ directory structure when creating
+    your own).
+
+  * In ``etc/nodes.cfg``, you need to specify the network interface
+    Bro is to monitor; that's the ``interface`` line.
+
+  * In ``etc/networks.cfg``, list all the networks which Bro should
+    consider as local to the monitored environment. 
+
+- Once you have updated these files, install the modified
+  configuration::
+
+  > broctl install
+
+- Some tasks need to be run on a regular basis. Insert a line like
+  this into your crontab::
+
+      0-59/5 * * * * /usr/local/bro/bin/broctl cron
+
+- Finally, you can start Bro::
+
+  > broctl start
+
+Installing a Bro Cluster
+------------------------
+
+A *Bro Cluster* is a set of systems jointly analyzing the traffic of
+a network link in a coordinated fashion. *BroControl* is able to
+operate such a setup from a central manager system pretty much
+transparently, hiding much of the complexity of the multi-machine
+installation.
+
+A cluster consists of four types of components:
+
+  Frontends.
+     One or more frontends: Frontends load-balance the traffic
+     across a set of worker machines.
+
+  Worker nodes.
+       Workers are doing the actual analysis, with each seeing a
+       slice of the overall traffic as split by the frontend(s).
+
+  One or more proxies.
+       Proxies relay the communication between worker nodes.
+
+  One manager.
+       The manager provides the cluster's user-interface for
+       controlling and logging. During operation, the user only
+       interacts with the manager; this is where *BroControl* is
+       running.
+
+See `this RAID Paper
+<http:///www.icir.org/robin/papers/raid07.pdf>`_ for more
+information about the general cluster architecture. This document
+focusses on the installation of manager, workers, and the proxies.
+See <somewhere different> for a discussion of how to setup a
+frontend. If not otherwise stated, in the following we use the terms
+"manager", "worker", and "proxy" to refer to Bro instances, not to
+physical machines; rather, we use the term "node" to refer to
+physical machines. There may be multiple Bro instances running on
+the same node. For example, it's possible to run a proxy on the same
+node as the manager is operating on.
+
+In the following, as an example setup, we will assume that our
+cluster consists of four nodes (not counting the frontend). The host
+names of the systems will be ``host1``, ``host2``, ``host3``, and
+``host4``. We will configure the cluster so that ``host1`` runs the
+manager and the (only) proxy, and ``host{2,3,4}`` are each running
+one worker. This is a typical setup, which will work well for many
+sites.
+
+When installing a cluster, in addition to the prerequisites
+mentioned above, you need to
+
+  - have the same user account set up on all nodes. On the worker
+    nodes, this user must have access to target network interface in
+    promiscuous mode. ``ssh`` access from the manager node to this
+    user account must be setup on all machines, and must work
+    without asking for a password/passphrase.
+
+  - have some storage available on all nodes under the same path,
+    which we will call the cluster's *prefix* path. In the
+    following, we will use ``/usr/local/bro`` as an example. The Bro
+    user must be able to either create this directory or, where it
+    already exists, must have write permission inside this directory
+    on all nodes.
+
+  - have ``ssh`` and ``rsync`` installed.
+
+With all prerequisites in place, as the Bro user perform the
+following steps to install a Bro cluster:
+
+- Configure and compile the Bro distribution using the cluster's
+  prefix path as ``--prefix``::
+
+  > cd /path/to/bro/source/distribution
+  > ./configure --prefix=/usr/local/bro
+  > cd build
+  > make install
+
+- Install *BroControl*, selecting cluster operation with the
+  ``--enable-cluster`` option::
+
+  > cd /path/to/broctl/source/distribution
+  > ./configure --prefix=/usr/local/bro --enable-cluster
+  > cd build
+  > make install
+
+- The installation process can be combined if using a *Bro* source
+  distribution that includes *BroControl* sources.  See the
+  ``--enable-broctl`` and ``--enable-cluster`` option of
+  Bro's configure script.
+
+- Add ``<prefix>/bin`` to your ``PATH``.
+
+- Create a cluster configuration file. There is an example provided,
+  which you can edit according to the instructions in the file::
+
+  > cd /usr/local/bro
+  > cp etc/broctl.cfg.example etc/broctl.cfg
+  > vi etc/broctl.cfg
+
+- Create a node configuration file to define where manager, workers,
+  and proxies are to run. There is again an example, which defines
+  the example scenario described above and can be edited as needed::
+
+  > cd /usr/local/bro
+  > cp etc/node.cfg.example etc/node.cfg
+  > vi etc/node.cfg
+
+- Create a network configuration file that lists all of the networks
+  which the cluster should consider as local to the monitored
+  environment. Once, again the installation installs a template for
+  editing::
+
+    > cd /usr/local/bro
+    > cp etc/networks.cfg.example etc/networks.cfg
+    > vi etc/networks.cfg
+
+- Install workers and proxies using *BroControl*::
+
+    > broctl install
+
+  This installation process uses ``ssh`` and ``rdist`` to copy the
+  configuration over to the remote machines so, as described above,
+  you need to ensure that logging in via SSH works before the install will
+  succeed.
+
+- Some tasks need to be run on a regular basis. On the manager node,
+  insert a line like this into the crontab of the user running the
+  cluster::
+
+      0-59/5 * * * * <prefix>/bin/broctl cron
+
+- Finally, you can start the cluster::
+
+  > broctl start
+
+Getting Started
+---------------
+
+*BroControl* is an interactive interface to the cluster which allows
+you to, e.g., start/stop the monitoring or update its configuration.
+It is started with the ``broctl`` script and then expects commands
+on its command-line (alternatively, ``broctl`` can also be started
+with a single command directly on the shell's command line)::
+
+  > broctl
+  Welcome to BroControl 0.2
+
+  Type "help" for help.
+
+  [BroControl] >
+
+As the message says, type help_ to see a list of
+all commands. We will now briefly summarize the most important
+commands. A full reference follows link:cmd_reference[below].
+
+Once ``broctl.cfg`` and ``node.cfg`` are set up as described above,
+the monitoring can be started with the start_
+command. In the cluster setup, this will successively start manager,
+proxies, and workers. The status_ command should
+then show all nodes as operating. To stop the monitoring, issue the
+stop_ command. exit_ leaves the
+shell.
+
+On the manager system (and on the standalone system), you find the
+current set of (aggregated) logs in ``logs/current`` (which is a
+symlink to the corresponding spool directory.) The workers and
+proxies log into ``spool/proxy/`` and ``spool/<worker-name>/``,
+respectively. The manager/stand-alone logs are archived in
+``logs/``, by default once a day. Logs files of workers and proxies
+are discarded at the same rotation interval.
+
+Whenever the *BroControl* configuration is modified in any way
+(including changes to configuration files and site-specific policy
+scripts), install_ installs the new version.
+*No changes will take effect until install_ is
+run*. Before you run install_,
+check_ can be used to check for any potential
+errors in the new configuration, e.g., typos in scripts. If
+check_ does not report any problems, doing
+install_ will pretty likely not break anything.
+
+
+Note that generally configuration changes only take effect after a
+restart of the affected nodes. The restart_
+command triggers this. Some changes however can be put into effect
+on-the-fly without restarting any of the nodes by using the
+update_ command (again only after doing
+install_ first). Such dynamic updates generally work with
+all changes done which only modify
+const variables declared as *redefinable* (i.e., with Bro's
+*&redef* attribute).
+
+Generally, site-specific tuning needs to be done with local policy
+scripts, as in any Bro setup. This is described
+link:site_tuning[below].
+
+*BroControl* provides various options to control the behavior of
+the setup. These options can be set by editing ``etc/broctl.cfg``.
+The config_ command gives list of all options
+with their current values. A list of the most important options also
+follows link:cmd_reference[below].
+
+Site-specific Customization
+---------------------------
+
+You'll most likely want to adapt the Bro policy to the local
+environment and much of the more specific
+tuning requires writing local policy files. 
+
+By default, it is assumed that you put site-specific policy scripts
+into the ``share/bro/site`` directory. To change the location of
+site policies, set the option
+SitePolicyPath_ in ``broctl.cfg`` to a
+different path.
+
+During the initial install, sample policy scripts are installed in
+``share/bro/site``, which you can edit as appropriate. In the
+stand-alone setup, this is just a single file called ``local.bro``.
+In the cluster setup, there are three: ``local-manager.bro`` and
+``local-worker.bro`` are loaded by the manager and the workers (plus
+proxies), respectively. In turn, both of these load ``local.bro``,
+which contains all configuration code shared by all nodes. If in
+doubt, put your customizations into ``local.bro`` so that all nodes
+see it. If you want to change which local scripts are loaded by the
+nodes, you can set SitePolicyManager_ for the manager and SitePolicyWorker_
+for the workers.
+
+In the cluster setup, the main exception to putting everything into
+``local.bro`` is notice filtering, which should be done only on the
+manager. The example ``local-manager.bro`` comes with an example
+setup to configure notice policy and notice actions. You should to
+adapt these to the local environment.
+
+In general, all of *BroControl*'s policy scripts are loaded before
+any site-specific policy so that you can redefine any of the
+defaults locally. The scripts_ shows precisely
+which policy scripts get loaded by a node; that can be very helpful
+for debugging.
+
+It is also possible to add additional scripts to individual nodes
+only. This works by setting the option ``aux_scripts`` for the
+corresponding node(s) in ``etc/nodes.cfg``. For example, one could
+add a script ``experimental.bro`` to a single worker for trying out
+new experimental code.  Alternatively, the node tag can be used as a prefix
+as in the example ``worker-1.local.bro``.  The prefix will be automatically
+given to each node automatically by *BroControl*.
+
+Command Reference
+-----------------
+
+The following summary lists all commands supported by *BroControl*.
+All commands may be either entered interactively or specified on
+the shell's command line. If not specified otherwise, commands
+taking *[<nodes>]* as arguments apply their action either to the
+given set of nodes, or to all nodes if none is given.
+
+.. include:: README.cmds
+
+Option Reference
+----------------
+
+This section summarizes the options that can be set in
+``etc/broctl.cfg`` for customizing the behaviour of *BroControl*.
+This section summarizes the options that can be set in 
+``etc/broctl.cfg`` for customizing the behavior of *BroControl*.
+Usually, one only needs to change the "user options", which are
+listed first. The "internal options" are, as the name suggests,
+primarily used internally and set automatically. They are documented
+here only for reference.
+
+.. include:: README.options
+
+Writing Plugins
+---------------
+
+BroControl provides a plugin interface to extend its functionality. A
+plugin is written in Python and can do any, or all, of the following:
+
+    * Perform actions before or after any of the standard BroControl
+      commands is executed. When running before the actual command, it
+      can filter which nodes to operate or stop the execution
+      alltogether. When running after the command, it gets access to
+      the commands success on a per-node basis (where applicable).
+
+    * Add custom commands to BroControl.
+
+    * Add custom options to BroControl defined in ``broctl.cfg``.
+
+    * Add custom keys to nodes in defined in ``nodes.cfg``.
+
+    * Add custom entries to the ``analysis`` command.
+
+A plugin is written by deriving a new class from BroControl class
+`Plugin`_. The Python script with the new plugin is then copied into a
+plugin directoriy searched by BroControl at startup. By default,
+BroControl searches ``<prefix>/lib/broctl/plugins``; further may be
+configured by setting the PluginDir_ option. Note that any plugin
+script must end in ``*.py`` to be found. BroControl comes with two
+example plugins that can be used as a starting point; see
+``<prefix>/lib/broctl/plugins/*.sample``
+
+In the following, we document the API that is available to plugins. A
+plugin must be derived from the `Plugin`_ class, and can use its
+methods as well as those of the `Node`_ class.
+
+.. include:: README.plugins
+
+Miscellanous
+------------
+
+Mails
+~~~~~
+
+*BroControl* sends four types of mails to the address given in
+``MailTo``:
+
+1. When logs are rotated (per default once a day), a list of all
+   alarms during the last rotation interval is sent. This can be
+   disabled by setting ``MailAlarms=0``.
+
+2. When the ``cron`` command notices that a node has crashed, it
+   restarts it and sends a notification. It may also send a more
+   detailed crash report containing information about the crash.
+
+3. NOTICES with a notice action of ``NOTICE_EMAIL``; see the Bro
+   documentation for how to configure NOTICE priorities.
+
+4. If link:trace_summary[``trace-summary``] is installed, a traffic
+   summary is sent each rotation interval.
+
+Performance Analysis
+~~~~~~~~~~~~~~~~~~~~
+
+*TODO*: ``broctl cron`` logs a number of statistics, which can be
+analyzed/plotted for understanding the clusters run-time behavior.
+
+Questions and Answers
+---------------------
+
+*Can I use an NFS-mounted partition as the cluster's base directory to avoid the ``rsync``'ing?*
+    Yes. BroBase_ can be on an NFS partition.
+    Configure and install the shell as usual with
+    ``--prefix=<BroBase>``. Then add HaveNFS_=1+ and
+    ``SpoolDir=<spath>`` to ``etc/broctl.cfg``, where ``<spath>`` is a
+    path on the local disks of the nodes; ``<spath>`` will be used for
+    all non-shared data (make sure that the parent directory exists
+    and is writable on all nodes!). Then run xref:cmd_install[+make
+    install-broctl+] again. Finally, you can remove
+    ``<BroBase>/spool`` (or link it to <spath>). In addition, you
+    might want to keep the log files locally on the nodes as well by
+    setting LogDir_+ to a non-NFS directory. (Only
+    the manager's logs will be kept permanently, the logs of
+    workers/proxies are discarded upon rotation.)
+
+*When I'm using the standalone mode_, do I still need to have ``ssh`` and ``rsync`` installed and configured?*
+    No. The standalone performs all operations directly on the local
+    file system.
+
+*What do I need to do when the something in the Bro distribution changes?*
+    After pulling from the main Bro git repository, Just re-run ``make install``
+    inside your build directory.  It will reinstall all the files from the
+    distribution that are not up-to-date.
+
+.. _development version:
+
+*Anything special to consider when using development versions?*
+   If you are using a *development version*, *BroControl* might
+   require patching Bro itself to work correctly. A "development
+   version" is defined as anything you have downloaded from Bro's
+   Subversion repository (as opposed to downloading a release
+   tar-ball). If so, see if there's a file called
+   ``aux/broctl/patch-bro.diff``. If there is, apply it as follows
+   before you proceed with any of the steps below::
+
+       > cd /path/to/bro/source/distribution
+       > patch -p0 <aux/broctl/patch-bro.diff
+       > ./autogen.sh
+
+*Can I change the naming scheme that BroControl uses for archived log files?*
+    Yes, set MakeArchiveName_+ to a
+    script that outputs the desired destination file name for an
+    archived log file. The default script for that task is
+    ``<BroBase>/share/broctl/scripts/make-archive-name``, which you
+    can use that as a template for creating your own version. See
+    the beginning of that script for instructions.
