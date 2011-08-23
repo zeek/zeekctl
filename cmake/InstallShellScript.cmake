@@ -23,8 +23,14 @@ macro(InstallShellScript _dstdir _srcfile)
         get_filename_component(_dstfilename ${_srcfile} NAME)
     endif ()
 
-    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/${_srcfile} _srclines)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_srcfile} "")
+    set(orig_file ${CMAKE_CURRENT_SOURCE_DIR}/${_srcfile})
+    set(configed_file ${CMAKE_CURRENT_BINARY_DIR}/${_srcfile})
+    set(dehashbanged_file ${CMAKE_CURRENT_BINARY_DIR}/${_srcfile}.dehashbanged)
+
+    configure_file(${orig_file} ${configed_file} @ONLY)
+
+    file(READ ${configed_file} _srclines)
+    file(WRITE ${dehashbanged_file} "")
 
     if (NOT BINARY_PACKAGING_MODE)
         set(_regex "^#![ ]*/usr/bin/env[ ]+([^\n ]*)")
@@ -35,8 +41,7 @@ macro(InstallShellScript _dstdir _srcfile)
             if (NOT ${_shell}_interp)
                 message(FATAL_ERROR
                        "Absolute path to interpreter '${_shell}' not found, "
-                       "failed to configure shell script: "
-                       " ${CMAKE_CURRENT_SOURCE_DIR}/${_srcfile}")
+                       "failed to configure shell script: ${orig_file}")
             endif ()
 
             string(REGEX REPLACE ${_regex} "#!${${_shell}_interp}"
@@ -44,10 +49,9 @@ macro(InstallShellScript _dstdir _srcfile)
         endif ()
     endif ()
 
-    string(CONFIGURE "${_srclines}" _cfgdlines @ONLY)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_srcfile} "${_cfgdlines}")
+    file(WRITE ${dehashbanged_file} "${_srclines}")
 
-    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${_srcfile}
+    install(PROGRAMS ${dehashbanged_file}
             DESTINATION ${_dstdir}
             RENAME ${_dstfilename})
 endmacro(InstallShellScript)
