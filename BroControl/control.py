@@ -628,7 +628,7 @@ def top(nodes):
             util.output("<%s> " % error, nl=False)
             util.output()
 
-def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
+def _doCheckConfig(nodes, installed, list_scripts):
 
     results = []
 
@@ -655,14 +655,18 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
         env = _makeEnvParam(node)
 
         installed_policies = installed and "1" or "0"
+        print_scripts = list_scripts and "1" or "0"
 
-        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s" % (installed_policies, cwd, " ".join(_makeBroParams(node, False)))
+        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
 
         cmds += [((node, cwd), cmd, env, None)]
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
         if success:
             util.output("%s is ok." % node.name)
+            if list_scripts:
+                for line in output:
+                    util.output("  %s" % line)
         else:
             ok = False
             util.output("%s failed." % node.name)
@@ -675,11 +679,12 @@ def _doCheckConfig(nodes, installed, list_scripts, fullpaths):
 
 # Check the configuration for nodes without installing first.
 def checkConfigs(nodes):
-    return _doCheckConfig(nodes, False, False, False)
+    return _doCheckConfig(nodes, False, False)
 
-# Extracts the list of loaded scripts from the -l output.
-def listScripts(nodes, paths, check):
-    _doCheckConfig(nodes, not check, True, paths)
+# Prints the loaded_scripts.log for either the installed scripts
+# (if check argument is false), or the original scripts (if check arg is true)
+def listScripts(nodes, check):
+    _doCheckConfig(nodes, not check, True)
 
 # Report diagostics for node (e.g., stderr output).
 def crashDiag(node):
@@ -1073,6 +1078,7 @@ def processTrace(trace, bro_options, bro_scripts):
     env = _makeEnvParam(node)
 
     bro_args =  " ".join(bro_options + _makeBroParams(node, False, add_manager=(not standalone)))
+    bro_args += " Log::default_rotation_interval=0secs"
     if bro_scripts:
         bro_args += " " + " ".join(bro_scripts)
 

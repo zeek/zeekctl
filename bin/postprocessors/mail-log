@@ -9,7 +9,7 @@
 
 . `dirname $0`/../broctl-config.sh
 
-if [ "$2" != "mail.log" ]; then
+if [ "$2" != "alarm" ]; then
    exit 0
 fi
 
@@ -29,7 +29,7 @@ fi
 # Build subject 
 start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
 end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
-subject="Log from $start-$end"
+subject="Alarms from $start-$end"
 
 # Mail it.
 if [ "${mailalarms}" == "1" ]; then
