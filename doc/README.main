@@ -55,20 +55,15 @@ This is the default installation:
   as an example)::
 
   > cd /path/to/bro/source/distribution
-  > ./configure --prefix=/usr/local/bro
-  > cd build
-  > make install
+  > ./configure --prefix=/usr/local/bro && make && make install
 
 - Install *BroControl*::
 
   > cd /path/to/broctl/source/distribution
-  > ./configure --prefix=/usr/local/bro
-  > cd build
-  > make install
+  > ./configure --prefix=/usr/local/bro && make && make install
 
 - The installation process can be combined if using a *Bro* source
-  distribution that includes *BroControl* sources.  See the
-  ``--enable-broctl`` option of Bro's configure script.
+  distribution that includes *BroControl* sources.
 
 - Add ``<prefix>/bin`` to your ``PATH``.
 
@@ -179,22 +174,16 @@ following steps to install a Bro cluster:
   prefix path as ``--prefix``::
 
   > cd /path/to/bro/source/distribution
-  > ./configure --prefix=/usr/local/bro
-  > cd build
-  > make install
+  > ./configure --prefix=/usr/local/bro && make && make install
 
 - Install *BroControl*, selecting cluster operation with the
   ``--enable-cluster`` option::
 
   > cd /path/to/broctl/source/distribution
-  > ./configure --prefix=/usr/local/bro --enable-cluster
-  > cd build
-  > make install
+  > ./configure --prefix=/usr/local/bro && make && make install
 
 - The installation process can be combined if using a *Bro* source
-  distribution that includes *BroControl* sources.  See the
-  ``--enable-broctl`` and ``--enable-cluster`` option of
-  Bro's configure script.
+  distribution that includes *BroControl* sources.
 
 - Add ``<prefix>/bin`` to your ``PATH``.
 
@@ -202,7 +191,7 @@ following steps to install a Bro cluster:
   which you can edit according to the instructions in the file::
 
   > cd /usr/local/bro
-  > cp etc/broctl.cfg.example etc/broctl.cfg
+  > cp etc/broctl.cfg etc/broctl.cfg
   > vi etc/broctl.cfg
 
 - Create a node configuration file to define where manager, workers,
@@ -210,7 +199,7 @@ following steps to install a Bro cluster:
   the example scenario described above and can be edited as needed::
 
   > cd /usr/local/bro
-  > cp etc/node.cfg.example etc/node.cfg
+  > cp etc/node.cfg etc/node.cfg
   > vi etc/node.cfg
 
 - Create a network configuration file that lists all of the networks
@@ -219,7 +208,7 @@ following steps to install a Bro cluster:
   editing::
 
     > cd /usr/local/bro
-    > cp etc/networks.cfg.example etc/networks.cfg
+    > cp etc/networks.cfg etc/networks.cfg
     > vi etc/networks.cfg
 
 - Install workers and proxies using *BroControl*::
