@@ -122,7 +122,6 @@ InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/to-bytes.awk)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
-InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/mail-log)
 InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
 install(DIRECTORY BroControl
