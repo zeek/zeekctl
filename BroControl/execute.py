@@ -78,7 +78,7 @@ def mkdirs(dirs):
         if isLocal(node):
             if not exists(node, dir):
                 util.debug(1, "mkdir -p %s" % dir, prefix="local")
-                os.mkdir(dir)
+                os.makedirs(dir)
 
             results += [(node, True)]
 
@@ -150,7 +150,11 @@ def install(host, src, dst):
             return False
 
         if os.path.isfile(dst):
-            os.remove(dst)
+            try:
+                os.remove(dst)
+            except OSError, e:
+                print 'install: os.remove(%s): %s' % (dst, e.strerror)
+                sys.exit(1)
 
         util.debug(1, "cp %s %s" % (src, dst))
 

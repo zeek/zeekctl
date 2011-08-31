@@ -80,7 +80,7 @@ class Node:
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
-        t = "%s-pid" % self.name
+        t = "%s-pid" % self.name.lower()
         if t in config.Config.state:
             try:
                 return int(config.Config.state[t])
@@ -108,7 +108,7 @@ class Node:
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
-        t = "%s-crashed" % self.name
+        t = "%s-crashed" % self.name.lower()
         return t in config.Config.state and config.Config.state[t] == "1"
 
     # Set the Bro port this node is using.
@@ -122,7 +122,7 @@ class Node:
         system is listening on for incoming connections, or -1 if no such port
         has been set yet.
         """
-        t = "%s-port" % self.name
+        t = "%s-port" % self.name.lower()
         return t in config.Config.state and int(config.Config.state[t]) or -1
 
     # Valid keys in nodes file. The values will be stored in attributes of the

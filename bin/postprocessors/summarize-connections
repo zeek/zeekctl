@@ -10,7 +10,7 @@
 
 . `dirname $0`/../broctl-config.sh
 
-if [ "$2" != "conn.log" ]; then
+if [ "$2" != "conn" ]; then
    exit 0
 fi
 
@@ -30,6 +30,7 @@ open=$3
 close=$4
 
 output=conn-summary.log
+output_basename=conn-summary
 
 # GNU's time can do memory as well.
 export TIME="%E real, %U user, %S sys, %KK total memory"
@@ -48,7 +49,7 @@ if [ "${tracesummary}" != "" ]; then
    nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwith" >$output
 
    ${scriptsdir}/send-mail "$subject" <$output
-   ${scriptsdir}/archive-log $output $output $3 $4 $5
+   ${scriptsdir}/archive-log $output $output_basename $3 $4 $5
 fi   
 
 

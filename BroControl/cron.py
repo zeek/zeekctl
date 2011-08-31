@@ -109,7 +109,7 @@ def _logStats(interval):
         if not error:
             for (key, val) in vals.items():
                 # Report if we don't see packets on an interface.
-                tag = "lastpkts-%s" % node.name
+                tag = "lastpkts-%s" % node.name.lower()
 
                 if key == "pkts":
                     if tag in config.Config.state:
@@ -150,7 +150,7 @@ def _checkDiskSpace():
             used = float(df[2])
             avail = float(df[3])
             perc = used * 100.0 / (used + avail)
-            key = "disk-space-%s%s" % (node, fs.replace("/", "-"))
+            key = ("disk-space-%s%s" % (node, fs.replace("/", "-"))).lower()
 
             if perc > 100 - minspace:
                 try:
@@ -181,7 +181,7 @@ def _checkHosts():
 
     for node in config.Config.hosts():
 
-        tag = "alive-%s" % node.host
+        tag = "alive-%s" % node.host.lower()
         alive = execute.isAlive(node.addr) and "1" or "0"
 
         if tag in config.Config.state:

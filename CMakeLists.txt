@@ -122,7 +122,6 @@ InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/to-bytes.awk)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
-InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/mail-log)
 InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
 install(DIRECTORY BroControl
@@ -138,11 +137,10 @@ install(DIRECTORY bin/
                         WORLD_READ WORLD_EXECUTE
         PATTERN "broctl.in" EXCLUDE
         PATTERN "run-cmd.in" EXCLUDE)
-install(DIRECTORY policy/
+install(DIRECTORY scripts/
         DESTINATION share/bro
         FILES_MATCHING
-        PATTERN "*.bro"
-        PATTERN "site/*.bro" EXCLUDE)
+        PATTERN "*.bro")
 
 set(ETC ${PREFIX}/etc)
 
@@ -191,19 +189,19 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
             DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${SPOOL}/tmp
             DIRECTORY_PERMISSIONS ${perms})
-    install(DIRECTORY DESTINATION ${SPOOL}/policy
+    install(DIRECTORY DESTINATION ${SPOOL}/scripts
             DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${LOGS}
             DIRECTORY_PERMISSIONS ${perms})
     set(EMPTY_WORLD_DIRS
-        "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${SPOOL}/policy ${LOGS}"
+        "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${SPOOL}/scripts ${LOGS}"
         CACHE STRING "" FORCE)
     InstallSymlink(${SPOOL}/broctl-config.sh
                    ${PREFIX}/share/broctl/scripts/broctl-config.sh)
 else ()
     install(DIRECTORY DESTINATION spool)
     install(DIRECTORY DESTINATION spool/tmp)
-    install(DIRECTORY DESTINATION spool/policy)
+    install(DIRECTORY DESTINATION spool/scripts)
     install(DIRECTORY DESTINATION logs)
     InstallSymlink(${PREFIX}/spool/broctl-config.sh
                    ${PREFIX}/share/broctl/scripts/broctl-config.sh)
@@ -225,30 +223,6 @@ InstallPackageConfigFile(
     ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg
     ${ETC}
     node.cfg)
-
-# The policy file template is configured into build dir just
-# to assist running bro from the build directory
-configure_file(policy/site/local-worker.bro
-               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local-worker.bro
-               COPY_ONLY)
-InstallPackageConfigFile(
-    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local-worker.bro
-    ${PREFIX}/share/bro/site
-    local-worker.bro)
-configure_file(policy/site/local-manager.bro
-               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local-manager.bro
-               COPY_ONLY)
-InstallPackageConfigFile(
-    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local-manager.bro
-    ${PREFIX}/share/bro/site
-    local-manager.bro)
-configure_file(policy/site/local-proxy.bro
-               ${CMAKE_CURRENT_BINARY_DIR}/policy/site/local-proxy.bro
-               COPY_ONLY)
-InstallPackageConfigFile(
-    ${CMAKE_CURRENT_SOURCE_DIR}/policy/site/local-proxy.bro
-    ${PREFIX}/share/bro/site
-    local-proxy.bro)
 
 ########################################################################
 ## Packaging Setup
@@ -284,7 +258,7 @@ message(
     "\n"
     "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
     "\nBro root:          ${BRO_ROOT_DIR}"
-    "\nPolicy Dir:        ${policydir}"
+    "\nScripts Dir:       ${policydir}"
     "\nSpool Dir:         ${spoolDir}"
     "\nLog Dir:           ${logDir}"
     "\n"

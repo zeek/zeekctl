@@ -650,18 +650,16 @@ class BroCtlCmdLoop(cmd.Cmd):
         return False
 
     def do_scripts(self, args):
-        """- [-p|-c] [<nodes>]
+        """- [-c] [<nodes>]
 
 		Primarily for debugging Bro configurations, the ``script`` command lists
         all the Bro scripts loaded by each of the nodes in the order as they
-        will be parsed by the node at startup. If ``-p`` is given, all scripts
-        are listed with their full paths. If ``-c`` is given, the command
-        operates as check_ does: it reads the policy files
-        from their *original* location, not the copies installed by
-        install_. The latter option is useful to check a
+        will be parsed by the node at startup.
+        If ``-c`` is given, the command operates as check_ does: it reads
+        the policy files from their *original* location, not the copies
+        installed by install_. The latter option is useful to check a
         not yet installed configuration."""
 
-        paths = False
         check = False
 
         args = args.split()
@@ -671,10 +669,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
                 opt = args[0]
 
-                if opt == "-p":
-                    # Show full paths.
-                    paths = True
-                elif opt == "-c":
+                if opt == "-c":
                     # Check non-installed policies.
                     check = True
                 else:
@@ -693,9 +688,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
 
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, paths, check)
-            control.listScripts(nodes, paths, check)
-            plugin.Registry.cmdPostWithNodes("scripts", nodes, paths, check)
+            nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, check)
+            control.listScripts(nodes, check)
+            plugin.Registry.cmdPostWithNodes("scripts", nodes, check)
 
         return False
 
@@ -703,10 +698,10 @@ class BroCtlCmdLoop(cmd.Cmd):
         """ - <trace> [options] [-- scripts]]
 
         Runs Bro offline on a given trace file using the same configuration as
-        when running live. It does however use the potentially
-        not-yet-installed policy files in SitePolicyPath_. Additional Bro
-        command line flags and scripts can be given, the latter must be
-        prefixed by ``--``.
+        when running live. It does, however, use the potentially
+        not-yet-installed policy files in SitePolicyPath_ and disables log
+        rotation. Additional Bro command line flags and scripts can
+        be given, the latter must be prefixed by ``--``.
 
         Upon completion, the command prints a path where the log files can be
         found. Subsequent runs of this command may delete these logs.
