@@ -26,6 +26,7 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
                            [PREFIX/lib/broctl]
 
   Required Packages in Non-Standard Locations:
+    --with-pcap=PATH       path to libpcap install root
     --with-python=PATH     path to Python interpreter
     --with-python-lib=PATH path to libpython
     --with-python-inc=PATH path to Python headers
@@ -83,6 +84,9 @@ while [ $# -ne 0 ]; do
             ;;
         --with-bro=*)
             append_cache_entry BRO_ROOT_DIR PATH $optarg
+            ;;
+        --with-pcap=*)
+            append_cache_entry PCAP_ROOT_DIR    PATH    $optarg
             ;;
         --with-python=*)
             append_cache_entry PYTHON_EXECUTABLE    PATH    $optarg
