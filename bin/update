@@ -4,6 +4,11 @@
 
 . `dirname $0`/broctl-config.sh
 
+export PATH=${bindir}:${scriptsdir}:$PATH
+
+use_installed_policies=1
+source ${scriptsdir}/set-bro-path
+
 host=$1
 shift
 port=$1
@@ -15,9 +20,6 @@ dir=${tmpdir}/update-$1-$$
 rm -rf $dir
 mkdir $dir
 cd $dir
-
-export PATH=${bindir}:${scriptsdir}:$PATH
-export BROPATH=${policydirsiteinstallauto}:${policydirsiteinstall}:${policydir}
 
 ${bro} $args frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?

@@ -1,6 +1,6 @@
 ##! Configuration for a worker cluster node used with BroControl.
 
-@load frameworks/cluster
+@load base/frameworks/cluster
 
 ## Record all packets into trace file.
 ## This will only be happen if the -w flag is given on the command line.
@@ -9,7 +9,7 @@ redef record_all_packets = T;
 
 # Log rotation support.
 redef Log::default_rotation_interval = 24 hrs;
-redef Log::default_rotation_postprocessor = "delete-log";
+redef Log::default_rotation_postprocessor_cmd = "delete-log";
 
 ### The cluster manager will inform us with these events if it's interested in
 ### further connection attempts from that source.

@@ -4,12 +4,18 @@
 #
 # Just check Bro's configuration for errors.
 #
-# check_config <installed_policies_flag> <dir-to-set-as-cwd> <Bro parameters>
+# check_config <installed_policies_flag> <print loaded scripts flag> <dir-to-set-as-cwd> <Bro parameters>
 
 . `dirname $0`/broctl-config.sh
 
+# Tell the BroControl script code that this is only a check.
+export BROCTL_CHECK=1
+
 use_installed_policies=$1
 source ${scriptsdir}/set-bro-path
+shift
+
+print_scripts=$1
 shift
 
 cd $1
@@ -21,9 +27,10 @@ echo $@ >.cmdline
 touch .checking
 
 ${bro} $@
+rc=$?
 
-exit $?
+if [ "$rc" == "0" ] && [ "$print_scripts" == "1" ]; then
+    cat loaded_scripts*
+fi
 
-
-
-
+exit $rc

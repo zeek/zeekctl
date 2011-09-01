@@ -46,12 +46,15 @@ date +%s >.startup
 date >>.startup
 date +%y-%m-%d_%H.%M.%S >>.startup # Bro default format when rotating files. 
 
-tmpbro=${tmpexecdir}/`basename ${bro}`
+mybro=${bro}
+if [ "${havenfs}" -ne 0 ]; then
+    mybro=${tmpexecdir}/`basename ${bro}`
+    rm -f $mybro
+    cp -p ${bro} $mybro
+fi
 
-rm -f $tmpbro
-cp -p ${bro} $tmpbro
 sleep 1
-nohup $tmpbro $@ &
+nohup $mybro $@ &
 
 child=$!
 

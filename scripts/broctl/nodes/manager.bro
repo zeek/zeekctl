@@ -1,7 +1,10 @@
 ##! Configuration for a manager cluster node used with BroControl.
 
-@load frameworks/cluster
-@load frameworks/notice
+@load base/frameworks/cluster
+
+# Log rotation support.
+redef Log::default_rotation_interval = 1 hrs;
+redef Log::default_rotation_postprocessor_cmd = "archive-log";
 
 #redef FilterDuplicates::filters += {
 #	[Drop::AddressSeenAgain] = FilterDuplicates::match_src,

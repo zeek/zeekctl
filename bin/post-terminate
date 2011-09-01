@@ -48,42 +48,31 @@ fi
 cd $tmp
 
 if [ "$crash" = "1" ]; then
-   tmpbro=${tmpexecdir}/`basename ${bro}`
-   cp $tmpbro .
+   mybro=${bro}
+   if [ "${havenfs}" -ne 0 ]; then
+       mybro=${tmpexecdir}/`basename ${bro}`
+   fi
+   cp $mybro .
 fi
-
-# Run post-processors manually. 
 
 if [ ! -f .startup ]; then
    echo No .startup
    exit
 fi
 
-brostart=`cat .startup | tail -1`
-end=`date +%y-%m-%d_%H.%M.%S`
-
-# Old. Remove later. 
-#
-#if [ "$crash" = "1" -a -e .rotate ]; then
-#   start=`cat .rotate | tail -1`
-#fi   
-
-# Likewise old.
-#if [ -e .peer_description ]; then
-#   tag=`cat .peer_description | tail -1`
-#fi   
-
 ( for i in *.log; do
-    if [ -s $i ]; then
-       if [ -e .rotated.$i ]; then
-          start=`cat .rotated.$i`
-       else
-          start=$brostart
-       fi
-       
-       ${scriptsdir}/archive-log $archive_flags "$i" "$i" "$start" "$end" 1 "$tag" >/dev/null &
+
+    if [ "$crash" = "1" ]; then
+        # manually run log postprocessors in event of crash
+        basename=`echo $i | sed 's/\.log$//g'`
+        strt=`cat .startup | tail -1`
+        if [ -e .rotated.$basename ]; then
+            strt=`cat .rotated.$basename`
+        fi
+        end=`date +%y-%m-%d_%H.%M.%S`
+        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 "$tag" >/dev/null &
     fi
-    
+
     ${scriptsdir}/remove-link-for-log $i
 
   done && wait && if [ "$crash" = "0" ]; then rm -rf $tmp; fi ) &

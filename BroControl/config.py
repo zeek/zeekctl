@@ -313,6 +313,7 @@ class Configuration:
 
     # Set a dynamic state variable.
     def _setState(self, val, key):
+        val = val.lower()
         self.state[val] = key
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
