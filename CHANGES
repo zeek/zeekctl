@@ -1,4 +1,44 @@
 
+0.41-99 | 2011-09-04 09:08:59 -0700
+
+  * Added --with-pcap configure option. (Jon Siwek)
+
+  * Various smaller tweaks to CMake setup. (Jon Siwek)
+
+  * Removed alarm log mailing postprocessing script from BroControl.
+    (Jon Siwek)
+
+  * Log rotation is disabled when using the 'process' command to
+    analyze trace files. (Jon Siwek)
+
+  * Fixed 'scripts' command. (Jon Siwek)
+
+  * Fixed inconsistent rotated-log naming. (Jon Siwek)
+
+  * Changed the 'mail-log' postprocessor to mail alarm.log's. (Jon
+    Siwek)
+
+  * Fix Config.state key capitalization inconsistencies. (Jon Siwek)
+
+  * Fixes for broctl 'check' command. Addresses #548. (Seth Hall and
+    Jon Siwek)
+
+  * Updated README. (Jon Siwek)
+    
+  * Copy bro binary only in NFS mode (fixes #361). (Jon Siwek)
+
+  * Fix install command failing because of missing parent dirs. (Jon Siwek)
+
+  * Removing the analysis.dat file since it's not used anymore. (Seth Hall)
+
+  * Better informational output if attempt to remove old scripts
+    before installing new ones failes. Addresses #470. (Craig Leres)
+
+  * Updating log rotation support for the new logging rotation code.
+    (Seth Hall)
+
+  * Updates for cleanup and meshing with Bro reorg. (Seth Hall)
+
 0.41-73 | 2011-08-13 12:14:28 -0700
 
   * Moving README*. into subdir doc. The top-level README is now
