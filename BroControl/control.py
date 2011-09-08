@@ -193,7 +193,10 @@ def _makeEnvParam(node):
     env = ""
     if node.type != "standalone":
         env = "CLUSTER_NODE=%s" % node.name
-
+    
+    if config.Config.pfringclusterid != "0":
+        env += " PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1 PCAP_PF_RING_CLUSTER_ID=%s" % config.Config.pfringclusterid
+    
     return env
 
 # Do a "post-terminate crash" for the given nodes.

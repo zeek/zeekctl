@@ -85,6 +85,9 @@ options = [
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 
+    Option("PFRINGClusterID", "21", "int", Option.USER, False,
+           "If PF_RING flow based load balancing is desired, this is where the pf_ring cluster_id is defined. Bro must be linked with pf_ring's libpcap wrapper."),
+
     Option("CFlowAddr", "", "string", Option.USER, False,
            "If a cFlow load-balander is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
