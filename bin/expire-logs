@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: expire-logs.in 6860 2009-08-14 19:01:47Z robin $
-#
 # Delete logs older than ${log_expire_interval} days.
 
 . `dirname $0`/broctl-config.sh

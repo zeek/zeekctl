@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: crash-diag.in 7098 2010-10-19 00:54:23Z robin $
-#
 # crash-diag <cwd>
 
 . `dirname $0`/broctl-config.sh

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: archive-log.in 6847 2009-07-30 16:54:58Z robin $
-#
 # Returns a path for archived log files. This script is called
 # once for each log file being archived. Usage is:
 #

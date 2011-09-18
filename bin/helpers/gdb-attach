@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: gdb-attach.in 6811 2009-07-06 20:41:10Z robin $
-#
 # gdb-attach <screen-session-name> <binary> <pid>
 
 . `dirname $0`/../broctl-config.sh

@@ -1,6 +1,4 @@
-# $Id: install.py 7098 2010-10-19 00:54:23Z robin $
-#
-# Functions to install files on all nodes.
+# Functions to install files on all nodes. 
 
 import os
 import sys

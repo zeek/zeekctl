@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: cflow-stats.in 6811 2009-07-06 20:41:10Z robin $
-#
 # Print cpacket stats in format:
 #
 # port pkts/sec bits/sec cum-pkts cum-bytes (-1 where not available)

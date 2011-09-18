@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: get-childs 6811 2009-07-06 20:41:10Z robin $
-#
 #  get-childs <pid> 
 
 echo 0

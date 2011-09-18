@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: check-config.in 7098 2010-10-19 00:54:23Z robin $
-#
 # Just check Bro's configuration for errors.
 #
 # check_config <installed_policies_flag> <print loaded scripts flag> <dir-to-set-as-cwd> <Bro parameters>
