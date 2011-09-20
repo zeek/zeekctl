@@ -33,6 +33,13 @@ endif ()
 find_package(Bro)
 FindRequiredPackage(PythonInterp)
 FindRequiredPackage(SubnetTree)
+find_package(PCAP)
+
+if (HAVE_PF_RING)
+    set(PF_RING_CLUSTER_ID 21)
+else ()
+    set(PF_RING_CLUSTER_ID 0)
+endif ()
 
 if (MISSING_PREREQS)
     foreach (prereq ${MISSING_PREREQ_DESCS})
