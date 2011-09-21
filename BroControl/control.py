@@ -438,19 +438,20 @@ def stop(nodes):
     proxies = config.Config.nodes("proxies")
     workers = config.Config.nodes("workers")
 
-    # Start all nodes. Do it in the order manager, proxies, workers.
+    # Stop all nodes. Do it in the order workers, proxies, manager
+    # (the reverse of "start").
 
-    results1 = _stopNodes(manager)
+    results1 = _stopNodes(workers)
 
     if nodeFailed(results1):
-        return results1 + [(n, False) for n in (proxies + workers)]
+        return results1 + [(n, False) for n in (proxies + manager)]
 
     results2 = _stopNodes(proxies)
 
     if nodeFailed(results2):
-        return results1 + results2 + [(n, False) for n in workers]
+        return results1 + results2 + [(n, False) for n in manager]
 
-    results3 = _stopNodes(workers)
+    results3 = _stopNodes(manager)
 
     return results1 + results2 + results3
 
