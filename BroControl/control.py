@@ -660,7 +660,7 @@ def _doCheckConfig(nodes, installed, list_scripts):
         print_scripts = list_scripts and "1" or "0"
 
         cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
-        cmd += " Log::default_rotation_interval=0secs"
+        cmd += " broctl/check"
 
         cmds += [((node, cwd), cmd, env, None)]
 
