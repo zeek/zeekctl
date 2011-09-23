@@ -23,9 +23,3 @@ SendMail = /usr/sbin/sendmail
 
 # Logs debug information into spool/debug.log.
 # Debug = 1
-
-# PF_RING flow based load balancing is available on Linux systems where
-# the kernel module has been loaded and Bro has been linked against
-# PF_RING's enhanced version of libpcap.  A value of '0' here means
-# that PF_RING will not be used.
-PFRINGClusterID = ${PF_RING_CLUSTER_ID}

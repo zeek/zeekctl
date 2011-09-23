@@ -106,7 +106,12 @@ InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
 InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
 install(DIRECTORY BroControl
-        DESTINATION lib/broctl)
+        DESTINATION lib/broctl
+        PATTERN "options.py" EXCLUDE)
+configure_file(BroControl/options.py
+               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py
+        DESTINATION lib/broctl/BroControl)
 install(DIRECTORY BroControl/plugins
         DESTINATION lib/broctl)
 install(DIRECTORY bin/
