@@ -191,10 +191,10 @@ def _makeEnvParam(node):
     env = ""
     if node.type != "standalone":
         env = "CLUSTER_NODE=%s" % node.name
-    
+
     if config.Config.pfringclusterid != "0":
         env += " PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1 PCAP_PF_RING_CLUSTER_ID=%s" % config.Config.pfringclusterid
-    
+
     return env
 
 # Do a "post-terminate crash" for the given nodes.
@@ -438,19 +438,20 @@ def stop(nodes):
     proxies = config.Config.nodes("proxies")
     workers = config.Config.nodes("workers")
 
-    # Start all nodes. Do it in the order manager, proxies, workers.
+    # Stop all nodes. Do it in the order workers, proxies, manager
+    # (the reverse of "start").
 
-    results1 = _stopNodes(manager)
+    results1 = _stopNodes(workers)
 
     if nodeFailed(results1):
-        return results1 + [(n, False) for n in (proxies + workers)]
+        return results1 + [(n, False) for n in (proxies + manager)]
 
     results2 = _stopNodes(proxies)
 
     if nodeFailed(results2):
-        return results1 + results2 + [(n, False) for n in workers]
+        return results1 + results2 + [(n, False) for n in manager]
 
-    results3 = _stopNodes(workers)
+    results3 = _stopNodes(manager)
 
     return results1 + results2 + results3
 
@@ -659,6 +660,7 @@ def _doCheckConfig(nodes, installed, list_scripts):
         print_scripts = list_scripts and "1" or "0"
 
         cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
+        cmd += " broctl/check"
 
         cmds += [((node, cwd), cmd, env, None)]
 
@@ -1079,11 +1081,13 @@ def processTrace(trace, bro_options, bro_scripts):
     env = _makeEnvParam(node)
 
     bro_args =  " ".join(bro_options + _makeBroParams(node, False, add_manager=(not standalone)))
-    bro_args += " Log::default_rotation_interval=0secs"
+
     if bro_scripts:
         bro_args += " " + " ".join(bro_scripts)
 
     cmd = os.path.join(config.Config.scriptsdir, "run-bro-on-trace") + " %s %s %s %s" % (0, cwd, trace, bro_args)
+    cmd += " broctl/process-trace"
+
     print cmd
 
     (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
