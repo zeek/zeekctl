@@ -18,12 +18,3 @@ redef Communication::nodes += {
 # Auto generated files.
 @load local-networks
 @load broctl-config
-
-# If BroControl is checking the configuration for any node, make sure to
-# terminate Bro after fully initializing.
-@if ( getenv("BROCTL_CHECK") != "" )
-event bro_init() &priority=-10
-	{
-	terminate_communication();
-	}
-@endif
