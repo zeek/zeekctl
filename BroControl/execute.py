@@ -1,5 +1,3 @@
-# $Id: execute.py 7098 2010-10-19 00:54:23Z robin $
-#
 # These modules provides a set of functions to execute actions on a host.
 # If the host is local, it's done direcly; if it's remote we log in via SSH.
 

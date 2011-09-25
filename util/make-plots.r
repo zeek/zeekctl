@@ -1,6 +1,3 @@
-
-# $Id: make-plots.r 6813 2009-07-07 18:54:12Z robin $
-
 # Text & pch scaling.
 scale.cex		<- 1.4 
 scale.cex.lab	<- 1.4

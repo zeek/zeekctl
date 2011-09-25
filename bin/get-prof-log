@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: get-prof-log.in 7098 2010-10-19 00:54:23Z robin $
-#
 # Copies $3/prof.log from the node $1, running on host $2, to the manager 
 
 . `dirname $0`/broctl-config.sh

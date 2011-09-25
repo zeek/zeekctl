@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 #
-# $Id: reformat-stats 6813 2009-07-07 18:54:12Z robin $
-#
 # Turns spool/stats.log into a format more something suitable for R.
 #
 # reformat-stats <stats.log> <dst-dir>
