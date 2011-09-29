@@ -347,7 +347,7 @@ the shell's command line. If not specified otherwise, commands
 taking *[<nodes>]* as arguments apply their action either to the
 given set of nodes, or to all nodes if none is given.
 
-.. Automatically generated. Do not edit.
+[?1034h.. Automatically generated. Do not edit.
 
 
 .. _attachgdb:
@@ -524,10 +524,10 @@ given set of nodes, or to all nodes if none is given.
     - <trace> [options] [-- scripts]]
     
     Runs Bro offline on a given trace file using the same configuration as
-    when running live. It does however use the potentially
-    not-yet-installed policy files in SitePolicyPath_. Additional Bro
-    command line flags and scripts can be given, the latter must be
-    prefixed by ``--``.
+    when running live. It does, however, use the potentially
+    not-yet-installed policy files in SitePolicyPath_ and disables log
+    rotation. Additional Bro command line flags and scripts can
+    be given, the latter must be prefixed by ``--``.
     
     Upon completion, the command prints a path where the log files can be
     found. Subsequent runs of this command may delete these logs.
@@ -562,14 +562,13 @@ given set of nodes, or to all nodes if none is given.
 
 .. _scripts:
 
-*scripts* *[-p|-c] [<nodes>]*
+*scripts* *[-c] [<nodes>]*
     Primarily for debugging Bro configurations, the ``script`` command lists
     all the Bro scripts loaded by each of the nodes in the order as they
-    will be parsed by the node at startup. If ``-p`` is given, all scripts
-    are listed with their full paths. If ``-c`` is given, the command
-    operates as check_ does: it reads the policy files
-    from their *original* location, not the copies installed by
-    install_. The latter option is useful to check a
+    will be parsed by the node at startup.
+    If ``-c`` is given, the command operates as check_ does: it reads
+    the policy files from their *original* location, not the copies
+    installed by install_. The latter option is useful to check a
     not yet installed configuration.
 
 
@@ -747,6 +746,11 @@ User Options
 
 *MinDiskSpace* (int, default 5)
     Percentage of minimum disk space available before warning is mailed.
+
+.. _PFRINGClusterID:
+
+*PFRINGClusterID* (int, default @PF_RING_CLUSTER_ID@)
+    If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work.
 
 .. _Prefixes:
 

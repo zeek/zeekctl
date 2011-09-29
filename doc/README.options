@@ -112,6 +112,11 @@ User Options
 *MinDiskSpace* (int, default 5)
     Percentage of minimum disk space available before warning is mailed.
 
+.. _PFRINGClusterID:
+
+*PFRINGClusterID* (int, default @PF_RING_CLUSTER_ID@)
+    If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work.
+
 .. _Prefixes:
 
 *Prefixes* (string, default "local")
