@@ -15,6 +15,3 @@ redef Communication::nodes += {
 	["local-control"] = [$host=127.0.0.1, $class="control", $events=Control::controller_events],
 };
 
-# Auto generated files.
-@load local-networks
-@load broctl-config

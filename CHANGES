@@ -1,4 +1,43 @@
 
+0.41-124 | 2011-10-05 16:58:10 -0700
+
+   * New broctl.cfg option for log rotation interval. Addresses #630.
+     (Jon Siwek)
+
+   * Removed some of the broct/nodes/* scripts and instead
+     consolidated their functionality into the node-specific scripts
+     that come with Bro's cluster framework. (Jon Siwek)
+
+   * Within the cluster framework, local-<node>.bro scripts should now
+     be loaded after the distributions <node>.bro script so things can
+     be overrided. (Jon Siwek)
+
+   * Auto-generated broctl scripts are loaded after all node-specific
+     scripts and can override their options. (Jon Siwek)
+
+  * Move configuration of PFRINGClusterID from broctl.cfg.in to
+    options.py. Addresses #621. (Jon Siwek)
+
+  * Add configure-time check for libpcap PF_RING support. Addresses
+    #621 (Jon Siwek)
+
+  * Fixing typo with process command. (Robin Sommer)
+
+  * Script cleanup.  (Seth Hall)
+
+    - Reshuffling "check" functionality into check.bro.
+
+    - Removing some code to deal with the non-existent react framework.
+
+  * Give check command its own script for tuning options. Addresses
+    #618). (Jon Siwek)
+
+  * Stop and restart command now stop worker nodes first. Addresses
+    #596. (Jon Siwek)
+
+  * broctl check no longer rotates logs. Addresses #618. (Jon Siwek)
+    
+
 0.41-101 | 2011-09-08 02:20:28 -0400
 
   * Implementing PF_RING environment variables. (Seth Hall)
