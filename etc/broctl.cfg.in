@@ -10,6 +10,10 @@ SpoolDir = ${SPOOL}
 # Location of the log directory.  This is longer term storage for rotated logs.
 LogDir = ${LOGS}
 
+# Rotation interval for log files on the manager/standalone node
+# This is specified in bro scripting syntax (e.g. "1sec", "1hr", "1day")
+LogRotationInterval = 1hrs
+
 # Expiration interval for log files in LogDir. Files older than this many days
 # will be deleted.
 LogExpireInterval = 30
