@@ -307,7 +307,7 @@ def makeConfig():
     print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
     if manager.type != "standalone":
         print >>out, "@if ( Cluster::local_node_type() == Cluster::MANAGER )"
-    print >>out, "redef Log::default_rotation_interval = %s;" % config.Config.logrotationinterval
+    print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
     if manager.type != "standalone":
         print >>out, "@endif"
 
