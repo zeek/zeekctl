@@ -1,4 +1,11 @@
 
+0.41-128 | 2011-10-06 17:23:03 -0700
+
+  * Change broctl.cfg LogRotationInterval to be specificed in seconds. (Jon Siwek)
+
+  * Force broctl 'process' command to enable local logging. Addresses
+    #632 (Jon Siwek)
+
 0.41-124 | 2011-10-05 16:58:10 -0700
 
    * New broctl.cfg option for log rotation interval. Addresses #630.
@@ -36,7 +43,6 @@
     #596. (Jon Siwek)
 
   * broctl check no longer rotates logs. Addresses #618. (Jon Siwek)
-    
 
 0.41-101 | 2011-09-08 02:20:28 -0400
 
@@ -67,7 +73,7 @@
     Jon Siwek)
 
   * Updated README. (Jon Siwek)
-    
+
   * Copy bro binary only in NFS mode (fixes #361). (Jon Siwek)
 
   * Fix install command failing because of missing parent dirs. (Jon Siwek)

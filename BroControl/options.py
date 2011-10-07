@@ -26,8 +26,8 @@ options = [
     Option("SaveTraces", "0", "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
 
-    Option("LogRotationInterval", "1hrs", "string", Option.USER, False,
-           "The frequency of log rotation for the manager/standalone node."),
+    Option("LogRotationInterval", "3600", "int", Option.USER, False,
+           "The frequency of log rotation in seconds for the manager/standalone node."),
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
            "Directory for archived log files."),
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
