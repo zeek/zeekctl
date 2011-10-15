@@ -3,6 +3,11 @@
 # Recipient address for all emails send out by Bro and BroControl.
 MailTo = root@localhost
 
+# Site-specific policy script to load. Bro will look for this in
+# $PREFIX/share/bro/site. A default local.bro comes preinstalled
+# and can be customized as desired.
+SitePolicyStandalone = local.bro
+
 # Location of the spool directory where files and data that are currently being
 # written are stored.
 SpoolDir = ${SPOOL}

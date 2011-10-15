@@ -1,4 +1,11 @@
 
+0.41-130 | 2011-10-18 08:03:35 -0700
+
+  * Distribution cleanup and some README fixes. (Robin Sommer)
+
+  * Fixed a bug caused by communication framework API update. Reported
+    by Daniel. (Seth Hall)
+
 0.41-128 | 2011-10-06 17:23:03 -0700
 
   * Change broctl.cfg LogRotationInterval to be specificed in seconds. (Jon Siwek)

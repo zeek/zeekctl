@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 #
-# $Id: run-bro.in 6860 2009-08-14 19:01:47Z robin $
-#
 # Run Bro on a trace file.
 #
 # run-bro-on-trace <installed_policies_flag> <dir-to-set-as-cwd> <trace> <other Bro parameters>
