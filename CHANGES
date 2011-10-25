@@ -1,4 +1,10 @@
 
+0.41-137 | 2011-10-25 15:44:18 -0700
+
+  * Updating CHANGES and VERSION. (Robin Sommer)
+
+  * Make dist now cleans the copied source. (Jon Siwek)
+
 0.41-130 | 2011-10-18 08:03:35 -0700
 
   * Distribution cleanup and some README fixes. (Robin Sommer)
