@@ -53,6 +53,18 @@ def generateDynamicVariableScript():
             cfg_file.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
     cfg_file.close()
 
+    symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
+
+    try:
+        if os.readlink(symlink) != cfg_path:
+            # attempt to update the symlink
+            try:
+                util.force_symlink(cfg_path, symlink)
+            except OSError:
+                util.error("failed to update symlink '%s' to point to '%s'" % (symlink, cfg_path))
+    except OSError:
+        util.error("error checking status of symlink '%s'" % symlink)
+
 # Performs the complete broctl installion process.
 #
 # If local_only is True, nothing is propagated to other nodes.
