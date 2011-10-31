@@ -56,8 +56,8 @@ options = [
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
-    Option("LogExpireInterval", "30", "int", Option.USER, False,
-           "Number of days log files are kept."),
+    Option("LogExpireInterval", "0", "int", Option.USER, False,
+           "Number of days log files are kept (zero means disabled)."),
     Option("BroArgs", "", "string", Option.USER, False,
            "Additional arguments to pass to Bro on the command-line."),
     Option("MemLimit", "unlimited", "string", Option.USER, False,

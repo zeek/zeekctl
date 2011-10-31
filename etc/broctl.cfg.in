@@ -19,8 +19,8 @@ LogDir = ${LOGS}
 LogRotationInterval = 3600
 
 # Expiration interval for log files in LogDir. Files older than this many days
-# will be deleted.
-LogExpireInterval = 30
+# will be deleted upon running "broctl cron".
+# LogExpireInterval = 30
 
 # Lower threshold for space available on the disk that holds SpoolDir. If less
 # space is available, BroControl starts sending out warning emails.
