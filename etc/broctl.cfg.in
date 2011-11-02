@@ -27,7 +27,7 @@ LogRotationInterval = 3600
 MinDiskSpace = 5
 
 # Location of the "sendmail" program for sending email.
-SendMail = /usr/sbin/sendmail
+SendMail = ${SENDMAIL}
 
 # Logs debug information into spool/debug.log.
 # Debug = 1
