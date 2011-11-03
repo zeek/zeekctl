@@ -196,6 +196,9 @@ def makeLayout():
         print >>out, "# Automatically generated. Do not edit."
         # This is the port that standalone nodes listen on for remote control by default.
         print >>out, "redef Communication::listen_port = %s/tcp;" % nextPort(manager)
+        print >>out, "redef Communication::nodes += {"
+        print >>out, "	[\"control\"] = [$host=%s, $class=\"control\", $events=Control::controller_events]," % manager.addr
+        print >>out, "};"
 
     else:
         util.output("generating cluster-layout.bro ...", False)
