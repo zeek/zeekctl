@@ -41,6 +41,14 @@ else ()
     set(PF_RING_CLUSTER_ID 0)
 endif ()
 
+find_program(SENDMAIL sendmail PATHS /usr/sbin)
+if (NOT SENDMAIL)
+    message(WARNING "A sendmail program was not found, BroControl will be "
+                    "unable to send mail.  This can be fixed even after "
+                    "installing by editing "
+                    "${CMAKE_INSTALL_PREFIX}/etc/broctl.cfg")
+endif ()
+
 if (MISSING_PREREQS)
     foreach (prereq ${MISSING_PREREQ_DESCS})
         message(SEND_ERROR ${prereq})

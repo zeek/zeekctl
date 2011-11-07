@@ -1,4 +1,5 @@
 import os
+import errno
 import sys
 import socket
 import imp
@@ -280,3 +281,11 @@ def printLines(lines):
     except:
         pass
 
+# 'src' is the file to which the link will point, and 'dst' is the link to make
+def force_symlink(src, dst):
+    try:
+        os.symlink(src, dst)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            os.remove(dst)
+            os.symlink(src, dst)

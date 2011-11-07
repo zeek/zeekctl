@@ -4,6 +4,10 @@
 
 . `dirname $0`/broctl-config.sh
 
+if [ "${logexpireinterval}" -eq "0" ]; then
+    exit 0
+fi
+
 base=${logdir}/
 
 file_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.*$'
@@ -14,13 +18,13 @@ if [ "${keeplogs}" != "" ]; then
    for name in ${keeplogs}; do
       exclude="$exclude -not -name $name"
    done
-fi   
+fi
 
 # Remove old files.
 find $base -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete 2>/dev/null
 rc=$?
 
 # Remove now empty directories (will fail for non-empty dirs).
-find $base -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null 
+find $base -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null
 
 exit $rc
