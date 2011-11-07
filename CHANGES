@@ -1,4 +1,17 @@
 
+0.5-beta-12 | 2011-11-06 19:23:43 -0800
+
+  * broctl.cfg now determines sendmail location at configure-time.  
+    Addreses #645 (Jon Siwek)
+
+  * Disable log expiration by default. Addresses #613. (Jon Siwek)
+    
+  * Make symlink to broctl-config.sh update with `broctl install`.
+    Addresses #648 (Jon Siwek)
+
+  * Fixed a problem when host= in standalone is not 127.0.0.1 or
+    localhost. (Seth Hall)
+
 0.5-beta | 2011-10-27 17:45:15 -0700
 
   * Updating submodule(s). (Robin Sommer)
