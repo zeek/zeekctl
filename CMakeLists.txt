@@ -1,4 +1,4 @@
-project(BroControl NONE)
+project(BroControl C CXX)
 # Python is checked as a dependency below
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 include(cmake/CommonCMakeConfig.cmake)
