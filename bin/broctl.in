@@ -80,6 +80,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         if not plugin.Registry.runCustomCommand(m[0], " ".join(m[1:])):
             self.error("unknown command '%s'" % m[0])
 
+    def emptyline(self):
+        pass
+
     def lock(self):
         if not util.lock():
             sys.exit(1)
