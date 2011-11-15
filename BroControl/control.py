@@ -1078,7 +1078,10 @@ def executeCmd(nodes, cmd):
 
 def processTrace(trace, bro_options, bro_scripts):
     standalone = (config.Config.standalone == "1")
-    tag = "standalone" if standalone else "workers"
+    if standalone:
+        tag = "standalone"
+    else:
+        tag = "workers"
 
     node = config.Config.nodes(tag=tag)[0]
 

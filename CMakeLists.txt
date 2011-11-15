@@ -1,4 +1,4 @@
-project(BroControl NONE)
+project(BroControl C CXX)
 # Python is checked as a dependency below
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 include(cmake/CommonCMakeConfig.cmake)
@@ -115,7 +115,8 @@ InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summar
 
 install(DIRECTORY BroControl
         DESTINATION lib/broctl
-        PATTERN "options.py" EXCLUDE)
+        PATTERN "options.py" EXCLUDE
+        PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py

@@ -35,8 +35,8 @@ options = [
     Option("CompressLogs", "1", "bool", Option.USER, False,
            "True to gzip archived log files."),
 
-    Option("SendMail", "/usr/sbin/sendmail", "string", Option.USER, False,
-           "Location of the sendmail binary.  Make this string blank to prevent email from being sent."),
+    Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
+           "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time"),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
            "General Subject prefix for broctl-generated mails."),
 
