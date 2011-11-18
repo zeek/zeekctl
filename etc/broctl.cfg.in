@@ -26,8 +26,5 @@ LogRotationInterval = 3600
 # space is available, BroControl starts sending out warning emails.
 MinDiskSpace = 5
 
-# Location of the "sendmail" program for sending email.
-SendMail = ${SENDMAIL}
-
 # Logs debug information into spool/debug.log.
 # Debug = 1

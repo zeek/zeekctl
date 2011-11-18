@@ -24,7 +24,10 @@ class PsBro(BroControl.plugin.Plugin):
         assert(cmd == "bro") # Can't be anything else.
 
         # Get the nodes the user wants.
-        nodes = self.parseNodes(args) if args else self.nodes()
+        if args:
+             nodes = self.parseNodes(args)
+        else:
+             nodes = self.nodes()
 
         if not nodes:
             self.message("No nodes given.")
@@ -76,6 +79,10 @@ class PsBro(BroControl.plugin.Plugin):
                     known = (pid in pids[n.host] or ppid in pids[n.host])
                 except KeyError:
                     known = False
-                print "   ", "(+)" if known else "(-)", line.strip()
+
+                if known:
+                    print "   (+)", line.strip()
+                else:
+                    print "   (-)", line.strip()
 
             first_node = False

@@ -39,7 +39,10 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
                             close_fds=True, shell=True, preexec_fn=os.setsid)
     # Compatibility with older popen4.
     proc.tochild = proc.stdin
-    proc.fromchild = proc.stdout if proc.stdout != None else []
+    if proc.stdout != None:
+       proc.fromchild = proc.stdout
+    else:
+       proc.fromchild = []
 
     return proc
 

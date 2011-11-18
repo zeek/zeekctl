@@ -1,4 +1,21 @@
 
+0.5-beta-20 | 2011-11-14 20:04:21 -0800
+
+  * Fixing some platforms behaving poorly during configure-time checks
+    when a superproject's languages didn't encompass a subproject's.
+    (Jon Siwek)
+
+  * Configure sendmail option in options.py instead of broctl.cfg.
+    Fixed #645. (Jon Siwek)
+
+  * Fix extraneous installation of BroControl plugins. (Jon Siwek)
+    
+  * Apply patch for BroControl Python 2.3/2.4 compatibility. Closes
+    #662. (William Jones)
+
+  * Avoid rerunning the previous command when hitting just enter in
+    broctl. (Justin Azoff)
+
 0.5-beta-12 | 2011-11-06 19:23:43 -0800
 
   * broctl.cfg now determines sendmail location at configure-time.  
