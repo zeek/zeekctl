@@ -105,11 +105,10 @@ def install(local_only):
     makeConfig()
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
-    if not execute.exists(manager, current):
-        try:
-            os.symlink(manager.cwd(), current)
-        except (IOError, OSError), e:
-            pass
+    try:
+        util.force_symlink(manager.cwd(), current)
+    except (IOError, OSError), e:
+        util.error("failed to update current log symlink")
 
     generateDynamicVariableScript()
 
