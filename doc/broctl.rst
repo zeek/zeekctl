@@ -11,7 +11,7 @@
 Bro Control
 ===========
 
-.. class:: opening
+.. rst-class:: opening
 
     This document summarizes installation and use of *BroControl*,
     Bro's interactive shell for operating Bro installations. *Bro
@@ -37,8 +37,8 @@ BroControl's git repository is located at
 `git://git.bro-ids.org/broctl <git://git.bro-ids.org/broctl>`_. You
 can browse the repository `here <http://git.bro-ids.org/broctl>`_.
 
-This document describes BroControl |version|. See the `CHANGES
-<{{git('broctl:CHANGES')}}>`_ file for version history.
+This document describes BroControl |version|. See the ``CHANGES``
+file for version history.
 
 Prerequisites
 -------------
@@ -63,8 +63,8 @@ Installation
 Stand-alone Bro
 ~~~~~~~~~~~~~~~
 
-For installing a standalone Bro setup, just follow the `Bro quickstart
-guide <{{git('bro:doc/quickstart.rst')}}>`_.
+For installing a standalone Bro setup, just follow the Bro quickstart
+guide included with the distribution in ``doc/quickstart.rst``.
 
 Bro Cluster
 ~~~~~~~~~~~
@@ -95,8 +95,8 @@ A cluster consists of four types of components:
        running.
 
 For more information about the cluster architecture, including options
-for the frontend, see `Bro's documentation
-<{{git('bro:doc/cluster.rst')}}`>. This document focusses on the
+for the frontend, see Bro's cluster documentation included with the
+distribution in ``doc/cluster.rst``.  This document focuses on the
 installation of manager, workers, and the proxies. If not otherwise
 stated, in the following we use the terms "manager", "worker", and
 "proxy" to refer to Bro instances, not to physical machines; rather,
@@ -642,8 +642,8 @@ User Options
 
 .. _LogExpireInterval:
 
-*LogExpireInterval* (int, default 30)
-    Number of days log files are kept.
+*LogExpireInterval* (int, default 0)
+    Number of days log files are kept (zero means disabled).
 
 .. _LogRotationInterval:
 
@@ -717,8 +717,8 @@ User Options
 
 .. _SendMail:
 
-*SendMail* (string, default "/usr/sbin/sendmail")
-    Location of the sendmail binary.  Make this string blank to prevent email from being sent.
+*SendMail* (string, default "@SENDMAIL@")
+    Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time
 
 .. _SitePluginPath:
 
