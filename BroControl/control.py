@@ -672,6 +672,10 @@ def _doCheckConfig(nodes, installed, list_scripts):
         installed_policies = installed and "1" or "0"
         print_scripts = list_scripts and "1" or "0"
 
+        install.makeLayout(cwd, True)
+        install.makeLocalNetworks(cwd, True)
+        install.makeConfig(cwd, True)
+
         cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
         cmd += " broctl/check"
 

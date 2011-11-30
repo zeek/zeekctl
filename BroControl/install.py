@@ -100,9 +100,9 @@ def install(local_only):
                     execute.install(manager, file, dst)
         util.output(" done.")
 
-    makeLayout()
-    makeLocalNetworks()
-    makeConfig()
+    makeLayout(config.Config.policydirsiteinstallauto)
+    makeLocalNetworks(config.Config.policydirsiteinstallauto)
+    makeConfig(config.Config.policydirsiteinstallauto)
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     if not execute.exists(manager, current):
@@ -179,7 +179,7 @@ def install(local_only):
 
 # Create Bro-side broctl configuration broctl-layout.bro.
 port = -1
-def makeLayout():
+def makeLayout(path, silent=False):
     def nextPort(node):
         global port
         port += 1
@@ -193,7 +193,7 @@ def makeLayout():
     if not manager:
         return
 
-    filename = os.path.join(config.Config.policydirsiteinstallauto, "cluster-layout.bro")
+    filename = os.path.join(path, "cluster-layout.bro")
 
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
@@ -201,9 +201,10 @@ def makeLayout():
         if os.access(filename, os.W_OK):
             os.unlink(filename)
         # We do need to establish the port for the manager.
-        util.output("generating standalone-layout.bro ...", False)
+        if ( not silent ):
+            util.output("generating standalone-layout.bro ...", False)
 
-        filename = os.path.join(config.Config.policydirsiteinstallauto, "standalone-layout.bro")
+        filename = os.path.join(path, "standalone-layout.bro")
         out = open(filename, "w")
         print >>out, "# Automatically generated. Do not edit."
         # This is the port that standalone nodes listen on for remote control by default.
@@ -213,7 +214,8 @@ def makeLayout():
         print >>out, "};"
 
     else:
-        util.output("generating cluster-layout.bro ...", False)
+        if ( not silent ):
+            util.output("generating cluster-layout.bro ...", False)
 
         out = open(filename, "w")
 
@@ -259,7 +261,8 @@ def makeLayout():
         # This doesn't work at all right now ... -Robin
         #print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
 
-    util.output(" done.")
+    if ( not silent ):
+        util.output(" done.")
 
 # Reads in a list of networks from file.
 def readNetworks(file):
@@ -278,7 +281,7 @@ def readNetworks(file):
 
 
 # Create Bro script which contains a list of local networks.
-def makeLocalNetworks():
+def makeLocalNetworks(path, silent=False):
 
     netcfg = config.Config.localnetscfg
 
@@ -286,9 +289,10 @@ def makeLocalNetworks():
         util.warn("list of local networks does not exist in %s" % netcfg)
         return
 
-    util.output("generating local-networks.bro ...", False)
+    if ( not silent ):
+        util.output("generating local-networks.bro ...", False)
 
-    out = open(os.path.join(config.Config.policydirsiteinstallauto, "local-networks.bro"), "w")
+    out = open(os.path.join(path, "local-networks.bro"), "w")
     print >>out, "# Automatically generated. Do not edit.\n"
 
     netcfg = config.Config.localnetscfg
@@ -304,17 +308,19 @@ def makeLocalNetworks():
             print >>out
         print >>out, "};\n"
 
-    util.output(" done.")
+    if ( not silent ):
+        util.output(" done.")
 
 
-def makeConfig():
+def makeConfig(path, silent=False):
     manager = config.Config.manager()
 
     if not manager:
         return
 
-    util.output("generating broctl-config.bro ...", False)
-    filename = os.path.join(config.Config.policydirsiteinstallauto, "broctl-config.bro")
+    if ( not silent ):
+        util.output("generating broctl-config.bro ...", False)
+    filename = os.path.join(path, "broctl-config.bro")
     out = open(filename, "w")
     print >>out, "# Automatically generated. Do not edit."
     print >>out, "redef Notice::mail_dest = \"%s\";" % config.Config.mailto
@@ -327,6 +333,7 @@ def makeConfig():
         print >>out, "@endif"
 
     out.close()
-    util.output(" done.")
+    if ( not silent ):
+        util.output(" done.")
 
 
