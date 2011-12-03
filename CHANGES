@@ -1,4 +1,22 @@
 
+0.5-beta-34 | 2011-12-02 17:17:14 -0800
+
+  * Make BroControl more robust when a node dies. (Robin Sommer)
+
+  * Disable collecting of prof.logs. The logs can get huge, which lets
+    cron take a while. (Robin Sommer)
+
+  * Fix standalone->cluster upgrade failing to update logs/current
+    symlink. Fixes #676. (Jon Siwek)
+
+  * Fix broctl 'scripts' command in cluster mode. Fixes #655. (Jon
+    Siwek)
+
+  * Teach 'check' command to generate temporary versions of autogen.
+    files. Addresses #658. (Jon Siwek)
+
+  * Submodule README conformity changes. (Jon Siwek)
+    
 0.5-beta-20 | 2011-11-14 20:04:21 -0800
 
   * Fixing some platforms behaving poorly during configure-time checks

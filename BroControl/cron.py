@@ -57,6 +57,7 @@ def doCron(watch):
     util.unlock()
 
     config.Config.config["cron"] = "0"
+    util.debug(1, "cron done")
 
 def logAction(node, action):
     t = time.time()
@@ -195,6 +196,9 @@ def _getProfLogs():
     cmds = []
 
     for node in config.Config.hosts():
+        if not execute.isAlive(node.addr):
+            continue
+
         cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.name, node.host, node.cwd())
         cmds += [(node, cmd, [], None)]
 
@@ -204,7 +208,12 @@ def _getProfLogs():
 
 def _updateHTTPStats():
     # Get the prof.logs.
-    _getProfLogs()
+
+    # FIXME: Disabled for now. This currently copies the complete prof.log
+    # each time. As these can get huge, that can take a while. We should
+    # change that to only copy the most recent chunk and then also expire old
+    # prof logs on the manager.
+    # _getProfLogs()
 
     # Create meta file.
     meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")

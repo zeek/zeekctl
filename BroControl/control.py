@@ -42,7 +42,8 @@ def isRunning(nodes, setcrashed=True):
         # If we cannot connect to the host at all, we filter it out because
         # the process might actually still be running but we can't tell.
         if output == None:
-            util.warn("cannot connect to %s" % node.name)
+            if config.Config.cron == "0":
+                util.warn("cannot connect to %s" % node.name)
             continue
 
         results += [(node, success)]
