@@ -26,6 +26,8 @@ options = [
     Option("SaveTraces", "0", "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
 
+    Option("StopTimeout", "60", "int", Option.USER, False,
+           "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command."),
     Option("CommTimeout", "10", "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
