@@ -382,7 +382,7 @@ def _stopNodes(nodes):
     # Check whether they terminated.
     terminated = []
     kill = []
-    for (node, success) in waitForBros(running, "TERMINATED", 60, False):
+    for (node, success) in waitForBros(running, "TERMINATED", int(config.Config.stoptimeout), False):
         if not success:
             # Check whether it crashed during shutdown ...
             result = isRunning([node])

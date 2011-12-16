@@ -1,4 +1,19 @@
 
+0.5-beta-39 | 2011-12-16 02:49:28 -0800
+
+  * Add StopTimeout option to broctl.cfg that sets the number of
+    seconds to wait after issuing the 'stop' command before sending a
+    SIGKILL to Bro instances. Adresses #608. (Jon Siwek)
+
+  * Add CommTimeout option to broctl.cfg that sets the number of
+    seconds to timeout Broccoli connnections. Addresses #608. (Jon
+    Siwek)
+
+  * Re-order the way local.bro and local-<node>.bro scripts are
+    loaded. Node-specific local scripts now load after local.bro so
+    tha identifiers defined by the loading of local.bro can be used in
+    them. Addresses #663 (Jon Siwek)
+
 0.5-beta-34 | 2011-12-02 17:17:14 -0800
 
   * Make BroControl more robust when a node dies. (Robin Sommer)
