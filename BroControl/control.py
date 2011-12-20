@@ -1008,11 +1008,14 @@ def getDf(nodes):
 
         for (node, success, output) in results:
             if success:
-                fields = output[0].split()
+                if len(output) > 0:
+                    fields = output[0].split()
 
-                # Ignore NFS mounted volumes.
-                if fields[0].find(":") < 0:
-                    df[node.name][fields[0]] = fields
+                    # Ignore NFS mounted volumes.
+                    if fields[0].find(":") < 0:
+                        df[node.name][fields[0]] = fields
+                else:
+                    util.warn("Invalid df output for node '%s'." % node)
 
 
     result = {}

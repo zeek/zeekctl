@@ -216,6 +216,10 @@ def _updateHTTPStats():
     # _getProfLogs()
 
     # Create meta file.
+    if not os.path.exists(config.Config.statsdir):
+        util.warn("creating directory for stats file: %s" % config.Config.statsdir)
+        os.makedirs(config.Config.statsdir)
+
     meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
     for node in config.Config.hosts():
         print >>meta, "node", node, node.type, node.host
