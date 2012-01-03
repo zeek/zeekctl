@@ -119,6 +119,11 @@ def _aquireLock():
     pid = str(os.getpid())
     tmpfile = config.Config.lockfile + "." + pid
 
+    lockdir = os.path.dirname(config.Config.lockfile);
+    if not os.path.exists(lockdir):
+        warn("creating directory for lock file: %s" % lockdir)
+        os.makedirs(lockdir)
+
     try:
         try:
             # This should be NFS-safe.

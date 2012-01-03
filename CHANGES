@@ -1,4 +1,9 @@
 
+0.5-beta-43 | 2012-01-03 14:45:40 -0800
+
+  * broctl now creates spool directories it finds missing. Addresses
+    #716. (Edward Groenendaal)
+
 0.5-beta-39 | 2011-12-16 02:49:28 -0800
 
   * Add StopTimeout option to broctl.cfg that sets the number of
