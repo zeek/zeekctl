@@ -338,7 +338,7 @@ class Configuration:
         if execute.exists(None, bro):
             (success, output) = execute.captureCmd("%s -v 2>&1" % bro)
             if success:
-                version = output[0]
+                version = output[len(output)-1]
 
         if not version:
             # Ok if it's already set.
