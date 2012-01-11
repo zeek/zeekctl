@@ -1,4 +1,8 @@
 
+1.0 | 2012-01-10 17:12:10 -0800
+
+  * Tweaks for OpenBSD support. (Jon Siwek)
+
 0.5-beta-43 | 2012-01-03 14:45:40 -0800
 
   * broctl now creates spool directories it finds missing. Addresses
