@@ -133,7 +133,7 @@ options = [
            "Directory for run-time data."),
     Option("PolicyDir", "${BroBase}/share/bro", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
-    Option("PolicyDirBroCtl", "${SpoolDir}/policy/broctl", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirBroCtl", "${SpoolDir}/.active_scripts_do_not_touch/broctl", "string", Option.AUTOMATIC, False,
            "Directory for additioal broctl policy scripts."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
@@ -180,9 +180,9 @@ options = [
     Option("DefSitePolicyPath", "${PolicyDir}/site", "string", Option.INTERNAL, False,
            "Default directory to search for local policy files."),
 
-    Option("PolicyDirSiteInstall", "${SpoolDir}/policy/site", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstall", "${SpoolDir}/.active_scripts_do_not_touch/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local policy scripts when installing."),
-    Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstallAuto", "${SpoolDir}/.active_scripts_do_not_touch/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
     # Internal, not documented.
