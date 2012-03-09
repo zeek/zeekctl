@@ -133,8 +133,6 @@ options = [
            "Directory for run-time data."),
     Option("PolicyDir", "${BroBase}/share/bro", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
-    Option("PolicyDirBroCtl", "${SpoolDir}/.active_scripts_do_not_touch/broctl", "string", Option.AUTOMATIC, False,
-           "Directory for additioal broctl policy scripts."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
     Option("TemplateDir", "${BroBase}/share/broctl/templates", "string", Option.AUTOMATIC, False,
