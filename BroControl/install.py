@@ -60,10 +60,10 @@ def generateDynamicVariableScript():
             # attempt to update the symlink
             try:
                 util.force_symlink(cfg_path, symlink)
-            except OSError:
-                util.error("failed to update symlink '%s' to point to '%s'" % (symlink, cfg_path))
-    except OSError:
-        util.error("error checking status of symlink '%s'" % symlink)
+            except OSError, e:
+                util.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+    except OSError, e:
+        util.error("error checking status of symlink '%s': %s" % (symlink, e.strerror))
 
 # Performs the complete broctl installion process.
 #
