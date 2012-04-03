@@ -32,6 +32,11 @@ if len(sys.argv) != 2:
 nets = readNetworks(sys.argv[1])
 
 for line in sys.stdin:
+    if line.startswith("#"):
+        continue
     m = line.split()
-    if m[2] in nets and m[3] in nets:
+    if len(m) < 5:
+        continue
+
+    if m[2] in nets and m[4] in nets:
         print line,
