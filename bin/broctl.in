@@ -832,7 +832,7 @@ BroControl Version %s
    process <trace> [Bro options] - runs Bro offline on trace file
    quit                          - exit shell
    restart [--clean] <nodes>     - stop and then restart processing
-   scripts [-p|-c] <nodes>       - Lists the Bro scripts the nodes will be loading
+   scripts [-c] <nodes>          - Lists the Bro scripts the nodes will be loading
    start <nodes>                 - start processing
    status <nodes>                - summarize node status
    stop <nodes>                  - stop processing
