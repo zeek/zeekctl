@@ -820,12 +820,12 @@ BroControl Version %s
    config                        - print broctl configuration
    cron                          - perform jobs intended to run from cron
    cron enable|disable|?         - enable/disable \"cron\" jobs
-   df                            - print nodes' current disk usage
+   df <nodes>                    - print nodes' current disk usage
    diag <nodes>                  - output diagnostics for nodes
    exec <shell cmd>              - execute shell command on all nodes
    exit                          - exit shell
    install                       - update broctl installation/configuration
-   netstats                      - print nodes' current packet counters
+   netstats <nodes>              - print nodes' current packet counters
    nodes                         - print node configuration
    print <id> <nodes>            - print current values of script variable at nodes
    peerstatus <nodes>            - print current status of nodes' remote connections
