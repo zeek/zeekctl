@@ -34,7 +34,9 @@ nets = readNetworks(sys.argv[1])
 for line in sys.stdin:
     if line.startswith("#"):
         continue
+
     m = line.split()
+
     if len(m) < 5:
         continue
 

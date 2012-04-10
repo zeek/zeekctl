@@ -1,4 +1,13 @@
 
+1.0-13 | 2012-04-09 15:59:17 -0700
+
+  * Remove "-p" option from broctl "scripts" command help. (Daniel
+    Thayer)
+
+  * Updating helper script to work with conn.log in Bro 2.0. (Daniel
+    Thayer)
+
+
 1.0-9 | 2012-03-28 15:46:02 -0700
 
   * Improve error message when failing to update broctl-config.sh
