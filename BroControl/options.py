@@ -40,7 +40,7 @@ options = [
            "True to gzip archived log files."),
 
     Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
-           "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time"),
+           "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time."),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
            "General Subject prefix for broctl-generated mails."),
 
@@ -68,7 +68,7 @@ options = [
            "Maximum amount of memory for Bro processes to use (in KB, or the string 'unlimited')."),
 
     Option("TimeFmt", "%d %b %H:%M:%S", "string", Option.USER, False,
-           "Format string to print data/time specifications (see 'man strftime')."),
+           "Format string to print date/time specifications (see 'man strftime')."),
 
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
@@ -93,16 +93,16 @@ options = [
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
 
     Option("CFlowAddr", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the address of the device (format: <ip>:<port>)."),
+           "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the user name for accessing its configuration interface."),
+           "If a cFlow load-balancer is used, the user name for accessing its configuration interface."),
     Option("CFlowPassword", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the password for accessing its configuration interface."),
+           "If a cFlow load-balancer is used, the password for accessing its configuration interface."),
 
     Option("TimeMachineHost", "", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the address of the host it is running on."),
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
-           "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., +47757/tcp+."),
+           "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
     # Automatically set.
     Option("BroBase", "", "string", Option.AUTOMATIC, True,
@@ -112,7 +112,7 @@ options = [
     Option("StandAlone", "0", "bool", Option.AUTOMATIC, True,
            "True if running in stand-alone mode (see elsewhere)."),
     Option("OS", "", "string", Option.AUTOMATIC, True,
-           "Name of operation systems as reported by uname."),
+           "Name of operating system as reported by uname."),
     Option("Time", "", "string", Option.AUTOMATIC, True,
            "Path to time binary."),
 
@@ -147,7 +147,7 @@ options = [
     Option("TmpExecDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,
            "Directory where binaries are copied before execution."),
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
-           "Directory where statistics are kepts."),
+           "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
            "Directory where standard plugins are located."),
 
@@ -159,7 +159,7 @@ options = [
     Option("NodeCfg", "${CfgDir}/node.cfg", "string", Option.AUTOMATIC, False,
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
-           "File definining the local networks."),
+           "File defining the local networks."),
     Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,
@@ -194,7 +194,7 @@ options = [
            "User's home directory."),
 
     Option("Cron", "0", "bool", Option.INTERNAL, False,
-           "True if we running from the cron command."),
+           "True if we are running from the cron command."),
 
     Option("BroCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
            """Directory where the shell copies the broctl-config.sh
