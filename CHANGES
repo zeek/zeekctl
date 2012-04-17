@@ -1,4 +1,12 @@
 
+1.0-17 | 2012-04-16 18:06:28 -0700
+
+  * Fixed lots of documentation typos and broken links. (Daniel
+    Thayer)
+
+  * Update broctl help information. (Daniel Thayer)
+    
+
 1.0-13 | 2012-04-09 15:59:17 -0700
 
   * Remove "-p" option from broctl "scripts" command help. (Daniel
