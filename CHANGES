@@ -1,4 +1,9 @@
 
+1.0-20 | 2012-04-19 09:08:32 -0700
+
+  * Remove unused broctl options and fixed a couple of typos in the
+    option names. (Daniel Thayer)
+
 1.0-17 | 2012-04-16 18:06:28 -0700
 
   * Fixed lots of documentation typos and broken links. (Daniel

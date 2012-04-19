@@ -51,10 +51,6 @@ options = [
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
-    Option("MailAlarms", "1", "bool", Option.USER, False,
-           "True if Bro should send mails for NOTICE_EMAIL alerts."),
-    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
-           "Subject prefix for individual alerts triggered by Notice::ACTION_EMAIL."),
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for broctl-generated alarm mails."),
 
@@ -73,9 +69,6 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("AuxPostProcessors", "", "string", Option.USER, False,
-           "Additional log postprocessors, with paths separated by spaces."),
-
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
            "Local policy file for manager."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
@@ -83,16 +76,13 @@ options = [
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
            "Local policy file for all Bro instances."),
 
-    Option("CustomInstallBin", "", "string", Option.USER, False,
-           "Additional executables to be installed into ${BinDir}, including full path and separated by spaces."),
-
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 
     Option("PFRINGClusterID", "@PF_RING_CLUSTER_ID@", "int", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
 
-    Option("CFlowAddr", "", "string", Option.USER, False,
+    Option("CFlowAddress", "", "string", Option.USER, False,
            "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
            "If a cFlow load-balancer is used, the user name for accessing its configuration interface."),
@@ -116,9 +106,6 @@ options = [
     Option("Time", "", "string", Option.AUTOMATIC, True,
            "Path to time binary."),
 
-    Option("HaveBroccoli", "", "bool", Option.AUTOMATIC, False,
-           "True if Broccoli interface is available."),
-
     Option("BinDir", "${BroBase}/bin", "string", Option.AUTOMATIC, False,
            "Directory for executable files."),
     Option("ScriptsDir", "${BroBase}/share/broctl/scripts", "string", Option.AUTOMATIC, False,
@@ -135,8 +122,6 @@ options = [
            "Directory for standard policy files."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
-    Option("TemplateDir", "${BroBase}/share/broctl/templates", "string", Option.AUTOMATIC, False,
-           "Directory where the \*.in templates are copied into."),
 
     Option("LibDir", "${BroBase}/lib", "string", Option.AUTOMATIC, False,
            "Directory for library files."),
@@ -175,8 +160,6 @@ options = [
     Option("SitePluginPath", "", "string", Option.USER, False,
            "Directories to search for custom plugins, separated by colons."),
 
-    Option("DefSitePolicyPath", "${PolicyDir}/site", "string", Option.INTERNAL, False,
-           "Default directory to search for local policy files."),
 
     Option("PolicyDirSiteInstall", "${SpoolDir}/installed-scripts-do-not-touch/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local policy scripts when installing."),
@@ -187,7 +170,7 @@ options = [
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 
-    Option("Cron-Enabled", "1", "bool", Option.INTERNAL, False,
+    Option("CronEnabled", "1", "bool", Option.INTERNAL, False,
            "True if cron command is enabled; if False, cron is silently ignored."),
 
     Option("Home", "", "string", Option.INTERNAL, False,

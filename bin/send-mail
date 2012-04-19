@@ -21,7 +21,7 @@ if [ $# -lt 1 -o $# -gt 2 ]; then
 fi
 
 from="${mailfrom}"
-replyto="${replyto}"
+replyto="${mailreplyto}"
 subject="${mailsubjectprefix} $1"
 
 if [ $# = 2 ]; then
