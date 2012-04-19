@@ -70,11 +70,11 @@ options = [
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
-           "Local policy file for manager."),
+           "Space-separated list of local policy files for manager."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
-           "Local policy file for workers."),
+           "Space-separated list of local policy files for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Local policy file for all Bro instances."),
+           "Space-separated list of local policy files for all Bro instances."),
 
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
