@@ -1,8 +1,12 @@
 
+1.0-24 | 2012-04-24 14:37:49 -0700
+
+  * Update some broctl option descriptions. (Daniel Thayer)
+
 1.0-22 | 2012-04-19 09:52:44 -0700
 
   * Options SitePolicyStandalone, SitePolicyManager, and
-    SitePolicyWorker were used. Now they are, and they replace the
+    SitePolicyWorker were unused. Now they are, and they replace the
     hard-coded defaults if defined. Addresses #797. (Daniel Thayer)
 
 1.0-20 | 2012-04-19 09:08:32 -0700
