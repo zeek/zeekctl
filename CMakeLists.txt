@@ -46,7 +46,7 @@ if (NOT SENDMAIL)
     message(WARNING "A sendmail program was not found, BroControl will be "
                     "unable to send mail.  This can be fixed even after "
                     "installing by editing "
-                    "${CMAKE_INSTALL_PREFIX}/etc/broctl.cfg")
+                    "${BRO_ETC_INSTALL_DIR}/broctl.cfg")
 endif ()
 
 if (MISSING_PREREQS)
@@ -137,7 +137,12 @@ install(DIRECTORY scripts/
         FILES_MATCHING
         PATTERN "*.bro")
 
-set(ETC ${PREFIX}/etc)
+if ( "${BRO_ETC_INSTALL_DIR}" STREQUAL "" )
+    set(ETC ${BRO_ROOT_DIR}/etc)
+else ()
+    set(ETC ${BRO_ETC_INSTALL_DIR})
+endif ()
+
 
 # These are needed for the default broctl.cfg file but they may be changed
 # below for packaging reasons.
@@ -256,6 +261,7 @@ message(
     "\nScripts Dir:       ${policydir}"
     "\nSpool Dir:         ${spoolDir}"
     "\nLog Dir:           ${logDir}"
+    "\nConfig File Dir:   ${BRO_ETC_INSTALL_DIR}"
     "\n"
     "\n================================================================\n"
 )
