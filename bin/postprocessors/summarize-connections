@@ -44,7 +44,7 @@ if [ "${tracesummary}" != "" ]; then
    ulimit -v $LIMIT
 
    export PYTHONPATH=${libdirinternal}:$PYTHONPATH
-   nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwith" >$output
+   nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwidth" >$output
 
    ${scriptsdir}/send-mail "$subject" <$output
    ${scriptsdir}/archive-log $output $output_basename $3 $4 $5

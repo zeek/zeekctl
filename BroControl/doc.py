@@ -1,5 +1,5 @@
 #
-# Generates the dynamic parts of the BroCtrol documentation.
+# Generates the dynamic parts of the BroControl documentation.
 #
 
 import inspect

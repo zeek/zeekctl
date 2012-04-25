@@ -148,7 +148,7 @@ def _aquireLock():
                 return _aquireLock()
 
         except IOError, e:
-            error("cannot aquire lock: %s" % e)
+            error("cannot acquire lock: %s" % e)
             return False
 
     finally:

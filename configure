@@ -23,7 +23,7 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --prefix=PREFIX        installation directory [/usr/local/bro]
     --conf-files-dir=DIR   config files installation directory [PREFIX/etc]
     --python-install-dir   the desired installation directory for
-                           any auxialliary python modules (if present)
+                           any auxiliary python modules (if present)
                            [PREFIX/lib/broctl]
 
   Required Packages in Non-Standard Locations:

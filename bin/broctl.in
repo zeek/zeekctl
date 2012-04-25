@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# The Bro Control interactive shell.
+# The BroControl interactive shell.
 
 import os
 import sys
@@ -595,7 +595,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 control.printID(nodes, id)
                 plugin.Registry.cmdPostWithNodes("print", nodes, id)
         except IndexError:
-            self.syntax("no id to print given")
+            self.syntax("no id given to print")
 
         return False
 

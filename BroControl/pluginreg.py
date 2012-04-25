@@ -132,8 +132,8 @@ class PluginRegistry:
                 pass
 
     def runCustomCommand(self, cmd, args):
-        """Runs a custom command *cmd* a string *args* as argument. Returns
-        False if no such command is known"""
+        """Runs a custom command *cmd* with string *args* as argument. Returns
+        False if no such command is known."""
         try:
             (plugin, usage, descr) = self._cmds[cmd]
         except LookupError:
@@ -161,7 +161,7 @@ class PluginRegistry:
 
     def addNodeKeys(self):
         """Adds all plugins' node keys to the list of supported keys in
-        ``Node``.."""
+        ``Node``."""
         for p in self._plugins:
             for key in p.nodeKeys():
                 key = "%s_%s" % (p.prefix(), key)
@@ -170,7 +170,7 @@ class PluginRegistry:
 
     def addAnalyses(self, analysis):
         """Adds all plugins' analyses specification to an ``Analysis``
-        instace."""
+        instance."""
         for p in self._plugins:
             for (name, descr, mechanism) in p.analyses():
 
