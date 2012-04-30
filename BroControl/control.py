@@ -214,10 +214,10 @@ def _makeBroParams(node, live, add_manager=False):
 def _makeEnvParam(node):
     env = ""
     if node.type != "standalone":
-        env = "CLUSTER_NODE=%s" % node.name
+        env += " CLUSTER_NODE=%s" % node.name
 
-    if config.Config.pfringclusterid != "0":
-        env += " PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1 PCAP_PF_RING_CLUSTER_ID=%s" % config.Config.pfringclusterid
+    for env_var in node.env_vars:
+        env += env_var
 
     return env
 

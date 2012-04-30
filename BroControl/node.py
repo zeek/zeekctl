@@ -30,6 +30,13 @@ class Node:
         ``interface`` (string)
             The network interface for Bro to use; empty if not set.
 
+        ``lb_procs`` (integer)
+            The number clustered Bro workers you'd like to start up.
+
+        ``lb_method`` (string)
+            The load balancing method to distribute packets to all of the 
+            processes.
+
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
 
@@ -42,7 +49,9 @@ class Node:
     ``node.cfg``.
     """
 
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
+    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
+              "brobase": 1, "ether": 1, 
+              "lb_procs": 1, "lb_method": 1, "lb_node": 1 }
 
 
     def __init__(self, name):
