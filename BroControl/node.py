@@ -49,14 +49,17 @@ class Node:
     ``node.cfg``).
     """
 
+    # Valid keys in nodes file. The values will be stored in attributes of the
+    # same name. Custom keys can be add via addKey().
     _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
               "brobase": 1, "ether": 1, 
-              "lb_procs": 1, "lb_method": 1, "lb_node": 1 }
+              "lb_procs": 1, "lb_method": 1 }
 
 
     def __init__(self, name):
         """Instantiates a new node of the given name."""
         self.name = name
+        self.env_vars = []
 
         for key in Node._keys:
             self.__dict__[key] = ""
@@ -133,10 +136,6 @@ class Node:
         """
         t = "%s-port" % self.name.lower()
         return t in config.Config.state and int(config.Config.state[t]) or -1
-
-    # Valid keys in nodes file. The values will be stored in attributes of the
-    # same name. Custom keys can be add via addKey().
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
 
     @staticmethod
     def addKey(kw):

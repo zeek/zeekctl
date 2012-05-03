@@ -217,7 +217,7 @@ def _makeEnvParam(node):
         env += " CLUSTER_NODE=%s" % node.name
 
     for env_var in node.env_vars:
-        env += env_var
+        env += " %s" % env_var
 
     return env
 

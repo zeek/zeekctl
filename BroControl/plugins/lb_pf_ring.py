@@ -1,15 +1,8 @@
-
-# run all tools with an environment variable.
-#    if config.Config.pfringclusterid != "0":
-#        env += " PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1 PCAP_PF_RING_CLUSTER_ID=%s" % config.Config.pfringclusterid
-
-#
-# A simple example plugin implementing a command "ps.bro" that shows all Bro
-# processes currently running on any of the configured nodes, including  those
-# not controlled by this broctl. The latter are marked with "(-)", while "our"
-# processes get a "(+)".
+# This plugin sets necessary environment variables to run Bro with
+# PF_RING load balancing.
 
 import BroControl.plugin
+import BroControl.config
 
 class LBPFRing(BroControl.plugin.Plugin):
     def __init__(self):
@@ -22,4 +15,8 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def cmd_install_pre(self):
-        self.nodes
+        for nn in self.nodes():
+            if nn.lb_method == "pf_ring":
+                if BroControl.config.Config.pfringclusterid != "0":
+                    nn.env_vars += ["PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1"]
+                    nn.env_vars += ["PCAP_PF_RING_CLUSTER_ID=%s" % BroControl.config.Config.pfringclusterid]
