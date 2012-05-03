@@ -59,7 +59,7 @@ class Plugin(object):
         self._apiversion = apiversion
 
     def apiVersion(self):
-        """Returns the plugin  API that the plugin expects to use."""
+        """Returns the plugin API that the plugin expects to use."""
         return self._apiversion
 
     @doc.api
