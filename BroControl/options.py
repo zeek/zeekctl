@@ -40,7 +40,7 @@ options = [
            "True to gzip archived log files."),
 
     Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
-           "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time"),
+           "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time."),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
            "General Subject prefix for broctl-generated mails."),
 
@@ -51,10 +51,6 @@ options = [
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
-    Option("MailAlarms", "1", "bool", Option.USER, False,
-           "True if Bro should send mails for NOTICE_EMAIL alerts."),
-    Option("MailAlarmPrefix", "ALERT:", "string", Option.USER, False,
-           "Subject prefix for individual alerts triggered by Notice::ACTION_EMAIL."),
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for broctl-generated alarm mails."),
 
@@ -68,23 +64,17 @@ options = [
            "Maximum amount of memory for Bro processes to use (in KB, or the string 'unlimited')."),
 
     Option("TimeFmt", "%d %b %H:%M:%S", "string", Option.USER, False,
-           "Format string to print data/time specifications (see 'man strftime')."),
+           "Format string to print date/time specifications (see 'man strftime')."),
 
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("AuxPostProcessors", "", "string", Option.USER, False,
-           "Additional log postprocessors, with paths separated by spaces."),
-
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
-           "Local policy file for manager."),
+           "Space-separated list of local policy files for manager."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
-           "Local policy file for workers."),
+           "Space-separated list of local policy files for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Local policy file for all Bro instances."),
-
-    Option("CustomInstallBin", "", "string", Option.USER, False,
-           "Additional executables to be installed into ${BinDir}, including full path and separated by spaces."),
+           "Space-separated list of local policy files for all Bro instances."),
 
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
@@ -92,17 +82,17 @@ options = [
     Option("PFRINGClusterID", "@PF_RING_CLUSTER_ID@", "int", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
 
-    Option("CFlowAddr", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the address of the device (format: <ip>:<port>)."),
+    Option("CFlowAddress", "", "string", Option.USER, False,
+           "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the user name for accessing its configuration interface."),
+           "If a cFlow load-balancer is used, the user name for accessing its configuration interface."),
     Option("CFlowPassword", "", "string", Option.USER, False,
-           "If a cFlow load-balander is used, the password for accessing its configuration interface."),
+           "If a cFlow load-balancer is used, the password for accessing its configuration interface."),
 
     Option("TimeMachineHost", "", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the address of the host it is running on."),
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
-           "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., +47757/tcp+."),
+           "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
     # Automatically set.
     Option("BroBase", "", "string", Option.AUTOMATIC, True,
@@ -112,12 +102,9 @@ options = [
     Option("StandAlone", "0", "bool", Option.AUTOMATIC, True,
            "True if running in stand-alone mode (see elsewhere)."),
     Option("OS", "", "string", Option.AUTOMATIC, True,
-           "Name of operation systems as reported by uname."),
+           "Name of operating system as reported by uname."),
     Option("Time", "", "string", Option.AUTOMATIC, True,
            "Path to time binary."),
-
-    Option("HaveBroccoli", "", "bool", Option.AUTOMATIC, False,
-           "True if Broccoli interface is available."),
 
     Option("BinDir", "${BroBase}/bin", "string", Option.AUTOMATIC, False,
            "Directory for executable files."),
@@ -133,12 +120,8 @@ options = [
            "Directory for run-time data."),
     Option("PolicyDir", "${BroBase}/share/bro", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
-    Option("PolicyDirBroCtl", "${SpoolDir}/policy/broctl", "string", Option.AUTOMATIC, False,
-           "Directory for additioal broctl policy scripts."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
-    Option("TemplateDir", "${BroBase}/share/broctl/templates", "string", Option.AUTOMATIC, False,
-           "Directory where the \*.in templates are copied into."),
 
     Option("LibDir", "${BroBase}/lib", "string", Option.AUTOMATIC, False,
            "Directory for library files."),
@@ -149,7 +132,7 @@ options = [
     Option("TmpExecDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,
            "Directory where binaries are copied before execution."),
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
-           "Directory where statistics are kepts."),
+           "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
            "Directory where standard plugins are located."),
 
@@ -161,7 +144,7 @@ options = [
     Option("NodeCfg", "${CfgDir}/node.cfg", "string", Option.AUTOMATIC, False,
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
-           "File definining the local networks."),
+           "File defining the local networks."),
     Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,
@@ -177,26 +160,24 @@ options = [
     Option("SitePluginPath", "", "string", Option.USER, False,
            "Directories to search for custom plugins, separated by colons."),
 
-    Option("DefSitePolicyPath", "${PolicyDir}/site", "string", Option.INTERNAL, False,
-           "Default directory to search for local policy files."),
 
-    Option("PolicyDirSiteInstall", "${SpoolDir}/policy/site", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstall", "${SpoolDir}/installed-scripts-do-not-touch/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local policy scripts when installing."),
-    Option("PolicyDirSiteInstallAuto", "${SpoolDir}/policy/auto", "string", Option.AUTOMATIC, False,
+    Option("PolicyDirSiteInstallAuto", "${SpoolDir}/installed-scripts-do-not-touch/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
     # Internal, not documented.
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 
-    Option("Cron-Enabled", "1", "bool", Option.INTERNAL, False,
+    Option("CronEnabled", "1", "bool", Option.INTERNAL, False,
            "True if cron command is enabled; if False, cron is silently ignored."),
 
     Option("Home", "", "string", Option.INTERNAL, False,
            "User's home directory."),
 
     Option("Cron", "0", "bool", Option.INTERNAL, False,
-           "True if we running from the cron command."),
+           "True if we are running from the cron command."),
 
     Option("BroCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
            """Directory where the shell copies the broctl-config.sh

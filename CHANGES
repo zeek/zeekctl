@@ -1,4 +1,48 @@
 
+1.0-24 | 2012-04-24 14:37:49 -0700
+
+  * Update some broctl option descriptions. (Daniel Thayer)
+
+1.0-22 | 2012-04-19 09:52:44 -0700
+
+  * Options SitePolicyStandalone, SitePolicyManager, and
+    SitePolicyWorker were unused. Now they are, and they replace the
+    hard-coded defaults if defined. Addresses #797. (Daniel Thayer)
+
+1.0-20 | 2012-04-19 09:08:32 -0700
+
+  * Remove unused broctl options and fixed a couple of typos in the
+    option names. (Daniel Thayer)
+
+1.0-17 | 2012-04-16 18:06:28 -0700
+
+  * Fixed lots of documentation typos and broken links. (Daniel
+    Thayer)
+
+  * Update broctl help information. (Daniel Thayer)
+    
+
+1.0-13 | 2012-04-09 15:59:17 -0700
+
+  * Remove "-p" option from broctl "scripts" command help. (Daniel
+    Thayer)
+
+  * Updating helper script to work with conn.log in Bro 2.0. (Daniel
+    Thayer)
+
+
+1.0-9 | 2012-03-28 15:46:02 -0700
+
+  * Improve error message when failing to update broctl-config.sh
+    symlink (Jon Siwek)
+
+  * Raise minimum required CMake version to 2.6.3. (Jon Siwek)
+    
+  * Remove the unused "PolicyDirBroCtl" option. (Daniel Thayer)
+
+  * Rename the spool/policy directory so it is less visible. Addresses
+    #767. (Daniel Thayer)
+
 1.0 | 2012-01-10 18:57:50 -0800
 
   * Tweaks for OpenBSD support. (Jon Siwek)

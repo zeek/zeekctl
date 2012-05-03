@@ -7,13 +7,13 @@ import config
 import os
 
 class Node:
-    """Class representing on node of the BroControl maintained setup. In
-    standalone mode, there's always exactly one node of type ``standalone`. In
+    """Class representing one node of the BroControl maintained setup. In
+    standalone mode, there's always exactly one node of type ``standalone``. In
     a cluster setup, there is exactly one of type ``manager``, and zero or
     more of type ``proxy`` and ``worker``.
 
     In addition to the methods described above, a ``Node`` object has a number
-    keys with values that are set via ``nodes.cfg`` and can be accessed
+    of keys with values that are set via ``nodes.cfg`` and can be accessed
     directly via corresponding Python attributes (e.g., ``node.name``):
 
         ``name`` (string)
@@ -43,10 +43,10 @@ class Node:
     Any attribute that is not defined in ``nodes.cfg`` will be empty.
 
     In addition, plugins can override `Plugin.nodeKeys`_ to define their own
-    node keys, which can then be likewise set in ``nodes.cfg``. They key names
+    node keys, which can then be likewise set in ``nodes.cfg``. The key names
     will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
     ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
-    ``node.cfg``.
+    ``node.cfg``).
     """
 
     _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
@@ -77,7 +77,7 @@ class Node:
 
     @doc.api
     def cwd(self):
-        """Returns a string with node's working directory."""
+        """Returns a string with the node's working directory."""
         return os.path.join(config.Config.spooldir, self.name)
 
     # Stores the nodes process ID.

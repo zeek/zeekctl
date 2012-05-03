@@ -176,7 +176,7 @@ def _makeBroParams(node, live, add_manager=False):
     # The order of loaded scripts is as follows:
     # 1) local.bro gives a common set of loaded scripts for all nodes.
     # 2) The common configuration of broctl is loaded via the broctl package.
-    # 3) The distribution's defautl settings for node configuration are loaded
+    # 3) The distribution's default settings for node configuration are loaded
     #    from either the cluster framework or standalone scripts.  This also
     #    involves loading local-<node>.bro scripts.  At this point anything
     #    in the distribution's default per-node is overridable and any
@@ -186,18 +186,18 @@ def _makeBroParams(node, live, add_manager=False):
     #    settings that override the previously loaded node-specific scripts.
     #    (e.g. Log::default_rotation_interval is set in manager.bro,
     #    but overrided by broctl.cfg)
-    args += ["local"]
+    args += config.Config.sitepolicystandalone.split()
     args += ["broctl"]
     if node.type == "standalone":
         args += ["broctl/standalone"]
     else:
         args += ["base/frameworks/cluster"]
         if node.type == "manager":
-            args += ["local-manager"]
+            args += config.Config.sitepolicymanager.split()
         elif node.type == "proxy":
             args += ["local-proxy"]
         elif node.type == "worker":
-            args += ["local-worker"]
+            args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
 
     if "aux_scripts" in node.__dict__:
