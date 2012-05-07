@@ -5,6 +5,7 @@ import sys
 import socket
 import imp
 import re
+import copy
 
 import ConfigParser
 
@@ -20,7 +21,7 @@ import util
 # This class provides access to four types of configuration/state:
 #
 # - the global broctl configuration from broctl.cfg
-# - the node configuration from nodes.cfg
+# - the node configuration from node.cfg
 # - dynamic state variables which are kept across restarts in spool/broctl.dat
 
 Config = None # Globally accessible instance of Configuration.
@@ -64,7 +65,7 @@ class Configuration:
     def initPostPlugins(self):
         plugin.Registry.addNodeKeys()
 
-        # Read nodes.cfg and broctl.dat.
+        # Read node.cfg and broctl.dat.
         self._readNodes()
         self.readState()
 
@@ -185,7 +186,7 @@ class Configuration:
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
 
-    # Parse nodes.cfg.
+    # Parse node.cfg.
     def _readNodes(self):
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
@@ -248,6 +249,16 @@ class Configuration:
                 counts[type] = 1
 
             node.count = counts[type]
+
+            if node.lb_procs and int(node.lb_procs) > 1:
+                for num in xrange(1, int(node.lb_procs)):
+                    newnode = copy.copy(node)
+                    # only the node name and count need to be changed
+                    newname = "%s-%d" % (sec, num)
+                    newnode.name = newname
+                    self.nodelist[newname] = newnode
+                    counts[type] += 1
+                    newnode.count = counts[type]
 
         if self.nodelist:
 
