@@ -279,7 +279,7 @@ by a node; that can be very helpful for debugging.
 
 It is also possible to add additional scripts to individual nodes
 only. This works by setting the option ``aux_scripts`` for the
-corresponding node(s) in ``etc/nodes.cfg``. For example, one could add
+corresponding node(s) in ``etc/node.cfg``. For example, one could add
 a script ``experimental.bro`` to a single worker for trying out new
 experimental code.  Alternatively, the node tag can be used as a
 prefix as in the example ``worker-1.local.bro``.  The prefix will be
@@ -325,7 +325,7 @@ plugin is written in Python and can do any, or all, of the following:
 
     * Add custom options to BroControl defined in ``broctl.cfg``.
 
-    * Add custom keys to nodes defined in ``nodes.cfg``.
+    * Add custom keys to nodes defined in ``node.cfg``.
 
     * Add custom entries to the ``analysis`` command.
 

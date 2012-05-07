@@ -13,12 +13,12 @@ class Node:
     more of type ``proxy`` and ``worker``.
 
     In addition to the methods described above, a ``Node`` object has a number
-    of keys with values that are set via ``nodes.cfg`` and can be accessed
+    of keys with values that are set via ``node.cfg`` and can be accessed
     directly via corresponding Python attributes (e.g., ``node.name``):
 
         ``name`` (string)
             The name of the node, which corresponds to the ``[<name>]``
-            section in ``nodes.cfg``.
+            section in ``node.cfg``.
 
         ``type`` (string)
             The type of the node, which will be one of ``standalone``,
@@ -33,10 +33,10 @@ class Node:
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
 
-    Any attribute that is not defined in ``nodes.cfg`` will be empty.
+    Any attribute that is not defined in ``node.cfg`` will be empty.
 
     In addition, plugins can override `Plugin.nodeKeys`_ to define their own
-    node keys, which can then be likewise set in ``nodes.cfg``. The key names
+    node keys, which can then be likewise set in ``node.cfg``. The key names
     will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
     ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
     ``node.cfg``).
