@@ -252,7 +252,7 @@ class Configuration:
 
             if node.lb_procs and int(node.lb_procs) > 1:
                 for num in xrange(1, int(node.lb_procs)):
-                    newnode = copy.copy(node)
+                    newnode = copy.deepcopy(node)
                     # only the node name and count need to be changed
                     newname = "%s-%d" % (sec, num)
                     newnode.name = newname

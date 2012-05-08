@@ -1,6 +1,5 @@
-
-# run all external tools with an environment variable
-# env += " SNF_NUM_RINGS=10 SNF_FLAGS=0x101"
+# This plugin sets necessary environment variables to run Bro with
+# myricom load balancing.
 
 import BroControl.plugin
 
@@ -13,4 +12,10 @@ class LBMyricom(BroControl.plugin.Plugin):
 
     def pluginVersion(self):
         return 1
+
+    def cmd_install_pre(self):
+        for nn in self.nodes():
+            if nn.lb_method == "myricom":
+                nn.env_vars += ["SNF_NUM_RINGS=10"]
+                nn.env_vars += ["SNF_FLAGS=0x101"]
 
