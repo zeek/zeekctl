@@ -16,6 +16,9 @@ class LBPFRing(BroControl.plugin.Plugin):
 
     def cmd_install_pre(self):
         for nn in self.nodes():
+            if nn.type != "worker":
+                continue
+
             if nn.lb_method == "pf_ring":
                 if BroControl.config.Config.pfringclusterid != "0":
                     nn.env_vars += ["PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1"]

@@ -35,7 +35,12 @@ class Node:
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the 
-            processes.
+            processes (must be one of: ``pf_ring``, ``myricom``, or
+            ``interfaces``).
+
+        ``lb_interfaces`` (string)
+            If the load balancing method is ``interfaces``, then this is
+            a comma-separated list of network interface names to use.
 
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
@@ -53,7 +58,7 @@ class Node:
     # same name. Custom keys can be add via addKey().
     _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
               "brobase": 1, "ether": 1, 
-              "lb_procs": 1, "lb_method": 1 }
+              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1 }
 
 
     def __init__(self, name):

@@ -251,6 +251,10 @@ class Configuration:
             node.count = counts[type]
 
             if node.lb_procs and int(node.lb_procs) > 1:
+                if node.lb_method == "interfaces":
+                    # get list of interfaces to use, and assign one to each node
+                    netifs = node.lb_interfaces.split(",")
+                    node.interface = netifs.pop().strip()
                 for num in xrange(1, int(node.lb_procs)):
                     newnode = copy.deepcopy(node)
                     # only the node name and count need to be changed
@@ -259,6 +263,8 @@ class Configuration:
                     self.nodelist[newname] = newnode
                     counts[type] += 1
                     newnode.count = counts[type]
+                    if newnode.lb_method == "interfaces":
+                        newnode.interface = netifs.pop().strip()
 
         if self.nodelist:
 

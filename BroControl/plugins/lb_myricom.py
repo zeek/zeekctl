@@ -15,6 +15,9 @@ class LBMyricom(BroControl.plugin.Plugin):
 
     def cmd_install_pre(self):
         for nn in self.nodes():
+            if nn.type != "worker":
+                continue
+
             if nn.lb_method == "myricom":
                 nn.env_vars += ["SNF_NUM_RINGS=10"]
                 nn.env_vars += ["SNF_FLAGS=0x101"]
