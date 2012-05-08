@@ -19,6 +19,6 @@ class LBMyricom(BroControl.plugin.Plugin):
                 continue
 
             if nn.lb_method == "myricom":
-                nn.env_vars += ["SNF_NUM_RINGS=10"]
+                nn.env_vars += ["SNF_NUM_RINGS=%d" % int(nn.lb_procs)]
                 nn.env_vars += ["SNF_FLAGS=0x101"]
 
