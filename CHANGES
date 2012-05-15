@@ -1,4 +1,8 @@
 
+1.0-32 | 2012-05-14 17:20:17 -0700
+
+  * Fix typos in broctl docs. (Daniel Thayer)
+
 1.0-29 | 2012-05-03 11:34:29 -0700
 
   * Added an option to specify 'etc' directory. Addresses #801.
