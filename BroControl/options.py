@@ -94,6 +94,11 @@ options = [
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
+    Option("IPv6Comm", "1", "bool", Option.USER, False,
+           "Enable IPv6 communication between cluster nodes (and also between them and BroControl)"),
+    Option("ZoneID", "", "string", Option.USER, False,
+           "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what RFC 4007 zone_id to append to node addresses when communicating with them."),
+
     # Automatically set.
     Option("BroBase", "", "string", Option.AUTOMATIC, True,
            "Base path of broctl installation on all nodes."),

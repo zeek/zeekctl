@@ -4,8 +4,13 @@
 
 . `dirname $0`/broctl-config.sh
 
-cmd_linux='ping -c 1 -W 1'
-cmd_bsd='ping -q -t 1 -o'
+if [[ "$1" == *:* ]]; then
+    cmd_linux='ping6 -c 1 -W 1'
+    cmd_bsd='ping6 -q -o'
+else
+    cmd_linux='ping -c 1 -W 1'
+    cmd_bsd='ping -q -t 1 -o'
+fi
 
 if [ "${os}" == "linux" ]; then
    cmd=$cmd_linux

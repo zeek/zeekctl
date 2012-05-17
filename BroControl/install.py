@@ -209,7 +209,7 @@ def makeLayout(path, silent=False):
         # This is the port that standalone nodes listen on for remote control by default.
         print >>out, "redef Communication::listen_port = %s/tcp;" % nextPort(manager)
         print >>out, "redef Communication::nodes += {"
-        print >>out, "	[\"control\"] = [$host=%s, $class=\"control\", $events=Control::controller_events]," % manager.addr
+        print >>out, "	[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events]," % (util.formatBroAddr(manager.addr), manager.zone_id)
         print >>out, "};"
 
     else:
@@ -225,10 +225,10 @@ def makeLayout(path, silent=False):
         print >>out, "redef Cluster::nodes = {";
 
         # Control definition.  For now just reuse the manager information.
-        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp]," % (manager.addr, nextPort(manager))
+        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp]," % (util.formatBroAddr(manager.addr), config.Config.zoneid, nextPort(manager))
 
         # Manager definition
-        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp, $workers=set(" % (manager.name, manager.addr, nextPort(manager)),
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.formatBroAddr(manager.addr), manager.zone_id, nextPort(manager)),
         for s in workers:
             print >>out, "\"%s\"" % (s.name),
             if s != workers[-1]:
@@ -237,7 +237,7 @@ def makeLayout(path, silent=False):
 
         # Proxies definition
         for p in proxies:
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, p.addr, nextPort(p), manager.name),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.formatBroAddr(p.addr), p.zone_id, nextPort(p), manager.name),
             for s in workers:
                 print >>out, "\"%s\"" % (s.name),
                 if s != workers[-1]:
@@ -247,7 +247,7 @@ def makeLayout(path, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, w.addr, nextPort(w), w.interface, manager.name, proxies[p].name),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, util.formatBroAddr(w.addr), w.zone_id, nextPort(w), w.interface, manager.name, proxies[p].name),
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
@@ -274,6 +274,10 @@ def readNetworks(file):
             continue
 
         fields = line.split()
+
+        for i, e in enumerate(fields):
+            fields[i] = util.formatBroPrefix(e)
+
         nets += [(fields[0], " ".join(fields[1:]))]
 
     return nets
@@ -331,6 +335,10 @@ def makeConfig(path, silent=False):
     print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
     if manager.type != "standalone":
         print >>out, "@endif"
+    if config.Config.ipv6comm:
+        print >>out, "redef Communication::listen_ipv6 = T ;"
+    else:
+        print >>out, "redef Communication::listen_ipv6 = F ;"
 
     out.close()
 

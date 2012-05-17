@@ -33,6 +33,13 @@ class Node:
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
 
+        ``zone_id`` (string)
+            If BroControl is managing a cluster comprised of nodes
+            using non-global IPv6 addresses, then this configures the
+            RFC 4007 ``zone_id`` string that the node associates with
+            the common zone that all cluster nodes are a part of.  This
+            identifier may differ between nodes.
+
     Any attribute that is not defined in ``node.cfg`` will be empty.
 
     In addition, plugins can override `Plugin.nodeKeys`_ to define their own
@@ -42,7 +49,7 @@ class Node:
     ``node.cfg``).
     """
 
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
+    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1, "zone_id": 1 }
 
 
     def __init__(self, name):
@@ -127,7 +134,7 @@ class Node:
 
     # Valid keys in nodes file. The values will be stored in attributes of the
     # same name. Custom keys can be add via addKey().
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1 }
+    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1, "zone_id": 1 }
 
     @staticmethod
     def addKey(kw):

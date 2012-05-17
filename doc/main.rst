@@ -409,3 +409,18 @@ Questions and Answers
     ``<BroBase>/share/broctl/scripts/make-archive-name``, which you
     can use as a template for creating your own version. See
     the beginning of that script for instructions.
+
+*Can BroControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local) ?*
+    Yes, set ``ZoneID`` in ``etc/broctl.cfg`` to the zone identifier
+    that the BroControl node uses to identify the scope zone
+    (the ``ifconfig`` command output is usually helpful, if it doesn't
+    show the zone identifier appended to the address with a '%'
+    character, then it may just be the interface name).  Then in
+    ``etc/node.cfg``, add a ``zone_id`` key to each node section
+    representing that particular node's zone identifier and set
+    the ``host`` key to the IPv6 address assigned to the node within
+    the scope zone.  Most nodes probably have the same ``zone_id``, but
+    may not be if their interface configuration differs.  The result is
+    that BroControl internally appends the right zone identifiers
+    when necessary.  See RFC 4007 for more information on IPv6 scoped
+    addresses and zones.
