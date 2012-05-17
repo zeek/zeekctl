@@ -68,7 +68,7 @@ fi
             strt=`cat .rotated.$basename`
         fi
         end=`date +%y-%m-%d_%H.%M.%S`
-        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 "$tag" >/dev/null &
+        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 ascii >/dev/null &
     fi
 
     ${scriptsdir}/remove-link-for-log $i
