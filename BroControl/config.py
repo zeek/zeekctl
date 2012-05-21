@@ -255,7 +255,9 @@ class Configuration:
                     # get list of interfaces to use, and assign one to each node
                     netifs = node.lb_interfaces.split(",")
                     node.interface = netifs.pop().strip()
-                for num in xrange(1, int(node.lb_procs)):
+                # node names will have a numerical suffix
+                node.name += "-1"
+                for num in xrange(2, int(node.lb_procs) + 1):
                     newnode = copy.deepcopy(node)
                     # only the node name and count need to be changed
                     newname = "%s-%d" % (sec, num)
