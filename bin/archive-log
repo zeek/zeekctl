@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to archive log files. 
-# 
-# archive-log <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> [<tag>]
+# Bro postprocessor script to archive log files.
+#
+# archive-log [-c] <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
 
 . `dirname $0`/broctl-config.sh
 
@@ -13,6 +13,7 @@ if [ "$1" == "-c" ]; then
 fi
 
 terminating=$5
+writer=$6
 
 century=`date +%Y | sed 's/..$//g'`
 
@@ -22,9 +23,10 @@ from="$century$from"
 to=`echo $4 | sed 's/[_.]/-/g'`
 to="$century$to"
 
-dest=`${makearchivename} $2 $from $to`
+ext=`echo $1 | sed 's/^.*\.//'`
+dest=`${makearchivename} $2.$ext $writer $from $to `
 
-echo $dest | grep -q '^/' 
+echo $dest | grep -q '^/'
 
 if [ $? != 0 ]; then
     dest="${logdir}/$dest"
@@ -32,28 +34,28 @@ fi
 
 dest_dir=`dirname $dest`
 
-mkdir -p $dest_dir # Makes sure all parent directories exist. 
+mkdir -p $dest_dir # Makes sure all parent directories exist.
 
 # Record time of last rotation.
 date +%y-%m-%d_%H.%M.%S >.rotated.$2 # Bro default format when rotating files.
 
-# Run other postprocessors. 
+# Run other postprocessors.
 for pp in ${postprocdir}/*; do
-    nice $pp $@ 
+    nice $pp $@
 done
 
 if [ -e $1 ]; then
-    if [ "${compresslogs}" == "1" ]; then
+    if [ "${compresslogs}" == "1" -a "$writer" == "ascii" ]; then
         nice gzip -9 <$1 >$dest.gz 2>/dev/null &
     else
         nice cp $1 $dest &
     fi
-fi   
+fi
 
 wait
 
 if [ "$?" == "0" ]; then
-    if [ "$delete" == "1" ]; then 
+    if [ "$delete" == "1" ]; then
         rm -rf $1
     else
         # Only delete if too large (>100MB).

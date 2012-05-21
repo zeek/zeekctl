@@ -1,14 +1,22 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to summarize connection summaries. 
+# Bro postprocessor script to summarize connection summaries.
 #
 # Needs trace-summary script.
 #
-# summarize-conns <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> [<tag>]
+# summarize-conns <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
 
 . `dirname $0`/../broctl-config.sh
 
-if [ "$2" != "conn" ]; then
+input=$1
+base=$2
+open=$3
+close=$4
+terminating=$5
+writer=$6
+
+# Only process ASCII conn.log.
+if [ "$base" != "conn" -o "$writer" != "ascii" ]; then
    exit 0
 fi
 
@@ -16,16 +24,12 @@ summary_options="-c -r"
 
 # If we're a cluster installation, we assume we have lots of traffic and activate sampling.
 if [ "${standalone}" = "0" ]; then
-   summary_options="$summary_options -S 0.01" 
-fi    
+   summary_options="$summary_options -S 0.01"
+fi
 
 if [ -e ${localnetscfg} ]; then
    summary_options="$summary_options -l ${localnetscfg}"
 fi
-
-input=$1
-open=$3
-close=$4
 
 output=conn-summary.log
 output_basename=conn-summary
@@ -34,7 +38,7 @@ output_basename=conn-summary
 export TIME="%E real, %U user, %S sys, %KK total memory"
 
 if [ "${tracesummary}" != "" ]; then
-   # Build subject 
+   # Build subject
    start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
    end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
    subject="Connection summary from $start-$end"
@@ -44,11 +48,11 @@ if [ "${tracesummary}" != "" ]; then
    ulimit -v $LIMIT
 
    export PYTHONPATH=${libdirinternal}:$PYTHONPATH
-   nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwith" >$output
+   nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwidth" >$output
 
    ${scriptsdir}/send-mail "$subject" <$output
-   ${scriptsdir}/archive-log $output $output_basename $3 $4 $5
-fi   
+   ${scriptsdir}/archive-log $output $output_basename $open $close $terminating "ascii"
+fi
 
 
 

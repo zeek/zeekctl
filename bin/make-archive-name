@@ -3,13 +3,17 @@
 # Returns a path for archived log files. This script is called
 # once for each log file being archived. Usage is:
 #
-# make-archive-name <basename> <timestamp-when-opened> [<timestamp-when-closed>]
+# make-archive-name <basename> <writer> <timestamp-when-opened> [<timestamp-when-closed>]
 #
 #   basename: The base file name of the log file being archived (e.g., conn.log).
+#   writer:   The name of the log writer type that produced the file.
 #   timestamp-when-opened: The timestamp when the log file being archived was created. 
 #   timestamp-when-closed: The timestamp when the log file being archived was finished. 
 #                          Optional. If not given, the name is used to create a link to 
 #                          the current live version of the file.
+#
+# The writer is derived from the WRITER_* constants and lower-cased; e.g., "ascii"
+# for Log::WRITER_ASCII.
 #
 # Times are given in the form "year-month-day-hour-minute-second",
 # e.g., "2010-03-30-13-12-04"
@@ -22,18 +26,20 @@
 # script should return the filename without any .gz extension; that
 # extension will be appended later.
 
-name=$1
-opened=$2
-closed=$3
+ext=`echo $1 | sed 's/^.*\.//'`
+name=`basename $1 .$ext`
+writer=$2
+opened=$3
+closed=$4
 
 day=`echo $opened  | awk -F - '{printf "%s-%s-%s", $1, $2, $3}'`
 from=`echo $opened | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 to=`echo $closed | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 
 if [ "$closed" != "" ]; then
-   echo $day/$name.$from-$to
+   echo $day/$name.$from-$to.$ext
 else
-   echo $day/$name.$from-current
-fi   
+   echo $day/$name.$from-current.$ext
+fi
 
 

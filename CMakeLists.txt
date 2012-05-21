@@ -137,12 +137,7 @@ install(DIRECTORY scripts/
         FILES_MATCHING
         PATTERN "*.bro")
 
-if ( "${BRO_ETC_INSTALL_DIR}" STREQUAL "" )
-    set(ETC ${BRO_ROOT_DIR}/etc)
-else ()
-    set(ETC ${BRO_ETC_INSTALL_DIR})
-endif ()
-
+set(ETC ${BRO_ETC_INSTALL_DIR})
 
 # These are needed for the default broctl.cfg file but they may be changed
 # below for packaging reasons.

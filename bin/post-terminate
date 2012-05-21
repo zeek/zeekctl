@@ -1,11 +1,11 @@
-#! /usr/bin/env bash 
+#! /usr/bin/env bash
 #
 # Cleans-up after termination.
 #
 # post-terminate <dir> [crash]
 #
 # If $2 is "crash", then the scripts assumes that Bro crashed and will return
-# information about the crash on stdout which is suitable for mailing to the user. 
+# information about the crash on stdout which is suitable for mailing to the user.
 
 . `dirname $0`/broctl-config.sh
 
@@ -14,7 +14,7 @@ dir=$1
 crash=0
 if [ "$2" == "crash" ]; then
    crash=1
-fi   
+fi
 
 if [ ! -d $dir ]; then
    echo No $dir
@@ -29,10 +29,10 @@ if [ "$crash" = "1" ]; then
    ${scriptsdir}/crash-diag $dir
    tmp=$tmp-crash
    archive_flags="-c" # Don't delete log files in work dir.
-fi    
+fi
 
-if [ ! -d ${tmpdir} ]; then 
-   mkdir ${tmpdir} 
+if [ ! -d ${tmpdir} ]; then
+   mkdir ${tmpdir}
 fi
 
 mv $dir $tmp 2>/dev/null
@@ -41,7 +41,7 @@ mkdir $dir 2>/dev/null
 
 if [ -d $tmp/.state ]; then
    mv $tmp/.state $dir 2>/dev/null
-fi   
+fi
 
 cd $tmp
 
@@ -68,7 +68,7 @@ fi
             strt=`cat .rotated.$basename`
         fi
         end=`date +%y-%m-%d_%H.%M.%S`
-        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 "$tag" >/dev/null &
+        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 ascii >/dev/null &
     fi
 
     ${scriptsdir}/remove-link-for-log $i
