@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# update <destination> <Bro args>
+# update <destination host> <zone_id> <destination port> <Bro args>
 
 . `dirname $0`/broctl-config.sh
 
@@ -10,6 +10,8 @@ use_installed_policies=1
 source ${scriptsdir}/set-bro-path
 
 host=$1
+shift
+zone=$1
 shift
 port=$1
 shift
@@ -21,7 +23,12 @@ rm -rf $dir
 mkdir $dir
 cd $dir
 
-${bro} $args frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
+zone_arg=""
+if [ "$zone" != "NOZONE" ]; then
+    zone_arg="Control::zone_id=$zone"
+fi
+
+${bro} $args frameworks/control/controller "Control::host=$host" $zone_arg "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?
 
 cat out.log | egrep -v "warning: no such host|received termination signal"

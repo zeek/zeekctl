@@ -294,3 +294,39 @@ def force_symlink(src, dst):
         if e.errno == errno.EEXIST:
             os.remove(dst)
             os.symlink(src, dst)
+
+# Returns an IP address string suitable for embedding in a Bro script,
+# for IPv6 colon-hexadecimal address strings, that means surrounding it
+# with square brackets.
+def formatBroAddr(addr):
+    if addr.find(':') == -1:
+        return addr
+    else:
+        return "[" + addr + "]"
+
+# Returns an IP prefix string suitable for embedding in a Bro script,
+# for IPv6 colon-hexadecimal prefix strings, that means surrounding the
+# IP address part with square brackets.
+def formatBroPrefix(prefix):
+    if prefix.find(':') == -1:
+        return prefix
+    else:
+        parts = prefix.split('/')
+        return "[" + parts[0] + "]" + "/" + parts[1]
+
+# Returns an IP address string suitable for use with rsync, which requires
+# encasing IPv6 addresses in square brackets, and some shells may require
+# quoting the brackets.
+def formatRsyncAddr(addr):
+    if addr.find(':') == -1:
+        return addr
+    else:
+        return "'[" + addr + "]'"
+
+# Scopes a non-global IPv6 address with a zone identifier according to RFC 4007
+def scopeAddr(addr):
+    zoneid=config.Config.zoneid
+    if addr.find(':') == -1 or zoneid == "":
+        return addr
+    else:
+        return addr + "%" + zoneid
