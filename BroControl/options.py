@@ -32,6 +32,8 @@ options = [
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node."),
+    Option("AlarmMailInterval", "86400", "int", Option.USER, False,
+           "The frequency of sending alarm summaries in seconds for the manager/standalone node."),
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
            "Directory for archived log files."),
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
@@ -47,7 +49,7 @@ options = [
     Option("MailReplyTo", "", "string", Option.USER, False,
            "Reply-to address for broctl-generated mails."),
     Option("MailTo", "<user>", "string", Option.USER, True,
-           "Destination address for broctl-generated non-alarm mails. Default is to use the same address as +MailTo+."),
+           "Destination address for broctl-generated non-alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
