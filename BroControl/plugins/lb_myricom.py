@@ -13,7 +13,7 @@ class LBMyricom(BroControl.plugin.Plugin):
     def pluginVersion(self):
         return 1
 
-    def cmd_install_pre(self):
+    def init(self):
         for nn in self.nodes():
             if nn.type != "worker":
                 continue
