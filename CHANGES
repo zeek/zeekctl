@@ -1,4 +1,24 @@
 
+1.0-38 | 2012-05-24 17:42:37 -0700
+
+  * Improvements to IPv6 support. (Jon Siwek)
+
+    - Add ability to manage a cluster over non-global IPv6 scope (e.g.
+      link-local), by specifying "zone_id" keys per node in node.cfg
+      and "ZoneID" option in broctl.cfg.
+
+    - Replace socket.gethostbyname lookups with socket.getaddrinfo to
+      support IPv6.
+
+    - ::1 is now recognized as the IPv6 loopback and a "local" address
+      where before 127.0.0.1 was expected.
+
+    - Update usages of ping, ssh, rsync, and ifconfig to work with IPv6
+      addresses.
+
+    - New "IPv6Comm" option in broctl.cfg can be set to 0 to turn off
+      IPv6-based communication capabilities (on by default).
+
 1.0-35 | 2012-05-17 11:57:30 -0700
 
   * BroControl tweaks to support non-ASCII logs. (Robin)

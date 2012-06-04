@@ -55,10 +55,12 @@ def isLocal(node):
             util.warn("cannot get list of local IP addresses")
 
             try:
-                # This does not work for multi-homed hosts.
-                LocalAddrs = [socket.gethostbyname(socket.gethostname()), "127.0.0.1"]
+                LocalAddrs = ["127.0.0.1", "::1"]
+                addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
+                for ai in addrinfo:
+                    LocalAddrs.append(ai[4][0])
             except:
-                LocalAddrs = ["127.0.0.1"]
+                LocalAddrs = ["127.0.0.1", "::1"]
         else:
             LocalAddrs = [line.strip() for line in output]
 
@@ -171,20 +173,20 @@ def install(host, src, dst):
         util.error("install() not yet supported for remote hosts")
         return False
 
-# rsyns paths from localhost to destination hosts.
+# rsyncs paths from localhost to destination hosts.
 def sync(nodes, paths):
 
     cmds = []
     for n in nodes:
         args = ["-rRl", "--delete", "--rsh=\"ssh -o ConnectTimeout=30\""]
-        dst = ["%s:/" % n.host]
+        dst = ["%s:/" % util.formatRsyncAddr(util.scopeAddr(n.host))]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
         cmds += [(n, cmdline, "", None)]
 
     for (id, success, output) in runLocalCmdsParallel(cmds):
         if not success:
-            util.warn("error rsyncing to %s: %s" % (id.host, output))
+            util.warn("error rsyncing to %s: %s" % (util.scopeAddr(id.host), output))
 
 # Checks whether the given host is alive.
 _deadHosts = {}
@@ -194,7 +196,7 @@ def isAlive(host):
     if host in _deadHosts:
         return False
 
-    (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + host)
+    (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + util.scopeAddr(host))
 
     if not success and not config.Config.cron == "1":
         _deadHosts[host] = True
@@ -427,7 +429,7 @@ def _getConnection(host):
         if not isAlive(host.host):
             return None
 
-        cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, host.host)
+        cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
 
     util.debug(1, cmdline, prefix="local")
 
@@ -527,8 +529,10 @@ def sendEventsParallel(events):
 
 def _sendEventInit(node, event, args, result_event):
 
+    host = util.scopeAddr(node.addr)
+
     try:
-        bc = broccoli.Connection("%s:%d" % (node.addr, node.getPort()), broclass="control",
+        bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
                                  flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False

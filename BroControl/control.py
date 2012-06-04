@@ -963,6 +963,9 @@ def capstats(nodes, interval):
 def update(nodes):
 
     running = isRunning(nodes)
+    zone = config.Config.zoneid
+    if zone == "":
+        zone = "NOZONE"
 
     cmds = []
     for (node, isrunning) in running:
@@ -970,7 +973,7 @@ def update(nodes):
             env = _makeEnvParam(node)
             env += " BRO_DNS_FAKE=1"
             args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.name, os.path.join(config.Config.scriptsdir, "update") + " %s %s/tcp %s" % (node.addr, node.getPort(), args), env, None)]
+            cmds += [(node.name, os.path.join(config.Config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.formatBroAddr(node.addr), zone, node.getPort(), args), env, None)]
             util.output("updating %s ..." % node.name)
 
     results = execute.runLocalCmdsParallel(cmds)

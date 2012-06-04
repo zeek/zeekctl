@@ -235,7 +235,13 @@ class Configuration:
                 node.__dict__[key] = val
 
             try:
-                node.addr = socket.gethostbyname(node.host)
+                addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
+                if len(addrinfo) == 0:
+                    util.error("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
+
+                addr_str = addrinfo[0][4][0]
+                # zone_id is handled manually, so strip it if it's there
+                node.addr = addr_str.split('%')[0]
             except AttributeError:
                 util.error("%s: no host given in section '%s'" % (file, sec))
             except socket.gaierror, e:
@@ -295,8 +301,8 @@ class Configuration:
                 if not execute.isLocal(n):
                     util.error("script must be run on manager node")
 
-                if n.addr == "127.0.0.1" and n.type != "standalone":
-                    util.error("cannot use localhost/127.0.0.1 for manager host in nodes configuration")
+                if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
+                    util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):
