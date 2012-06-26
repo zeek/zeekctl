@@ -175,9 +175,6 @@ options = [
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 
-    Option("CronEnabled", "1", "bool", Option.INTERNAL, False,
-           "True if cron command is enabled; if False, cron is silently ignored."),
-
     Option("Home", "", "string", Option.INTERNAL, False,
            "User's home directory."),
 

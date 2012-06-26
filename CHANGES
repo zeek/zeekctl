@@ -1,4 +1,10 @@
 
+1.0-40 | 2012-06-06 11:52:06 -0700
+
+    * Fix the "cron disable" command, which didn't work. This also
+      removes the config option CronEnabled. The command is now the
+      only way to turn off cron operation. (Daniel Thayer)
+
 1.0-38 | 2012-05-24 17:42:37 -0700
 
   * Improvements to IPv6 support. (Jon Siwek)
