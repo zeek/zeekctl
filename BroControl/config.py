@@ -256,10 +256,25 @@ class Configuration:
 
             node.count = counts[type]
 
-            if node.lb_procs and int(node.lb_procs) > 1:
+            if node.lb_procs:
+                try:
+                    numprocs = int(node.lb_procs)
+                    if numprocs < 1:
+                        util.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
+                except ValueError:
+                    util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+
+                if not node.lb_method:
+                    util.error("%s: no load balancing method given in section '%s'" % (file, sec))
+                if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+                    util.error("%s: unknown load balancing method given in section '%s'" % (file, sec))
                 if node.lb_method == "interfaces":
+                    if not node.lb_interfaces:
+                        util.error("%s: no list of interfaces given in section '%s'" % (file, sec))
                     # get list of interfaces to use, and assign one to each node
                     netifs = node.lb_interfaces.split(",")
+                    if len(netifs) != int(node.lb_procs):
+                        util.error("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
                     node.interface = netifs.pop().strip()
                 # node names will have a numerical suffix
                 node.name += "-1"
