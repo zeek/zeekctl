@@ -1,4 +1,15 @@
 
+1.0-43 | 2012-07-02 15:40:01 -0700
+
+  * Improve README. Rewrote the section on site-specific customization
+    so that it is more clear about the load order of scripts relevant
+    to site-specific customization.  Removed the description of
+    several features that don't seem to work: "worker-1.local.bro" is
+    not automatically loaded, there is no example policy in
+    local-manager.bro, local-manager.bro and local-worker.bro do not
+    automatically load local.bro, and proxies do not automatically
+    load local-worker.bro. (Daniel Thayer)
+
 1.0-40 | 2012-06-06 11:52:06 -0700
 
     * Fix the "cron disable" command, which didn't work. This also
