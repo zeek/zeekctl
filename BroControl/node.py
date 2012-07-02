@@ -30,6 +30,18 @@ class Node:
         ``interface`` (string)
             The network interface for Bro to use; empty if not set.
 
+        ``lb_procs`` (integer)
+            The number of clustered Bro workers you'd like to start up.
+
+        ``lb_method`` (string)
+            The load balancing method to distribute packets to all of the 
+            processes (must be one of: ``pf_ring``, ``myricom``, or
+            ``interfaces``).
+
+        ``lb_interfaces`` (string)
+            If the load balancing method is ``interfaces``, then this is
+            a comma-separated list of network interface names to use.
+
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
 
@@ -49,12 +61,17 @@ class Node:
     ``node.cfg``).
     """
 
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1, "zone_id": 1 }
+    # Valid keys in nodes file. The values will be stored in attributes of the
+    # same name. Custom keys can be add via addKey().
+    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
+              "brobase": 1, "ether": 1, "zone_id": 1,
+              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1 }
 
 
     def __init__(self, name):
         """Instantiates a new node of the given name."""
         self.name = name
+        self.env_vars = []
 
         for key in Node._keys:
             self.__dict__[key] = ""
@@ -131,10 +148,6 @@ class Node:
         """
         t = "%s-port" % self.name.lower()
         return t in config.Config.state and int(config.Config.state[t]) or -1
-
-    # Valid keys in nodes file. The values will be stored in attributes of the
-    # same name. Custom keys can be add via addKey().
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, "brobase": 1, "ether": 1, "zone_id": 1 }
 
     @staticmethod
     def addKey(kw):

@@ -1,4 +1,23 @@
 
+1.0-58 | 2012-07-02 15:55:06 -0700
+
+  * Improvements to built-in load-balancing support. Instead of adding
+    a separate worker entry in node.cfg for each Bro worker process on
+    each worker host, it is now possible to just specify the number of
+    worker processes on each host. (Daniel Thayer)
+
+    This change adds three new keywords to the node.cfg file (to be
+    used with worker entries): lb_procs (specifies number of workers
+    on a host), lb_method (specifies what type of load balancing to
+    use: pf_ring, myricom, or interfaces), and lb_interfaces (used
+    only with "lb_method=interfaces" to specify which interfaces to
+    load-balance on).
+
+    Two new broctl plugins (which operate automatically and the user
+    doesn't need to be aware of them) are added to set the appropriate
+    environment variables when either PF_RING or myricom
+    load-balancing is being used.
+
 1.0-43 | 2012-07-02 15:40:01 -0700
 
   * Improve README. Rewrote the section on site-specific customization
