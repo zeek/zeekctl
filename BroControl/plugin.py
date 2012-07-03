@@ -38,7 +38,7 @@ class Plugin(object):
     corresponds to those nodes for which the command was actually executed
     (i.e., after any ``cmd_<XXX>_pre`` filtering). Each node is given as a
     tuple ``(node, bool)`` with *node* being the actual `Node`_, and the boolean
-    indicating whether the command was succesful for it.
+    indicating whether the command was successful for it.
 
     Note that if a plugin prevents a command from executing either completely or
     partially, it should report its reason via the ``message*()`` or

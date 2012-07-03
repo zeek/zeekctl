@@ -44,11 +44,9 @@ Prerequisites
 Running *BroControl* requires the following prerequisites:
 
   - A Unix system. FreeBSD, Linux, and MacOS are supported and
-    should work out of the box. Note however that FreeBSD usually
-    sees more testing as it is Bro's primary development platform.
-    Other Unix systems will quite likely require some tweaking. Note
-    that in a cluster setup, all systems must be running exactly the
-    *same* operating system.
+    should work out of the box. Other Unix systems will quite likely
+    require some tweaking. Note that in a cluster setup, all systems
+    must be running exactly the *same* operating system.
 
   - A version of *Python* >= 2.6.
 
@@ -378,11 +376,10 @@ Questions and Answers
     ``SpoolDir=<spath>`` to ``etc/broctl.cfg``, where ``<spath>`` is a
     path on the local disks of the nodes; ``<spath>`` will be used for
     all non-shared data (make sure that the parent directory exists
-    and is writable on all nodes!). Then run xref:cmd_install[+make
-    install-broctl+] again. Finally, you can remove
-    ``<BroBase>/spool`` (or link it to <spath>). In addition, you
-    might want to keep the log files locally on the nodes as well by
-    setting LogDir_ to a non-NFS directory. (Only
+    and is writable on all nodes!). Then run ``make install`` again.
+    Finally, you can remove ``<BroBase>/spool`` (or link it to <spath>).
+    In addition, you might want to keep the log files locally on the nodes
+    as well by setting LogDir_ to a non-NFS directory. (Only
     the manager's logs will be kept permanently, the logs of
     workers/proxies are discarded upon rotation.)
 
@@ -406,7 +403,7 @@ Questions and Answers
     can use as a template for creating your own version. See
     the beginning of that script for instructions.
 
-*Can BroControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local) ?*
+*Can BroControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local)?*
     Yes, set ``ZoneID`` in ``etc/broctl.cfg`` to the zone identifier
     that the BroControl node uses to identify the scope zone
     (the ``ifconfig`` command output is usually helpful, if it doesn't
@@ -416,7 +413,5 @@ Questions and Answers
     representing that particular node's zone identifier and set
     the ``host`` key to the IPv6 address assigned to the node within
     the scope zone.  Most nodes probably have the same ``zone_id``, but
-    may not be if their interface configuration differs.  The result is
-    that BroControl internally appends the right zone identifiers
-    when necessary.  See RFC 4007 for more information on IPv6 scoped
-    addresses and zones.
+    may not if their interface configuration differs.  See RFC 4007 for
+    more information on IPv6 scoped addresses and zones.
