@@ -1,4 +1,8 @@
 
+1.0-60 | 2012-07-05 12:31:02 -0700
+
+  * Small updates to BroControl docs. (Daniel Thayer)
+
 1.0-58 | 2012-07-02 15:55:06 -0700
 
   * Improvements to built-in load-balancing support. Instead of adding
