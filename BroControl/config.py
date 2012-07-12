@@ -5,6 +5,7 @@ import sys
 import socket
 import imp
 import re
+import copy
 
 import ConfigParser
 
@@ -20,7 +21,7 @@ import util
 # This class provides access to four types of configuration/state:
 #
 # - the global broctl configuration from broctl.cfg
-# - the node configuration from nodes.cfg
+# - the node configuration from node.cfg
 # - dynamic state variables which are kept across restarts in spool/broctl.dat
 
 Config = None # Globally accessible instance of Configuration.
@@ -64,7 +65,7 @@ class Configuration:
     def initPostPlugins(self):
         plugin.Registry.addNodeKeys()
 
-        # Read nodes.cfg and broctl.dat.
+        # Read node.cfg and broctl.dat.
         self._readNodes()
         self.readState()
 
@@ -185,7 +186,7 @@ class Configuration:
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
 
-    # Parse nodes.cfg.
+    # Parse node.cfg.
     def _readNodes(self):
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
@@ -254,6 +255,47 @@ class Configuration:
                 counts[type] = 1
 
             node.count = counts[type]
+
+            if node.lb_procs:
+                try:
+                    numprocs = int(node.lb_procs)
+                    if numprocs < 1:
+                        util.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
+                except ValueError:
+                    util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+
+                if not node.lb_method:
+                    util.error("%s: no load balancing method given in section '%s'" % (file, sec))
+
+                if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+                    util.error("%s: unknown load balancing method given in section '%s'" % (file, sec))
+
+                if node.lb_method == "interfaces":
+                    if not node.lb_interfaces:
+                        util.error("%s: no list of interfaces given in section '%s'" % (file, sec))
+
+                    # get list of interfaces to use, and assign one to each node
+                    netifs = node.lb_interfaces.split(",")
+
+                    if len(netifs) != int(node.lb_procs):
+                        util.error("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
+
+                    node.interface = netifs.pop().strip()
+
+                # node names will have a numerical suffix
+                node.name = "%s-1" % sec
+
+                for num in xrange(2, int(node.lb_procs) + 1):
+                    newnode = copy.deepcopy(node)
+                    # only the node name and count need to be changed
+                    newname = "%s-%d" % (sec, num)
+                    newnode.name = newname
+                    self.nodelist[newname] = newnode
+                    counts[type] += 1
+                    newnode.count = counts[type]
+
+                    if newnode.lb_method == "interfaces":
+                        newnode.interface = netifs.pop().strip()
 
         if self.nodelist:
 

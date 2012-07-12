@@ -1,4 +1,46 @@
 
+1.0-64 | 2012-07-10 16:07:50 -0700
+
+  * Remove automatic override of config file directory with /usr prefix.
+
+  * Small updates to BroControl docs. (Daniel Thayer)
+
+1.0-58 | 2012-07-02 15:55:06 -0700
+
+  * Improvements to built-in load-balancing support. Instead of adding
+    a separate worker entry in node.cfg for each Bro worker process on
+    each worker host, it is now possible to just specify the number of
+    worker processes on each host. (Daniel Thayer)
+
+    This change adds three new keywords to the node.cfg file (to be
+    used with worker entries): lb_procs (specifies number of workers
+    on a host), lb_method (specifies what type of load balancing to
+    use: pf_ring, myricom, or interfaces), and lb_interfaces (used
+    only with "lb_method=interfaces" to specify which interfaces to
+    load-balance on).
+
+    Two new broctl plugins (which operate automatically and the user
+    doesn't need to be aware of them) are added to set the appropriate
+    environment variables when either PF_RING or myricom
+    load-balancing is being used.
+
+1.0-43 | 2012-07-02 15:40:01 -0700
+
+  * Improve README. Rewrote the section on site-specific customization
+    so that it is more clear about the load order of scripts relevant
+    to site-specific customization.  Removed the description of
+    several features that don't seem to work: "worker-1.local.bro" is
+    not automatically loaded, there is no example policy in
+    local-manager.bro, local-manager.bro and local-worker.bro do not
+    automatically load local.bro, and proxies do not automatically
+    load local-worker.bro. (Daniel Thayer)
+
+1.0-40 | 2012-06-06 11:52:06 -0700
+
+    * Fix the "cron disable" command, which didn't work. This also
+      removes the config option CronEnabled. The command is now the
+      only way to turn off cron operation. (Daniel Thayer)
+
 1.0-38 | 2012-05-24 17:42:37 -0700
 
   * Improvements to IPv6 support. (Jon Siwek)

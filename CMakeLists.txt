@@ -160,7 +160,9 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
     # post install script will make sure to set the sticky bit to prevent
     # unprivileged users from removing/renaming files.
     if (${CMAKE_INSTALL_PREFIX} STREQUAL /usr)
-        set(ETC /etc)
+        # Don't make any assumption for config file install dir.  The default
+        # of /usr/etc/ is usually wrong, but it's always explicitly configurable
+        # with --conf-files-dir.
         set(VAR /var)
         # TODO: Consult FHS to see if these are appropriate. Also,
         #       packaging should do something more to protect the
