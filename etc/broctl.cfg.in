@@ -8,6 +8,10 @@ MailTo = root@localhost
 # and can be customized as desired.
 SitePolicyStandalone = local.bro
 
+# Location of other configuration files that can be used to customize
+# BroControl operation (e.g. local networks, nodes).
+CfgDir = ${ETC}
+
 # Location of the spool directory where files and data that are currently being
 # written are stored.
 SpoolDir = ${SPOOL}
