@@ -15,6 +15,10 @@ import atexit
 # Base directory of broctl installation.
 BroBase = "@PREFIX@"
 
+# Configured by CMake
+# Base directory of broctl configuration files.
+BroCfgDir = "@ETC@"
+
 # Version of the broctl distribution.
 Version = "@VERSION@"
 
@@ -864,7 +868,7 @@ def saveState(loop):
         print >>sys.stderr, "abnormal termination, saving state ..."
         Config.writeState()
 
-Config = config.Configuration("etc/broctl.cfg", BroBase, Version)
+Config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), BroBase, Version)
 
 for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
     if dir:

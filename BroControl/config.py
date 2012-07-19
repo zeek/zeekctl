@@ -35,7 +35,7 @@ class Configuration:
         self.state = {}
 
         # Read broctl.cfg.
-        self.config = self._readConfig(os.path.join(basedir, config))
+        self.config = self._readConfig(config)
 
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
