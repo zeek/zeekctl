@@ -1,4 +1,14 @@
 
+1.0-68 | 2012-07-20 07:02:27 -0700
+
+  * Fix broctl startup when using custom config file dirs. (Jon Siwek)
+
+  * Change crash report info to include stack traces from all threads.
+    (Jon Siwek)
+
+  * Changed the invocation of gdb that produces the crash report. (Jon
+    Siwek)
+
 1.0-64 | 2012-07-10 16:07:50 -0700
 
   * Remove automatic override of config file directory with /usr prefix.
