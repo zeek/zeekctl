@@ -1,5 +1,5 @@
 
-1.0-68 | 2012-07-20 07:02:27 -0700
+1.1-beta | 2012-07-20 07:03:21 -0700
 
   * Fix broctl startup when using custom config file dirs. (Jon Siwek)
 
