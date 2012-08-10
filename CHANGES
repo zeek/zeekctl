@@ -1,4 +1,12 @@
 
+1.1-beta-6 | 2012-08-10 12:32:46 -0700
+
+  * Fix MailAlarmsTo broctl config option. Addresses #814. (Daniel
+    Thayer)
+
+  * Fix configure script to exit with non-zero status on error. (Jon
+    Siwek)
+
 1.1-beta-2 | 2012-08-10 12:29:56 -0700
 
   * Updates to disable STDERR printing from the reporter framework.

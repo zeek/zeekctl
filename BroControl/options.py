@@ -42,17 +42,17 @@ options = [
     Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
            "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time."),
     Option("MailSubjectPrefix", "[Bro]", "string", Option.USER, False,
-           "General Subject prefix for broctl-generated mails."),
+           "General Subject prefix for mails."),
 
     Option("MailReplyTo", "", "string", Option.USER, False,
            "Reply-to address for broctl-generated mails."),
     Option("MailTo", "<user>", "string", Option.USER, True,
-           "Destination address for broctl-generated non-alarm mails. Default is to use the same address as +MailTo+."),
+           "Destination address for non-alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
            "Originator address for broctl-generated mails."),
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
-           "Destination address for broctl-generated alarm mails."),
+           "Destination address for alarm summary mails. Default is to use the same address as MailTo."),
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
