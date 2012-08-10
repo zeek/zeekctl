@@ -1,4 +1,9 @@
 
+1.1-beta-2 | 2012-08-10 12:29:56 -0700
+
+  * Updates to disable STDERR printing from the reporter framework.
+    (Seth Hall)
+
 1.1-beta | 2012-07-20 07:03:21 -0700
 
   * Fix broctl startup when using custom config file dirs. (Jon Siwek)
