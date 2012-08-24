@@ -646,7 +646,7 @@ User Options
 .. _MailAlarmsTo:
 
 *MailAlarmsTo* (string, default "$\{MailTo}")
-    Destination address for broctl-generated alarm mails.
+    Destination address for alarm summary mails. Default is to use the same address as MailTo.
 
 .. _MailFrom:
 
@@ -661,12 +661,12 @@ User Options
 .. _MailSubjectPrefix:
 
 *MailSubjectPrefix* (string, default "[Bro]")
-    General Subject prefix for broctl-generated mails.
+    General Subject prefix for mails.
 
 .. _MailTo:
 
 *MailTo* (string, default "<user>")
-    Destination address for broctl-generated non-alarm mails. Default is to use the same address as +MailTo+.
+    Destination address for non-alarm mails.
 
 .. _MakeArchiveName:
 
