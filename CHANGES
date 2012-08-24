@@ -1,5 +1,5 @@
 
-1.1 | 2012-08-24 15:04:28 -0700
+1.1 | 2012-08-24 15:09:04 -0700
 
   * Fix MailAlarmsTo broctl config option. Addresses #814. (Daniel
     Thayer)
