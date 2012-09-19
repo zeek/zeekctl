@@ -142,7 +142,7 @@ options = [
            "Directory where standard plugins are located."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
-           "Path to trace-summary script; empty if not available."),
+           "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary emails."),
     Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False,
            "Path to capstats binary; empty if not available."),
 
