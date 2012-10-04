@@ -1,0 +1,6 @@
+#!/bin/sh
+# After configured by CMake, this file prints the absolute path to Bro
+# installation.
+#
+
+echo @PREFIX@
