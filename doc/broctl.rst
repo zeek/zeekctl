@@ -607,6 +607,16 @@ User Options
 *CompressLogs* (bool, default 1)
     True to gzip archived log files.
 
+.. _CompressCmd:
+
+*CompressCmd* (string, default "gzip -9")
+    Command to use to compress archived log files.
+
+.. _CompressExtension:
+
+*CompressExtension* (string, default "gz")
+    File extension for compressed log files.
+
 .. _CronCmd:
 
 *CronCmd* (string, default _empty_)
