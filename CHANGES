@@ -1,4 +1,9 @@
 
+1.1-10 | 2012-10-19 15:10:20 -0700
+
+  * Fix `broctl install` to now also copy subdirs in SitePolicyPath.
+    Addresses #902. (Jon Siwek)
+
 1.1-8 | 2012-10-19 14:52:23 -0700
 
   * Add options CompressCmd and CompressExtension to customize log

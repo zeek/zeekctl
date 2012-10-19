@@ -98,6 +98,9 @@ def install(local_only):
             for file in glob.glob(os.path.join(dir, "*")):
                 if execute.isfile(manager, file):
                     execute.install(manager, file, dst)
+                elif execute.isdir(manager, file):
+                    dstdir = os.path.join(dst, os.path.basename(file))
+                    execute.install(manager, file, dstdir)
         util.output(" done.")
 
     makeLayout(config.Config.policydirsiteinstallauto)
