@@ -227,6 +227,7 @@ def _makeCrashReports(nodes):
     for n in nodes:
         plugin.Registry.broProcessDied(n)
 
+    msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro-ids.org\n"
     cmds = []
     for node in nodes:
         cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]
@@ -235,7 +236,7 @@ def _makeCrashReports(nodes):
         if not success:
             util.output("cannot run post-terminate for %s" % node.name)
         else:
-            util.sendMail("Crash report from %s" % node.name, "\n".join(output))
+            util.sendMail("Crash report from %s" % node.name, msg + "\n".join(output))
 
         node.clearCrashed()
 
