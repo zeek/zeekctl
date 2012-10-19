@@ -1,4 +1,9 @@
 
+1.1-8 | 2012-10-19 14:52:23 -0700
+
+  * Add options CompressCmd and CompressExtension to customize log
+    compressions scheme. (Justin Azoff)
+
 1.1-3 | 2012-09-25 06:23:34 -0700
 
   * Updates to documentation. (Daniel Thayer)
