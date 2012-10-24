@@ -1,4 +1,10 @@
 
+1.1-12 | 2012-10-24 15:53:48 -0700
+
+    * Add a message at the top of broctl-generated crash report emails
+      that explains how to submit the crash report to a mailing list
+      address. Addresses #876. (Daniel Thayer)
+
 1.1-10 | 2012-10-19 15:10:20 -0700
 
   * Fix `broctl install` to now also copy subdirs in SitePolicyPath.
