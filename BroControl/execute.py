@@ -145,7 +145,7 @@ def isdir(host, path):
         return success
 
 # Copies src to dst, preserving permission bits.
-# Works for files and directories (non-recursive).
+# Works for files and directories (recursive).
 def install(host, src, dst):
     if isLocal(host):
         if not exists(host, src):
@@ -162,7 +162,10 @@ def install(host, src, dst):
         util.debug(1, "cp %s %s" % (src, dst))
 
         try:
-            shutil.copy2(src, dst)
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+            elif os.path.isdir(src):
+                shutil.copytree(src, dst)
         except OSError:
             # Python 2.6 has a bug where this may fail on NFS. So we just
             # ignore errors.

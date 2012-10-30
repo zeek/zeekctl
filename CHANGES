@@ -1,4 +1,47 @@
 
+1.1-12 | 2012-10-24 15:53:48 -0700
+
+    * Add a message at the top of broctl-generated crash report emails
+      that explains how to submit the crash report to a mailing list
+      address. Addresses #876. (Daniel Thayer)
+
+1.1-10 | 2012-10-19 15:10:20 -0700
+
+  * Fix `broctl install` to now also copy subdirs in SitePolicyPath.
+    Addresses #902. (Jon Siwek)
+
+1.1-8 | 2012-10-19 14:52:23 -0700
+
+  * Add options CompressCmd and CompressExtension to customize log
+    compressions scheme. (Justin Azoff)
+
+1.1-3 | 2012-09-25 06:23:34 -0700
+
+  * Updates to documentation. (Daniel Thayer)
+    
+1.1 | 2012-08-24 15:09:04 -0700
+
+  * Fix MailAlarmsTo broctl config option. Addresses #814. (Daniel
+    Thayer)
+
+  * Fix configure script to exit with non-zero status on error. (Jon
+    Siwek)
+
+1.1-beta-2 | 2012-08-10 12:29:56 -0700
+
+  * Updates to disable STDERR printing from the reporter framework.
+    (Seth Hall)
+
+1.1-beta | 2012-07-20 07:03:21 -0700
+
+  * Fix broctl startup when using custom config file dirs. (Jon Siwek)
+
+  * Change crash report info to include stack traces from all threads.
+    (Jon Siwek)
+
+  * Changed the invocation of gdb that produces the crash report. (Jon
+    Siwek)
+
 1.0-64 | 2012-07-10 16:07:50 -0700
 
   * Remove automatic override of config file directory with /usr prefix.

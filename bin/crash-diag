@@ -11,12 +11,14 @@ cd $1
 core=`ls -t *core* 2>&1`
 
 if which gdb >/dev/null 2>&1; then
+    echo "thread apply all bt" >.gdb_cmds
     for c in $core; do
         if [ -e $c ]; then
             echo $c
-            echo "bt" | gdb --batch -x /dev/stdin ${bro} $c 2>/dev/null
+            gdb --batch -x .gdb_cmds ${bro} $c 2>/dev/null
         fi
     done
+    rm -f .gdb_cmds
 else
     echo "No gdb installed."
 fi

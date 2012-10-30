@@ -22,9 +22,9 @@
 # archived. If it's a relative path, it will be interpreted as
 # relative to BroControl's standard log directory. 
 #
-# Note that even though the logs will later be compressed, this
-# script should return the filename without any .gz extension; that
-# extension will be appended later.
+# Note that even if the logs will later be compressed, this script should
+# always return the filename without any compression extension (such as ".gz");
+# that extension will be appended later.
 
 ext=`echo $1 | sed 's/^.*\.//'`
 name=`basename $1 .$ext`

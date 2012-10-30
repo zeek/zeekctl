@@ -46,7 +46,7 @@ done
 
 if [ -e $1 ]; then
     if [ "${compresslogs}" == "1" -a "$writer" == "ascii" ]; then
-        nice gzip -9 <$1 >$dest.gz 2>/dev/null &
+        nice ${compresscmd} <$1 >$dest.${compressextension} 2>/dev/null &
     else
         nice cp $1 $dest &
     fi

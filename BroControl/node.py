@@ -9,8 +9,8 @@ import os
 class Node:
     """Class representing one node of the BroControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
-    a cluster setup, there is exactly one of type ``manager``, and zero or
-    more of type ``proxy`` and ``worker``.
+    a cluster setup, there is exactly one of type ``manager``, one or
+    more of type ``proxy``, and zero or more of type ``worker``.
 
     In addition to the methods described above, a ``Node`` object has a number
     of keys with values that are set via ``node.cfg`` and can be accessed

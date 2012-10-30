@@ -6,6 +6,7 @@ include(cmake/CommonCMakeConfig.cmake)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX "${CMAKE_INSTALL_PREFIX}")
+set(ETC "${BRO_ETC_INSTALL_DIR}")
 
 ########################################################################
 ## Dependency Configuration
@@ -137,13 +138,10 @@ install(DIRECTORY scripts/
         FILES_MATCHING
         PATTERN "*.bro")
 
-set(ETC ${BRO_ETC_INSTALL_DIR})
-
 # These are needed for the default broctl.cfg file but they may be changed
 # below for packaging reasons.
 set(SPOOL ${PREFIX}/spool)
 set(LOGS ${PREFIX}/logs)
-
 
 # Check the install prefixes to determine if we're creating a package
 # Packaging for Apple-based systems does not need special logic

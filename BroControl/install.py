@@ -98,6 +98,9 @@ def install(local_only):
             for file in glob.glob(os.path.join(dir, "*")):
                 if execute.isfile(manager, file):
                     execute.install(manager, file, dst)
+                elif execute.isdir(manager, file):
+                    dstdir = os.path.join(dst, os.path.basename(file))
+                    execute.install(manager, file, dstdir)
         util.output(" done.")
 
     makeLayout(config.Config.policydirsiteinstallauto)
@@ -328,6 +331,7 @@ def makeConfig(path, silent=False):
     out = open(filename, "w")
     print >>out, "# Automatically generated. Do not edit."
     print >>out, "redef Notice::mail_dest = \"%s\";" % config.Config.mailto
+    print >>out, "redef Notice::mail_dest_pretty_printed = \"%s\";" % config.Config.mailalarmsto
     print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
     print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
     if manager.type != "standalone":
