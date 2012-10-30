@@ -344,8 +344,9 @@ Mails
 *BroControl* sends four types of mails to the address given in
 ``MailTo``:
 
-1. A list of all alarms (since the last alarm mail was sent) is sent
-   every ``AlarmMailInterval`` seconds.
+1. When logs are rotated (per default once a day), a list of all
+   alarms during the last rotation interval is sent. This can be
+   disabled by setting ``MailAlarms=0``.
 
 2. When the ``cron`` command notices that a node has crashed, it
    restarts it and sends a notification. It may also send a more
@@ -354,7 +355,7 @@ Mails
 3. NOTICES with a notice action ``EMAIL``.
 
 4. If `trace-summary <http://www.bro-ids.org/documentation/components/trace-summary/README.html>`_
-   is installed, a traffic summary is sent each time logs are rotated.
+   is installed, a traffic summary is sent each rotation interval.
 
 Performance Analysis
 ~~~~~~~~~~~~~~~~~~~~
