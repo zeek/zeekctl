@@ -337,7 +337,7 @@ def makeConfig(path, silent=False):
     if manager.type != "standalone":
         print >>out, "@if ( Cluster::local_node_type() == Cluster::MANAGER )"
     print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
-    print >>out, "redef Log::default_alarm_mail_interval = %s secs;" % config.Config.alarmmailinterval
+    print >>out, "redef Log::default_mail_alarms_interval = %s secs;" % config.Config.mailalarmsinterval
     if manager.type != "standalone":
         print >>out, "@endif"
     if config.Config.ipv6comm:
