@@ -1,4 +1,10 @@
 
+1.1-18 | 2012-10-31 14:24:27 -0700
+
+  * Add new broctl.cfg option "MailAlarmsInterval" to allow user to
+    specify alarm mail interval. Default is once per day. (Daniel
+    Thayer)
+
 1.1-12 | 2012-10-24 15:53:48 -0700
 
     * Add a message at the top of broctl-generated crash report emails

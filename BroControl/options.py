@@ -57,6 +57,8 @@ options = [
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for alarm summary mails. Default is to use the same address as MailTo."),
+    Option("MailAlarmsInterval", "86400", "int", Option.USER, False,
+           "The frequency (in seconds) of sending alarm summary mails (zero to disable)."),
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
