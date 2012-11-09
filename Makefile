@@ -35,6 +35,10 @@ dist:
 distclean:
 	rm -rf $(BUILD)
 
+.PHONY : test
+test:
+	@make -C testing/btest
+
 .PHONY : doc
 doc:
 	cd doc && make

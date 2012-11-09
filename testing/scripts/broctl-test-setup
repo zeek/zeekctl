@@ -1,0 +1,28 @@
+#! /usr/bin/env bash
+#
+# Broctl test setup script used with the tests in broctl/testing/btest/*.
+# This script should be run at the start of each test to cleanup and
+# install the necessary files for each test.
+# Usage:  broctl-test-setup <broctl.cfg> <networks.cfg> <node.cfg>
+
+if [ -z "${INSTALL}" ]; then
+    echo "Error: INSTALL not defined in btest.cfg" > /dev/stderr
+    exit 1
+fi
+
+if [ ! -d "${INSTALL}" ]; then
+    echo "Error: directory $INSTALL does not exist" > /dev/stderr
+    exit 1
+fi
+
+# remove all files (not directories) in "spool" subdir
+rm -f "${INSTALL}"/spool/* 2> /dev/null
+
+# remove the installed scripts directory tree (in "spool" subdir)
+rm -rf "${INSTALL}/spool/installed-scripts-do-not-touch"
+
+# install test-specific files
+cp "${BROCTLCFG}/$1" "${INSTALL}/etc/broctl.cfg"
+cp "${BROCTLCFG}/$2" "${INSTALL}/etc/networks.cfg"
+cp "${BROCTLCFG}/$3" "${INSTALL}/etc/node.cfg"
+

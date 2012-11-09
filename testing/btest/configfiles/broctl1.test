@@ -1,9 +1,4 @@
-@TEST-EXEC: cp broctl.cfg $INSTALL/etc
+@TEST-EXEC: broctl-test-setup broctl2.cfg networks1.cfg node1.cfg
 @TEST-EXEC: broctl config | grep foo1 > out
 @TEST-EXEC: btest-diff out
 
-@TEST-START-FILE broctl.cfg
-sendmail=
-tracesummary=
-foo1=this is a test
-@TEST-END-FILE

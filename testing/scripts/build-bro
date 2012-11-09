@@ -1,0 +1,57 @@
+#! /usr/bin/env bash
+#
+# This script configures and builds bro for running the broctl tests.
+# Usage:  build-bro [cleanup]
+
+BROCTLSRCDIR=`dirname "$0"`/../..
+BROSRCDIR=${BROCTLSRCDIR}/../..
+PATHSCRIPT=${BROSRCDIR}/build/aux/broctl/broctl-path
+
+# directory pathname where bro will be installed for broctl test purposes
+TESTPREFIX=/tmp/broctltest
+
+if [ "$1" = "cleanup" ]; then
+    # attempt to remove only if the path is a directory
+    test -d "${TESTPREFIX}" && rm -rf "${TESTPREFIX}"
+
+    # if the path still exists, then something is wrong
+    if [ -e "${TESTPREFIX}" ]; then
+        echo "Error: unable to remove ${TESTPREFIX}"
+        exit 1
+    fi
+    exit
+fi
+
+# Verify that the bro git repo was cloned (not just the broctl repo)
+if [ ! -e "${BROSRCDIR}/configure" ]; then
+    echo "Error: configure script not found. Did you remember to clone the bro repo?"
+    exit 1
+fi
+
+RESTOREPREFIX=0
+
+# Get the original bro install prefix (if any)
+if [ -e "${PATHSCRIPT}" ]; then
+    ORIGPREFIX=`"${PATHSCRIPT}"`
+
+    # If original and test prefix differ, then restore original after building
+    if [ "${ORIGPREFIX}" != "${TESTPREFIX}" ]; then
+        RESTOREPREFIX=1
+    fi
+fi
+
+# Rebuild bro, using the broctl test install prefix
+(cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make && make install)
+
+# Copy the newly-built broctl test path script (this step is needed to
+# avoid referring to the original which might get overwritten in the next step,
+# and also in the case where someone manually rebuilds bro, then manually
+# runs btest on broctl tests)
+mkdir -p "${BROCTLSRCDIR}/build"
+cp "${PATHSCRIPT}" "${BROCTLSRCDIR}/build"
+
+# Restore (if necessary) the original bro install prefix
+if [ ${RESTOREPREFIX} -eq 1 ]; then
+    (cd "${BROSRCDIR}" && ./configure --prefix="${ORIGPREFIX}")
+fi
+

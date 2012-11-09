@@ -2,19 +2,17 @@
 DIAG=diag.log
 BTEST=../../../btest/btest
 
-all: cleanup btest-verbose
+all: cleanup buildbro btest-verbose
 
 # Showing all tests.
 btest-verbose:
 	@$(BTEST) -f $(DIAG)
 
-brief: cleanup btest-brief
-
-# Brief output showing only failed tests.
-btest-brief:
-	@$(BTEST) -b -f $(DIAG)
+buildbro:
+	@../scripts/build-bro
 
 cleanup:
 	@rm -f $(DIAG)
+	@../scripts/build-bro cleanup
 
-.PHONY: all btest-verbose brief btest-brief cleanup
+.PHONY: all btest-verbose buildbro cleanup

@@ -1,28 +1,5 @@
-@TEST-EXEC: cp broctl.cfg $INSTALL/etc
-@TEST-EXEC: cp node.cfg $INSTALL/etc
-@TEST-EXEC: cp networks.cfg $INSTALL/etc
+@TEST-EXEC: broctl-test-setup broctl1.cfg networks1.cfg node1.cfg
 @TEST-EXEC: broctl install
 @TEST-EXEC: grep -v "^#" $INSTALL/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out
 @TEST-EXEC: btest-diff out
 
-@TEST-START-FILE broctl.cfg
-
-sendmail=
-tracesummary=
-
-@TEST-END-FILE
-
-@TEST-START-FILE node.cfg
-
-[bro]
-type=standalone
-host=localhost
-interface=eth0
-
-@TEST-END-FILE
-
-@TEST-START-FILE networks.cfg
-
-192.168.0.0/16  my network
-
-@TEST-END-FILE
