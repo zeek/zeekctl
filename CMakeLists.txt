@@ -223,7 +223,7 @@ InstallPackageConfigFile(
 ## Packaging Setup
 
 # CPack RPM Generator may not automatically detect this
-set(CPACK_RPM_PACKAGE_REQUIRES "python >= 2.4.0")
+set(CPACK_RPM_PACKAGE_REQUIRES "python >= 2.6.0")
 
 # If this CMake project is a sub-project of another, we will not
 # configure the generic packaging because CPack will fail in the case
