@@ -334,6 +334,7 @@ def makeConfig(path, silent=False):
     print >>out, "redef Notice::mail_dest_pretty_printed = \"%s\";" % config.Config.mailalarmsto
     print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
     print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
+    print >>out, "redef Notice::mail_from  = \"%s\";" % config.Config.mailfrom;
     if manager.type != "standalone":
         print >>out, "@if ( Cluster::local_node_type() == Cluster::MANAGER )"
     print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
