@@ -53,7 +53,7 @@ options = [
     Option("MailTo", "<user>", "string", Option.USER, True,
            "Destination address for non-alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
-           "Originator address for broctl-generated mails."),
+           "Originator address for mails."),
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for alarm summary mails. Default is to use the same address as MailTo."),
