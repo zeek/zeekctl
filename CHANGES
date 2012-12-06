@@ -1,4 +1,8 @@
 
+1.1-23 | 2012-12-06 15:52:20 -0800
+
+  * Update documentation for recent MailFrom change. (Daniel Thayer)
+
 1.1-21 | 2012-12-06 08:34:14 -0800
 
   * MailFrom broctl.cfg option now adds a redef for Notice::mail_from.
