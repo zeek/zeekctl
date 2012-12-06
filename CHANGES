@@ -1,4 +1,11 @@
 
+1.1-21 | 2012-12-06 08:34:14 -0800
+
+  * MailFrom broctl.cfg option now adds a redef for Notice::mail_from.
+    (Jon Siwek)
+
+  * Bump CPack RPM package requirement to python >= 2.6.0. (Jon Siwek)
+    
 1.1-18 | 2012-10-31 14:24:27 -0700
 
   * Add new broctl.cfg option "MailAlarmsInterval" to allow user to
