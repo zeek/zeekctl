@@ -60,6 +60,9 @@ options = [
     Option("MailAlarmsInterval", "86400", "int", Option.USER, False,
            "The frequency (in seconds) of sending alarm summary mails (zero to disable)."),
 
+    Option("MailConnectionSummary", "1", "bool", Option.USER, False,
+           "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
+
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,
@@ -148,7 +151,7 @@ options = [
            "Directory where standard plugins are located."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
-           "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary emails."),
+           "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary reports."),
     Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False,
            "Path to capstats binary; empty if not available."),
 

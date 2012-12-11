@@ -38,11 +38,6 @@ output_basename=conn-summary
 export TIME="%E real, %U user, %S sys, %KK total memory"
 
 if [ "${tracesummary}" != "" ]; then
-   # Build subject
-   start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
-   end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
-   subject="Connection summary from $start-$end"
-
    LIMIT=${memlimit:1572864}
    ulimit -m $LIMIT
    ulimit -v $LIMIT
@@ -50,7 +45,15 @@ if [ "${tracesummary}" != "" ]; then
    export PYTHONPATH=${libdirinternal}:$PYTHONPATH
    nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwidth" >$output
 
-   ${scriptsdir}/send-mail "$subject" <$output
+   if [ "${mailconnectionsummary}" = "1" ]; then
+      # Build subject
+      start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
+      end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
+      subject="Connection summary from $start-$end"
+
+      ${scriptsdir}/send-mail "$subject" <$output
+   fi
+
    ${scriptsdir}/archive-log $output $output_basename $open $close $terminating "ascii"
 fi
 
