@@ -1,5 +1,6 @@
-@TEST-EXEC: broctl-test-setup broctl1.cfg networks1.cfg node1.cfg
-@TEST-EXEC: broctl install
-@TEST-EXEC: grep -v "^#" $INSTALL/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out
+@TEST-EXEC: broctl-test-setup broctl1.cfg networks1.cfg node1.cfg > newprefix
+@TEST-EXEC: BROCTL_INSTALL_PREFIX=`cat newprefix` `cat newprefix`/bin/broctl install
+@TEST-EXEC: grep -v "^#" `cat newprefix`/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out
 @TEST-EXEC: btest-diff out
+@TEST-EXEC: rm -rf `cat newprefix`
 

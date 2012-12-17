@@ -19,8 +19,19 @@ BroBase = "@PREFIX@"
 # Base directory of broctl configuration files.
 BroCfgDir = "@ETC@"
 
+# Configured by CMake
 # Version of the broctl distribution.
 Version = "@VERSION@"
+
+# Allow user to override default broctl install directory
+tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
+if tmpbrobase and os.path.isdir(tmpbrobase):
+    # Note: the BroCfgDir might not be a subdirectory of BroBase, but for now
+    # we assume it is
+    tmpbrocfgdir = os.path.join(tmpbrobase, "etc")
+    if os.path.isdir(tmpbrocfgdir):
+        BroBase = tmpbrobase
+        BroCfgDir = tmpbrocfgdir
 
 # Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path

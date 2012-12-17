@@ -15,14 +15,15 @@ if [ ! -d "${INSTALL}" ]; then
     exit 1
 fi
 
-# remove all files (not directories) in "spool" subdir
-rm -f "${INSTALL}"/spool/* 2> /dev/null
-
-# remove the installed scripts directory tree (in "spool" subdir)
-rm -rf "${INSTALL}/spool/installed-scripts-do-not-touch"
+# Create test-specific bro installation
+basedir=`dirname "${INSTALL}"`
+newprefix="$basedir"/test.$$
+mkdir "$newprefix"
+(cd "$newprefix" && tar xf "$basedir"/orig.tar)
 
 # install test-specific files
-cp "${BROCTLCFG}/$1" "${INSTALL}/etc/broctl.cfg"
-cp "${BROCTLCFG}/$2" "${INSTALL}/etc/networks.cfg"
-cp "${BROCTLCFG}/$3" "${INSTALL}/etc/node.cfg"
+cp "${BROCTLCFG}/$1" "$newprefix/etc/broctl.cfg"
+cp "${BROCTLCFG}/$2" "$newprefix/etc/networks.cfg"
+cp "${BROCTLCFG}/$3" "$newprefix/etc/node.cfg"
 
+echo $newprefix

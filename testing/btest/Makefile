@@ -6,7 +6,7 @@ all: cleanup buildbro btest-verbose
 
 # Showing all tests.
 btest-verbose:
-	@$(BTEST) -f $(DIAG)
+	@$(BTEST) -j 4 -f $(DIAG)
 
 buildbro:
 	@../scripts/build-bro

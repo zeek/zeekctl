@@ -1,4 +1,5 @@
-@TEST-EXEC: broctl-test-setup broctl2.cfg networks1.cfg node1.cfg
-@TEST-EXEC: broctl config | grep foo1 > out
+@TEST-EXEC: broctl-test-setup broctl2.cfg networks1.cfg node1.cfg > newprefix
+@TEST-EXEC: BROCTL_INSTALL_PREFIX=`cat newprefix` `cat newprefix`/bin/broctl config | grep foo1 > out
 @TEST-EXEC: btest-diff out
+@TEST-EXEC: rm -rf `cat newprefix`
 
