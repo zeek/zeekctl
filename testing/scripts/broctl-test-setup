@@ -10,8 +10,10 @@ if [ -z "${INSTALL}" ]; then
     exit 1
 fi
 
-if [ ! -d "${INSTALL}" ]; then
-    echo "Error: directory $INSTALL does not exist" > /dev/stderr
+tarfile=${INSTALL}.tar
+
+if [ ! -f "$tarfile" ]; then
+    echo "Error: file $tarfile does not exist" > /dev/stderr
     exit 1
 fi
 
@@ -19,7 +21,7 @@ fi
 basedir=`dirname "${INSTALL}"`
 newprefix="$basedir"/test.$$
 mkdir "$newprefix"
-(cd "$newprefix" && tar xf "$basedir"/orig.tar)
+(cd "$newprefix" && tar xf "$tarfile")
 
 # install test-specific files
 cp "${BROCTLCFG}/$1" "$newprefix/etc/broctl.cfg"

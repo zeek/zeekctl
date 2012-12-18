@@ -7,18 +7,25 @@ BROCTLSRCDIR=`dirname "$0"`/../..
 BROSRCDIR=${BROCTLSRCDIR}/../..
 PATHSCRIPT=${BROSRCDIR}/build/aux/broctl/broctl-path
 
-# directory pathname where bro will be installed for broctl test purposes
+# Directory pathname where bro will be installed for broctl test purposes.
+# This directory must not already exist (it will be removed by this script!).
 TESTPREFIX=/tmp/broctltest/orig
 
+if [ -e "${TESTPREFIX}" ]; then
+    echo "Error: directory specified by TESTPREFIX already exists"
+    exit 1
+fi
+
 if [ "$1" = "cleanup" ]; then
-    # attempt to remove only if the path is a directory
-    test -d "${TESTPREFIX}" && rm -rf "${TESTPREFIX}"
+    # attempt to remove only if the path is a file
+    test -f "${TESTPREFIX}.tar" && rm -f "${TESTPREFIX}.tar"
 
     # if the path still exists, then something is wrong
-    if [ -e "${TESTPREFIX}" ]; then
-        echo "Error: unable to remove ${TESTPREFIX}"
+    if [ -f "${TESTPREFIX}.tar" ]; then
+        echo "Error: unable to remove ${TESTPREFIX}.tar"
         exit 1
     fi
+
     exit
 fi
 
@@ -42,10 +49,11 @@ fi
 
 # Rebuild bro, using the broctl test install prefix
 (cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make && make install)
+test $? -ne 0 && exit 1
 
 # Archive the installation so each test case can use its own prefix without
 # needing to rerun ./configure
-(cd "${TESTPREFIX}" && tar cf "${TESTPREFIX}.tar" *)
+(cd "${TESTPREFIX}" && tar cf "${TESTPREFIX}.tar" * && rm -rf "${TESTPREFIX}")
 
 # Copy the newly-built broctl test path script (this step is needed to
 # avoid referring to the original which might get overwritten in the next step,
