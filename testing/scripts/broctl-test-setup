@@ -13,7 +13,7 @@ fi
 tarfile=${INSTALL}.tar
 
 if [ ! -f "$tarfile" ]; then
-    echo "Error: file $tarfile does not exist" > /dev/stderr
+    echo "Error: $tarfile doesn't exist ('make buildbro' to create)" > /dev/stderr
     exit 1
 fi
 
