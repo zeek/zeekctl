@@ -1,4 +1,12 @@
 
+1.1-26 | 2012-12-20 17:53:52 -0800
+
+  * Add Bro version to crash reports. (Robin Sommer)
+
+  * Add a new broctl option "MailConnectionSummary" that specifies
+    whether or not to mail the connection summary reports.  (Daniel
+    Thayer)
+
 1.1-23 | 2012-12-06 15:52:20 -0800
 
   * Update documentation for recent MailFrom change. (Daniel Thayer)
