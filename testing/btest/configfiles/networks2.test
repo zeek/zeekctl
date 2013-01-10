@@ -1,0 +1,13 @@
+# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-cleanup
+
+newprefix=$(broctl-test-setup broctl1.cfg networks2.cfg node1.cfg)
+
+export BROCTL_INSTALL_PREFIX=$newprefix
+export PATH=$newprefix/bin:$PATH
+
+broctl install
+
+grep -v "^#" $newprefix/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out

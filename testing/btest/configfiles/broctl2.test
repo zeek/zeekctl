@@ -1,0 +1,12 @@
+# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-cleanup
+
+newprefix=$(broctl-test-setup broctl3.cfg networks1.cfg node1.cfg)
+
+export BROCTL_INSTALL_PREFIX=$newprefix
+export PATH=$newprefix/bin:$PATH
+
+broctl config | grep -i LogRotationInterval > out
+
