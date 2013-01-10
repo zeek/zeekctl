@@ -328,6 +328,8 @@ class Configuration:
                 if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
                     manageronlocalhost = True
 
+            util.debug(1, "node: %s" % n.describe())
+
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in self.nodelist.values():
