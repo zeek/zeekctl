@@ -190,11 +190,11 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_capstats_post(self, nodes, interval):
         self.message("TestPlugin: Test post 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
 
-    def cmd_scripts_pre(self, nodes, full_path, check):
-        self.message("TestPlugin: Test pre 'scripts':  %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+    def cmd_scripts_pre(self, nodes, check):
+        self.message("TestPlugin: Test pre 'scripts':  %s (%s)" % (self._nodes(nodes), check))
 
-    def cmd_scripts_post(self, nodes, full_path, check):
-        self.message("TestPlugin: Test post 'scripts': %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+    def cmd_scripts_post(self, nodes, check):
+        self.message("TestPlugin: Test post 'scripts': %s (%s)" % (self._nodes(nodes), check))
 
     def cmd_print_pre(self, nodes, id):
         self.message("TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id))
