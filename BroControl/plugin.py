@@ -163,7 +163,7 @@ class Plugin(object):
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
         stdout/stderr output."""
-        return execute.executeCmdsParallel([node, cmd])
+        return execute.executeCmdsParallel([(node, cmd)])
 
     @doc.api
     def nodes(self):
