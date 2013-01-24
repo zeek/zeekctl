@@ -810,7 +810,7 @@ BroControl Version %s
    check <nodes>                 - check configuration before installing it
    cleanup [--all] <nodes>       - delete working dirs on nodes (flushes state)
    config                        - print broctl configuration
-   cron                          - perform jobs intended to run from cron
+   cron [--no-watch]             - perform jobs intended to run from cron
    cron enable|disable|?         - enable/disable \"cron\" jobs
    df <nodes>                    - print nodes' current disk usage
    diag <nodes>                  - output diagnostics for nodes
