@@ -80,7 +80,7 @@ class TestPlugin(BroControl.plugin.Plugin):
             bar = "1"
 
         self.setState("bar", str(int(bar) + 1))
-        self.message("TestPlugin: TestPlugin: My command: %s" % args)
+        self.message("TestPlugin: My command: %s" % args)
 
     def cmd_check_pre(self, nodes):
         self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))
@@ -98,7 +98,7 @@ class TestPlugin(BroControl.plugin.Plugin):
         self.message("TestPlugin: Test pre 'config'")
 
     def cmd_config_post(self):
-        self.message("TestPlugin: Test post 'confg'")
+        self.message("TestPlugin: Test post 'config'")
 
     def cmd_exec_pre(self, cmdline):
         self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
