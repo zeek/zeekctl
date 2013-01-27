@@ -41,7 +41,7 @@ class Plugin(object):
     indicating whether the command was successful for it.
 
     Note that if a plugin prevents a command from executing either completely or
-    partially, it should report its reason via the ``message*()`` or
+    partially, it should report its reason via the ``message()`` or
     ``error()`` methods.
 
     If multiple plugins hook into the same command, all their
@@ -218,6 +218,8 @@ class Plugin(object):
         """
         raise NotImplementedError
 
+    ### Methods that can be overridden by plugins.
+
     @doc.api("override")
     def prefix(self):
         """Returns a string with a prefix for the plugin's options and
@@ -241,7 +243,7 @@ class Plugin(object):
                 A string with name of the option (e.g., ``Path``). Option
                 names are case-insensitive. Note that the option name exposed
                 to the user will be prefixed with your plugin's prefix as
-                returned by *name()* (e.g., ``myplugin.Path``).
+                returned by *prefix()* (e.g., ``myplugin.Path``).
 
             ``type``
                 A string with type of the option, which must be one of
@@ -273,16 +275,17 @@ class Plugin(object):
             ``command``
                 A string with the command's name. Note that the command name
                 exposed to the user will be prefixed with the plugin's prefix
-                as returned by *name()* (e.g., ``myplugin.mycommand``).
+                as returned by *prefix()* (e.g., ``myplugin.mycommand``).
 
             ``arguments``
                 A string describing the command's arguments in a textual form
                 suitable for use in the ``help`` command summary (e.g.,
-                ``[<nodes>]`` for command taking an optional list of nodes).
+                ``[<nodes>]`` for a command taking an optional list of nodes).
                 Empty if no arguments are expected. 
 
             ``description``
-                A string with a description of the command's semantics.
+                A string with a description of the command's semantics suitable
+                for use in the ``help`` command summary.
 
 
         This method can be overridden by derived classes. The implementation
@@ -293,10 +296,11 @@ class Plugin(object):
 
     @doc.api("override")
     def nodeKeys(self):
-        """Returns a list of custom keys for ``node.cfg``. The value for a
-        key will be available from the `Node`_ object as attribute
-        ``<prefix>_<key>`` (e.g., ``node.test_mykw``). If not set, the
-        attribute will be set to None.
+        """Returns a list of names of custom keys (the value of a key
+        can be specified in ``node.cfg`` for any node defined there). The
+        value for a key will be available from the `Node`_ object as attribute
+        ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not set, the
+        attribute will be set to an empty string.
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default
@@ -453,11 +457,11 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_cron_pre(self, arg, watch):
-        """Called just before the ``cron`` command is run. *arg* is None if
-        the cron is executed without arguments. Otherwise, it is one of the
-        strings: ``enable``, ``disable``, ``?``. *watch* is a boolean
-        indicating whether ``cron`` should restart abnormally terminated Bro
-        processes; it's only valid if arg is empty.
+        """Called just before the ``cron`` command is run. *arg* is an empty
+        string if the command is executed without arguments. Otherwise, it is
+        one of the strings: ``enable``, ``disable``, ``?``. *watch* is a
+        boolean indicating whether the ``cron`` command should restart
+        abnormally terminated Bro processes; it's only valid if *arg* is empty.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
@@ -585,9 +589,9 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_custom(self, cmd, args):
-        """Called when command defined by the ``commands`` method is executed.
-        ``cmd`` is the command (with the plugin's prefix), and ``args`` is a
-        single *string* with all arguments.
+        """Called when a command defined by the ``commands`` method is executed.
+        *cmd* is the command (without the plugin's prefix), and *args* is a
+        single string with all arguments.
 
         If the arguments are actually node names, ``parseNodes`` can
         be used to get the `Node`_ objects.
@@ -752,7 +756,7 @@ class Plugin(object):
     def cmd_capstats_pre(self, nodes, interval):
         """Called just before the ``capstats`` command is run. It receives the
         list of nodes, and returns the list of nodes that should proceed with
-        the command. *integer* is an integer with the measurement interval in
+        the command. *interval* is an integer with the measurement interval in
         seconds.
 
         This method can be overridden by derived classes. The default
@@ -817,7 +821,7 @@ class Plugin(object):
     def cmd_process_pre(self, trace, options, scripts):
         """Called just before the ``process`` command is run. It receives the
         *trace* to read from as a string, a list of additional Bro *options*,
-        and a list of additional Bro scripts.
+        and a list of additional Bro *scripts*.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

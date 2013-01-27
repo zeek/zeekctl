@@ -30,7 +30,7 @@ class PluginRegistry:
             plugin._registerOptions()
 
     def initPlugins(self):
-        """Initialized all loaded plugins."""
+        """Initialize all loaded plugins."""
         plugins = []
 
         for p in self._plugins:
@@ -83,7 +83,7 @@ class PluginRegistry:
     def cmdPre(self, cmd, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command *not* taking
         a list of nodes as its first argument. All arguments are passed on.
-        Returns the True if all plugins returned True.
+        Returns True if all plugins returned True.
         """
         method = "cmd_%s_pre" % cmd
 
@@ -121,7 +121,7 @@ class PluginRegistry:
     def cmdPost(self, cmd, *args):
         """Executes the ``cmd_<XXX>_post`` function for a command *not* taking
         a list of nodes as its first argument. All arguments are passed on.
-        Returns the True if all plugins returned True.
+        Returns True if all plugins returned True.
         """
         method = "cmd_%s_post" % cmd
 
