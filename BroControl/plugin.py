@@ -731,6 +731,30 @@ class Plugin(object):
         pass
 
     @doc.api("override")
+    def cmd_restart_pre(self, nodes, clean):
+        """Called just before the ``restart`` command is run. It receives the
+        list of nodes, and returns the list of nodes that should proceed with
+        the command. *clean* is boolean indicating whether the ``--clean``
+        argument has been given.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
+    @doc.api("override")
+    def cmd_restart_post(self, results):
+        """Called just after the ``restart`` command has finished. It receives
+        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
+        was executed for, along with their success status. The remaining
+        arguments are as with the ``pre`` method.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
+    @doc.api("override")
     def cmd_cleanup_pre(self, nodes, all):
         """Called just before the ``cleanup`` command is run. It receives the
         list of nodes, and returns the list of nodes that should proceed with
