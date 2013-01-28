@@ -154,8 +154,8 @@ class Plugin(object):
 
     @doc.api
     def error(self, msg):
-        """Reports an error to the user."""
-        error("error: %s" % msg, prefix="plugin:%s" % self.prefix())
+        """Reports an error to the user and terminates broctl."""
+        util.error(msg, prefix="plugin:%s" % self.prefix())
 
     @doc.api
     def execute(self, node, cmd):
