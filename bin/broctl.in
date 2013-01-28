@@ -749,8 +749,8 @@ class BroCtlCmdLoop(cmd.Cmd):
         plugin.Registry.cmdPost("process", trace, options, scripts, success)
 
     def completedefault(self, text, line, begidx, endidx):
-        # Commands taken a "<nodes>" argument.
-        nodes_cmds = ["check", "cleanup", "df", "diag", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "list-scripts"],
+        # Commands that take a "<nodes>" argument.
+        nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats", "print", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "scripts"]
 
         args = line.split()
 
