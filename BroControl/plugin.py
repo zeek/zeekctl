@@ -127,10 +127,10 @@ class Plugin(object):
 
     @doc.api
     def parseNodes(self, names):
-        """Returns `Node`_ objects for a string of space-separated node names.
-        If a name does not correspond to a known node, an error message is
-        printed and the node is skipped from the returned list. If no names
-        are known, an empty list is returned."""
+        """Returns a list of `Node`_ objects for a string of space-separated
+        node names. If a name does not correspond to a known node, an error
+        message is printed and the node is skipped from the returned list. If
+        no names are known, an empty list is returned."""
         nodes = []
 
         for arg in names.split():
@@ -138,7 +138,7 @@ class Plugin(object):
             if not h:
                 util.output("unknown node '%s'" % arg)
             else:
-                nodes += [h]
+                nodes += h
 
         return nodes
 
