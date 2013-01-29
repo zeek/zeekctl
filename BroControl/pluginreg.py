@@ -46,7 +46,8 @@ class PluginRegistry:
 
     def finishPlugins(self):
         """Shuts all plugins down."""
-        pass
+        for plugin in self._plugins:
+            plugin.done()
 
     def hostStatusChanged(self, host, status):
         """Calls all plugins Plugin.hostStatusChanged_ methods; see there for

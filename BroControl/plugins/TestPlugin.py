@@ -50,6 +50,9 @@ class TestPlugin(BroControl.plugin.Plugin):
     def nodeKeys(self):
         return ["mykey"]
 
+    def done(self):
+        self.message("TestPlugin: done")
+
     def _nodes(self, nodes):
 
         if not nodes:
