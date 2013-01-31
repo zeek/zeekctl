@@ -95,8 +95,8 @@ class Plugin(object):
         *name*. The returned value will always be a string. If it has not yet
         been set, an empty string will be returned.
 
-        Different from options, state variables can be set by the plugin and
-        are persistent across restarts. They are not visible to the user.
+        Different from options, state variables can be set by the plugin.
+        They are persistent across restarts.
 
         Note that a plugin cannot query any global BroControl state variables.
         """

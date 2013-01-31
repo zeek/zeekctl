@@ -328,7 +328,7 @@ class Configuration:
                     util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
     # Parses broctl.cfg and returns a dictionary of all entries.
-    def _readConfig(self, file):
+    def _readConfig(self, file, allowstate = False):
         config = {}
         try:
             for line in open(file):
@@ -344,6 +344,9 @@ class Configuration:
                 (key, val) = args
                 key = key.strip().lower()
                 val = val.strip()
+
+                if not allowstate and ".state." in key:
+                    util.error("state variable '%s' not allowed in file: %s" % (key, file))
 
                 config[key] = val
 
@@ -364,7 +367,7 @@ class Configuration:
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self):
-        self.state = self._readConfig(self.statefile)
+        self.state = self._readConfig(self.statefile, True)
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
     def writeState(self):
