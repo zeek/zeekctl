@@ -136,10 +136,9 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         self.lock()
 
-        plugin.Registry.cmdPre("nodes")
-
-        for n in Config.nodes():
-            print n.describe()
+        if plugin.Registry.cmdPre("nodes"):
+            for n in Config.nodes():
+                print n.describe()
 
         plugin.Registry.cmdPost("nodes")
 
@@ -149,10 +148,9 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax(args)
             return
 
-        plugin.Registry.cmdPre("config")
-
-        for (key, val) in sorted(Config.options()):
-            print "%s = %s" % (key, val)
+        if plugin.Registry.cmdPre("config"):
+            for (key, val) in sorted(Config.options()):
+                print "%s = %s" % (key, val)
 
         plugin.Registry.cmdPost("config")
 
@@ -178,9 +176,8 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         self.lock()
 
-        plugin.Registry.cmdPre("install")
-
-        install.install(local)
+        if plugin.Registry.cmdPre("install"):
+            install.install(local)
 
         plugin.Registry.cmdPost("install")
 
@@ -411,20 +408,20 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.lock()
 
             if args == "enable":
-                plugin.Registry.cmdPre("cron", args, False)
-                config.Config._setState("cronenabled", "1")
-                util.output("cron enabled")
+                if plugin.Registry.cmdPre("cron", args, False):
+                    config.Config._setState("cronenabled", "1")
+                    util.output("cron enabled")
                 plugin.Registry.cmdPost("cron", args, False)
 
             elif args == "disable":
-                plugin.Registry.cmdPre("cron", args, False)
-                config.Config._setState("cronenabled", "0")
-                util.output("cron disabled")
+                if plugin.Registry.cmdPre("cron", args, False):
+                    config.Config._setState("cronenabled", "0")
+                    util.output("cron disabled")
                 plugin.Registry.cmdPost("cron", args, False)
 
             elif args == "?":
-                plugin.Registry.cmdPre("cron", args, False)
-                util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
+                if plugin.Registry.cmdPre("cron", args, False):
+                    util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
                 plugin.Registry.cmdPost("cron", args, False)
 
             else:
@@ -432,8 +429,8 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             return
 
-        plugin.Registry.cmdPre("cron", "", watch)
-        cron.doCron(watch)
+        if plugin.Registry.cmdPre("cron", "", watch):
+            cron.doCron(watch)
         plugin.Registry.cmdPost("cron", "", watch)
 
         return False
@@ -648,8 +645,8 @@ class BroCtlCmdLoop(cmd.Cmd):
         action across all systems."""
 
         self.lock()
-        plugin.Registry.cmdPre("exec", args)
-        control.executeCmd(Config.nodes(), args)
+        if plugin.Registry.cmdPre("exec", args):
+            control.executeCmd(Config.nodes(), args)
         plugin.Registry.cmdPost("exec", args)
 
         return False
@@ -720,6 +717,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         scripts = []
         trace = None
         in_scripts = False
+        success = False
 
         for arg in args.split():
 
@@ -744,8 +742,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax("no trace file given")
             return
 
-        plugin.Registry.cmdPre("process", trace, options, scripts)
-        success = control.processTrace(trace, options, scripts)
+        if plugin.Registry.cmdPre("process", trace, options, scripts):
+            success = control.processTrace(trace, options, scripts)
         plugin.Registry.cmdPost("process", trace, options, scripts, success)
 
     def completedefault(self, text, line, begidx, endidx):

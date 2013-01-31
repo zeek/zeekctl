@@ -93,30 +93,35 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def cmd_nodes_pre(self):
         self.message("TestPlugin: Test pre 'nodes'")
+        return True
 
     def cmd_nodes_post(self):
         self.message("TestPlugin: Test post 'nodes'")
 
     def cmd_config_pre(self):
         self.message("TestPlugin: Test pre 'config'")
+        return True
 
     def cmd_config_post(self):
         self.message("TestPlugin: Test post 'config'")
 
     def cmd_exec_pre(self, cmdline):
         self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
+        return True
 
     def cmd_exec_post(self, cmdline):
         self.message("TestPlugin: Test post 'exec': %s" % cmdline)
 
     def cmd_install_pre(self):
         self.message("TestPlugin: Test pre 'install'")
+        return True
 
     def cmd_install_post(self):
         self.message("TestPlugin: Test post 'install'")
 
     def cmd_cron_pre(self, arg, watch):
         self.message("TestPlugin: Test pre 'cron':  %s/%s" % (arg, watch))
+        return True
 
     def cmd_cron_post(self, arg, watch):
         self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
@@ -207,6 +212,7 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def cmd_process_pre(self, trace, options, scripts):
         self.message("TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts))
+        return True
 
     def cmd_process_post(self, trace, options, scripts, success):
         self.message("TestPlugin: Test post 'process': %s %s -- %s -> %s" % (trace, options, scripts, success))

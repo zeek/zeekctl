@@ -383,12 +383,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_nodes_pre(self):
-        """Called just before the ``nodes`` command is run.
+        """Called just before the ``nodes`` command is run. Returns a
+        boolean indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_nodes_post(self):
@@ -401,12 +402,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_config_pre(self):
-        """Called just before the ``config`` command is run.
+        """Called just before the ``config`` command is run. Returns a boolean
+        indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_config_post(self):
@@ -422,10 +424,13 @@ class Plugin(object):
         """Called just before the ``exec`` command is run. *cmdline* is a
         string with the command line to execute.
 
+        Returns a boolean indicating whether or not the ``exec`` command
+        should run.
+
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_exec_post(self, cmdline):
@@ -439,12 +444,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_install_pre(self):
-        """Called just before the ``install`` command is run.
+        """Called just before the ``install`` command is run. Returns a
+        boolean indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_install_post(self):
@@ -463,10 +469,13 @@ class Plugin(object):
         boolean indicating whether the ``cron`` command should restart
         abnormally terminated Bro processes; it's only valid if *arg* is empty.
 
+        Returns a boolean indicating whether or not the ``cron`` command should
+        run.
+
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_cron_post(self, arg, watch):
@@ -847,10 +856,13 @@ class Plugin(object):
         *trace* to read from as a string, a list of additional Bro *options*,
         and a list of additional Bro *scripts*.
 
+        Returns a boolean indicating whether or not the ``process`` command
+        should run.
+
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_process_post(self, trace, options, scripts, success):
