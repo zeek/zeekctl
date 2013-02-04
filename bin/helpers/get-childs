@@ -2,8 +2,8 @@
 #
 #  get-childs <pid> 
 
-echo 0
 ps ax -o pid,ppid | awk -v pid=$1 '$2==pid {print $1}'
+echo 0
 echo ~~~
 
 
