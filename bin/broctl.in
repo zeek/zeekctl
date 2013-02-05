@@ -354,10 +354,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         if not success:
             return
 
+        nodes = plugin.Registry.cmdPreWithNodes("diag", nodes)
+
         for h in nodes:
-            nodes = plugin.Registry.cmdPreWithNodes("diag", nodes)
             control.crashDiag(h)
-            plugin.Registry.cmdPostWithNodes("diag", nodes)
+
+        plugin.Registry.cmdPostWithNodes("diag", nodes)
 
         return False
 
