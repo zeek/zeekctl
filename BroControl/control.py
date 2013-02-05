@@ -694,6 +694,7 @@ def _doCheckConfig(nodes, installed, list_scripts):
         cmds += [((node, cwd), cmd, env, None)]
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
+        results += [(node, success)]
         if success:
             util.output("%s is ok." % node.name)
             if list_scripts:

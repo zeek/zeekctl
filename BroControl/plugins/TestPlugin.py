@@ -88,8 +88,8 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_check_pre(self, nodes):
         self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))
 
-    def cmd_check_post(self, nodes):
-        self.message("TestPlugin: Test post 'check': %s" % self._nodes(nodes))
+    def cmd_check_post(self, results):
+        self.message("TestPlugin: Test post 'check': %s" % self._results(results))
 
     def cmd_nodes_pre(self):
         self.message("TestPlugin: Test pre 'nodes'")
