@@ -753,11 +753,10 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_restart_post(self, results):
+    def cmd_restart_post(self, nodes):
         """Called just after the ``restart`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status. The remaining
-        arguments are as with the ``pre`` method.
+        a list of *nodes* indicating the nodes on which the command was
+        executed.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

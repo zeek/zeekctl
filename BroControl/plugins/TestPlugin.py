@@ -126,6 +126,12 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_cron_post(self, arg, watch):
         self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
 
+    def cmd_restart_pre(self, nodes):
+        self.message("TestPlugin: Test pre 'restart':  %s" % self._nodes(nodes))
+
+    def cmd_restart_post(self, nodes):
+        self.message("TestPlugin: Test post 'restart': %s" % self._nodes(nodes))
+
     def cmd_start_pre(self, nodes):
         self.message("TestPlugin: Test pre 'start':  %s" % self._nodes(nodes))
 

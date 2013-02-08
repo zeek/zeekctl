@@ -237,6 +237,9 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         (success, nodes) = nodeArgs(args, expand_all=False)
         if success:
+            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes)
+            args = " ".join([ str(n) for n in nodes ])
+
             util.output("stopping ...")
             self.do_stop(args)
             self.postcmd(False, args) # Need to call manually.
@@ -271,6 +274,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             util.output("starting ...")
             self.do_start(args)
             self.postcmd(False, args)
+
+            plugin.Registry.cmdPostWithNodes("restart", nodes)
 
     def do_status(self, args):
         """- [<nodes>]
