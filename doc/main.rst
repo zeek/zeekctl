@@ -287,7 +287,9 @@ The following summary lists all commands supported by *BroControl*.
 All commands may be either entered interactively or specified on the
 shell's command line. If not specified otherwise, commands taking
 *[<nodes>]* as arguments apply their action either to the given set of
-nodes, or to all nodes if none is given.
+nodes, to the manager node if "manager" is given, to all proxy nodes if
+"proxies" is given, to all worker nodes if "workers" is given, or to all
+nodes if none is given.
 
 .. include:: commands.rst
 

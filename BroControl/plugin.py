@@ -36,9 +36,7 @@ class Plugin(object):
     The ``cmd_<XXX>_post`` methods likewise receive the commands arguments as
     their parameter, as documented below. For commands taking nodes, the list
     corresponds to those nodes for which the command was actually executed
-    (i.e., after any ``cmd_<XXX>_pre`` filtering). Each node is given as a
-    tuple ``(node, bool)`` with *node* being the actual `Node`_, and the boolean
-    indicating whether the command was successful for it.
+    (i.e., after any ``cmd_<XXX>_pre`` filtering).
 
     Note that if a plugin prevents a command from executing either completely or
     partially, it should report its reason via the ``message()`` or
@@ -48,9 +46,9 @@ class Plugin(object):
     ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
     executed on the intersection of all ``cmd_<XXX>_pre`` results.
 
-    Finally, note that the ``restart`` command doesn't have its own method as
-    it's just a combination of other commands and thus their callbacks are
-    run.
+    Finally, note that the ``restart`` command is just a combination of other
+    commands and thus their callbacks are run in addition to the callbacks
+    for ``restart``.
     """
 
     def __init__(self, apiversion):
@@ -200,7 +198,7 @@ class Plugin(object):
 
     @doc.api("override")
     def name(self):
-        """Returns a string with a descriptive *name* for the plugin (e.g.,
+        """Returns a string with a descriptive name for the plugin (e.g.,
         ``"TestPlugin"``). The name must not contain any whitespace.
 
         This method must be overridden by derived classes. The implementation

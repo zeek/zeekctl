@@ -155,15 +155,17 @@ class BroCtlCmdLoop(cmd.Cmd):
         plugin.Registry.cmdPost("config")
 
     def do_install(self, args):
-        """
+        """- [--local]
 
-        Reinstalls the given nodes, including all configuration files and
-        local policy scripts.  This command must be executed after *all*
-        changes to any part of the broctl configuration, otherwise the
-        modifications will not take effect. Usually all nodes should be
-        reinstalled at the same time, as any inconsistencies between them will
-        lead to strange effects. Before executing ``install``, it is recommended
-        to verify the configuration with check_."""
+        Reinstalls on all nodes (unless the ``--local`` option is given, in
+        which case nothing will be propagated to other nodes), including all
+        configuration files and local policy scripts.  Usually all nodes
+        should be reinstalled at the same time, as any inconsistencies between
+        them will lead to strange effects.  This command must be
+        executed after *all* changes to any part of the broctl configuration,
+        otherwise the modifications will not take effect.  Before executing
+        ``install``, it is recommended to verify the configuration
+        with check_."""
 
         local = False
 
@@ -218,12 +220,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         by a start_, giving the same nodes in both cases.
         This command is most useful to activate any changes made to Bro policy
         scripts (after running install_ first). Note that a
-        subset of policy changes can also be installed on the fly via the
+        subset of policy changes can also be installed on the fly via
         update_, without requiring a restart.
 
         If ``--clean`` is given, the installation is reset into a clean state
         before restarting. More precisely, a ``restart --clean`` turns into
-        the command sequence stop_, cleanup_ --all, check_, install_, and
+        the command sequence stop_, cleanup_, check_, install_, and
         start_.
         """
 
@@ -390,8 +392,8 @@ class BroCtlCmdLoop(cmd.Cmd):
         ``--no-watch``), it performs a set of maintenance tasks, including
         the logging of various statistical information, expiring old log
         files, checking for dead hosts, and restarting nodes which terminated
-        unexpectedly. The latter can be suppressed with the ``--no-watch``
-        option if no auto-restart is desired. This mode is intended to be
+        unexpectedly (the latter can be suppressed with the ``--no-watch``
+        option if no auto-restart is desired). This mode is intended to be
         executed regularly via *cron*, as described in the installation
         instructions. While not intended for interactive use, no harm will be
         caused by executing the command manually: all the maintenance tasks
@@ -400,7 +402,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         The second mode is for interactive usage and determines if the regular
         tasks are indeed performed when ``broctl cron`` is executed. In other
         words, even with ``broctl cron`` in your crontab, you can still
-        temporarily disable its execution by running ``cron disable``, and
+        temporarily disable it by running ``cron disable``, and
         then later reenable with ``cron enable``. This can be helpful while
         working, e.g., on the BroControl configuration and ``cron`` would
         interfere with that. ``cron ?`` can be used to query the current state.
@@ -509,9 +511,8 @@ class BroCtlCmdLoop(cmd.Cmd):
         Determines the current load on the network interfaces monitored by
         each of the given worker nodes. The load is measured over the
         specified interval (in seconds), or by default over 10 seconds. This
-        command uses the `capstats tool
-        <http://www.bro-ids.org/files/capstats-release/README.html>`_,
-        which is installed along with ``broctl``.
+        command uses the :doc:`capstats<../../components/capstats/README>`
+        tool, which is installed along with ``broctl``.
 
         (Note: When using a CFlow and the CFlow command line utility is
         installed as well, the ``capstats`` command can also query the device
@@ -589,8 +590,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         example be useful to (1) check that policy scripts are working as
         expected, or (2) confirm that configuration changes have in fact been
         applied.  Note that IDs defined inside a Bro namespace must be
-        prefixed with ``<namespace>::`` (e.g., ``print SSH::did*ssh*version`` to
-        print the corresponding table from ``ssh.bro``.)"""
+        prefixed with ``<namespace>::`` (e.g.,
+        ``print HTTP::mime_types_extensions`` to print the corresponding
+        table from ``file-ident.bro``)."""
 
         self.lock()
         args = args.split()
