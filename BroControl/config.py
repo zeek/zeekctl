@@ -107,16 +107,16 @@ class Configuration:
             return self.config.items()
 
     # Returns a list of Nodes.
-    # - If tag is "global" or "all", all Nodes are returned if "expand_all" is true.
+    # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "proxies" or "proxy", all proxy Nodes are returned.
-    # - If tag is "workers" or "worker", all worker Nodes are returned.
+    # - If tag is "proxies", all proxy Nodes are returned.
+    # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned.
     def nodes(self, tag=None, expand_all=True):
         nodes = []
         type = None
 
-        if tag == "cluster" or tag == "all":
+        if tag == "all":
             if not expand_all:
                 return []
 
