@@ -120,7 +120,7 @@ class Plugin(object):
         if "." in name or " " in name:
             self.error("plugin state variable names must not contain dots or spaces")
 
-        name = "%s.state.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.state.%s" % (self.prefix(), name)
         config.Config._setState(name, value)
 
     @doc.api
@@ -892,4 +892,4 @@ class Plugin(object):
             if not isinstance(default, str):
                 self.error("plugin option default must be a string")
 
-            config.Config._setOption("%s.%s" % (self.prefix().lower(), name), default)
+            config.Config._setOption("%s.%s" % (self.prefix(), name), default)

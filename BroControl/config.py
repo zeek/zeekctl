@@ -44,7 +44,7 @@ class Configuration:
         # Initialize options.
         for opt in options.options:
             if not opt.dontinit:
-                self._setOption(opt.name.lower(), opt.default)
+                self._setOption(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))
@@ -357,6 +357,7 @@ class Configuration:
 
     # Initialize a global option if not already set.
     def _setOption(self, val, key):
+        val = val.lower()
         if not val in self.config:
             self.config[val] = self.subst(key)
 
