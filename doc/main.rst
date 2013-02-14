@@ -177,6 +177,11 @@ code (which includes BroControl):
 
       0-59/5 * * * * <prefix>/bin/broctl cron
 
+  (Note: if you are editing the system crontab instead of a user's own 
+  crontab, then you need to also specify the user which the command
+  will be run as. The username must be placed after the time fields
+  and before the broctl command.)
+
 - Finally, you can start the cluster::
 
   > broctl start
