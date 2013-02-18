@@ -317,15 +317,19 @@ def _startNodes(nodes):
 
 # Start Bro processes on nodes if not already running.
 def start(nodes):
-    if len(nodes) > 0:
-        # User picked nodes to start.
-        return _startNodes(nodes)
+    manager = []
+    proxies = []
+    workers = []
 
-    manager = config.Config.nodes("manager")
-    proxies = config.Config.nodes("proxies")
-    workers = config.Config.nodes("workers")
+    for n in nodes:
+        if n.type == "worker":
+            workers += [n]
+        elif n.type == "proxy":
+            proxies += [n]
+        else:
+            manager += [n]
 
-    # Start all nodes. Do it in the order manager, proxies, workers.
+    # Start nodes. Do it in the order manager, proxies, workers.
 
     results1 = _startNodes(manager)
 
@@ -455,15 +459,20 @@ def _stopNodes(nodes):
 
 # Stop Bro processes on nodes.
 def stop(nodes):
-    if len(nodes) > 0:
-        # User picked nodes to stop.
-        return _stopNodes(nodes)
+    manager = []
+    proxies = []
+    workers = []
 
-    manager = config.Config.nodes("manager")
-    proxies = config.Config.nodes("proxies")
-    workers = config.Config.nodes("workers")
+    for n in nodes:
+        if n.type == "worker":
+            workers += [n]
+        elif n.type == "proxy":
+            proxies += [n]
+        else:
+            manager += [n]
 
-    # Stop all nodes. Do it in the order workers, proxies, manager
+        
+    # Stop nodes. Do it in the order workers, proxies, manager
     # (the reverse of "start").
 
     results1 = _stopNodes(workers)

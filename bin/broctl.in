@@ -45,14 +45,14 @@ if not old or not dir in old:
 ## End of library hack.
 
 # Turns nodes arguments into a list of node names.
-def nodeArgs(args, expand_all=True):
+def nodeArgs(args):
     if not args:
         args = "all"
 
     nodes = []
 
     for arg in args.split():
-        h = Config.nodes(arg, expand_all)
+        h = Config.nodes(arg)
         if not h and arg != "all":
             util.output("unknown node '%s'" % arg)
             return (False, [])
@@ -191,7 +191,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         """
 
         self.lock()
-        (success, nodes) = nodeArgs(args, expand_all=False)
+        (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("start", nodes)
             results = control.start(nodes)
@@ -205,7 +205,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         running are left untouched.
         """
         self.lock()
-        (success, nodes) = nodeArgs(args, expand_all=False)
+        (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("stop", nodes)
             results = control.stop(nodes)
@@ -237,7 +237,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         except IndexError:
             pass
 
-        (success, nodes) = nodeArgs(args, expand_all=False)
+        (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("restart", nodes)
             args = " ".join([ str(n) for n in nodes ])
