@@ -810,6 +810,9 @@ def getCapstatsOutput(nodes, interval):
 
     hosts = {}
     for node in nodes:
+        if not node.interface:
+            continue
+
         try:
             hosts[(node.addr, node.interface)] = node
         except AttributeError:
@@ -954,7 +957,7 @@ def capstats(nodes, interval):
         for (node, error, vals) in getCapstatsOutput(nodes, interval):
             if str(node) == "$total":
                 capstats += [(node, error, vals)]
-            elif node.interface:
+            else:
                 capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
 
     else:
