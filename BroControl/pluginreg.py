@@ -237,7 +237,16 @@ class PluginRegistry:
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
-                self._plugins += [p]
+                pluginprefix = p.prefix().lower()
+                sameprefix = False
+                for i in self._plugins:
+                    if pluginprefix == i.prefix().lower():
+                        sameprefix = True
+                        util.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        break
+
+                if not sameprefix:
+                    self._plugins += [p]
 
         if not found:
             util.warn("No plugin found in %s" % module.__file__)
