@@ -8,6 +8,5 @@ newprefix=$(broctl-test-setup broctl1.cfg networks1.cfg node3.cfg)
 export BROCTL_INSTALL_PREFIX=$newprefix
 export PATH=$newprefix/bin:$PATH
 
-broctl install
+broctl nodes > out
 
-grep main $newprefix/spool/debug.log | grep "node:" > out

@@ -1,4 +1,4 @@
-10 Jan 22:17:40 [main]     node:        worker-1 - addr=127.0.0.1 aux_scripts=doesnot.exist brobase= count=1 env_vars= ether= host=localhost interface=eth0 lb_interfaces= lb_method= lb_procs= name=worker-1 test_mykey= type=worker zone_id=
-10 Jan 22:17:40 [main]     node:         proxy-1 - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=proxy-1 test_mykey= type=proxy zone_id=
-10 Jan 22:17:40 [main]     node:         manager - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=manager test_mykey= type=manager zone_id=
-10 Jan 22:17:40 [main]     node:        worker-2 - addr=127.0.0.1 aux_scripts= brobase= count=2 env_vars= ether= host=localhost interface=eth1 lb_interfaces= lb_method= lb_procs= name=worker-2 test_mykey= type=worker zone_id=
+        manager - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=manager test_mykey= type=manager zone_id=
+        proxy-1 - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=proxy-1 test_mykey= type=proxy zone_id=
+       worker-1 - addr=127.0.0.1 aux_scripts=doesnot.exist brobase= count=1 env_vars= ether= host=localhost interface=eth0 lb_interfaces= lb_method= lb_procs= name=worker-1 test_mykey= type=worker zone_id=
+       worker-2 - addr=127.0.0.1 aux_scripts= brobase= count=2 env_vars= ether= host=localhost interface=eth1 lb_interfaces= lb_method= lb_procs= name=worker-2 test_mykey= type=worker zone_id=
