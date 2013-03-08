@@ -31,11 +31,11 @@ Download
 --------
 
 You can find the latest BroControl release for download at
-http://www.bro-ids.org/download.
+http://www.bro.org/download.
 
 BroControl's git repository is located at
-`git://git.bro-ids.org/broctl <git://git.bro-ids.org/broctl>`_. You
-can browse the repository `here <http://git.bro-ids.org/broctl>`_.
+`git://git.bro.org/broctl <git://git.bro.org/broctl>`_. You
+can browse the repository `here <http://git.bro.org/broctl>`_.
 
 This document describes BroControl |version|. See the ``CHANGES``
 file for version history.
@@ -308,7 +308,7 @@ nodes, or to all nodes if none is given.
     each of the given worker nodes. The load is measured over the
     specified interval (in seconds), or by default over 10 seconds. This
     command uses the `capstats tool
-    <http://www.bro-ids.org/files/capstats-release/README.html>`_,
+    <http://www.bro.org/files/capstats-release/README.html>`_,
     which is installed along with ``broctl``.
     
     (Note: When using a CFlow and the CFlow command line utility is
@@ -1855,7 +1855,7 @@ Mails
 
 3. NOTICES with a notice action ``EMAIL``.
 
-4. If `trace-summary <http://www.bro-ids.org/documentation/components/trace-summary/README.html>`_
+4. If `trace-summary <http://www.bro.org/documentation/components/trace-summary/README.html>`_
    is installed, a traffic summary is sent each rotation interval.
 
 Performance Analysis

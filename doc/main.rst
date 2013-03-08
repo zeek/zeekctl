@@ -29,11 +29,11 @@ Download
 --------
 
 You can find the latest BroControl release for download at
-http://www.bro-ids.org/download.
+http://www.bro.org/download.
 
 BroControl's git repository is located at
-`git://git.bro-ids.org/broctl <git://git.bro-ids.org/broctl>`_. You
-can browse the repository `here <http://git.bro-ids.org/broctl>`_.
+`git://git.bro.org/broctl <git://git.bro.org/broctl>`_. You
+can browse the repository `here <http://git.bro.org/broctl>`_.
 
 This document describes BroControl |version|. See the ``CHANGES``
 file for version history.
@@ -354,7 +354,7 @@ Mails
 
 3. NOTICES with a notice action ``EMAIL``.
 
-4. If `trace-summary <http://www.bro-ids.org/documentation/components/trace-summary/README.html>`_
+4. If `trace-summary <http://www.bro.org/documentation/components/trace-summary/README.html>`_
    is installed, a traffic summary is sent each rotation interval.
 
 Performance Analysis
