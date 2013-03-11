@@ -227,7 +227,7 @@ def _makeCrashReports(nodes):
     for n in nodes:
         plugin.Registry.broProcessDied(n)
 
-    msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro-ids.org\n"
+    msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
     cmds = []
     for node in nodes:
         cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]
