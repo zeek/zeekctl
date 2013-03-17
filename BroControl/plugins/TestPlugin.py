@@ -50,6 +50,9 @@ class TestPlugin(BroControl.plugin.Plugin):
     def nodeKeys(self):
         return ["mykey"]
 
+    def done(self):
+        self.message("TestPlugin: done")
+
     def _nodes(self, nodes):
 
         if not nodes:
@@ -80,43 +83,54 @@ class TestPlugin(BroControl.plugin.Plugin):
             bar = "1"
 
         self.setState("bar", str(int(bar) + 1))
-        self.message("TestPlugin: TestPlugin: My command: %s" % args)
+        self.message("TestPlugin: My command: %s" % args)
 
     def cmd_check_pre(self, nodes):
         self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))
 
-    def cmd_check_post(self, nodes):
-        self.message("TestPlugin: Test post 'check': %s" % self._nodes(nodes))
+    def cmd_check_post(self, results):
+        self.message("TestPlugin: Test post 'check': %s" % self._results(results))
 
     def cmd_nodes_pre(self):
         self.message("TestPlugin: Test pre 'nodes'")
+        return True
 
     def cmd_nodes_post(self):
         self.message("TestPlugin: Test post 'nodes'")
 
     def cmd_config_pre(self):
         self.message("TestPlugin: Test pre 'config'")
+        return True
 
     def cmd_config_post(self):
-        self.message("TestPlugin: Test post 'confg'")
+        self.message("TestPlugin: Test post 'config'")
 
     def cmd_exec_pre(self, cmdline):
         self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
+        return True
 
     def cmd_exec_post(self, cmdline):
         self.message("TestPlugin: Test post 'exec': %s" % cmdline)
 
     def cmd_install_pre(self):
         self.message("TestPlugin: Test pre 'install'")
+        return True
 
     def cmd_install_post(self):
         self.message("TestPlugin: Test post 'install'")
 
     def cmd_cron_pre(self, arg, watch):
         self.message("TestPlugin: Test pre 'cron':  %s/%s" % (arg, watch))
+        return True
 
     def cmd_cron_post(self, arg, watch):
         self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
+
+    def cmd_restart_pre(self, nodes):
+        self.message("TestPlugin: Test pre 'restart':  %s" % self._nodes(nodes))
+
+    def cmd_restart_post(self, nodes):
+        self.message("TestPlugin: Test post 'restart': %s" % self._nodes(nodes))
 
     def cmd_start_pre(self, nodes):
         self.message("TestPlugin: Test pre 'start':  %s" % self._nodes(nodes))
@@ -190,11 +204,11 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_capstats_post(self, nodes, interval):
         self.message("TestPlugin: Test post 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
 
-    def cmd_scripts_pre(self, nodes, full_path, check):
-        self.message("TestPlugin: Test pre 'scripts':  %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+    def cmd_scripts_pre(self, nodes, check):
+        self.message("TestPlugin: Test pre 'scripts':  %s (%s)" % (self._nodes(nodes), check))
 
-    def cmd_scripts_post(self, nodes, full_path, check):
-        self.message("TestPlugin: Test post 'scripts': %s (%s/%s)" % (self._nodes(nodes), full_path, check))
+    def cmd_scripts_post(self, nodes, check):
+        self.message("TestPlugin: Test post 'scripts': %s (%s)" % (self._nodes(nodes), check))
 
     def cmd_print_pre(self, nodes, id):
         self.message("TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id))
@@ -204,6 +218,7 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def cmd_process_pre(self, trace, options, scripts):
         self.message("TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts))
+        return True
 
     def cmd_process_post(self, trace, options, scripts, success):
         self.message("TestPlugin: Test post 'process': %s %s -- %s -> %s" % (trace, options, scripts, success))

@@ -30,7 +30,7 @@ class PluginRegistry:
             plugin._registerOptions()
 
     def initPlugins(self):
-        """Initialized all loaded plugins."""
+        """Initialize all loaded plugins."""
         plugins = []
 
         for p in self._plugins:
@@ -46,7 +46,8 @@ class PluginRegistry:
 
     def finishPlugins(self):
         """Shuts all plugins down."""
-        pass
+        for plugin in self._plugins:
+            plugin.done()
 
     def hostStatusChanged(self, host, status):
         """Calls all plugins Plugin.hostStatusChanged_ methods; see there for
@@ -83,15 +84,19 @@ class PluginRegistry:
     def cmdPre(self, cmd, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command *not* taking
         a list of nodes as its first argument. All arguments are passed on.
-        Returns the True if all plugins returned True.
+        Returns True if no plugins returned False.
         """
         method = "cmd_%s_pre" % cmd
+        result = True
 
         for p in self._plugins:
             try:
-                p.__class__.__dict__[method](p, *args)
+                if p.__class__.__dict__[method](p, *args) == False:
+                    result = False
             except LookupError:
                 pass
+
+        return result
 
     def cmdPostWithNodes(self, cmd, nodes, *args):
         """Executes the ``cmd_<XXX>_post`` function for a command taking a list
@@ -121,7 +126,6 @@ class PluginRegistry:
     def cmdPost(self, cmd, *args):
         """Executes the ``cmd_<XXX>_post`` function for a command *not* taking
         a list of nodes as its first argument. All arguments are passed on.
-        Returns the True if all plugins returned True.
         """
         method = "cmd_%s_post" % cmd
 
@@ -233,7 +237,16 @@ class PluginRegistry:
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
-                self._plugins += [p]
+                pluginprefix = p.prefix().lower()
+                sameprefix = False
+                for i in self._plugins:
+                    if pluginprefix == i.prefix().lower():
+                        sameprefix = True
+                        util.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        break
+
+                if not sameprefix:
+                    self._plugins += [p]
 
         if not found:
             util.warn("No plugin found in %s" % module.__file__)

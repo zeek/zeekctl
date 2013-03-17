@@ -187,7 +187,7 @@ def _checkHosts():
             previous = config.Config.state[tag]
 
             if alive != previous:
-                plugin.Registry.hostStatusChanged(node.host, alive)
+                plugin.Registry.hostStatusChanged(node.host, alive == "1")
                 util.output("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
         config.Config._setState(tag, alive)

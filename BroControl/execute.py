@@ -480,9 +480,9 @@ def _runHelperWait(host):
         output += [line]
 
     try:
-        rc = int(output[0])
+        rc = int(output[-1])
     except ValueError:
-        util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[0]))
+        util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[-1]))
         rc = 1
 
     util.debug(1, "exit code %d" % rc, prefix=host.host)
@@ -490,7 +490,7 @@ def _runHelperWait(host):
     for line in output:
         util.debug(2, "           > %s" % line, prefix=host.host)
 
-    return (rc == 0, output[1:])
+    return (rc == 0, output[:-1])
 
 # Broccoli communication with running nodes.
 
