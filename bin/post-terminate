@@ -60,6 +60,10 @@ fi
 
 ( for i in *.log; do
 
+    if [ "$i" = "stderr.log" -o "$i" = "stdout.log" ]; then
+        continue
+    fi
+
     if [ "$crash" = "1" ]; then
         # manually run log postprocessors in event of crash
         basename=`echo $i | sed 's/\.log$//g'`
