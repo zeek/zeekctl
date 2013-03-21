@@ -8,7 +8,7 @@
 dst=${statsdir}/`basename ${statslog}`
 cat ${statslog} >>$dst
 
-cp ${statsdir}/meta.dat ${statsdir}/www
+cp ${statsdir}/meta.dat ${statsdir}/www/
 
 ${scriptsdir}/stats-to-csv ${statslog} ${statsdir}/meta.dat ${statsdir}/www
 
