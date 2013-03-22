@@ -1,4 +1,9 @@
 
+1.1-61 | 2013-03-22 12:25:22 -0700
+
+  * Fix problem with the cron command hanging sometimes. Addresses
+    #591. (Seth Hall)
+
 1.1-59 | 2013-03-17 13:36:04 -0700
 
   * Lots of small fixes, cleanup, and documentation improvemets (in
