@@ -1,3 +1,4 @@
+# Cluster "interfaces" load-balancing configuration.
 
 [manager]
 type=manager
@@ -10,7 +11,6 @@ host=localhost
 [worker-1]
 type=worker
 host=localhost
-interface=eth0
-lb_procs=11
-lb_method=pf_ring
-
+lb_procs=3
+lb_method=interfaces
+lb_interfaces=eth0, eth3,eth1

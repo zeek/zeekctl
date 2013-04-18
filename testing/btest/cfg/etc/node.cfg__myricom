@@ -1,3 +1,4 @@
+# Cluster myricom configuration.
 
 [manager]
 type=manager
@@ -11,10 +12,6 @@ host=localhost
 type=worker
 host=localhost
 interface=eth0
-aux_scripts=doesnot.exist
-
-[worker-2]
-type=worker
-host=localhost
-interface=eth1
+lb_procs=11
+lb_method=myricom
 

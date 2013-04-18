@@ -1,9 +1,0 @@
-# this is used by the test scripts to cleanup when done (or upon failure)
-
-trap "cleanup" EXIT
-
-function cleanup()
-	{
-	test ! -z "$newprefix" && rm -rf "$newprefix"
-	}
-

@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+#
+# Replace localhost values with X (e.g., "key=::1" would convert to "key=X").
+
+sed 's/=::1/=X/;s/=127.0.0.1/=X/'

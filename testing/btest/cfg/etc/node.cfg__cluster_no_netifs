@@ -1,0 +1,19 @@
+# Cluster configuration without any network interfaces specified (this is
+# mainly useful because Bro will not need any superuser privileges).
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+
+[worker-2]
+type=worker
+host=localhost
+

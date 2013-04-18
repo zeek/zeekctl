@@ -1,31 +1,114 @@
 #! /usr/bin/env bash
 #
 # Broctl test setup script used with the tests in broctl/testing/btest/*.
-# This script should be run at the start of each test to cleanup and
-# install the necessary files for each test.
-# Usage:  broctl-test-setup <broctl.cfg> <networks.cfg> <node.cfg>
+# This script should be sourced at the start of each test case.  This script
+# will install the necessary files (in directory BROCTL_INSTALL_PREFIX) for
+# each test (cleanup happens automatically unless BROCTL_TEST_DEBUG is
+# defined).
 
-if [ -z "${INSTALL}" ]; then
-    echo "Error: INSTALL not defined in btest.cfg" > /dev/stderr
-    exit 1
-fi
 
-tarfile=${INSTALL}.tar
+# installcfgfile <rel.path> [--new]
+#
+# This function can be used to install a test-specific config file.
+# The <rel.path> is the relative pathname of the config file to install
+# and it must follow a naming convention: <dir>/<dest.name>__<text>
+# where <dir> is the directory, <dest.name> is the destination filename, and
+# <text> is some descriptive text for the config file.
+# If "--new" is given, then skip check for existence of destination file.
+function installcfgfile() {
+    if [ -z "$1" ]; then
+        return
+    fi
 
-if [ ! -f "$tarfile" ]; then
-    echo "Error: $tarfile doesn't exist ('make buildbro' to create)" > /dev/stderr
-    exit 1
-fi
+    # Split input into two cmd-line args.
+    origrelpath=`echo $1 | awk '{print $1}'`
+    newfile=`echo $1 | awk '{print $2}'`
+    if [ "$newfile" = "--new" ]; then
+        newfile="yes"
+    else
+        newfile="no"
+    fi
 
-# Create test-specific bro installation
-basedir=`dirname "${INSTALL}"`
-newprefix="$basedir"/test.$$
-mkdir "$newprefix"
-(cd "$newprefix" && tar xf "$tarfile")
+    # Make sure original file exists
+    origpath=$BROCTLCFG/$origrelpath
+    if [ ! -f "$origpath" ]; then
+        echo "Error: file not found: $origpath"
+        exit 1
+    fi
 
-# install test-specific files
-cp "${BROCTLCFG}/$1" "$newprefix/etc/broctl.cfg"
-cp "${BROCTLCFG}/$2" "$newprefix/etc/networks.cfg"
-cp "${BROCTLCFG}/$3" "$newprefix/etc/node.cfg"
+    # Use the double-underscore delimiter to derive the destination filename
+    relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
+    if [ "$origrelpath" = "$relpath" ]; then
+        echo "Error: filename needs '__': $origrelpath"
+        exit 1
+    fi
+    destfile=$(basename "$relpath")
 
-echo $newprefix
+    # Derive the destination directory based on the original directory
+    destdir=$(dirname "$relpath")
+
+    # Make sure destination directory exists
+    if [ ! -d "$BROCTL_INSTALL_PREFIX/$destdir" ]; then
+        echo "Error: directory not found: $BROCTL_INSTALL_PREFIX/$destdir"
+        exit 1
+    fi
+
+    # Finally, build the destination pathname
+    destpath=$BROCTL_INSTALL_PREFIX/$destdir/$destfile
+
+    if [ "$newfile" = "no" ]; then
+        # Make sure destination file exists (usually, we're overwriting an
+        # existing file, so this is a good safety check to catch typos)
+        if [ ! -f "$destpath" ]; then
+            echo "Error: file not found: $destpath"
+            exit 1
+        fi
+    fi
+
+    cp $origpath $destpath
+}
+
+function installbro() {
+    if [ -z "${INSTALL}" ]; then
+        echo "Error: INSTALL not defined (should be in btest.cfg)" 1>&2
+        exit 1
+    fi
+
+    basedir=`dirname "${INSTALL}"`
+    tarfile=$basedir/bro-test-install.tar
+
+    if [ ! -f "$tarfile" ]; then
+        echo "Error: $tarfile doesn't exist ('make buildbro' to create)" 1>&2
+        exit 1
+    fi
+
+    # Cleanup the test directory only if BROCTL_TEST_DEBUG is not set.
+    if [ -z "${BROCTL_TEST_DEBUG}" ]; then
+        trap "cleanup" EXIT
+    fi
+
+    # Create test-specific bro installation
+    newprefix=$basedir/test.$$
+    mkdir "$newprefix"
+    (cd "$newprefix" && tar xf "$tarfile" && sed -i.orig "s#@PREFIX@#$newprefix#" etc/broctl.cfg)
+
+    export BROCTL_INSTALL_PREFIX=$newprefix
+    export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
+
+    # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
+    # to help setup environment for running broctl manually.
+    if [ -n "${BROCTL_TEST_DEBUG}" ]; then
+        how2run=${BROCTL_INSTALL_PREFIX}/how_to_run_broctl
+        echo "# In order to run broctl in this directory, first type '. how_to_run_broctl'" >> $how2run
+        echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
+        echo "export BROCTL_INSTALL_PREFIX=$BROCTL_INSTALL_PREFIX" >> $how2run
+    fi
+}
+
+function cleanup() {
+    test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
+}
+
+
+installbro
+
