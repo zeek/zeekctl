@@ -1,0 +1,8 @@
+manager is ok.
+  Node manager: This is the contents of loaded_scripts.log for broctl testing.
+proxy-1 is ok.
+  Node proxy-1: This is the contents of loaded_scripts.log for broctl testing.
+worker-1 is ok.
+  Node worker-1: This is the contents of loaded_scripts.log for broctl testing.
+worker-2 is ok.
+  Node worker-2: This is the contents of loaded_scripts.log for broctl testing.

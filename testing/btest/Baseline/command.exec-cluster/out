@@ -1,0 +1,8 @@
+[manager]  
+> hello world
+[proxy-1]  
+> hello world
+[worker-1]  
+> hello world
+[worker-2]  
+> hello world

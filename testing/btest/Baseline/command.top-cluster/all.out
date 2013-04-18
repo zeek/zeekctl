@@ -1,0 +1,5 @@
+Name       Type       Node       Pid      Proc     VSize    Rss      Cpu      Cmd     
+manager    manager    localhost  1449     parent    28K       5K     0%       python   
+proxy-1    proxy      localhost  1481     parent    28K       5K     0%       python   
+worker-1   worker     localhost  1527     parent    28K       5K     0%       python   
+worker-2   worker     localhost  1528     parent    28K       5K     0%       python   

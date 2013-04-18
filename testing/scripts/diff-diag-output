@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+#
+# Remove content from "broctl diag" output that is too system-dependent
+# (currently, this includes the contents of stdout.log, and PATH).
+
+awk '{ 
+if ( $0 ~ /^==== stdout.log/ ) {
+    print; f=1
+}  
+else if ( f == 0 ) {
+    if ( $0 ~ /^PATH=/ ) { 
+        print "PATH=<...>" 
+    }
+    else { 
+        print 
+    }
+} else if ( $0 ~ /^====/ ) { 
+    print; f=0 
+} 
+}'

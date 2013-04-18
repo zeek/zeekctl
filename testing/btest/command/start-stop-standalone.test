@@ -1,0 +1,44 @@
+# Test that the start and stop commands can start and stop a standalone bro
+# and creates or removes certain files.
+#
+# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: btest-diff start.out
+# @TEST-EXEC: btest-diff stop.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+broctl install
+
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro
+test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log
+
+# test the start command
+broctl start 2> start.out
+
+# test that broctl created certain files (these are NOT created by bro itself)
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/.cmdline
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/.env_vars
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/.pid
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/.startup
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/stderr.log
+test -e $BROCTL_INSTALL_PREFIX/spool/bro/stdout.log
+grep started $BROCTL_INSTALL_PREFIX/spool/stats.log
+
+
+# test the stop command
+broctl stop 2> stop.out
+
+# the stop command should cleanup the node directory
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/.cmdline
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/.env_vars
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/.pid
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/.startup
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/stderr.log
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/stdout.log
+grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log
+

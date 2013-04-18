@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+#
+# Remove columns from "broctl status" output that always differ (such as PID).
+
+awk '{ print $1,$2,$3,$4,$6 }'

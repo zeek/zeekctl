@@ -1,0 +1,5 @@
+Name       Type       Host       Status        Pid    Peers  Started              
+manager    manager    localhost  running       12656  3      08 Apr 21:51:30  
+proxy-1    proxy      localhost  running       12693  3      08 Apr 21:51:32  
+worker-1   worker     localhost  running       12748  2      08 Apr 21:51:34  
+worker-2   worker     localhost  running       12749  2      08 Apr 21:51:34  

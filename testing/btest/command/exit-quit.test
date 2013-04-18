@@ -1,0 +1,14 @@
+# Test the exit and quit commands.
+#
+# @TEST-EXEC: bash -ex %INPUT
+
+. broctl-test-setup
+
+broctl install
+
+# test the exit command
+broctl exit
+
+# test the quit command
+broctl quit
+

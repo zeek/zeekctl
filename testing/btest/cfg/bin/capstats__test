@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+#
+# This script is a replacement for the "capstats" command, and is used for
+# certain broctl test cases.
+
+
+while [ -n "$1" ]; do
+  if [ "$1" = "-i" ]; then
+      netif=$2
+      shift
+  elif [ "$1" = "-I" ]; then
+      interval=$2
+      shift
+  fi
+  shift 
+done
+
+if [ "$netif" = "eth0" ]; then
+    msg="1365006359.859727 pkts=71674 kpps=7.1 kbytes=306810 mbps=250.4 nic_pkts=71703 nic_drops=0 u=28 t=71628 i=0 o=0 nonip=18"
+else
+    msg="1365006359.859727 pkts=29810 kpps=3.0 kbytes=101090 mbps=82.5 nic_pkts=29812 nic_drops=0 u=26 t=29749 i=0 o=0 nonip=35"
+fi
+
+sleep $interval
+
+# Output an example capstats output (broctl ignores the timestamp value)
+# Note: the capstats command outputs to stderr
+
+echo $msg 1>&2
+

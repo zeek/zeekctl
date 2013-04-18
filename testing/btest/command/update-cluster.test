@@ -1,0 +1,30 @@
+# Test that the update command can update all nodes, or just a specified node.
+#
+# @TEST-SERIALIZE: broccoli
+# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | sort" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | sort" btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster_no_netifs
+EOF
+
+broctl install
+broctl start
+
+# update all nodes
+broctl update 2> all.out
+
+# update one node
+broctl update worker-2 2> onenode.out
+
+broctl stop
+
+# no nodes are running, so no update can happen
+broctl update 2> stopped.out
+# the file size should be zero
+test ! -s stopped.out
+
