@@ -3,8 +3,8 @@
 # cat-file <file>
 
 if [ -f $1 ]; then
-   echo 0
    cat $1
+   echo 0
 else
    echo 1
 fi   

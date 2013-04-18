@@ -8,6 +8,10 @@
 
 cd $1
 
+echo
+echo Bro `${bro} -v 2>&1 | awk '{print $3}'`
+echo
+
 core=`ls -t *core* 2>&1`
 
 if which gdb >/dev/null 2>&1; then

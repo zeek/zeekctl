@@ -15,8 +15,8 @@ while [ ! -e .pid ]; do
    sleep 1
 done
 
-echo 0
 cat .pid
+echo 0
 echo ~~~
 
 

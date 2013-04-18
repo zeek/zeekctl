@@ -44,7 +44,7 @@ class Configuration:
         # Initialize options.
         for opt in options.options:
             if not opt.dontinit:
-                self._setOption(opt.name.lower(), opt.default)
+                self._setOption(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))
@@ -107,16 +107,16 @@ class Configuration:
             return self.config.items()
 
     # Returns a list of Nodes.
-    # - If tag is "global" or "all", all Nodes are returned if "expand_all" is true.
+    # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "proxies" or "proxy", all proxy Nodes are returned.
-    # - If tag is "workers" or "worker", all worker Nodes are returned.
+    # - If tag is "proxies", all proxy Nodes are returned.
+    # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned.
     def nodes(self, tag=None, expand_all=True):
         nodes = []
         type = None
 
-        if tag == "cluster" or tag == "all":
+        if tag == "all":
             if not expand_all:
                 return []
 
@@ -336,7 +336,7 @@ class Configuration:
                         util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
     # Parses broctl.cfg and returns a dictionary of all entries.
-    def _readConfig(self, file):
+    def _readConfig(self, file, allowstate = False):
         config = {}
         try:
             for line in open(file):
@@ -353,6 +353,9 @@ class Configuration:
                 key = key.strip().lower()
                 val = val.strip()
 
+                if not allowstate and ".state." in key:
+                    util.error("state variable '%s' not allowed in file: %s" % (key, file))
+
                 config[key] = val
 
         except IOError, e:
@@ -362,6 +365,7 @@ class Configuration:
 
     # Initialize a global option if not already set.
     def _setOption(self, val, key):
+        val = val.lower()
         if not val in self.config:
             self.config[val] = self.subst(key)
 
@@ -372,7 +376,7 @@ class Configuration:
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self):
-        self.state = self._readConfig(self.statefile)
+        self.state = self._readConfig(self.statefile, True)
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
     def writeState(self):

@@ -37,7 +37,11 @@ options = [
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
            "Script to generate filenames for archived log files."),
     Option("CompressLogs", "1", "bool", Option.USER, False,
-           "True to gzip archived log files."),
+           "True to compress archived log files."),
+    Option("CompressCmd", "gzip -9", "string", Option.USER, False,
+           "If archived logs will be compressed, the command to use for that. The specified command must compress its standard input to standard output."),
+    Option("CompressExtension", "gz", "string", Option.USER, False,
+           "If archived logs will be compressed, the file extension to use on compressed log files. When specifying a file extension, don't include the period character (e.g., specify 'gz' instead of '.gz')."),
 
     Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
            "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time."),
@@ -49,15 +53,22 @@ options = [
     Option("MailTo", "<user>", "string", Option.USER, True,
            "Destination address for non-alarm mails."),
     Option("MailFrom", "Big Brother <bro@localhost>", "string", Option.USER, True,
-           "Originator address for broctl-generated mails."),
+           "Originator address for mails."),
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for alarm summary mails. Default is to use the same address as MailTo."),
+    Option("MailAlarmsInterval", "86400", "int", Option.USER, False,
+           "The frequency (in seconds) of sending alarm summary mails (zero to disable)."),
+
+    Option("MailConnectionSummary", "1", "bool", Option.USER, False,
+           "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,
-           "Number of days log files are kept (zero means disabled)."),
+           "Number of days log files are kept (zero means log files never expire)."),
+    Option("KeepLogs", "", "string", Option.USER, False,
+           "A space-separated list of filename shell patterns of expired log files to keep (empty string means don't keep any expired log files). The filename shell patterns are not regular expressions and do not include any directories. For example, specifying 'conn.* dns*' will prevent any expired log files with filenames starting with 'conn.' or 'dns' from being removed. Finally, note that this option is ignored if log files never expire."),
     Option("BroArgs", "", "string", Option.USER, False,
            "Additional arguments to pass to Bro on the command-line."),
     Option("MemLimit", "unlimited", "string", Option.USER, False,
@@ -142,7 +153,7 @@ options = [
            "Directory where standard plugins are located."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
-           "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary emails."),
+           "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary reports."),
     Option("CapstatsPath", "${bindir}/capstats", "string", Option.AUTOMATIC, False,
            "Path to capstats binary; empty if not available."),
 

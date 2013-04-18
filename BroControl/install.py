@@ -98,6 +98,9 @@ def install(local_only):
             for file in glob.glob(os.path.join(dir, "*")):
                 if execute.isfile(manager, file):
                     execute.install(manager, file, dst)
+                elif execute.isdir(manager, file):
+                    dstdir = os.path.join(dst, os.path.basename(file))
+                    execute.install(manager, file, dstdir)
         util.output(" done.")
 
     makeLayout(config.Config.policydirsiteinstallauto)
@@ -331,9 +334,11 @@ def makeConfig(path, silent=False):
     print >>out, "redef Notice::mail_dest_pretty_printed = \"%s\";" % config.Config.mailalarmsto
     print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
     print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
+    print >>out, "redef Notice::mail_from  = \"%s\";" % config.Config.mailfrom;
     if manager.type != "standalone":
         print >>out, "@if ( Cluster::local_node_type() == Cluster::MANAGER )"
     print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
+    print >>out, "redef Log::default_mail_alarms_interval = %s secs;" % config.Config.mailalarmsinterval
     if manager.type != "standalone":
         print >>out, "@endif"
     if config.Config.ipv6comm:

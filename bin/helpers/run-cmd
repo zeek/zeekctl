@@ -2,6 +2,6 @@
 #
 #  run-cmd <cmd> 
 
-echo 0     # Fix me. Should be real return code.
 eval $@ 2>&1
+echo $?
 echo ~~~

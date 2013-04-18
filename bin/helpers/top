@@ -27,6 +27,6 @@ fi
 unset LINES
 unset COLUMNS
 
-echo 0
 eval $cmd | awk -f ${helperdir}/to-bytes.awk
+echo $?
 echo ~~~

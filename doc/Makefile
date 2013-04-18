@@ -2,7 +2,7 @@
 #
 # Note: It's not great to build this here and commit to the repository
 # (as opposed to in build/). However, otherwise it would get hard
-# to put the final document online www.bro-ids.org.
+# to put the final document online www.bro.org.
 
 all: generate-docs
 

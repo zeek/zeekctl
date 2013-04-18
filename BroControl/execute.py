@@ -145,7 +145,7 @@ def isdir(host, path):
         return success
 
 # Copies src to dst, preserving permission bits.
-# Works for files and directories (non-recursive).
+# Works for files and directories (recursive).
 def install(host, src, dst):
     if isLocal(host):
         if not exists(host, src):
@@ -162,7 +162,10 @@ def install(host, src, dst):
         util.debug(1, "cp %s %s" % (src, dst))
 
         try:
-            shutil.copy2(src, dst)
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+            elif os.path.isdir(src):
+                shutil.copytree(src, dst)
         except OSError:
             # Python 2.6 has a bug where this may fail on NFS. So we just
             # ignore errors.
@@ -477,9 +480,9 @@ def _runHelperWait(host):
         output += [line]
 
     try:
-        rc = int(output[0])
+        rc = int(output[-1])
     except ValueError:
-        util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[0]))
+        util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[-1]))
         rc = 1
 
     util.debug(1, "exit code %d" % rc, prefix=host.host)
@@ -487,7 +490,7 @@ def _runHelperWait(host):
     for line in output:
         util.debug(2, "           > %s" % line, prefix=host.host)
 
-    return (rc == 0, output[1:])
+    return (rc == 0, output[:-1])
 
 # Broccoli communication with running nodes.
 
