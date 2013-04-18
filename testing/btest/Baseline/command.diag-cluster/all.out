@@ -1,5 +1,8 @@
 [manager]
 
+Bro 2.2-1
+
+
 ==== No reporter.log
 
 ==== stderr.log
@@ -27,6 +30,9 @@ RUNNING [net_run]
 ==== loaded_scripts.log
 Node manager: This is the contents of loaded_scripts.log for broctl testing.
 [proxy-1]
+
+Bro 2.2-1
+
 
 ==== No reporter.log
 
@@ -56,6 +62,9 @@ RUNNING [net_run]
 Node proxy-1: This is the contents of loaded_scripts.log for broctl testing.
 [worker-1]
 
+Bro 2.2-1
+
+
 ==== No reporter.log
 
 ==== stderr.log
@@ -83,6 +92,9 @@ RUNNING [net_run]
 ==== loaded_scripts.log
 Node worker-1: This is the contents of loaded_scripts.log for broctl testing.
 [worker-2]
+
+Bro 2.2-1
+
 
 ==== No reporter.log
 

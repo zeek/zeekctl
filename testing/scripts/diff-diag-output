@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #
 # Remove content from "broctl diag" output that is too system-dependent
-# (currently, this includes the contents of stdout.log, and PATH).
+# (currently, this includes the contents of stdout.log, PATH, and bro version).
 
 awk '{ 
 if ( $0 ~ /^==== stdout.log/ ) {
@@ -10,6 +10,9 @@ if ( $0 ~ /^==== stdout.log/ ) {
 else if ( f == 0 ) {
     if ( $0 ~ /^PATH=/ ) { 
         print "PATH=<...>" 
+    }
+    else if ( $0 ~ /^Bro / ) {
+        print "Bro <version>"
     }
     else { 
         print 
