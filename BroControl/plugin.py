@@ -36,21 +36,19 @@ class Plugin(object):
     The ``cmd_<XXX>_post`` methods likewise receive the commands arguments as
     their parameter, as documented below. For commands taking nodes, the list
     corresponds to those nodes for which the command was actually executed
-    (i.e., after any ``cmd_<XXX>_pre`` filtering). Each node is given as a
-    tuple ``(node, bool)`` with *node* being the actual `Node`_, and the boolean
-    indicating whether the command was successful for it.
+    (i.e., after any ``cmd_<XXX>_pre`` filtering).
 
     Note that if a plugin prevents a command from executing either completely or
-    partially, it should report its reason via the ``message*()`` or
+    partially, it should report its reason via the ``message()`` or
     ``error()`` methods.
 
     If multiple plugins hook into the same command, all their
     ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
     executed on the intersection of all ``cmd_<XXX>_pre`` results.
 
-    Finally, note that the ``restart`` command doesn't have its own method as
-    it's just a combination of other commands and thus their callbacks are
-    run.
+    Finally, note that the ``restart`` command is just a combination of other
+    commands and thus their callbacks are run in addition to the callbacks
+    for ``restart``.
     """
 
     def __init__(self, apiversion):
@@ -95,8 +93,8 @@ class Plugin(object):
         *name*. The returned value will always be a string. If it has not yet
         been set, an empty string will be returned.
 
-        Different from options, state variables can be set by the plugin and
-        are persistent across restarts. They are not visible to the user.
+        Different from options, state variables can be set by the plugin.
+        They are persistent across restarts.
 
         Note that a plugin cannot query any global BroControl state variables.
         """
@@ -122,15 +120,15 @@ class Plugin(object):
         if "." in name or " " in name:
             self.error("plugin state variable names must not contain dots or spaces")
 
-        name = "%s.state.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.state.%s" % (self.prefix(), name)
         config.Config._setState(name, value)
 
     @doc.api
     def parseNodes(self, names):
-        """Returns `Node`_ objects for a string of space-separated node names.
-        If a name does not correspond to a known node, an error message is
-        printed and the node is skipped from the returned list. If no names
-        are known, an empty list is returned."""
+        """Returns a list of `Node`_ objects for a string of space-separated
+        node names. If a name does not correspond to a known node, an error
+        message is printed and the node is skipped from the returned list. If
+        no names are known, an empty list is returned."""
         nodes = []
 
         for arg in names.split():
@@ -138,7 +136,7 @@ class Plugin(object):
             if not h:
                 util.output("unknown node '%s'" % arg)
             else:
-                nodes += [h]
+                nodes += h
 
         return nodes
 
@@ -154,8 +152,8 @@ class Plugin(object):
 
     @doc.api
     def error(self, msg):
-        """Reports an error to the user."""
-        error("error: %s" % msg, prefix="plugin:%s" % self.prefix())
+        """Reports an error to the user and terminates broctl."""
+        util.error(msg, prefix="plugin:%s" % self.prefix())
 
     @doc.api
     def execute(self, node, cmd):
@@ -163,7 +161,8 @@ class Plugin(object):
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
         stdout/stderr output."""
-        return execute.executeCmdsParallel([node, cmd])
+        result = execute.executeCmdsParallel([(node, cmd)])[0]
+        return (result[1], result[2])
 
     @doc.api
     def nodes(self):
@@ -173,17 +172,17 @@ class Plugin(object):
     @doc.api
     def hosts(self, nodes=[]):
         """Returns a list of all hosts running at least one node from the list
-        of Nodes_ objects in *nodes*, or configured in if *nodes* is empty."""
+        of Node_ objects in *nodes*, or configured in if *nodes* is empty."""
 
         if not nodes:
-            return config.Config.hosts()
+            return [ n.host for n in config.Config.hosts() ]
 
         result = {}
 
         for n in nodes:
             result[n.host] = n
 
-        return result.values()
+        return result.keys()
 
     @doc.api
     def executeParallel(self, cmds):
@@ -199,7 +198,7 @@ class Plugin(object):
 
     @doc.api("override")
     def name(self):
-        """Returns a string with a descriptive *name* for the plugin (e.g.,
+        """Returns a string with a descriptive name for the plugin (e.g.,
         ``"TestPlugin"``). The name must not contain any whitespace.
 
         This method must be overridden by derived classes. The implementation
@@ -217,6 +216,8 @@ class Plugin(object):
         must not call the parent class' implementation.
         """
         raise NotImplementedError
+
+    ### Methods that can be overridden by plugins.
 
     @doc.api("override")
     def prefix(self):
@@ -241,7 +242,7 @@ class Plugin(object):
                 A string with name of the option (e.g., ``Path``). Option
                 names are case-insensitive. Note that the option name exposed
                 to the user will be prefixed with your plugin's prefix as
-                returned by *name()* (e.g., ``myplugin.Path``).
+                returned by *prefix()* (e.g., ``myplugin.Path``).
 
             ``type``
                 A string with type of the option, which must be one of
@@ -273,16 +274,17 @@ class Plugin(object):
             ``command``
                 A string with the command's name. Note that the command name
                 exposed to the user will be prefixed with the plugin's prefix
-                as returned by *name()* (e.g., ``myplugin.mycommand``).
+                as returned by *prefix()* (e.g., ``myplugin.mycommand``).
 
             ``arguments``
                 A string describing the command's arguments in a textual form
                 suitable for use in the ``help`` command summary (e.g.,
-                ``[<nodes>]`` for command taking an optional list of nodes).
-                Empty if no arguments are expected. 
+                ``[<nodes>]`` for a command taking an optional list of nodes).
+                Empty if no arguments are expected.
 
             ``description``
-                A string with a description of the command's semantics.
+                A string with a description of the command's semantics suitable
+                for use in the ``help`` command summary.
 
 
         This method can be overridden by derived classes. The implementation
@@ -293,10 +295,11 @@ class Plugin(object):
 
     @doc.api("override")
     def nodeKeys(self):
-        """Returns a list of custom keys for ``node.cfg``. The value for a
-        key will be available from the `Node`_ object as attribute
-        ``<prefix>_<key>`` (e.g., ``node.test_mykw``). If not set, the
-        attribute will be set to None.
+        """Returns a list of names of custom keys (the value of a key
+        can be specified in ``node.cfg`` for any node defined there). The
+        value for a key will be available from the `Node`_ object as attribute
+        ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not set, the
+        attribute will be set to an empty string.
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default
@@ -379,12 +382,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_nodes_pre(self):
-        """Called just before the ``nodes`` command is run.
+        """Called just before the ``nodes`` command is run. Returns a
+        boolean indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_nodes_post(self):
@@ -397,12 +401,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_config_pre(self):
-        """Called just before the ``config`` command is run.
+        """Called just before the ``config`` command is run. Returns a boolean
+        indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_config_post(self):
@@ -418,10 +423,13 @@ class Plugin(object):
         """Called just before the ``exec`` command is run. *cmdline* is a
         string with the command line to execute.
 
+        Returns a boolean indicating whether or not the ``exec`` command
+        should run.
+
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_exec_post(self, cmdline):
@@ -435,12 +443,13 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_install_pre(self):
-        """Called just before the ``install`` command is run.
+        """Called just before the ``install`` command is run. Returns a
+        boolean indicating whether or not the command should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_install_post(self):
@@ -453,20 +462,23 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_cron_pre(self, arg, watch):
-        """Called just before the ``cron`` command is run. *arg* is None if
-        the cron is executed without arguments. Otherwise, it is one of the
-        strings: ``enable``, ``disable``, ``?``. *watch* is a boolean
-        indicating whether ``cron`` should restart abnormally terminated Bro
-        processes; it's only valid if arg is empty.
+        """Called just before the ``cron`` command is run. *arg* is an empty
+        string if the command is executed without arguments. Otherwise, it is
+        one of the strings: ``enable``, ``disable``, ``?``. *watch* is a
+        boolean indicating whether the ``cron`` command should restart
+        abnormally terminated Bro processes; it's only valid if *arg* is empty.
+
+        Returns a boolean indicating whether or not the ``cron`` command should
+        run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_cron_post(self, arg, watch):
-        """Called just after the ``cron`` command has finished. Arguments are 
+        """Called just after the ``cron`` command has finished. Arguments are
         as with the ``pre`` method.
 
         This method can be overridden by derived classes. The default
@@ -585,9 +597,9 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_custom(self, cmd, args):
-        """Called when command defined by the ``commands`` method is executed.
-        ``cmd`` is the command (with the plugin's prefix), and ``args`` is a
-        single *string* with all arguments.
+        """Called when a command defined by the ``commands`` method is executed.
+        *cmd* is the command (without the plugin's prefix), and *args* is a
+        single string with all arguments.
 
         If the arguments are actually node names, ``parseNodes`` can
         be used to get the `Node`_ objects.
@@ -673,7 +685,7 @@ class Plugin(object):
 
     @doc.api("override")
     def cmd_peerstatus_post(self, nodes):
-        """Called just after the ``peerstatus`` command has finished. 
+        """Called just after the ``peerstatus`` command has finished.
         Arguments are as with the ``pre`` method.
 
         This method can be overridden by derived classes. The default
@@ -739,59 +751,10 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_restart_post(self, results):
+    def cmd_restart_post(self, nodes):
         """Called just after the ``restart`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status. The remaining
-        arguments are as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_restart_pre(self, nodes, clean):
-        """Called just before the ``restart`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command. *clean* is boolean indicating whether the ``--clean``
-        argument has been given.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_restart_post(self, results):
-        """Called just after the ``restart`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status. The remaining
-        arguments are as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_restart_pre(self, nodes, clean):
-        """Called just before the ``restart`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command. *clean* is boolean indicating whether the ``--clean``
-        argument has been given.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_restart_post(self, results):
-        """Called just after the ``restart`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status. The remaining
-        arguments are as with the ``pre`` method.
+        a list of *nodes* indicating the nodes on which the command was
+        executed.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
@@ -824,7 +787,7 @@ class Plugin(object):
     def cmd_capstats_pre(self, nodes, interval):
         """Called just before the ``capstats`` command is run. It receives the
         list of nodes, and returns the list of nodes that should proceed with
-        the command. *integer* is an integer with the measurement interval in
+        the command. *interval* is an integer with the measurement interval in
         seconds.
 
         This method can be overridden by derived classes. The default
@@ -843,11 +806,11 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_scripts_pre(self, nodes, full_path, check):
+    def cmd_scripts_pre(self, nodes, check):
         """Called just before the ``scripts`` command is run. It receives the
         list of nodes, and returns the list of nodes that should proceed with
-        the command. ``full_path`` and ``check`` are boolean indicating
-        whether the ``-p`` and ``-c`` options were given, respectively.
+        the command. *check* is boolean indicating whether the ``-c``
+        option was given.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
@@ -855,7 +818,7 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_scripts_post(self, nodes, full_path, check):
+    def cmd_scripts_post(self, nodes, check):
         """Called just after the ``scripts`` command has finished. Arguments
         are as with the ``pre`` method.
 
@@ -889,12 +852,15 @@ class Plugin(object):
     def cmd_process_pre(self, trace, options, scripts):
         """Called just before the ``process`` command is run. It receives the
         *trace* to read from as a string, a list of additional Bro *options*,
-        and a list of additional Bro scripts.
+        and a list of additional Bro *scripts*.
+
+        Returns a boolean indicating whether or not the ``process`` command
+        should run.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        pass
+        return True
 
     @doc.api("override")
     def cmd_process_post(self, trace, options, scripts, success):
@@ -926,4 +892,4 @@ class Plugin(object):
             if not isinstance(default, str):
                 self.error("plugin option default must be a string")
 
-            config.Config._setOption("%s.%s" % (self.prefix().lower(), name), default)
+            config.Config._setOption("%s.%s" % (self.prefix(), name), default)

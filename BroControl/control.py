@@ -317,15 +317,19 @@ def _startNodes(nodes):
 
 # Start Bro processes on nodes if not already running.
 def start(nodes):
-    if len(nodes) > 0:
-        # User picked nodes to start.
-        return _startNodes(nodes)
+    manager = []
+    proxies = []
+    workers = []
 
-    manager = config.Config.nodes("manager")
-    proxies = config.Config.nodes("proxies")
-    workers = config.Config.nodes("workers")
+    for n in nodes:
+        if n.type == "worker":
+            workers += [n]
+        elif n.type == "proxy":
+            proxies += [n]
+        else:
+            manager += [n]
 
-    # Start all nodes. Do it in the order manager, proxies, workers.
+    # Start nodes. Do it in the order manager, proxies, workers.
 
     results1 = _startNodes(manager)
 
@@ -455,15 +459,20 @@ def _stopNodes(nodes):
 
 # Stop Bro processes on nodes.
 def stop(nodes):
-    if len(nodes) > 0:
-        # User picked nodes to stop.
-        return _stopNodes(nodes)
+    manager = []
+    proxies = []
+    workers = []
 
-    manager = config.Config.nodes("manager")
-    proxies = config.Config.nodes("proxies")
-    workers = config.Config.nodes("workers")
+    for n in nodes:
+        if n.type == "worker":
+            workers += [n]
+        elif n.type == "proxy":
+            proxies += [n]
+        else:
+            manager += [n]
 
-    # Stop all nodes. Do it in the order workers, proxies, manager
+
+    # Stop nodes. Do it in the order workers, proxies, manager
     # (the reverse of "start").
 
     results1 = _stopNodes(workers)
@@ -694,6 +703,7 @@ def _doCheckConfig(nodes, installed, list_scripts):
         cmds += [((node, cwd), cmd, env, None)]
 
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
+        results += [(node, success)]
         if success:
             util.output("%s is ok." % node.name)
             if list_scripts:
@@ -800,6 +810,9 @@ def getCapstatsOutput(nodes, interval):
 
     hosts = {}
     for node in nodes:
+        if not node.interface:
+            continue
+
         try:
             hosts[(node.addr, node.interface)] = node
         except AttributeError:
@@ -944,7 +957,7 @@ def capstats(nodes, interval):
         for (node, error, vals) in getCapstatsOutput(nodes, interval):
             if str(node) == "$total":
                 capstats += [(node, error, vals)]
-            elif node.interface:
+            else:
                 capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
 
     else:

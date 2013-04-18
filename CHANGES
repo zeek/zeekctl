@@ -1,4 +1,43 @@
 
+1.1-61 | 2013-03-22 12:25:22 -0700
+
+  * Fix problem with the cron command hanging sometimes. Addresses
+    #591. (Seth Hall)
+
+1.1-59 | 2013-03-17 13:36:04 -0700
+
+  * Lots of small fixes, cleanup, and documentation improvemets (in
+    particular, but not only, to the plugin API). (Daniel Thayer).
+
+    This includes:
+
+        - Check for plugins with same prefix
+        - Prevent capstats from being run with invalid args
+        - Fix plugin inconsistency for certain broctl commands
+        - Document the broctl user option KeepLogs?
+        - Add a note in documentation about editing crontab
+        - Fix broctl plugin option names to be case-insensitive
+        - Remove reserved word "cluster" from node args
+        - Fix documentation of broctl commands
+        - Add calls to plugin cmd_restart_pre/post methods
+        - Fix instructions for adding plugin directories
+        - Fix the broctl check command to report results
+        - Fix handling of cmd_diag_pre for diag command
+        - Changed return value of plugin API "execute" method
+        - Add return value to some cmd_<cmd>_pre methods
+        - Add a check for state variables in broctl.cfg
+        - Changed "hosts" method to return list of hosts
+        - Call "done" method from plugin API
+        - Call hostStatusChanged with correct arg type
+        - Fix the parseNodes method in plugin API
+        - Fix the "error" method in broctl plugin API
+        - Fixed tab-completion of commands with node args
+        - Fix broctl plugin API documentation errors
+        - Fix typos in TestPlugin? output messages
+        - Add cron "--no-watch" option to broctl "help" output
+        - Fix the "execute" method of the Plugin class
+        - Fix various bugs and remove some unused code
+
 1.1-26 | 2012-12-20 17:53:52 -0800
 
   * Add Bro version to crash reports. (Robin Sommer)

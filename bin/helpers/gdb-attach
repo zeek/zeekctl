@@ -11,7 +11,7 @@ pid=$3
 cmds=${tmpdir}/gdb.cmd
 echo "continue" >$cmds
 
-echo 0
 screen -s $session -X quit >/dev/null 2>&1 
 screen -dmS $session gdb -x $cmds $binary $pid
+echo 0
 echo ~~~
