@@ -60,7 +60,10 @@ class Configuration:
 
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.captureCmd("which time")
-        self._setOption("time", output[0].lower().strip())
+        if success:
+            self._setOption("time", output[0].lower().strip())
+        else:
+            self._setOption("time", "")
 
     def initPostPlugins(self):
         plugin.Registry.addNodeKeys()
