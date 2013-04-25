@@ -63,7 +63,7 @@ def processNode(stats, wwwdir, node, iface):
             try:
                 print >>iface_mbps, "%s,%s" % (t, entry["interface-mbps"])
             except KeyError:
-                    pass
+                pass
                 
             try:
                 tc = float(entry["interface-t"])
@@ -73,7 +73,7 @@ def processNode(stats, wwwdir, node, iface):
                 print >>iface_pkts, "%s,%s,%s,%s,%s" % (t, tc, ud, ic, ot)
                 
             except KeyError:
-                    pass
+                pass
                 
         if "in-mbps" in entry:
             print >>cflow, "%s,%s" % (t, entry["in-mbps"])
@@ -124,14 +124,16 @@ except OSError:
 
 readNodes(meta)
 
-for w in Workers:
-    processNode(stats, wwwdir, w, True)
+try:
+    for w in Workers:
+        processNode(stats, wwwdir, w, True)
 
-for p in Proxies:
-    processNode(stats, wwwdir, p, False)
+    for p in Proxies:
+        processNode(stats, wwwdir, p, False)
 
-processNode(stats, wwwdir, "manager", False)
-processNode(stats, wwwdir, "cflow", False)
-    
-    
-    
+    processNode(stats, wwwdir, "manager", False)
+    processNode(stats, wwwdir, "cflow", False)
+except IOError, err:    
+    print "Error: %s" % err
+    sys.exit(1)
+
