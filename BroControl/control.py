@@ -842,11 +842,20 @@ def getCapstatsOutput(nodes, interval):
             results += [(node, "%s: cannot execute capstats" % node.name, {})]
             continue
 
-        fields = output[0].split()
+        if not output:
+            results += [(node, "%s: no capstats output" % node.name, {})]
+            continue
+
+        fields = output[0].split()[1:]
+
+        if not fields:
+            results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+            continue
+
         vals = { }
 
         try:
-            for field in fields[1:]:
+            for field in fields:
                 (key, val) = field.split("=")
                 val = float(val)
                 vals[key] = val
@@ -914,9 +923,8 @@ def capstats(nodes, interval):
             util.output("%-20s " % tag, nl=False)
 
             if not error:
-                util.output("%-10s " % vals["kpps"], nl=False)
-                if "mbps" in vals:
-                    util.output("%-10s " % vals["mbps"], nl=False)
+                util.output("%-10s " % vals.get("kpps", ""), nl=False)
+                util.output("%-10s " % vals.get("mbps", ""), nl=False)
                 util.output()
             else:
                 util.output("<%s> " % error)
