@@ -24,6 +24,12 @@ if [ "${os}" == "freebsd" ]; then
    top -u -b all | grep -q "STATE  *C  *TIME" || cmd="$cmd_freebsd_nonsmp"
 fi
 
+if [ -z "$cmd" ]; then
+    echo 1
+    echo ~~~
+    exit
+fi
+
 unset LINES
 unset COLUMNS
 

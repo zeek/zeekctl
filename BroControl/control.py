@@ -611,8 +611,9 @@ def getTopOutput(nodes):
 
     for (node, success, output) in execute.runHelperParallel(cmds):
 
-        if not success:
+        if not success or not output:
             results += [(node, "cannot get top output", [{}])]
+            continue
 
         procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
 
@@ -623,15 +624,19 @@ def getTopOutput(nodes):
 
         vals = []
 
-        for p in procs:
-            d = {}
-            d["pid"] = int(p[0])
-            d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-            d["vsize"] = long(float(p[1])) # May be something like 2.17684e+09
-            d["rss"] = long(float(p[2]))
-            d["cpu"] = p[3]
-            d["cmd"] = " ".join(p[4:])
-            vals += [d]
+        try:
+            for p in procs:
+                d = {}
+                d["pid"] = int(p[0])
+                d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
+                d["rss"] = long(float(p[2]))
+                d["cpu"] = p[3]
+                d["cmd"] = " ".join(p[4:])
+                vals += [d]
+        except ValueError, err:
+            results += [(node, "unexpected top output: %s" % err, [{}])]
+            continue
 
         results += [(node, None, vals)]
 
