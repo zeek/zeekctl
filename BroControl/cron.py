@@ -47,7 +47,9 @@ def doCron(watch):
 
     # Run external command if we have one.
     if config.Config.croncmd:
-        execute.runLocalCmd(config.Config.croncmd)
+        (success, output) = execute.runLocalCmd(config.Config.croncmd)
+        if not success:
+            util.output("error running croncmd: %s" % config.Config.croncmd)
 
     # Mail potential output.
     output = util.getBufferedOutput()
