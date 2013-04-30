@@ -15,11 +15,24 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
+        pfringid = int(BroControl.config.Config.pfringclusterid)
+        if pfringid == 0:
+            return True
+
+        dd = {}
         for nn in self.nodes():
-            if nn.type != "worker":
+            if nn.type != "worker" or nn.lb_method != "pf_ring":
                 continue
 
-            if nn.lb_method == "pf_ring":
-                if BroControl.config.Config.pfringclusterid != "0":
-                    nn.env_vars += ["PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1"]
-                    nn.env_vars += ["PCAP_PF_RING_CLUSTER_ID=%s" % BroControl.config.Config.pfringclusterid]
+            if nn.host in dd:
+                if nn.interface not in dd[nn.host]:
+                    dd[nn.host][nn.interface] = pfringid + len(dd[nn.host])
+            else:
+                dd[nn.host] = { nn.interface : pfringid }
+
+            nn.env_vars += ["PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1"]
+            myid = dd[nn.host][nn.interface]
+            nn.env_vars += ["PCAP_PF_RING_CLUSTER_ID=%s" % myid]
+
+        return True
+

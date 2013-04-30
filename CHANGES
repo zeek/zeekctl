@@ -1,4 +1,18 @@
 
+1.1-63 | 2013-04-25 16:14:51 -0400
+
+  * Add support for multiple PF_RING cluster IDs
+
+    Instead of assigning the same PF_RING cluster ID to every worker
+    in a Bro cluster, the pf_ring broctl plugin has been modified to
+    automatically assign a different PF_RING cluster ID for each se
+    of workers on a host that all sniff the same interface.  The firs
+    such set of workers on a host are assigned the globally-configured
+    PF_RING cluster ID (this is the "pfringclusterid" broctl option in
+    broctl.cfg).  Each subsequent set of workers on a host that sniff
+    another interface are assigned a different value (incremented by
+    one from previous value). Addresses #943. (Daniel Thayer)
+
 1.1-61 | 2013-03-22 12:25:22 -0700
 
   * Fix problem with the cron command hanging sometimes. Addresses
