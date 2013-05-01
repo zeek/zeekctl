@@ -224,12 +224,12 @@ def captureCmd(cmd, env = "", input = None):
     rc = proc.wait()
     output = [line.strip() for line in proc.fromchild]
 
-    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+    util.debug(1, rc, prefix="local")
 
     for line in output:
         util.debug(2, "           > %s" % line, prefix="local")
 
-    return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
+    return (rc == 0, output)
 
 ## FIXME: Replace "captureCmd" with "runLocalCmd".
 
@@ -297,12 +297,12 @@ def _runLocalCmdWait(proc):
     rc = proc.wait()
     output = [stripNL(line) for line in proc.fromchild]
 
-    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+    util.debug(1, rc, prefix="local")
 
     for line in output:
         util.debug(2, "           > %s" % line, prefix="local")
 
-    return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
+    return (rc == 0, output)
 
 
 # Runs arbitrary commands in parallel on nodes. Input is list of (node, cmd).
