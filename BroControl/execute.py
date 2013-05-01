@@ -238,8 +238,6 @@ def captureCmd(cmd, env = "", input = None):
 # and output being the combinded stdout/stderr output of the command.
 def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
     proc = _runLocalCmdInit("single", cmd, env, input, donotcaptureoutput)
-    if not proc:
-        return (False, [])
 
     return _runLocalCmdWait(proc)
 
@@ -247,7 +245,6 @@ def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
 # Cmds is a list of (id, cmd, envs, input) tuples, where id is
 # an arbitrary cookie identifying each command.
 # Returns a list of (id, success, output) tuples.
-# 'output' is None (vs. []) if we couldn't connect to host.
 def runLocalCmdsParallel(cmds):
 
     results = []
@@ -255,18 +252,11 @@ def runLocalCmdsParallel(cmds):
 
     for (id, cmd, envs, input) in cmds:
         proc = _runLocalCmdInit(id, cmd, envs, input)
-        if proc:
-            running += [(id, proc)]
-        else:
-            results += [(id, False, None)]
+        running += [(id, proc)]
 
     for (id, proc) in running:
-        status  = _runLocalCmdWait(proc)
-        if status:
-            (success, output) = status
-            results += [(id, success, output)]
-        else:
-            results += [(id, False, None)]
+        (success, output) = _runLocalCmdWait(proc)
+        results += [(id, success, output)]
 
     return results
 
