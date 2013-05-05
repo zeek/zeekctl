@@ -27,7 +27,7 @@ import util
 Config = None # Globally accessible instance of Configuration.
 
 class Configuration:
-    def __init__(self, config, basedir, version):
+    def __init__(self, config, basedir, broscriptdir, version):
         global Config
         Config = self
 
@@ -39,6 +39,7 @@ class Configuration:
 
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
+        self._setOption("broscriptdir", broscriptdir)
         self._setOption("version", version)
 
         # Initialize options.

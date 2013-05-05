@@ -134,7 +134,7 @@ options = [
            "Directory for configuration files."),
     Option("SpoolDir", "${BroBase}/spool", "string", Option.AUTOMATIC, False,
            "Directory for run-time data."),
-    Option("PolicyDir", "${BroBase}/share/bro", "string", Option.AUTOMATIC, False,
+    Option("PolicyDir", "${BroScriptDir}", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
     Option("StaticDir", "${BroBase}/share/broctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
