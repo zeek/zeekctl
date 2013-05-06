@@ -11,7 +11,7 @@ rm -f .pid
 
 nohup ${scriptsdir}/run-bro $@ >stdout.log 2>stderr.log &
 
-while [ ! -e .pid ]; do
+while [ ! -s .pid ]; do
    sleep 1
 done
 
