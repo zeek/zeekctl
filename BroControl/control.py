@@ -1109,7 +1109,8 @@ def netStats(nodes):
 
 def executeCmd(nodes, cmd):
     for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
-        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), "\n> ".join(output)))
+        out = output and "\n> ".join(output) or ""
+        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
 
 def processTrace(trace, bro_options, bro_scripts):
     standalone = (config.Config.standalone == "1")
