@@ -6,6 +6,7 @@ include(cmake/CommonCMakeConfig.cmake)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX "${CMAKE_INSTALL_PREFIX}")
+set(BROSCRIPTDIR "${BRO_SCRIPT_INSTALL_PATH}")
 set(ETC "${BRO_ETC_INSTALL_DIR}")
 
 ########################################################################
@@ -74,7 +75,7 @@ include(InstallPackageConfigFile)
 include(InstallSymlink)
 include(InstallShellScript)
 
-set(policydir ${BRO_ROOT_DIR}/share/bro)
+set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 
 InstallShellScript(bin bin/broctl.in broctl)
 InstallShellScript(share/broctl/scripts bin/archive-log)
@@ -129,7 +130,7 @@ install(DIRECTORY bin/
                         WORLD_READ WORLD_EXECUTE
         PATTERN "broctl.in" EXCLUDE)
 install(DIRECTORY scripts/
-        DESTINATION share/bro
+        DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
         PATTERN "*.bro")
 
