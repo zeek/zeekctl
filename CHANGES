@@ -1,4 +1,19 @@
 
+1.1-79 | 2013-05-10 19:39:55 -0700
+
+  * A set of bug fixes and robustness improvements. (Daniel Thayer)
+
+    This includes:
+    
+    - Add more error checking and reporting to cron command.
+    - Improve error checking of top helper output.
+    - Improve error checking of capstats output.
+    - Fix a bug when the time command is not found.
+    - Fix the broctl top and cron commands on OS X.
+    - Fix a couple of bugs in the broctl ps plugin.
+    - Remove unused broctl scripts.
+    - Improve the check-pid helper script.
+
 1.1-63 | 2013-04-25 16:14:51 -0400
 
   * Add support for multiple PF_RING cluster IDs

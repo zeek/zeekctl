@@ -56,7 +56,9 @@ class PsBro(BroControl.plugin.Plugin):
         # Run them in parallel and print output.
 
         def startNode(n, success, output, first_node):
-            if first_node:
+            # Note: output might be None or an empty list, in which case we
+            # still want the "failed" message below.
+            if first_node and output:
                 print "       ", output[0]
 
             if not success:
@@ -68,11 +70,17 @@ class PsBro(BroControl.plugin.Plugin):
         first_node = True
 
         for (n, success, output) in self.executeParallel(cmds):
+            # Remove stderr output (if any)
+            while output and not output[0].startswith("USER"):
+                output = output[1:]
+
             startNode(n, success, output, first_node)
+
+            if not output:
+                continue
 
             for line in output[1:]:
 
-                first_line = False
                 m = line.split()
                 (pid, ppid) = (int(m[1]), int(m[2]))
                 try:
