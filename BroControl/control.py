@@ -152,7 +152,12 @@ def _makeBroParams(node, live, add_manager=False):
 
     if live and node.interface:
         try:
-            args += ["-i %s " % node.interface]
+            # If interface name contains semicolons (to aggregate traffic from
+            # multiple devices with PF_RING, the interface name can be in a
+            # semicolon-delimited format, such as "p2p1;p2p2"), then we must
+            # quote it to prevent shell from interpreting semicolon as command
+            # separator.
+            args += ["-i \"%s\"" % node.interface]
         except AttributeError:
             pass
 
@@ -821,7 +826,13 @@ def getCapstatsOutput(nodes, interval):
     for (addr, interface) in hosts.keys():
         node = hosts[addr, interface]
 
-        capstats = [config.Config.capstatspath, "-i", interface, "-I", str(interval), "-n", "1"]
+        # If interface name contains semicolons (to aggregate traffic from
+        # multiple devices with PF_RING, the interface name can be in a
+        # semicolon-delimited format, such as "p2p1;p2p2"), then we must
+        # quote it to prevent shell from interpreting semicolon as command
+        # separator (another layer of quotes is needed because the eval
+        # command is used).
+        capstats = [config.Config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
 
 # Unfinished feature: only consider a particular MAC. Works here for capstats
 # but Bro config is not adapted currently so we disable it for now.
@@ -839,7 +850,10 @@ def getCapstatsOutput(nodes, interval):
     for (node, success, output) in outputs:
 
         if not success:
-            results += [(node, "%s: cannot execute capstats" % node.name, {})]
+            if output:
+                results += [(node, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
+            else:
+                results += [(node, "%s: cannot execute capstats" % node.name, {})]
             continue
 
         fields = output[0].split()
