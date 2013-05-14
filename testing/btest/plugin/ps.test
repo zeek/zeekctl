@@ -1,7 +1,6 @@
 # Test that the ps plugin can show bro processes on all nodes, or just a
 # specified node.
 #
-# @TEST-REQUIRES: false
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash -ex %INPUT
 # @TEST-EXEC: grep '(+)' all.out
