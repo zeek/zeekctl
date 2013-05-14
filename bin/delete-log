@@ -1,8 +1,7 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to archive log files. 
-# 
-# archive-log <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+# This script can be used as a Bro log postprocessor to simply *delete* 
+# the files after rotation.
 
-rm -rf $1
+rm $1
 

@@ -27,7 +27,7 @@ import util
 Config = None # Globally accessible instance of Configuration.
 
 class Configuration:
-    def __init__(self, config, basedir, version):
+    def __init__(self, config, basedir, broscriptdir, version):
         global Config
         Config = self
 
@@ -39,6 +39,7 @@ class Configuration:
 
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
+        self._setOption("broscriptdir", broscriptdir)
         self._setOption("version", version)
 
         # Initialize options.
@@ -60,7 +61,10 @@ class Configuration:
 
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.captureCmd("which time")
-        self._setOption("time", output[0].lower().strip())
+        if success:
+            self._setOption("time", output[0].lower().strip())
+        else:
+            self._setOption("time", "")
 
     def initPostPlugins(self):
         plugin.Registry.addNodeKeys()

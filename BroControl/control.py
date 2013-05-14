@@ -616,8 +616,9 @@ def getTopOutput(nodes):
 
     for (node, success, output) in execute.runHelperParallel(cmds):
 
-        if not success:
+        if not success or not output:
             results += [(node, "cannot get top output", [{}])]
+            continue
 
         procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
 
@@ -628,15 +629,19 @@ def getTopOutput(nodes):
 
         vals = []
 
-        for p in procs:
-            d = {}
-            d["pid"] = int(p[0])
-            d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-            d["vsize"] = long(float(p[1])) # May be something like 2.17684e+09
-            d["rss"] = long(float(p[2]))
-            d["cpu"] = p[3]
-            d["cmd"] = " ".join(p[4:])
-            vals += [d]
+        try:
+            for p in procs:
+                d = {}
+                d["pid"] = int(p[0])
+                d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
+                d["rss"] = long(float(p[2]))
+                d["cpu"] = p[3]
+                d["cmd"] = " ".join(p[4:])
+                vals += [d]
+        except ValueError, err:
+            results += [(node, "unexpected top output: %s" % err, [{}])]
+            continue
 
         results += [(node, None, vals)]
 
@@ -856,11 +861,20 @@ def getCapstatsOutput(nodes, interval):
                 results += [(node, "%s: cannot execute capstats" % node.name, {})]
             continue
 
-        fields = output[0].split()
+        if not output:
+            results += [(node, "%s: no capstats output" % node.name, {})]
+            continue
+
+        fields = output[0].split()[1:]
+
+        if not fields:
+            results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+            continue
+
         vals = { }
 
         try:
-            for field in fields[1:]:
+            for field in fields:
                 (key, val) = field.split("=")
                 val = float(val)
                 vals[key] = val
@@ -928,9 +942,8 @@ def capstats(nodes, interval):
             util.output("%-20s " % tag, nl=False)
 
             if not error:
-                util.output("%-10s " % vals["kpps"], nl=False)
-                if "mbps" in vals:
-                    util.output("%-10s " % vals["mbps"], nl=False)
+                util.output("%-10s " % vals.get("kpps", ""), nl=False)
+                util.output("%-10s " % vals.get("mbps", ""), nl=False)
                 util.output()
             else:
                 util.output("<%s> " % error)

@@ -47,7 +47,9 @@ def doCron(watch):
 
     # Run external command if we have one.
     if config.Config.croncmd:
-        execute.runLocalCmd(config.Config.croncmd)
+        (success, output) = execute.runLocalCmd(config.Config.croncmd)
+        if not success:
+            util.output("error running croncmd: %s" % config.Config.croncmd)
 
     # Mail potential output.
     output = util.getBufferedOutput()
@@ -217,10 +219,20 @@ def _updateHTTPStats():
 
     # Create meta file.
     if not os.path.exists(config.Config.statsdir):
-        util.warn("creating directory for stats file: %s" % config.Config.statsdir)
-        os.makedirs(config.Config.statsdir)
+        try:
+            os.makedirs(config.Config.statsdir)
+        except OSError, err:
+            util.output("error creating directory: %s" % err)
+            return
 
-    meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
+        util.warn("creating directory for stats file: %s" % config.Config.statsdir)
+
+    try:
+        meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
+    except IOError, err:
+        util.output("error creating file: %s" % err)
+        return
+
     for node in config.Config.hosts():
         print >>meta, "node", node, node.type, node.host
 
