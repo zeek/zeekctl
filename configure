@@ -21,6 +21,8 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
 
   Installation Directories:
     --prefix=PREFIX        installation directory [/usr/local/bro]
+    --scriptdir=PATH       root installation directory for Bro scripts
+                           [PREFIX/share/bro]
     --conf-files-dir=DIR   config files installation directory [PREFIX/etc]
     --python-install-dir   the desired installation directory for
                            any auxiliary python modules (if present)
@@ -63,6 +65,7 @@ prefix=/usr/local/bro
 CMakeCacheEntries=""
 append_cache_entry CMAKE_INSTALL_PREFIX PATH   $prefix
 append_cache_entry PY_MOD_INSTALL_DIR   PATH   $prefix/lib/broctl
+append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
 append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING
 
 # parse arguments
@@ -84,6 +87,10 @@ while [ $# -ne 0 ]; do
             prefix=$optarg
             append_cache_entry CMAKE_INSTALL_PREFIX PATH   $optarg
             append_cache_entry PY_MOD_INSTALL_DIR   PATH   $optarg/lib/broctl
+            ;;
+        --scriptdir=*)
+            append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $optarg
+            user_set_scriptdir="true"
             ;;
         --conf-files-dir=*)
             append_cache_entry BRO_ETC_INSTALL_DIR  PATH   $optarg
@@ -130,6 +137,10 @@ while [ $# -ne 0 ]; do
     esac
     shift
 done
+
+if [ "$user_set_scriptdir" != "true" ]; then
+    append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
+fi
 
 if [ "$user_set_conffilesdir" != "true" ]; then
     append_cache_entry BRO_ETC_INSTALL_DIR PATH $prefix/etc

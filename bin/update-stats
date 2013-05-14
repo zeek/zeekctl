@@ -5,12 +5,17 @@
 
 . `dirname $0`/broctl-config.sh
 
+mkdir -p ${statsdir}/www
+[ $? -ne 0 ] && exit 1
+
 dst=${statsdir}/`basename ${statslog}`
 cat ${statslog} >>$dst
-
-mkdir -p ${statsdir}/www
-cp ${statsdir}/meta.dat ${statsdir}/www
+[ $? -ne 0 ] && exit 1
 
 ${scriptsdir}/stats-to-csv ${statslog} ${statsdir}/meta.dat ${statsdir}/www
+[ $? -ne 0 ] && exit 1
+
+cp ${statsdir}/meta.dat ${statsdir}/www
 
 rm -f ${statslog}
+

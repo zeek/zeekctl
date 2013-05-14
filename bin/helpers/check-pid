@@ -2,7 +2,7 @@
 #
 #  check-pid <pid> 
 
-( ps aux | awk '{print $2}' | grep -v check-pid | grep -v grep | grep -q "^$1$" )  2>/dev/null
+( ps aux | grep -v check-pid | grep -v "ps aux$" | grep -v grep | awk '{print $2}' | grep -q "^$1$" )  2>/dev/null
 
 if [ $? = 0 ]; then
    echo 0
