@@ -30,12 +30,14 @@ Version = "@VERSION@"
 # Allow user to override default broctl install directory
 tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
 if tmpbrobase and os.path.isdir(tmpbrobase):
-    # Note: the BroCfgDir might not be a subdirectory of BroBase, but for now
-    # we assume it is
-    tmpbrocfgdir = os.path.join(tmpbrobase, "etc")
+    BroBase = tmpbrobase
+    # Note: for now we assume these are subdirectories of BroBase
+    tmpbrocfgdir = os.path.join(BroBase, "etc")
     if os.path.isdir(tmpbrocfgdir):
-        BroBase = tmpbrobase
         BroCfgDir = tmpbrocfgdir
+    tmpbroscriptdir = os.path.join(BroBase, "share/bro")
+    if os.path.isdir(tmpbroscriptdir):
+        BroScriptDir = tmpbroscriptdir
 
 # Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
