@@ -93,6 +93,7 @@ function installbro() {
     (cd "$newprefix" && tar xf "$tarfile" && sed -i.orig "s#@PREFIX@#$newprefix#" etc/broctl.cfg)
 
     export BROCTL_INSTALL_PREFIX=$newprefix
+    export BROMAGIC=$newprefix/share/bro/magic
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
