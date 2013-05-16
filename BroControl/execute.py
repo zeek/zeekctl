@@ -224,12 +224,12 @@ def captureCmd(cmd, env = "", input = None):
     rc = proc.wait()
     output = [line.strip() for line in proc.fromchild]
 
-    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+    util.debug(1, rc, prefix="local")
 
     for line in output:
         util.debug(2, "           > %s" % line, prefix="local")
 
-    return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
+    return (rc == 0, output)
 
 ## FIXME: Replace "captureCmd" with "runLocalCmd".
 
@@ -238,35 +238,23 @@ def captureCmd(cmd, env = "", input = None):
 # and output being the combinded stdout/stderr output of the command.
 def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
     proc = _runLocalCmdInit("single", cmd, env, input, donotcaptureoutput)
-    if not proc:
-        return (False, [])
-
     return _runLocalCmdWait(proc)
 
 # Same as above but runs a set of local commands in parallel.
 # Cmds is a list of (id, cmd, envs, input) tuples, where id is
 # an arbitrary cookie identifying each command.
 # Returns a list of (id, success, output) tuples.
-# 'output' is None (vs. []) if we couldn't connect to host.
 def runLocalCmdsParallel(cmds):
-
     results = []
     running = []
 
     for (id, cmd, envs, input) in cmds:
         proc = _runLocalCmdInit(id, cmd, envs, input)
-        if proc:
-            running += [(id, proc)]
-        else:
-            results += [(id, False, None)]
+        running += [(id, proc)]
 
     for (id, proc) in running:
-        status  = _runLocalCmdWait(proc)
-        if status:
-            (success, output) = status
-            results += [(id, success, output)]
-        else:
-            results += [(id, False, None)]
+        (success, output) = _runLocalCmdWait(proc)
+        results += [(id, success, output)]
 
     return results
 
@@ -297,12 +285,12 @@ def _runLocalCmdWait(proc):
     rc = proc.wait()
     output = [stripNL(line) for line in proc.fromchild]
 
-    util.debug(1, os.WEXITSTATUS(rc), prefix="local")
+    util.debug(1, rc, prefix="local")
 
     for line in output:
         util.debug(2, "           > %s" % line, prefix="local")
 
-    return (os.WIFEXITED(rc) and os.WEXITSTATUS(rc) == 0, output)
+    return (rc == 0, output)
 
 
 # Runs arbitrary commands in parallel on nodes. Input is list of (node, cmd).
