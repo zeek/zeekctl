@@ -1,4 +1,9 @@
 
+1.1-94 | 2013-05-17 13:29:04 -0700
+
+  * Don't import readline, it's loaded implicitly already. (Daniel
+    Thayer)
+
 1.1-92 | 2013-05-17 07:37:13 -0700
 
   * Removing uncessary directory check. (Robin Sommer)
