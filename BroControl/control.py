@@ -152,7 +152,12 @@ def _makeBroParams(node, live, add_manager=False):
 
     if live and node.interface:
         try:
-            args += ["-i %s " % node.interface]
+            # If interface name contains semicolons (to aggregate traffic from
+            # multiple devices with PF_RING, the interface name can be in a
+            # semicolon-delimited format, such as "p2p1;p2p2"), then we must
+            # quote it to prevent shell from interpreting semicolon as command
+            # separator.
+            args += ["-i \"%s\"" % node.interface]
         except AttributeError:
             pass
 
@@ -611,8 +616,9 @@ def getTopOutput(nodes):
 
     for (node, success, output) in execute.runHelperParallel(cmds):
 
-        if not success:
+        if not success or not output:
             results += [(node, "cannot get top output", [{}])]
+            continue
 
         procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
 
@@ -623,15 +629,19 @@ def getTopOutput(nodes):
 
         vals = []
 
-        for p in procs:
-            d = {}
-            d["pid"] = int(p[0])
-            d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-            d["vsize"] = long(float(p[1])) # May be something like 2.17684e+09
-            d["rss"] = long(float(p[2]))
-            d["cpu"] = p[3]
-            d["cmd"] = " ".join(p[4:])
-            vals += [d]
+        try:
+            for p in procs:
+                d = {}
+                d["pid"] = int(p[0])
+                d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
+                d["rss"] = long(float(p[2]))
+                d["cpu"] = p[3]
+                d["cmd"] = " ".join(p[4:])
+                vals += [d]
+        except ValueError, err:
+            results += [(node, "unexpected top output: %s" % err, [{}])]
+            continue
 
         results += [(node, None, vals)]
 
@@ -821,7 +831,13 @@ def getCapstatsOutput(nodes, interval):
     for (addr, interface) in hosts.keys():
         node = hosts[addr, interface]
 
-        capstats = [config.Config.capstatspath, "-i", interface, "-I", str(interval), "-n", "1"]
+        # If interface name contains semicolons (to aggregate traffic from
+        # multiple devices with PF_RING, the interface name can be in a
+        # semicolon-delimited format, such as "p2p1;p2p2"), then we must
+        # quote it to prevent shell from interpreting semicolon as command
+        # separator (another layer of quotes is needed because the eval
+        # command is used).
+        capstats = [config.Config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
 
 # Unfinished feature: only consider a particular MAC. Works here for capstats
 # but Bro config is not adapted currently so we disable it for now.
@@ -839,14 +855,26 @@ def getCapstatsOutput(nodes, interval):
     for (node, success, output) in outputs:
 
         if not success:
-            results += [(node, "%s: cannot execute capstats" % node.name, {})]
+            if output:
+                results += [(node, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
+            else:
+                results += [(node, "%s: cannot execute capstats" % node.name, {})]
             continue
 
-        fields = output[0].split()
+        if not output:
+            results += [(node, "%s: no capstats output" % node.name, {})]
+            continue
+
+        fields = output[0].split()[1:]
+
+        if not fields:
+            results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+            continue
+
         vals = { }
 
         try:
-            for field in fields[1:]:
+            for field in fields:
                 (key, val) = field.split("=")
                 val = float(val)
                 vals[key] = val
@@ -914,9 +942,8 @@ def capstats(nodes, interval):
             util.output("%-20s " % tag, nl=False)
 
             if not error:
-                util.output("%-10s " % vals["kpps"], nl=False)
-                if "mbps" in vals:
-                    util.output("%-10s " % vals["mbps"], nl=False)
+                util.output("%-10s " % vals.get("kpps", ""), nl=False)
+                util.output("%-10s " % vals.get("mbps", ""), nl=False)
                 util.output()
             else:
                 util.output("<%s> " % error)
@@ -1109,7 +1136,8 @@ def netStats(nodes):
 
 def executeCmd(nodes, cmd):
     for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
-        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), "\n> ".join(output)))
+        out = output and "\n> ".join(output) or ""
+        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
 
 def processTrace(trace, bro_options, bro_scripts):
     standalone = (config.Config.standalone == "1")

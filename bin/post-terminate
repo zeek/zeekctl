@@ -82,7 +82,8 @@ fi
   for i in *.log; do
 
     if [ "$crash" = "1" ]; then
-        # manually run log postprocessors in event of crash
+        # In the event of a crash, manually run log postprocessors on all
+        # remaining logs (including stderr.log and stdout.log).
         basename=`echo $i | sed 's/\.log$//g'`
         strt=`cat .startup | tail -1`
         if [ -e .rotated.$basename ]; then

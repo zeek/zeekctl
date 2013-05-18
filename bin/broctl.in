@@ -5,7 +5,6 @@
 import os
 import sys
 import cmd
-import readline
 import time
 import signal
 import platform
@@ -14,6 +13,10 @@ import atexit
 # Configured by CMake
 # Base directory of broctl installation.
 BroBase = "@PREFIX@"
+
+# Configured by CMake
+# Base directory of bro script files.
+BroScriptDir = "@BROSCRIPTDIR@"
 
 # Configured by CMake
 # Base directory of broctl configuration files.
@@ -873,7 +876,7 @@ def saveState(loop):
         print >>sys.stderr, "abnormal termination, saving state ..."
         Config.writeState()
 
-Config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), BroBase, Version)
+Config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), BroBase, BroScriptDir, Version)
 
 for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
     if dir:

@@ -1,4 +1,60 @@
 
+1.1-94 | 2013-05-17 13:29:04 -0700
+
+  * Don't import readline, it's loaded implicitly already. (Daniel
+    Thayer)
+
+1.1-92 | 2013-05-17 07:37:13 -0700
+
+  * Removing uncessary directory check. (Robin Sommer)
+
+1.1-91 | 2013-05-16 20:25:00 -0700
+
+  * Stop trying to create the stats/www directory if it already
+    exists. Addresses #1007. (Seth Hall)
+
+  * Another batch of fixes. (Daniel Thayer)
+
+    This includes:
+
+    - Fix usage of PF_RING interface containing semicolons.
+    - Fix broctl exec command to check for errors.
+    - Fix a race condition during broctl start.
+    - Remove some dead code.
+    - Fix exit status output in debug log.
+
+  * Add support for the "--scriptdir" configure option. Adresses
+    #993. (Daniel Thayer)
+
+1.1-79 | 2013-05-10 19:39:55 -0700
+
+  * A set of bug fixes and robustness improvements. (Daniel Thayer)
+
+    This includes:
+    
+    - Add more error checking and reporting to cron command.
+    - Improve error checking of top helper output.
+    - Improve error checking of capstats output.
+    - Fix a bug when the time command is not found.
+    - Fix the broctl top and cron commands on OS X.
+    - Fix a couple of bugs in the broctl ps plugin.
+    - Remove unused broctl scripts.
+    - Improve the check-pid helper script.
+
+1.1-63 | 2013-04-25 16:14:51 -0400
+
+  * Add support for multiple PF_RING cluster IDs
+
+    Instead of assigning the same PF_RING cluster ID to every worker
+    in a Bro cluster, the pf_ring broctl plugin has been modified to
+    automatically assign a different PF_RING cluster ID for each se
+    of workers on a host that all sniff the same interface.  The firs
+    such set of workers on a host are assigned the globally-configured
+    PF_RING cluster ID (this is the "pfringclusterid" broctl option in
+    broctl.cfg).  Each subsequent set of workers on a host that sniff
+    another interface are assigned a different value (incremented by
+    one from previous value). Addresses #943. (Daniel Thayer)
+
 1.1-61 | 2013-03-22 12:25:22 -0700
 
   * Fix problem with the cron command hanging sometimes. Addresses
