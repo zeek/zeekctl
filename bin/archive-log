@@ -4,6 +4,17 @@
 #
 # archive-log [-c] <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
 
+# Create a PID file so that the post-terminate script knows when we're done
+echo $$ > .archive-log.running.$$.tmp
+
+# Make sure PID file is removed upon exit from this script
+trap sig_handler 0
+
+function sig_handler
+{
+    rm .archive-log.running.$$.tmp
+}
+
 . `dirname $0`/broctl-config.sh
 
 delete=1
