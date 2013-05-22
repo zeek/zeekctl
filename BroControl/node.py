@@ -42,6 +42,17 @@ class Node:
             If the load balancing method is ``interfaces``, then this is
             a comma-separated list of network interface names to use.
 
+        ``pin_cpus`` (string)
+            A comma-separated list of CPU numbers (minimum CPU number is 0)
+            to which the node's Bro processes will be pinned (if not specified,
+            then CPU pinning will not be used for this node).  If the length
+            of this list does not match the number of Bro processes for this
+            node, then some CPUs could have zero (if too many CPU numbers are
+            specified) or more than one (if not enough CPU numbers are
+            specified) Bro processes pinned to them.  Only the specified CPU
+            numbers will be used, regardless of whether additional CPU cores
+            exist.
+
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
 
@@ -65,7 +76,8 @@ class Node:
     # same name. Custom keys can be add via addKey().
     _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
               "brobase": 1, "ether": 1, "zone_id": 1,
-              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1 }
+              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
+              "pin_cpus": 1 }
 
 
     def __init__(self, name):

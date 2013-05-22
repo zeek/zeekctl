@@ -278,7 +278,11 @@ def _startNodes(nodes):
     cmds = []
     envs = []
     for node in nodes:
-        cmds += [(node, "start", [node.cwd()] + _makeBroParams(node, True))]
+        pin_cpu = node.pin_cpus
+        # If this node isn't using CPU pinning, then use a placeholder value
+        if pin_cpu == "":
+            pin_cpu = -1
+        cmds += [(node, "start", [node.cwd(), str(pin_cpu)] + _makeBroParams(node, True))]
         envs += [_makeEnvParam(node)]
 
     nodes = []
