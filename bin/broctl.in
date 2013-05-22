@@ -69,6 +69,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
+        self.exit_code = 0
         self.prompt = "[BroControl] > "
 
     def output(self, text):
@@ -77,15 +78,18 @@ class BroCtlCmdLoop(cmd.Cmd):
 
     def error(self, str):
         self.output("Error: %s" % str)
+        self.exit_code = 1
 
     def syntax(self, args):
         self.output("Syntax error: %s" % args)
+        self.exit_code = 1
 
     def default(self, line):
         m = line.split()
 
         if not plugin.Registry.runCustomCommand(m[0], " ".join(m[1:])):
             self.error("unknown command '%s'" % m[0])
+            self.exit_code = 1
 
     def emptyline(self):
         pass
@@ -107,6 +111,7 @@ class BroCtlCmdLoop(cmd.Cmd):
     def checkForFailure(self, results):
         if control.nodeFailed(results):
             self._failed = True
+            self.exit_code = 1
 
     def failed(self):
         return self._failed
@@ -200,6 +205,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             results = control.start(nodes)
             self.checkForFailure(results)
             plugin.Registry.cmdPostWithResults("start", results)
+        else:
+            self.exit_code = 1
 
     def do_stop(self, args):
         """- [<nodes>]
@@ -214,6 +221,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             results = control.stop(nodes)
             self.checkForFailure(results)
             plugin.Registry.cmdPostWithResults("stop", results)
+        else:
+            self.exit_code = 1
 
     def do_restart(self, args):
         """- [--clean] [<nodes>]
@@ -250,6 +259,7 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.postcmd(False, args) # Need to call manually.
 
             if self.failed():
+                self.exit_code = 1
                 return
 
             if clean:
@@ -258,6 +268,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
+                    self.exit_code = 1
                     return
 
                 util.output("checking configurations...")
@@ -265,6 +276,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
+                    self.exit_code = 1
                     return
 
                 util.output("installing ...")
@@ -272,11 +284,14 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
+                    self.exit_code = 1
                     return
 
             util.output("starting ...")
             self.do_start(args)
             self.postcmd(False, args)
+        else:
+            self.exit_code = 1
 
             plugin.Registry.cmdPostWithNodes("restart", nodes)
 
@@ -289,8 +304,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("status", nodes)
-            control.status(nodes)
+            result = control.status(nodes)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("status", nodes)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -300,9 +319,12 @@ class BroCtlCmdLoop(cmd.Cmd):
             (success, nodes) = nodeArgs(args)
             if success:
                 nodes = plugin.Registry.cmdPreWithNodes("top", nodes)
-                control.top(nodes)
+                result = control.top(nodes)
+                if not result:
+                    self.exit_code = 1
                 plugin.Registry.cmdPostWithNodes("top", nodes)
-
+            else:
+                self.exit_code = 1
             util.unlock()
 
     def do_top(self, args):
@@ -360,12 +382,15 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if not success:
+            self.exit_code = 1
             return
 
         nodes = plugin.Registry.cmdPreWithNodes("diag", nodes)
 
         for h in nodes:
-            control.crashDiag(h)
+            result = control.crashDiag(h)
+            if not result:
+                self.exit_code = 1
 
         plugin.Registry.cmdPostWithNodes("diag", nodes)
 
@@ -381,8 +406,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("attachgdb", nodes)
-            control.attachGdb(nodes)
+            result = control.attachGdb(nodes)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("attachgdb", nodes)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -436,6 +465,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             else:
                 util.output("wrong cron argument")
+                self.exit_code = 1
 
             return
 
@@ -470,6 +500,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             results = control.checkConfigs(nodes)
             self.checkForFailure(results)
             plugin.Registry.cmdPostWithResults("check", results)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -498,6 +530,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if not success:
+            self.exit_code = 1
             return
 
         nodes = plugin.Registry.cmdPreWithNodes("cleanup", nodes, cleantmp)
@@ -536,8 +569,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("capstats", nodes, interval)
-            control.capstats(nodes, interval)
+            result = control.capstats(nodes, interval)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("capstats", nodes, interval)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -565,6 +602,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             results = control.update(nodes)
             self.checkForFailure(results)
             plugin.Registry.cmdPostWithResults("update", results)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -580,7 +619,9 @@ class BroCtlCmdLoop(cmd.Cmd):
             nodes = plugin.Registry.cmdPreWithNodes("df", nodes)
             control.df(nodes)
             plugin.Registry.cmdPostWithNodes("df", nodes)
-
+        else:
+            self.exit_code = 1
+            
         return False
 
     def do_print(self, args):
@@ -605,8 +646,11 @@ class BroCtlCmdLoop(cmd.Cmd):
                 nodes = plugin.Registry.cmdPreWithNodes("print", nodes, id)
                 control.printID(nodes, id)
                 plugin.Registry.cmdPostWithNodes("print", nodes, id)
+            else:
+                self.exit_code = 1
         except IndexError:
             self.syntax("no id given to print")
+            self.exit_code = 1
 
         return False
 
@@ -621,8 +665,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("peerstatus", nodes)
-            control.peerStatus(nodes)
+            result = control.peerStatus(nodes)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("peerstatus", nodes)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -642,8 +690,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("netstats", nodes)
-            control.netStats(nodes)
+            result = control.netStats(nodes)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("netstats", nodes)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -656,7 +708,9 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         self.lock()
         if plugin.Registry.cmdPre("exec", args):
-            control.executeCmd(Config.nodes(), args)
+            result = control.executeCmd(Config.nodes(), args)
+            if not result:
+                self.exit_code = 1
         plugin.Registry.cmdPost("exec", args)
 
         return False
@@ -686,6 +740,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                     check = True
                 else:
                     self.syntax("unknown option %s" % args[0])
+                    self.exit_code = 1
                     return
 
                 args = args[1:]
@@ -701,8 +756,11 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, check)
-            control.listScripts(nodes, check)
+            result = control.listScripts(nodes, check)
+            self.checkForFailure(results)
             plugin.Registry.cmdPostWithNodes("scripts", nodes, check)
+        else:
+            self.exit_code = 1
 
         return False
 
@@ -738,6 +796,7 @@ class BroCtlCmdLoop(cmd.Cmd):
             if arg == "--":
                 if in_scripts:
                     self.syntax("cannot parse arguments")
+                    self.exit_code = 1
 
                 in_scripts = True
                 continue
@@ -750,11 +809,15 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         if not trace:
             self.syntax("no trace file given")
+            self.exit_code = 1
             return
 
         if plugin.Registry.cmdPre("process", trace, options, scripts):
             success = control.processTrace(trace, options, scripts)
         plugin.Registry.cmdPost("process", trace, options, scripts, success)
+
+        if not success:
+            self.exit_code = 1
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands that take a "<nodes>" argument.
@@ -858,7 +921,7 @@ BroControl Version %s
 if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":
     loop = BroCtlCmdLoop()
     loop.printReference()
-    sys.exit(0)
+    sys.exit(loop.exit_code)
 
 # Here so that we don't need the PYTHONPATH to be setup for --print-doc.
 from BroControl import util
@@ -908,3 +971,4 @@ else:
     loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % Version)
 
 plugin.Registry.finishPlugins()
+sys.exit(loop.exit_code)
