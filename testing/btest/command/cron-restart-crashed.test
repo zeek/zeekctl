@@ -2,7 +2,7 @@
 # option is specified.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
 

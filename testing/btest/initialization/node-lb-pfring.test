@@ -1,7 +1,7 @@
 # Test that worker nodes using PF_RING load balancing are expanded to new
 # nodes that have names of the form: <name>-<number>
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
 
 . broctl-test-setup

@@ -2,7 +2,7 @@
 # specified node.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | sort" btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | sort" btest-diff onenode.out
 
@@ -12,6 +12,8 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
 etc/node.cfg__cluster_no_netifs
 EOF
+
+ret=0
 
 broctl install
 broctl start
@@ -27,5 +29,7 @@ broctl stop
 # no nodes are running, so no value exists
 broctl print HTTP::mime_types_extensions > stopped.out
 # the file size should be zero
-test ! -s stopped.out
+test ! -s stopped.out || ret=1
+
+exit $ret
 

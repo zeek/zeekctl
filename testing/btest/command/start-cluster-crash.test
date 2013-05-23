@@ -1,7 +1,7 @@
 # Test that the start command starts a cluster and reports to the user
 # that a node crashed.
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup
