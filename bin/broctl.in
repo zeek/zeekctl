@@ -290,10 +290,10 @@ class BroCtlCmdLoop(cmd.Cmd):
             util.output("starting ...")
             self.do_start(args)
             self.postcmd(False, args)
-        else:
-            self.exit_code = 1
 
             plugin.Registry.cmdPostWithNodes("restart", nodes)
+        else:
+            self.exit_code = 1
 
     def do_status(self, args):
         """- [<nodes>]
