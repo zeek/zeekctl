@@ -1,4 +1,12 @@
 
+1.1-101 | 2013-05-24 17:55:41 -0700
+
+  * Add support for CPU pinning. To use CPU pinning, a new per-node
+    option "pin_cpus" can be specified in node.cfg, and the OS must be
+    either Linux or FreeBSD (if such a node.cfg is used on another OS,
+    then the "pin_cpus" option is ignored). Addresses #996. (Daniel
+    Thayer)
+
 1.1-99 | 2013-05-24 17:34:44 -0700
 
   * Allow multiple conn-summary.log files to be processed to avoid
