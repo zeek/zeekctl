@@ -1,6 +1,6 @@
 # Test that broctl.cfg options that aren't used or documented can be specified.
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

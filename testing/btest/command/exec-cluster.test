@@ -1,6 +1,6 @@
 # Test that the exec command can exec a command on all nodes in a cluster.
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

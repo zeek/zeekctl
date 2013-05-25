@@ -1,7 +1,7 @@
 # Test that the df command can get disk usage for all nodes in a cluster, or
 # just a specified node.
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 

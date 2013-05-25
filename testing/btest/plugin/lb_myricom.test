@@ -2,7 +2,7 @@
 # set by the lb_myricom plugin when the necessary node.cfg options are
 # specified.
 #
-# @TEST-EXEC: bash -ex %INPUT
+# @TEST-EXEC: bash -x %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
 
 . broctl-test-setup
