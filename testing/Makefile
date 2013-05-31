@@ -1,6 +1,6 @@
 
 DIAG=diag.log
-BTEST=../../../btest/btest
+BTEST=../../btest/btest
 
 all: btest-verbose
 

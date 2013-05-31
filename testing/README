@@ -78,4 +78,5 @@ tests, then you'll need to add it to the list of ``TestDirs`` in
 any of the extant directories.
 
 Note that any new test you add this way will automatically be included
-in the testing done in the NMI automated build & test environment.
+in the testing done in Bro's central automated build & test
+environment.

@@ -37,7 +37,7 @@ distclean:
 
 .PHONY : test
 test:
-	@make -C testing/btest
+	@make -C testing
 
 .PHONY : doc
 doc:
