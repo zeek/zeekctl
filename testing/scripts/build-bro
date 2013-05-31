@@ -1,11 +1,12 @@
 #! /usr/bin/env bash
 #
 # Usage:  build-bro [cleanup]
+#
 # This script configures and builds Bro, and then creates a tar file (in
 # directory BROCTL_TEST) of the Bro installation so that each broctl test
 # case will have its own fresh install.
+#
 # If the "cleanup" parameter is specified, then just remove the tar file.
-
 
 # Absolute path of where a tar file of a Bro installation will be created for
 # broctl test purposes (if not specified by user, then just use a hard-coded
@@ -78,8 +79,8 @@ rm -rf "${TESTPREFIX}"
 mkdir -p "${BROCTLSRCDIR}/build"
 cp "${PATHSCRIPT}" "${BROCTLSRCDIR}/build"
 
-# Restore (if necessary) the original Bro install prefix.
+# Restore (if necessary) the original Bro configure setup.
 if [ ${RESTOREPREFIX} -eq 1 ]; then
-    (cd "${BROSRCDIR}" && ./configure --prefix="${ORIGPREFIX}")
+    (cd "${BROSRCDIR}" && ./build/config.status)
 fi
 
