@@ -30,7 +30,8 @@ Running Tests
 In order to run the tests you must clone the entire Bro repo (not just the
 broctl repo).  Next, either use the ``make all`` or ``make brief``
 ``Makefile`` targets to run all the tests (these will automatically build
-Bro before running any of the broctl tests).  Alternatively, if you want
+Bro before running any of the broctl tests). ``make quick`` runs all
+tests but does not rebuild build before the tests. Alternatively, if you want
 to run just a subset of the tests, then build Bro with ``make buildbro``,
 followed by ``btest`` directly with desired options/arguments.  Examples:
 
