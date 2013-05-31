@@ -1,4 +1,21 @@
 
+1.1-101 | 2013-05-24 17:55:41 -0700
+
+  * Add support for CPU pinning. To use CPU pinning, a new per-node
+    option "pin_cpus" can be specified in node.cfg, and the OS must be
+    either Linux or FreeBSD (if such a node.cfg is used on another OS,
+    then the "pin_cpus" option is ignored). Addresses #996. (Daniel
+    Thayer)
+
+1.1-99 | 2013-05-24 17:34:44 -0700
+
+  * Allow multiple conn-summary.log files to be processed to avoid
+    conflicts when stopping Bro shortly after a log rotation. (Daniel
+    Thayer)
+
+  * Prevent deletion of unarchived logs during "broctl stop" when
+    archiving takes a while. (Daniel Thayer)
+
 1.1-94 | 2013-05-17 13:29:04 -0700
 
   * Don't import readline, it's loaded implicitly already. (Daniel

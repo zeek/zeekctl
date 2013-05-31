@@ -59,6 +59,13 @@ class Configuration:
             util.error("cannot run uname")
         self._setOption("os", output[0].lower().strip())
 
+        if self.config["os"] == "linux":
+            self._setOption("pin_command", "taskset -c")
+        elif self.config["os"] == "freebsd":
+            self._setOption("pin_command", "cpuset -l")
+        else:
+            self._setOption("pin_command", "")
+
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.captureCmd("which time")
         if success:
@@ -190,6 +197,25 @@ class Configuration:
 
             str = str[0:m.start(1)] + value + str[m.end(1):]
 
+
+    # Convert string into list of integers (ValueError is raised if any
+    # item in the list is not a non-negative integer).
+    def _getPinCPUList(self, str, numprocs):
+        if not str:
+            return []
+
+        cpulist = map(int, str.split(","))
+        # Minimum allowed CPU number is zero.
+        if min(cpulist) < 0:
+            raise ValueError
+
+        # Make sure list is at least as long as number of worker processes.
+        cpulen = len(cpulist)
+        if numprocs > cpulen:
+            cpulist = [ cpulist[i%cpulen] for i in xrange(numprocs) ]
+
+        return cpulist
+
     # Parse node.cfg.
     def _readNodes(self):
         self.nodelist = {}
@@ -260,6 +286,8 @@ class Configuration:
 
             node.count = counts[type]
 
+            numprocs = 0
+
             if node.lb_procs:
                 try:
                     numprocs = int(node.lb_procs)
@@ -268,6 +296,15 @@ class Configuration:
                 except ValueError:
                     util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
 
+            try:
+                pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
+            except ValueError:
+                util.error("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
+
+            if pin_cpus:
+                node.pin_cpus = pin_cpus[0]
+
+            if node.lb_procs:
                 if not node.lb_method:
                     util.error("%s: no load balancing method given in section '%s'" % (file, sec))
 
@@ -289,14 +326,16 @@ class Configuration:
                 # node names will have a numerical suffix
                 node.name = "%s-1" % sec
 
-                for num in xrange(2, int(node.lb_procs) + 1):
+                for num in xrange(2, numprocs + 1):
                     newnode = copy.deepcopy(node)
-                    # only the node name and count need to be changed
+                    # only the node name, count, and pin_cpus need to be changed
                     newname = "%s-%d" % (sec, num)
                     newnode.name = newname
                     self.nodelist[newname] = newnode
                     counts[type] += 1
                     newnode.count = counts[type]
+                    if pin_cpus:
+                        newnode.pin_cpus = pin_cpus[num-1]
 
                     if newnode.lb_method == "interfaces":
                         newnode.interface = netifs.pop().strip()
