@@ -34,6 +34,7 @@ if tmpbrobase and os.path.isdir(tmpbrobase):
     tmpbrocfgdir = os.path.join(BroBase, "etc")
     if os.path.isdir(tmpbrocfgdir):
         BroCfgDir = tmpbrocfgdir
+
     tmpbroscriptdir = os.path.join(BroBase, "share/bro")
     if os.path.isdir(tmpbroscriptdir):
         BroScriptDir = tmpbroscriptdir

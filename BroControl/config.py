@@ -354,6 +354,7 @@ class Configuration:
                     util.error("%s: more than one node defined in stand-alone setup" % file)
 
         manageronlocalhost = False
+
         for n in self.nodelist.values():
             if not n.name:
                 util.error("node configured without a name")
