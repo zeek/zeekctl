@@ -8,13 +8,21 @@
 #
 # If the "cleanup" parameter is specified, then just remove the tar file.
 
+BROCTLSRCDIR=`dirname "$0"`/../..
+BROSRCDIR=${BROCTLSRCDIR}/../..
+BROCTLBUILDDIR=${BROCTLSRCDIR}/build
+PATHSCRIPT=${BROSRCDIR}/build/aux/broctl/broctl-path
+
 # Absolute path of where a tar file of a Bro installation will be created for
 # broctl test purposes (if not specified by user, then just use a hard-coded
 # value).
-test -z "${BROCTL_TEST}" && BROCTL_TEST=/tmp/broctl_test
+test -z "${BROCTL_TEST}" && BROCTL_TEST=`realpath ${BROCTLBUILDDIR}/broctl_test`
+
+mkdir -p ${BROCTL_TEST} || exit 1
 
 # The tar file that all broctl test cases will use.
 TARFILE=${BROCTL_TEST}/bro-test-install.tar
+LOG=${BROCTL_TEST}/build-bro.log
 
 if [ "$1" = "cleanup" ]; then
     # attempt to remove the tar file only if the path is a regular file
@@ -28,10 +36,6 @@ if [ "$1" = "cleanup" ]; then
 
     exit
 fi
-
-BROCTLSRCDIR=`dirname "$0"`/../..
-BROSRCDIR=${BROCTLSRCDIR}/../..
-PATHSCRIPT=${BROSRCDIR}/build/aux/broctl/broctl-path
 
 # Verify that the entire Bro git repo was cloned (not just the broctl repo).
 if [ ! -e "${BROSRCDIR}/configure" ]; then
@@ -61,7 +65,8 @@ if [ -e "${PATHSCRIPT}" ]; then
 fi
 
 # Build and install Bro in a temporary directory.
-(cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make -j && make install)
+echo "Building Bro (log in $LOG) ..."
+(cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make -j && make install) >>$LOG 2>&1
 test $? -ne 0 && exit 1
 
 # Create a tar file of the installation so each test case can use its own
@@ -81,6 +86,7 @@ cp "${PATHSCRIPT}" "${BROCTLSRCDIR}/build"
 
 # Restore (if necessary) the original Bro configure setup.
 if [ ${RESTOREPREFIX} -eq 1 ]; then
-    (cd "${BROSRCDIR}" && ./build/config.status)
+    echo "Reconfiguring Bro (log in $LOG) ..."
+    (cd "${BROSRCDIR}" && ./build/config.status) >>$LOG 2>&1
 fi
 

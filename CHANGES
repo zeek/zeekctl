@@ -1,4 +1,9 @@
 
+1.1-137 | 2013-05-31 17:16:14 -0700
+
+  * New regression test suite for BroControl. "make test" runs it. See
+    testing/README for more information. (Daniel Thayer)
+    
 1.1-101 | 2013-05-24 17:55:41 -0700
 
   * Add support for CPU pinning. To use CPU pinning, a new per-node
