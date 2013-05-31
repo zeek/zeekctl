@@ -61,7 +61,7 @@ if [ -e "${PATHSCRIPT}" ]; then
 fi
 
 # Build and install Bro in a temporary directory.
-(cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make && make install)
+(cd "${BROSRCDIR}" && ./configure --prefix="${TESTPREFIX}" && make -j && make install)
 test $? -ne 0 && exit 1
 
 # Create a tar file of the installation so each test case can use its own
