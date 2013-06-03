@@ -9,12 +9,7 @@ all: btest-verbose
 btest-verbose: buildbro
 	@$(BTEST) -j -f $(DIAG)
 
-# Showing all tests, but not building Bro.
-btest-quick:
-	@$(BTEST) -j -f $(DIAG)
-
 brief: btest-brief
-quick: btest-quick
 
 # Brief output showing only failed tests.
 btest-brief: buildbro
