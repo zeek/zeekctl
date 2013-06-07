@@ -1,4 +1,10 @@
 
+1.1-140 | 2013-06-07 16:35:08 -0700
+
+  * Adding OS to crash output. (Robin Sommer)
+
+  * Giving the broctl test suite its own build directory. (Robin Sommer)
+
 1.1-137 | 2013-05-31 17:16:14 -0700
 
   * New regression test suite for BroControl. "make test" runs it. See
