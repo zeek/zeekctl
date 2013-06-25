@@ -27,7 +27,7 @@ mkdir -p ${BROCTLBUILDDIR}
 # Absolute path of where a tar file of a Bro installation will be created for
 # broctl test purposes (if not specified by user, then just use a hard-coded
 # value).
-test -z "${BROCTL_TEST}" && BROCTL_TEST=`realpath ${BROCTLBUILDDIR}/testing`
+test -z "${BROCTL_TEST}" && BROCTL_TEST=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${BROCTLBUILDDIR}/testing`
 mkdir -p ${BROCTL_TEST} || exit 1
 
 # The tar file that all broctl test cases will use.
