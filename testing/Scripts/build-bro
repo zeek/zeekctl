@@ -13,7 +13,7 @@ function build_bro
     cd "${BROSRCDIR}"
     test -d ${BUILDPREFIX} || ./configure --builddir=${BUILDPREFIX} --prefix="${TESTPREFIX}"
     cd ${BUILDPREFIX}
-    make -j
+    make
     make install
     test $? -ne 0 && exit 1
 }
