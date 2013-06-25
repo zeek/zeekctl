@@ -1,7 +1,6 @@
 
 DIAG=diag.log
 BTEST=../../btest/btest
-BROSRC=..
 
 all: btest-verbose
 
