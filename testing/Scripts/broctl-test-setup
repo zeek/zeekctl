@@ -72,7 +72,7 @@ function installcfgfile() {
 
 function installbro() {
     if [ -z "${INSTALL}" ]; then
-        echo "Error: INSTALL not defined (should be in btest.cfg)" 1>&2
+        echo "Error: INSTALL not defined (try 'make buildbro')" 1>&2
         exit 1
     fi
 
