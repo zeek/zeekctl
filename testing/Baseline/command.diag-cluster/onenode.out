@@ -1,6 +1,7 @@
 [worker-2]
 
 Bro 2.2-1
+Linux 3.2.0-48-generic
 
 
 ==== No reporter.log
