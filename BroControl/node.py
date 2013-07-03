@@ -24,6 +24,9 @@ class Node:
             The type of the node, which will be one of ``standalone``,
             ``manager``, ``proxy``, and ``worker``.
 
+        ``env_vars`` (string)
+            One or more environment variables to set when running Bro.
+
         ``host`` (string)
             The hostname of the system the node is running on.
 
@@ -77,13 +80,12 @@ class Node:
     _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
               "brobase": 1, "ether": 1, "zone_id": 1,
               "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
-              "pin_cpus": 1 }
+              "pin_cpus": 1, "env_vars": 1 }
 
 
     def __init__(self, name):
         """Instantiates a new node of the given name."""
         self.name = name
-        self.env_vars = []
 
         for key in Node._keys:
             self.__dict__[key] = ""

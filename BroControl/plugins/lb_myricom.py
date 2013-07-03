@@ -15,10 +15,8 @@ class LBMyricom(BroControl.plugin.Plugin):
 
     def init(self):
         for nn in self.nodes():
-            if nn.type != "worker":
+            if nn.type != "worker" or nn.lb_method != "myricom":
                 continue
 
-            if nn.lb_method == "myricom":
-                nn.env_vars += ["SNF_NUM_RINGS=%d" % int(nn.lb_procs)]
-                nn.env_vars += ["SNF_FLAGS=0x101"]
+            nn.env_vars = " SNF_NUM_RINGS=%d SNF_FLAGS=0x101 %s" % (int(nn.lb_procs), nn.env_vars)
 

@@ -221,8 +221,7 @@ def _makeEnvParam(node):
     if node.type != "standalone":
         env += " CLUSTER_NODE=%s" % node.name
 
-    for env_var in node.env_vars:
-        env += " %s" % env_var
+    env += " %s" % node.env_vars
 
     return env
 

@@ -264,6 +264,16 @@ class Configuration:
 
                 node.__dict__[key] = val
 
+            if node.env_vars:
+                # If the value is quoted, then remove the quotes (otherwise,
+                # the shell gives a "command not found" error).
+                ntmp = node.env_vars
+
+                if ntmp.startswith('"') and ntmp.endswith('"'):
+                    node.env_vars = ntmp[1:-1]
+                elif ntmp.startswith("'") and ntmp.endswith("'"):
+                    node.env_vars = ntmp[1:-1]
+
             try:
                 addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
                 if len(addrinfo) == 0:
