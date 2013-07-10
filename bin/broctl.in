@@ -756,7 +756,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, check)
-            result = control.listScripts(nodes, check)
+            results = control.listScripts(nodes, check)
             self.checkForFailure(results)
             plugin.Registry.cmdPostWithNodes("scripts", nodes, check)
         else:
