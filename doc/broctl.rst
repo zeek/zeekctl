@@ -1890,7 +1890,7 @@ Mails
 
 3. NOTICES with a notice action ``EMAIL``.
 
-4. If `trace-summary <http://www.bro.org/documentation/components/trace-summary/README.html>`_
+4. If `trace-summary <http://www.bro.org/sphinx-git/components/trace-summary/README.html>`_
    is installed, a traffic summary is sent each rotation interval.
 
 Performance Analysis
