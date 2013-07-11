@@ -983,6 +983,7 @@ def capstats(nodes, interval):
             outputOne("Total", totals)
             util.output("")
 
+    hadError = False
     have_cflow = config.Config.cflowaddress and config.Config.cflowuser and config.Config.cflowpassword
     have_capstats = config.Config.capstatspath
 
@@ -992,6 +993,8 @@ def capstats(nodes, interval):
 
     if have_cflow:
         cflow_start = getCFlowStatus()
+        if not cflow_start:
+            hadError = True
 
     if have_capstats:
         capstats = []
@@ -1001,11 +1004,16 @@ def capstats(nodes, interval):
             else:
                 capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
 
+            if error:
+                hadError = True
+
     else:
         time.sleep(interval)
 
     if have_cflow:
         cflow_stop = getCFlowStatus()
+        if not cflow_stop:
+            hadError = True
 
     if have_capstats:
         output("Interface", sorted(capstats))
@@ -1014,7 +1022,7 @@ def capstats(nodes, interval):
         diffs = calculateCFlowRate(cflow_start, cflow_stop, interval)
         output("cFlow Port", sorted(diffs))
     
-    return True
+    return not hadError
 
 # Update the configuration of a running instance on the fly.
 def update(nodes):
