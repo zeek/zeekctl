@@ -1171,7 +1171,7 @@ def executeCmd(nodes, cmd):
     for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
         out = output and "\n> ".join(output) or ""
         util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
-        if (not success) or (success == "error"):
+        if not success:
             hadError = True
     return not hadError 
 
