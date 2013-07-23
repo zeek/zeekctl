@@ -25,7 +25,8 @@ class Node:
             ``manager``, ``proxy``, and ``worker``.
 
         ``env_vars`` (string)
-            One or more environment variables to set when running Bro.
+            One or more environment variables to set when running Bro (e.g.,
+            ``env_vars=VAR1=1 VAR2=2``).
 
         ``host`` (string)
             The hostname of the system the node is running on.
