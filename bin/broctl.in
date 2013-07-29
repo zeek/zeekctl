@@ -186,7 +186,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
 
         if plugin.Registry.cmdPre("install"):
-            install.install(local)
+            result = install.install(local)
+            if not result:
+                self.exit_code = 1
 
         plugin.Registry.cmdPost("install")
 
@@ -258,7 +260,6 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.postcmd(False, args) # Need to call manually.
 
             if self.failed():
-                self.exit_code = 1
                 return
 
             if clean:
@@ -267,7 +268,6 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
-                    self.exit_code = 1
                     return
 
                 util.output("checking configurations...")
@@ -275,7 +275,6 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
-                    self.exit_code = 1
                     return
 
                 util.output("installing ...")
@@ -283,7 +282,6 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.postcmd(False, args)
 
                 if self.failed():
-                    self.exit_code = 1
                     return
 
             util.output("starting ...")
@@ -533,7 +531,9 @@ class BroCtlCmdLoop(cmd.Cmd):
             return
 
         nodes = plugin.Registry.cmdPreWithNodes("cleanup", nodes, cleantmp)
-        control.cleanup(nodes, cleantmp)
+        result = control.cleanup(nodes, cleantmp)
+        if not result:
+            self.exit_code = 1
         plugin.Registry.cmdPostWithNodes("cleanup", nodes, cleantmp)
 
         return False
@@ -616,7 +616,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
         if success:
             nodes = plugin.Registry.cmdPreWithNodes("df", nodes)
-            control.df(nodes)
+            result = control.df(nodes)
+            if not result:
+                self.exit_code = 1
             plugin.Registry.cmdPostWithNodes("df", nodes)
         else:
             self.exit_code = 1
@@ -643,7 +645,9 @@ class BroCtlCmdLoop(cmd.Cmd):
             (success, nodes) = nodeArgs(" ".join(args[1:]))
             if success:
                 nodes = plugin.Registry.cmdPreWithNodes("print", nodes, id)
-                control.printID(nodes, id)
+                result = control.printID(nodes, id)
+                if not result:
+                    self.exit_code = 1
                 plugin.Registry.cmdPostWithNodes("print", nodes, id)
             else:
                 self.exit_code = 1

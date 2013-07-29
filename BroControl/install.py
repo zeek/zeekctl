@@ -70,6 +70,8 @@ def generateDynamicVariableScript():
 # If local_only is True, nothing is propagated to other nodes.
 def install(local_only):
 
+    hadError = False
+
     config.Config.determineBroVersion()
 
     manager = config.Config.manager()
@@ -80,12 +82,14 @@ def install(local_only):
     for p in policies:
         if os.path.isdir(p):
             util.output("removing old policies in %s ..." % p, False)
-            execute.rmdir(manager, p)
+            if not execute.rmdir(manager, p):
+                hadError = True
             util.output(" done.")
 
     util.output("creating policy directories ...", False)
     for p in policies:
-        execute.mkdir(manager, p)
+        if not execute.mkdir(manager, p):
+            hadError = True
     util.output(" done.")
 
     # Install local site policy.
@@ -97,14 +101,17 @@ def install(local_only):
             dir = config.Config.subst(dir)
             for file in glob.glob(os.path.join(dir, "*")):
                 if execute.isfile(manager, file):
-                    execute.install(manager, file, dst)
+                    if not execute.install(manager, file, dst):
+                        hadError = True
                 elif execute.isdir(manager, file):
                     dstdir = os.path.join(dst, os.path.basename(file))
-                    execute.install(manager, file, dstdir)
+                    if not execute.install(manager, file, dstdir):
+                        hadError = True
         util.output(" done.")
 
     makeLayout(config.Config.policydirsiteinstallauto)
-    makeLocalNetworks(config.Config.policydirsiteinstallauto)
+    if not makeLocalNetworks(config.Config.policydirsiteinstallauto):
+        hadError = True
     makeConfig(config.Config.policydirsiteinstallauto)
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
@@ -116,7 +123,7 @@ def install(local_only):
     generateDynamicVariableScript()
 
     if local_only:
-        return
+        return not hadError
 
     # Sync to clients.
     util.output("updating nodes ... ", False)
@@ -135,6 +142,7 @@ def install(local_only):
             continue
 
         if not execute.isAlive(n.addr):
+            hadError = True
             continue
 
         nodes += [n]
@@ -148,9 +156,12 @@ def install(local_only):
         for (node, success) in execute.mkdirs(dirs):
             if not success:
                 util.warn("cannot create directory %s on %s" % (dir, node.name))
+                hadError = True
 
         paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
-        execute.sync(nodes, paths)
+        if not execute.sync(nodes, paths):
+            hadError = True
+
         util.output("done.")
 
         # Note: the old code created $brobase explicitly but it seems the loop above should
@@ -174,10 +185,15 @@ def install(local_only):
         for (node, success) in execute.mkdirs(dirs):
             if not success:
                 util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
+                hadError = True
 
         paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
-        execute.sync(nodes, paths)
+        if not execute.sync(nodes, paths):
+            hadError = True
+
         util.output("done.")
+
+    return not hadError
 
 # Create Bro-side broctl configuration broctl-layout.bro.
 port = -1
@@ -293,7 +309,7 @@ def makeLocalNetworks(path, silent=False):
 
     if not os.path.exists(netcfg):
         util.warn("list of local networks does not exist in %s" % netcfg)
-        return
+        return False
 
     if ( not silent ):
         util.output("generating local-networks.bro ...", False)
@@ -316,6 +332,8 @@ def makeLocalNetworks(path, silent=False):
 
     if ( not silent ):
         util.output(" done.")
+
+    return True
 
 
 def makeConfig(path, silent=False):

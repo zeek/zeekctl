@@ -767,13 +767,16 @@ def crashDiag(node):
 # If cleantmp is true, also wipes ${tmpdir}; this is done
 # even when the node is still running.
 def cleanup(nodes, cleantmp=False):
+    hadError = False
     util.output("cleaning up nodes ...")
     result = isRunning(nodes)
     running =    [node for (node, on) in result if on]
     notrunning = [node for (node, on) in result if not on]
 
-    execute.rmdirs([(n, n.cwd()) for n in notrunning])
-    execute.mkdirs([(n, n.cwd()) for n in notrunning])
+    results1 = execute.rmdirs([(n, n.cwd()) for n in notrunning])
+    results2 = execute.mkdirs([(n, n.cwd()) for n in notrunning])
+    if nodeFailed(results1) or nodeFailed(results2):
+        hadError = True
 
     for node in notrunning:
         node.clearCrashed();
@@ -782,8 +785,12 @@ def cleanup(nodes, cleantmp=False):
         util.output("   %s is still running, not cleaning work directory" % node.name)
 
     if cleantmp:
-        execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning])
-        execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning])
+        results3 = execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning])
+        results4 = execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning])
+        if nodeFailed(results3) or nodeFailed(results4):
+            hadError = True
+
+    return not hadError
 
 # Attach gdb to the main Bro processes on the given nodes.
 def attachGdb(nodes):
@@ -1054,7 +1061,7 @@ def update(nodes):
 # Gets disk space on all volumes relevant to broctl installation.
 # Returns dict which for each node has a list of tuples (fs, total, used, avail).
 def getDf(nodes):
-
+    hadError = False
     dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
 
     df = {}
@@ -1084,19 +1091,22 @@ def getDf(nodes):
                         df[node.name][fields[0]] = fields
                 else:
                     util.warn("Invalid df output for node '%s'." % node)
-
+                    hadError = True
+            else:
+                hadError = True
 
     result = {}
     for node in df:
         result[node] = df[node].values()
 
-    return result
+    return (hadError, result)
 
 def df(nodes):
 
     util.output("%10s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
 
-    for (node, dfs) in getDf(nodes).items():
+    hadError, results = getDf(nodes)
+    for (node, dfs) in results.items():
         for df in dfs:
             total = float(df[1])
             used = float(df[2])
@@ -1107,8 +1117,11 @@ def df(nodes):
                 prettyPrintVal(total),
                 prettyPrintVal(avail), perc))
 
+    return not hadError
+
 
 def printID(nodes, id):
+    hadError = False
     running = isRunning(nodes)
 
     events = []
@@ -1123,6 +1136,9 @@ def printID(nodes, id):
             print "%10s   %s = %s" % (node, args[0], args[1])
         else:
             print "%10s   <error: %s>" % (node, args)
+            hadError = True
+
+    return not hadError
 
 def _queryPeerStatus(nodes):
     running = isRunning(nodes)
