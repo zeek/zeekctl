@@ -18,5 +18,6 @@ class LBMyricom(BroControl.plugin.Plugin):
             if nn.type != "worker" or nn.lb_method != "myricom":
                 continue
 
-            nn.env_vars = " SNF_NUM_RINGS=%d SNF_FLAGS=0x101 %s" % (int(nn.lb_procs), nn.env_vars)
+            nn.env_vars.setdefault("SNF_NUM_RINGS", nn.lb_procs)
+            nn.env_vars.setdefault("SNF_FLAGS", "0x101")
 

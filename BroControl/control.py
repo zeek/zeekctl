@@ -219,9 +219,9 @@ def _makeBroParams(node, live, add_manager=False):
 def _makeEnvParam(node):
     env = ""
     if node.type != "standalone":
-        env += " CLUSTER_NODE=%s" % node.name
+        env += "CLUSTER_NODE=%s " % node.name
 
-    env += " %s" % node.env_vars
+    env += " ".join(["%s=%s" % (key, val) for key,val in node.env_vars.items()])
 
     return env
 

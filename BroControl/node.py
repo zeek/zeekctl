@@ -25,8 +25,8 @@ class Node:
             ``manager``, ``proxy``, and ``worker``.
 
         ``env_vars`` (string)
-            One or more environment variables to set when running Bro (e.g.,
-            ``env_vars=VAR1=1 VAR2=2``).
+            A comma-separated list of one or more environment variables
+            to set when running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``).
 
         ``host`` (string)
             The hostname of the system the node is running on.
@@ -101,6 +101,8 @@ class Node:
         def fmt(v):
             if type(v) == type([]):
                 v = ",".join(v)
+            elif type(v) == type({}):
+                v = ",".join(["%s=%s" % (key, val) for key, val in v.items()])
             return v
 
         return ("%15s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])

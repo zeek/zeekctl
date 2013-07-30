@@ -30,8 +30,8 @@ class LBPFRing(BroControl.plugin.Plugin):
             else:
                 dd[nn.host] = { nn.interface : pfringid }
 
-            myid = dd[nn.host][nn.interface]
-            nn.env_vars = " PCAP_PF_RING_USE_CLUSTER_PER_FLOW=1 PCAP_PF_RING_CLUSTER_ID=%s %s" % (myid, nn.env_vars)
+            nn.env_vars.setdefault("PCAP_PF_RING_USE_CLUSTER_PER_FLOW", "1")
+            nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
 
         return True
 

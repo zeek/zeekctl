@@ -264,15 +264,26 @@ class Configuration:
 
                 node.__dict__[key] = val
 
-            if node.env_vars:
-                # If the value is quoted, then remove the quotes (otherwise,
-                # the shell gives a "command not found" error).
-                ntmp = node.env_vars
+            ntmp = node.env_vars
+            if ntmp:
+                # If the entire value is quoted, then remove the quotes
+                # (however, if individual environment variable values are
+                # quoted, then don't remove those)
+                if ntmp.startswith('"') and ntmp.endswith('"') or ntmp.startswith("'") and ntmp.endswith("'"):
+                    ntmp = ntmp[1:-1]
 
-                if ntmp.startswith('"') and ntmp.endswith('"'):
-                    node.env_vars = ntmp[1:-1]
-                elif ntmp.startswith("'") and ntmp.endswith("'"):
-                    node.env_vars = ntmp[1:-1]
+            node.env_vars = {}
+            if ntmp:
+                for keyval in ntmp.split(","):
+                    try:
+                        key,val = keyval.split("=", 1)
+                    except ValueError:
+                        util.error("%s: missing '=' in section '%s'" % (file, sec))
+
+                    if not key.strip():
+                        util.error("%s: missing environment variable name in section '%s'" % (file, sec))
+
+                    node.env_vars[key.strip()] = val.strip()
 
             try:
                 addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
