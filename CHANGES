@@ -1,4 +1,49 @@
 
+1.1-150 | 2013-07-14 08:00:44 -0700
+
+  * Fix broken link in README. (Bernhard Amann, thanks kraigu)
+
+1.1-148 | 2013-07-03 17:06:44 -0700
+
+  * Updates to test infrastructure. (Daniel Thayer)
+
+    - Fix canonifier script for handling missing gdb.
+    - Update baselines for recent changes to crash-diag.
+    - Remove "make quick" from the README.
+    - Minor cleanup of the build script.
+    - Remove unused Makefile variable.
+    - Remove the "-j" option to make as it can cause lock-ups on
+      some machines.
+    - Replace realpath command with more portable Python equivalent.
+
+1.1-140 | 2013-06-07 16:35:08 -0700
+
+  * Adding OS to crash output. (Robin Sommer)
+
+  * Giving the broctl test suite its own build directory. (Robin Sommer)
+
+1.1-137 | 2013-05-31 17:16:14 -0700
+
+  * New regression test suite for BroControl. "make test" runs it. See
+    testing/README for more information. (Daniel Thayer)
+    
+1.1-101 | 2013-05-24 17:55:41 -0700
+
+  * Add support for CPU pinning. To use CPU pinning, a new per-node
+    option "pin_cpus" can be specified in node.cfg, and the OS must be
+    either Linux or FreeBSD (if such a node.cfg is used on another OS,
+    then the "pin_cpus" option is ignored). Addresses #996. (Daniel
+    Thayer)
+
+1.1-99 | 2013-05-24 17:34:44 -0700
+
+  * Allow multiple conn-summary.log files to be processed to avoid
+    conflicts when stopping Bro shortly after a log rotation. (Daniel
+    Thayer)
+
+  * Prevent deletion of unarchived logs during "broctl stop" when
+    archiving takes a while. (Daniel Thayer)
+
 1.1-94 | 2013-05-17 13:29:04 -0700
 
   * Don't import readline, it's loaded implicitly already. (Daniel

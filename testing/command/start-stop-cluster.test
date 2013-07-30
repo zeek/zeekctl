@@ -1,0 +1,40 @@
+# Test that the start command can start all stopped nodes, or just a specified
+# node.  Test that the stop command can stop all running nodes, or just a
+# specified node.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff start-all.out
+# @TEST-EXEC: btest-diff stop-one.out
+# @TEST-EXEC: btest-diff stop-remaining.out
+# @TEST-EXEC: btest-diff start-one.out
+# @TEST-EXEC: btest-diff start-remaining.out
+# @TEST-EXEC: btest-diff stop-all.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+broctl install
+
+# start all nodes
+broctl start 2> start-all.out
+
+# stop one node
+broctl stop worker-1 2> stop-one.out
+
+# stop all remaining running nodes
+broctl stop 2> stop-remaining.out
+
+# start one node
+broctl start manager 2> start-one.out
+
+# start all remaining stopped nodes
+broctl start 2> start-remaining.out
+
+# stop all nodes
+broctl stop 2> stop-all.out
+

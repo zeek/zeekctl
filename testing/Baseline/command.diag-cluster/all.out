@@ -1,0 +1,128 @@
+[manager]
+
+Bro 2.2-1
+Linux 3.2.0-48-generic
+
+
+==== No reporter.log
+
+==== stderr.log
+
+==== stdout.log
+unlimited
+unlimited
+unlimited
+
+==== .cmdline
+-U .status -p broctl -p broctl-live -p local -p manager local.bro broctl base/frameworks/cluster local-manager.bro broctl/auto
+
+==== .env_vars
+PATH=/tmp/broctltest/test.28034/bin:/tmp/broctltest/test.28034/share/broctl/scripts:/tmp/broctltest/test.28034/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+BROPATH=/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/site::/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/auto:/tmp/broctltest/test.28034/share/bro:/tmp/broctltest/test.28034/share/bro/policy:/tmp/broctltest/test.28034/share/bro/site
+CLUSTER_NODE=manager
+
+==== .status
+RUNNING [net_run]
+
+==== No prof.log
+
+==== No packet_filter.log
+
+==== loaded_scripts.log
+Node manager: This is the contents of loaded_scripts.log for broctl testing.
+[proxy-1]
+
+Bro 2.2-1
+Linux 3.2.0-48-generic
+
+
+==== No reporter.log
+
+==== stderr.log
+
+==== stdout.log
+unlimited
+unlimited
+unlimited
+
+==== .cmdline
+-U .status -p broctl -p broctl-live -p local -p proxy-1 local.bro broctl base/frameworks/cluster local-proxy broctl/auto
+
+==== .env_vars
+PATH=/tmp/broctltest/test.28034/bin:/tmp/broctltest/test.28034/share/broctl/scripts:/tmp/broctltest/test.28034/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+BROPATH=/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/site::/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/auto:/tmp/broctltest/test.28034/share/bro:/tmp/broctltest/test.28034/share/bro/policy:/tmp/broctltest/test.28034/share/bro/site
+CLUSTER_NODE=proxy-1
+
+==== .status
+RUNNING [net_run]
+
+==== No prof.log
+
+==== No packet_filter.log
+
+==== loaded_scripts.log
+Node proxy-1: This is the contents of loaded_scripts.log for broctl testing.
+[worker-1]
+
+Bro 2.2-1
+Linux 3.2.0-48-generic
+
+
+==== No reporter.log
+
+==== stderr.log
+
+==== stdout.log
+unlimited
+unlimited
+unlimited
+
+==== .cmdline
+-i eth0 -U .status -p broctl -p broctl-live -p local -p worker-1 local.bro broctl base/frameworks/cluster local-worker.bro broctl/auto
+
+==== .env_vars
+PATH=/tmp/broctltest/test.28034/bin:/tmp/broctltest/test.28034/share/broctl/scripts:/tmp/broctltest/test.28034/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+BROPATH=/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/site::/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/auto:/tmp/broctltest/test.28034/share/bro:/tmp/broctltest/test.28034/share/bro/policy:/tmp/broctltest/test.28034/share/bro/site
+CLUSTER_NODE=worker-1
+
+==== .status
+RUNNING [net_run]
+
+==== No prof.log
+
+==== No packet_filter.log
+
+==== loaded_scripts.log
+Node worker-1: This is the contents of loaded_scripts.log for broctl testing.
+[worker-2]
+
+Bro 2.2-1
+Linux 3.2.0-48-generic
+
+
+==== No reporter.log
+
+==== stderr.log
+
+==== stdout.log
+unlimited
+unlimited
+unlimited
+
+==== .cmdline
+-i eth1 -U .status -p broctl -p broctl-live -p local -p worker-2 local.bro broctl base/frameworks/cluster local-worker.bro broctl/auto
+
+==== .env_vars
+PATH=/tmp/broctltest/test.28034/bin:/tmp/broctltest/test.28034/share/broctl/scripts:/tmp/broctltest/test.28034/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+BROPATH=/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/site::/tmp/broctltest/test.28034/spool/installed-scripts-do-not-touch/auto:/tmp/broctltest/test.28034/share/bro:/tmp/broctltest/test.28034/share/bro/policy:/tmp/broctltest/test.28034/share/bro/site
+CLUSTER_NODE=worker-2
+
+==== .status
+RUNNING [net_run]
+
+==== No prof.log
+
+==== No packet_filter.log
+
+==== loaded_scripts.log
+Node worker-2: This is the contents of loaded_scripts.log for broctl testing.

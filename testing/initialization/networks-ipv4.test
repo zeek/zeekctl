@@ -1,0 +1,15 @@
+# Test that IPv4 networks in networks.cfg are interpreted correctly.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/networks.cfg__ipv4
+EOF
+
+broctl install
+
+grep -v "^#" $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out
+

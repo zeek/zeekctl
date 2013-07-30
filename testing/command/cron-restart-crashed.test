@@ -1,0 +1,38 @@
+# Test that the cron command restarts a crashed node, unless the "--no-watch"
+# option is specified.
+#
+# @TEST-SERIALIZE: broccoli
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+broctl install
+broctl start
+
+# make sure cron can restart the crashed node
+rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
+
+# test with the "--no-watch" option
+broctl cron --no-watch
+
+broctl status 2> status1.out
+
+# test without the "--no-watch" option
+broctl cron
+
+broctl status 2> status2.out
+
+broctl stop
+

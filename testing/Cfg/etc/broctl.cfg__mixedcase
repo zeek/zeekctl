@@ -1,0 +1,6 @@
+# Specify an option name with mixed case and extraneous whitespace before
+# and after the option name and value.
+
+ logroTaTioniNterval  =     123 
+
+

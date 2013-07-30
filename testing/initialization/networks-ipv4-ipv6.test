@@ -1,0 +1,16 @@
+# Test that both IPv4 and IPv6 networks can be specified in networks.cfg and
+# are interpreted correctly.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/networks.cfg__ipv4_ipv6
+EOF
+
+broctl install
+
+grep -v "^#" $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/local-networks.bro | grep -v "^$" > out
+

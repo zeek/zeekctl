@@ -1,0 +1,5 @@
+  worker-2
+1365197157.616340 peer=proxy-1 host=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1365197157.616340 peer=manager host=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1365197157.616340 peer= host=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+

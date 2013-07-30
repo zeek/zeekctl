@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+#
+# This script is a replacement for the "df" command, and is used for certain
+# broctl test cases.
+
+dfdir=`basename $2`
+
+echo "Filesystem     1024-blocks     Used Available Capacity Mounted on"
+
+if [ "$dfdir" = "logs" ]; then
+    echo "/dev/sda5        518977272 67485396 424704036      14% /"
+else
+    echo "/dev/sda6        249577356 21542244 215357276      10% /"
+fi
+

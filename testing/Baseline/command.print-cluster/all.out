@@ -1,0 +1,12 @@
+   manager   HTTP::mime_types_extensions = {
+	[application/x-dosexec] = /^?(\.([eE][xX][eE]|[dD][lL][lL]))$?/
+}
+   proxy-1   HTTP::mime_types_extensions = {
+	[application/x-dosexec] = /^?(\.([eE][xX][eE]|[dD][lL][lL]))$?/
+}
+  worker-1   HTTP::mime_types_extensions = {
+	[application/x-dosexec] = /^?(\.([eE][xX][eE]|[dD][lL][lL]))$?/
+}
+  worker-2   HTTP::mime_types_extensions = {
+	[application/x-dosexec] = /^?(\.([eE][xX][eE]|[dD][lL][lL]))$?/
+}

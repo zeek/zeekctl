@@ -31,7 +31,7 @@ if [ -e ${localnetscfg} ]; then
    summary_options="$summary_options -l ${localnetscfg}"
 fi
 
-output=conn-summary.log
+output=conn-summary.${open}.log
 output_basename=conn-summary
 
 # GNU's time can do memory as well.

@@ -1,0 +1,3 @@
+  worker-2   HTTP::mime_types_extensions = {
+	[application/x-dosexec] = /^?(\.([eE][xX][eE]|[dD][lL][lL]))$?/
+}

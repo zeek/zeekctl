@@ -1,0 +1,17 @@
+# Cluster myricom configuration.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+lb_procs=11
+lb_method=myricom
+

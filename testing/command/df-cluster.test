@@ -1,0 +1,22 @@
+# Test that the df command can get disk usage for all nodes in a cluster, or
+# just a specified node.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+bin/df__test --new
+EOF
+
+broctl install
+
+# check usage on all nodes
+broctl df 2> all.out
+
+# check usage on one node
+broctl df worker-1 2> onenode.out
+

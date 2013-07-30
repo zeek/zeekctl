@@ -1,0 +1,22 @@
+# Test that the "scripts -c" command can output contents of loaded_scripts.log
+# on all nodes, or just a specified node.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+broctl install
+
+# show loaded_scripts.log for all nodes
+broctl scripts -c 2> all.out
+
+# show loaded_scripts.log for one node
+broctl scripts -c proxy-1 2> onenode.out
+

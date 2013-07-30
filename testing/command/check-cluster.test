@@ -1,0 +1,21 @@
+# Test that the check command can check all nodes in a cluster, or just a
+# specified node.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+EOF
+
+broctl install
+
+# check all nodes
+broctl check 2> all.out
+
+# check one node
+broctl check proxy-1 2> onenode.out
+

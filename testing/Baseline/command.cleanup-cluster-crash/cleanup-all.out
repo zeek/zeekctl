@@ -1,0 +1,4 @@
+cleaning up nodes ...
+   manager is still running, not cleaning work directory
+   proxy-1 is still running, not cleaning work directory
+   worker-2 is still running, not cleaning work directory

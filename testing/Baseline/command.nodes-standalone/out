@@ -1,0 +1,1 @@
+            bro - addr=::1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface=eth0 lb_interfaces= lb_method= lb_procs= name=bro pin_cpus= test_mykey= type=standalone zone_id=

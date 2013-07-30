@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+#
+# Replace integer values with X (e.g., "key=123" would convert to "key=X").
+
+sed 's/=[0-9][0-9]* /=X /g;s/=[0-9][0-9]*$/=X/'

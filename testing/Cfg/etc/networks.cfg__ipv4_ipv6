@@ -1,0 +1,5 @@
+# Mix of IPv4 and IPv6 networks.
+
+192.168.0.0/16  my network
+
+fe80::/64       another network

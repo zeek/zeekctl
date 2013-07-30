@@ -1,0 +1,31 @@
+# Test that the capstats command can get stats on all unique host/interface
+# pairs in a cluster, or on just the specified node, and also over a
+# specified time interval.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+# @TEST-EXEC: btest-diff interval.out
+# @TEST-EXEC: btest-diff onenode-interval.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+bin/capstats__test
+EOF
+
+broctl install
+
+# get capstats on all nodes
+broctl capstats 2> all.out
+
+# get capstats on one node
+broctl capstats worker-2 2> onenode.out
+
+# get the capstats over a specified time interval
+broctl capstats 4 2> interval.out
+
+# get capstats on one node over a specified time interval
+broctl capstats worker-2 3 2> onenode-interval.out
+

@@ -1,0 +1,27 @@
+# Test that the restart command can restart all nodes (including crashed ones).
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+broctl install
+broctl start
+
+# when we restart, make sure no nodes crash
+rm $BROCTL_INSTALL_PREFIX/broctltest.cfg
+
+broctl restart 2> out
+
+broctl stop
+

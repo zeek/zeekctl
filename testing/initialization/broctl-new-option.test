@@ -1,0 +1,13 @@
+# Test that broctl.cfg options that aren't used or documented can be specified.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__new_option
+EOF
+
+broctl config | grep foo1 > out
+

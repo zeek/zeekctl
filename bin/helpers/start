@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-#  start <cwd> <Bro args>
+#  start <cwd> <pin_cpu> <Bro args>
 
 . `dirname $0`/../broctl-config.sh
 

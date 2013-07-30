@@ -1,0 +1,3 @@
+# Don't send emails or summary reports
+sendmail=
+tracesummary=

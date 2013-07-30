@@ -58,7 +58,39 @@ if [ ! -f .startup ]; then
    exit
 fi
 
-( for i in *.log; do
+( function waitforarchivelog() {
+    [ "$crash" = "1" ] && return 0
+
+    # Gather list of all archive-log PID files.
+    pidfiles=$(find . -maxdepth 1 -name '.archive-log.*.tmp' -type f -print)
+
+    while [ -n "$pidfiles" ]; do
+        for pfile in $pidfiles ; do
+            # If PID file is empty, then check it again later.
+            if [ -s $pfile ]; then
+                # Check if a process with given PID exists
+                ps -p $(cat $pfile) > /dev/null 2>&1
+                if [ $? -ne 0 ]; then
+                    # No such process exists, so remove PID file
+                    rm -f $pfile
+                fi
+            fi
+        done
+
+        sleep 1
+
+        pidfiles=$(find . -maxdepth 1 -name '.archive-log.*.tmp' -type f -print)
+    done
+
+    # Check if any log files remain (this could happen if the archival
+    # failed, or if archive-log terminated before a log was archived).
+    if [ -z "$(find . -maxdepth 1 -name '*.*-*.log' -type f -print)" ]; then
+        rm -rf $tmp
+    fi
+
+  }
+
+  for i in *.log; do
 
     if [ "$crash" = "1" ]; then
         # In the event of a crash, manually run log postprocessors on all
@@ -74,7 +106,7 @@ fi
 
     ${scriptsdir}/remove-link-for-log $i
 
-  done && wait && if [ "$crash" = "0" ]; then rm -rf $tmp; fi ) &
+  done && wait && waitforarchivelog ) &
 
 
 

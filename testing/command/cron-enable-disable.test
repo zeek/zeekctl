@@ -1,0 +1,21 @@
+# Test that the initial default cron state is correct, and that the state
+# can be set to either disabled or enabled.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+broctl install
+
+# check the initial default state
+broctl cron ? 2> out
+
+# test that the state can be set to disabled
+broctl cron disable
+broctl cron ? 2>> out
+
+# test that the state can be set to enabled
+broctl cron enable
+broctl cron ? 2>> out
+

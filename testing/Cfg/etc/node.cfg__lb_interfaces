@@ -1,0 +1,16 @@
+# Cluster "interfaces" load-balancing configuration.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+lb_procs=3
+lb_method=interfaces
+lb_interfaces=eth0, eth3,eth1

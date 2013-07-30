@@ -1,0 +1,11 @@
+# Test that the nodes command lists the standalone bro node.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
+
+. broctl-test-setup
+
+broctl install
+
+broctl nodes > out
+

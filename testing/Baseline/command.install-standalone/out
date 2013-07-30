@@ -1,0 +1,8 @@
+warning: cannot read '/tmp/broctltest/test.19657/spool/broctl.dat' (this is ok on first run)
+warning: cannot read '/tmp/broctltest/test.19657/spool/broctl.dat' (this is ok on first run)
+creating policy directories ... done.
+installing site policies ... done.
+generating standalone-layout.bro ... done.
+generating local-networks.bro ... done.
+generating broctl-config.bro ... done.
+updating nodes ... done.

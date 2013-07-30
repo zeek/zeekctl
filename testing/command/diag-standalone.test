@@ -1,0 +1,19 @@
+# Test that the diag command can output diags for a standalone bro.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+broctl install
+broctl start
+
+broctl diag 2> out
+
+broctl stop
+

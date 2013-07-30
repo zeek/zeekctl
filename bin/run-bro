@@ -1,8 +1,13 @@
 #! /usr/bin/env bash
 #
 # Wrapper script around the actual Bro invocation. 
+#
+# run-bro <pin_cpu> <Bro args>
 
 . `dirname $0`/broctl-config.sh
+
+pin_cpu=$1
+shift
 
 export PATH=${bindir}:${scriptsdir}:$PATH
 
@@ -52,7 +57,12 @@ if [ "${havenfs}" -ne 0 ]; then
 fi
 
 sleep 1
-nohup $mybro $@ &
+
+if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
+    nohup ${pin_command} $pin_cpu $mybro $@ &
+else
+    nohup $mybro $@ &
+fi
 
 child=$!
 

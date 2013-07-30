@@ -1,0 +1,6 @@
+# Don't send emails or summary reports, and turn on debug output.
+# Specify a non-zero pfringclusterid (so that PF_RING can be tested).
+sendmail=
+tracesummary=
+debug=1
+pfringclusterid=21

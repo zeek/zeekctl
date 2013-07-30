@@ -1,0 +1,30 @@
+# Test that the status command can get status of all nodes, or just a 
+# specified node.
+#
+# @TEST-SERIALIZE: broccoli
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff onenode.out
+# @TEST-EXEC: btest-diff stopped.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster_no_netifs
+EOF
+
+broctl install
+broctl start
+
+# get status of all nodes
+broctl status 2> all.out
+
+# get status of one node
+broctl status manager 2> onenode.out
+
+broctl stop
+
+# all nodes are stopped
+broctl status 2> stopped.out
+

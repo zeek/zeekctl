@@ -1,0 +1,29 @@
+# Test that the ps plugin can show bro processes on all nodes, or just a
+# specified node.
+#
+# @TEST-SERIALIZE: broccoli
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: grep '(+)' all.out
+# @TEST-EXEC-FAIL: grep '(+)' stopped.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster_no_netifs
+EOF
+
+broctl install
+broctl start
+
+# get status of all nodes
+broctl ps.bro > all.out
+
+# get status of one node
+broctl ps.bro worker-2 > onenode.out
+
+broctl stop
+
+# no bro processes running
+broctl ps.bro > stopped.out
+

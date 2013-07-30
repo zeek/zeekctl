@@ -1,0 +1,5 @@
+Name       Type       Host       Status        Pid    Peers  Started              
+worker-1   worker     localhost  crashed       
+manager    manager    localhost  running       29509  ???    10 Apr 22:08:07  
+proxy-1    proxy      localhost  running       29541  ???    10 Apr 22:08:09  
+worker-2   worker     localhost  running       29588  ???    10 Apr 22:08:11  

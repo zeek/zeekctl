@@ -1,0 +1,92 @@
+#! /usr/bin/env python
+#
+# This script can be used in place of Bro for testing purposes to simulate
+# some of the behavior of Bro.
+
+import os, atexit, getopt, signal, sys, time
+
+def setprocstate(str):
+    if statusfile:
+        stfile = open(statusfile, "w")
+        stfile.write(str)
+        stfile.close()
+
+def catchsigterm(signum, frame):
+    sys.exit(0)
+
+def createloadedscriptslog(thisnode):
+    lsl = open("loaded_scripts.log", "w")
+    lsl.write("Node %s: This is the contents of loaded_scripts.log for broctl testing.\n" % thisnode)
+    lsl.close()
+
+livemode = False
+statusfile = None
+brotestcfg = { "crash" : "" }
+
+# Parse cmd-line args (most of them can be ignored).
+optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:K:LOPR:ST:U:WZ")
+for (opt, val) in optlist:
+    if opt == "-v":
+        # broctl doesn't care which version bro reports
+        print "bro version 2.2-1"
+        sys.exit(0)
+    elif opt == "-U":
+        statusfile = val
+    elif opt == "-p":
+        if val == "broctl-live":
+            livemode = True
+
+# Check if the test config file exists (Bro does not do this).  The config
+# file can be used to control the behavior of this script.
+BroBase = os.getenv("BROCTL_INSTALL_PREFIX", "")
+cfgfilepath = os.path.join(BroBase, "broctltest.cfg")
+
+if os.path.isfile(cfgfilepath):
+    testcfg = open(cfgfilepath, "r")
+    for line in testcfg.readlines():
+        brovar,broval = line.strip().split('=', 1)
+        brovar = brovar.strip()
+        broval = broval.strip()
+        if brovar not in brotestcfg:
+            print >>sys.stderr, "Error: unknown option '%s' in: %s" % (brovar, cfgfilepath)
+            sys.exit(1)
+        brotestcfg[brovar] = broval
+    testcfg.close()
+
+
+# The env. var. is set by broctl and can be used to determine if we're a
+# manager, proxy, or worker (for a standalone config, this env. var. is not
+# set).
+nodename = os.getenv("CLUSTER_NODE", "bro")
+
+if livemode:
+    # Set an exit handler to update status upon exit (broctl "start" and "stop"
+    # check this status).
+    atexit.register(setprocstate, "TERMINATED [atexit]\n")
+
+    # Check config file whether this node should simulate a Bro crash or not.
+    if nodename in brotestcfg["crash"].split():
+        sys.exit(1)
+
+    # Set the status to notify broctl that we're up and running (broctl ignores
+    # the part in brackets).
+    setprocstate("RUNNING [net_run]\n")
+
+    # Catch SIGTERM so the exit handler runs after a "broctl stop".
+    signal.signal(signal.SIGTERM, catchsigterm)
+
+    # Create loaded_scripts.log (only the broctl "scripts" and "diag" commands
+    # check for this file).
+    createloadedscriptslog(nodename)
+
+    # Unlike bro, just wait long enough so that the slowest test case has time
+    # to finish, and then just exit to avoid having unwanted processes
+    # running if a test case fails to cleanup.
+    time.sleep(100)
+    sys.exit(0)
+
+
+# Create loaded_scripts.log (only the broctl "scripts" and "diag" commands
+# check for this file).
+createloadedscriptslog(nodename)
+

@@ -1,0 +1,14 @@
+# Test that option names in broctl.cfg are case-insensitive, and that
+# whitespace is ignored before and after option names and values.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__mixedcase
+EOF
+
+broctl config | grep -i LogRotationInterval > out
+

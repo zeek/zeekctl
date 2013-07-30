@@ -10,6 +10,7 @@ cd $1
 
 echo
 echo Bro `${bro} -v 2>&1 | awk '{print $3}'`
+uname -sr
 echo
 
 core=`ls -t *core* 2>&1`
