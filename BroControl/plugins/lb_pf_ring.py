@@ -30,6 +30,8 @@ class LBPFRing(BroControl.plugin.Plugin):
             else:
                 dd[nn.host] = { nn.interface : pfringid }
 
+            # Apply environment variables, but do not override values from
+            # the node.cfg or broctl.cfg files.
             nn.env_vars.setdefault("PCAP_PF_RING_USE_CLUSTER_PER_FLOW", "1")
             nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
 
