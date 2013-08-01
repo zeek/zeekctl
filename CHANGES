@@ -1,4 +1,21 @@
 
+1.1-150 | 2013-07-14 08:00:44 -0700
+
+  * Fix broken link in README. (Bernhard Amann, thanks kraigu)
+
+1.1-148 | 2013-07-03 17:06:44 -0700
+
+  * Updates to test infrastructure. (Daniel Thayer)
+
+    - Fix canonifier script for handling missing gdb.
+    - Update baselines for recent changes to crash-diag.
+    - Remove "make quick" from the README.
+    - Minor cleanup of the build script.
+    - Remove unused Makefile variable.
+    - Remove the "-j" option to make as it can cause lock-ups on
+      some machines.
+    - Replace realpath command with more portable Python equivalent.
+
 1.1-140 | 2013-06-07 16:35:08 -0700
 
   * Adding OS to crash output. (Robin Sommer)
