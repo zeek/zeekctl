@@ -15,10 +15,11 @@ class LBMyricom(BroControl.plugin.Plugin):
 
     def init(self):
         for nn in self.nodes():
-            if nn.type != "worker":
+            if nn.type != "worker" or nn.lb_method != "myricom":
                 continue
 
-            if nn.lb_method == "myricom":
-                nn.env_vars += ["SNF_NUM_RINGS=%d" % int(nn.lb_procs)]
-                nn.env_vars += ["SNF_FLAGS=0x101"]
+            # Apply environment variables, but do not override values from
+            # the node.cfg or broctl.cfg files.
+            nn.env_vars.setdefault("SNF_NUM_RINGS", nn.lb_procs)
+            nn.env_vars.setdefault("SNF_FLAGS", "0x101")
 
