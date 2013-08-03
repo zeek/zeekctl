@@ -104,7 +104,7 @@ class Node:
             if type(v) == type([]):
                 v = ",".join(v)
             elif type(v) == type({}):
-                v = ",".join(["%s=%s" % (key, val) for key, val in v.items()])
+                v = ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
 
             return v
 

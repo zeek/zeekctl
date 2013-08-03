@@ -1,4 +1,11 @@
 
+1.1-158 | 2013-08-02 17:06:57 -0700
+
+  * Add ability to set environment variables in node.cfg and
+    broctl.cfg via new "env_vars" options taking a comma-separated
+    list (e.g., "env_vars=VAR1=1,VAR2=2"). Variables in node.cfg take
+    prioroty over broctl.cfg. Addresses BIT-1010. (Daniel Thayer)
+
 1.1-150 | 2013-07-14 08:00:44 -0700
 
   * Fix broken link in README. (Bernhard Amann, thanks kraigu)
