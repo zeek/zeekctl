@@ -80,6 +80,19 @@ class Configuration:
         self._readNodes()
         self.readState()
 
+        # If "env_vars" was specified in broctl.cfg, then apply to all nodes.
+        varlist = self.config.get("env_vars")
+        if varlist:
+            try:
+                global_env_vars = self._getEnvVarDict(varlist)
+            except ValueError, err:
+                util.error("broctl.cfg: %s" % err)
+
+            for node in self.nodes("all"):
+                for (key, val) in global_env_vars.items():
+                    # Values from node.cfg take precedence over broctl.cfg
+                    node.env_vars.setdefault(key, val)
+
         # Now that the nodes have been read in, set the standalone config option.
         standalone = "0"
         for node in self.nodes("all"):
@@ -216,6 +229,32 @@ class Configuration:
 
         return cpulist
 
+    # Convert a string consisting of a comma-separated list of environment
+    # variables (e.g. "VAR1=123, VAR2=456") to a dictionary.
+    # If the string is empty, then return an empty dictionary.  Upon error,
+    # a ValueError is raised.
+    def _getEnvVarDict(self, str):
+        env_vars = {}
+
+        if str:
+            # If the entire string is quoted, then remove only those quotes.
+            if (str.startswith('"') and str.endswith('"')) or (str.startswith("'") and str.endswith("'")):
+                str = str[1:-1]
+
+        if str:
+            for keyval in str.split(","):
+                try:
+                    (key, val) = keyval.split("=", 1)
+                except ValueError:
+                    raise ValueError("missing '=' after environment variable name")
+
+                if not key.strip():
+                    raise ValueError("missing environment variable name")
+
+                env_vars[key.strip()] = val.strip()
+
+        return env_vars
+
     # Parse node.cfg.
     def _readNodes(self):
         self.nodelist = {}
@@ -263,6 +302,12 @@ class Configuration:
 
 
                 node.__dict__[key] = val
+
+            # Convert env_vars from a string to a dictionary.
+            try:
+                node.env_vars = self._getEnvVarDict(node.env_vars)
+            except ValueError, err:
+                util.error("%s: section %s: %s" % (file, sec, err))
 
             try:
                 addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
@@ -389,7 +434,7 @@ class Configuration:
                 if not line or line.startswith("#"):
                     continue
 
-                args = line.split("=")
+                args = line.split("=", 1)
                 if len(args) != 2:
                     util.error("%s: syntax error '%s'" % (file, line))
 
