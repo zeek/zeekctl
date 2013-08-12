@@ -171,14 +171,14 @@ def install(host, src, dst):
             # ignore errors.
             pass
 
-        return True
     else:
         util.error("install() not yet supported for remote hosts")
-        return False
+
+    return True
 
 # rsyncs paths from localhost to destination hosts.
 def sync(nodes, paths):
-
+    result = True
     cmds = []
     for n in nodes:
         args = ["-rRl", "--delete", "--rsh=\"ssh -o ConnectTimeout=30\""]
@@ -190,6 +190,9 @@ def sync(nodes, paths):
     for (id, success, output) in runLocalCmdsParallel(cmds):
         if not success:
             util.warn("error rsyncing to %s: %s" % (util.scopeAddr(id.host), output))
+            result = False
+
+    return result
 
 # Checks whether the given host is alive.
 _deadHosts = {}

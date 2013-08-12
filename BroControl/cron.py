@@ -144,7 +144,8 @@ def _checkDiskSpace():
     if minspace == 0.0:
         return
 
-    for (node, dfs) in control.getDf(config.Config.nodes()).items():
+    hadError, results = control.getDf(config.Config.nodes())
+    for (node, dfs) in results.items():
         for df in dfs:
             fs = df[0]
             total = float(df[1])
