@@ -144,26 +144,25 @@ def isdir(host, path):
         (success, output) = runHelper(host, "is-dir", [path])
         return success
 
-# Copies src to dst, preserving permission bits.
+# Copies src to dst, preserving permission bits, but does not clobber existing
+# files/directories.
 # Works for files and directories (recursive).
-def install(host, src, dst):
+def install(host, src, dstdir):
     if isLocal(host):
         if not exists(host, src):
             util.output("file does not exist: %s" % src)
             return False
 
-        if os.path.isfile(dst):
-            try:
-                os.remove(dst)
-            except OSError, e:
-                print 'install: os.remove(%s): %s' % (dst, e.strerror)
-                sys.exit(1)
+        dst = os.path.join(dstdir, os.path.basename(src))
+        if exists(host, dst):
+            # Do not clobber existing files/dirs (this is not an error)
+            return True
 
-        util.debug(1, "cp %s %s" % (src, dst))
+        util.debug(1, "cp %s %s" % (src, dstdir))
 
         try:
             if os.path.isfile(src):
-                shutil.copy2(src, dst)
+                shutil.copy2(src, dstdir)
             elif os.path.isdir(src):
                 shutil.copytree(src, dst)
         except OSError:

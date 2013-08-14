@@ -100,13 +100,8 @@ def install(local_only):
         for dir in config.Config.sitepolicypath.split(":"):
             dir = config.Config.subst(dir)
             for file in glob.glob(os.path.join(dir, "*")):
-                if execute.isfile(manager, file):
-                    if not execute.install(manager, file, dst):
-                        hadError = True
-                elif execute.isdir(manager, file):
-                    dstdir = os.path.join(dst, os.path.basename(file))
-                    if not execute.install(manager, file, dstdir):
-                        hadError = True
+                if not execute.install(manager, file, dst):
+                    hadError = True
         util.output(" done.")
 
     makeLayout(config.Config.policydirsiteinstallauto)
