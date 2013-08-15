@@ -265,7 +265,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes)
+            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes, clean)
             args = " ".join([ str(n) for n in nodes ])
 
             util.output("stopping ...")
