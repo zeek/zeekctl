@@ -2,6 +2,8 @@
 #
 # If started directly, will print option reference documentation.
 
+import sys
+
 class Option:
     # Options category.
     USER = 1       # Standard user-configurable option.

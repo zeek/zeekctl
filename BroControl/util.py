@@ -1,16 +1,9 @@
 import os
 import errno
 import sys
-import socket
-import imp
-import re
 import time
-import tempfile
 import signal
 import StringIO
-import tty
-import termios
-import select
 import curses
 import atexit
 
@@ -119,7 +112,7 @@ def _aquireLock():
     pid = str(os.getpid())
     tmpfile = config.Config.lockfile + "." + pid
 
-    lockdir = os.path.dirname(config.Config.lockfile);
+    lockdir = os.path.dirname(config.Config.lockfile)
     if not os.path.exists(lockdir):
         warn("creating directory for lock file: %s" % lockdir)
         os.makedirs(lockdir)
@@ -233,7 +226,7 @@ def disableSignals():
 _Stdscr = None
 
 def _finishCurses():
-    curses.nocbreak();
+    curses.nocbreak()
     curses.echo()
     curses.endwin()
 
@@ -325,7 +318,7 @@ def formatRsyncAddr(addr):
 
 # Scopes a non-global IPv6 address with a zone identifier according to RFC 4007
 def scopeAddr(addr):
-    zoneid=config.Config.zoneid
+    zoneid = config.Config.zoneid
     if addr.find(':') == -1 or zoneid == "":
         return addr
     else:

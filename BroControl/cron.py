@@ -1,14 +1,12 @@
 # Tasks which are to be done on a regular basis from cron.
 
 import os
-import sys
+import time
 
 import util
 import config
 import execute
 import control
-import time
-import shutil
 import plugin
 
 # Triggers all activity which is to be done regularly via cron.

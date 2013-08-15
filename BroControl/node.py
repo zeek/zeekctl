@@ -2,9 +2,10 @@
 # One BroControl node.
 #
 
+import os
+
 import doc
 import config
-import os
 
 class Node:
     """Class representing one node of the BroControl maintained setup. In

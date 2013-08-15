@@ -1,15 +1,11 @@
 # Functions to read and access the broctl configuration.
 
 import os
-import sys
 import socket
-import imp
 import re
 import copy
-
 import ConfigParser
 
-import doc
 import execute
 import node as node_mod
 import options
@@ -225,7 +221,7 @@ class Configuration:
         # Make sure list is at least as long as number of worker processes.
         cpulen = len(cpulist)
         if numprocs > cpulen:
-            cpulist = [ cpulist[i%cpulen] for i in xrange(numprocs) ]
+            cpulist = [ cpulist[i % cpulen] for i in xrange(numprocs) ]
 
         return cpulist
 

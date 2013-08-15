@@ -25,9 +25,9 @@ class PsBro(BroControl.plugin.Plugin):
 
         # Get the nodes the user wants.
         if args:
-             nodes = self.parseNodes(args)
+            nodes = self.parseNodes(args)
         else:
-             nodes = self.nodes()
+            nodes = self.nodes()
 
         if not nodes:
             self.message("No nodes given.")
@@ -39,7 +39,6 @@ class PsBro(BroControl.plugin.Plugin):
         pids = {}
 
         for n in nodes:
-            host = n.host
             pid = n.getPID()
             if pid:
                 p = pids.setdefault(n.host, set())

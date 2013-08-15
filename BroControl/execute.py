@@ -5,12 +5,11 @@ import os
 import sys
 import socket
 import shutil
-import re
-import util
 import time
 import subprocess
 
 import config
+import util
 
 haveBroccoli = True
 
@@ -40,9 +39,9 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
     # Compatibility with older popen4.
     proc.tochild = proc.stdin
     if proc.stdout != None:
-       proc.fromchild = proc.stdout
+        proc.fromchild = proc.stdout
     else:
-       proc.fromchild = []
+        proc.fromchild = []
 
     return proc
 
@@ -555,10 +554,10 @@ def _sendEventWait(node, result_event, bc):
 
     # Wait for reply event.
     cnt = 0
-    bc.processInput();
+    bc.processInput()
     while not bc.got_result:
         time.sleep(1)
-        bc.processInput();
+        bc.processInput()
 
         cnt += 1
         if cnt > int(config.Config.commtimeout):

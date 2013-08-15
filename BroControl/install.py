@@ -1,9 +1,7 @@
 # Functions to install files on all nodes. 
 
 import os
-import sys
 import glob
-import fileinput
 import re
 
 import util
@@ -241,7 +239,7 @@ def makeLayout(path, silent=False):
         proxies = config.Config.nodes("proxies")
 
         print >>out, "# Automatically generated. Do not edit."
-        print >>out, "redef Cluster::nodes = {";
+        print >>out, "redef Cluster::nodes = {"
 
         # Control definition.  For now just reuse the manager information.
         print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp]," % (util.formatBroAddr(manager.addr), config.Config.zoneid, nextPort(manager))
@@ -350,9 +348,9 @@ def makeConfig(path, silent=False):
     print >>out, "# Automatically generated. Do not edit."
     print >>out, "redef Notice::mail_dest = \"%s\";" % config.Config.mailto
     print >>out, "redef Notice::mail_dest_pretty_printed = \"%s\";" % config.Config.mailalarmsto
-    print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail;
-    print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix;
-    print >>out, "redef Notice::mail_from  = \"%s\";" % config.Config.mailfrom;
+    print >>out, "redef Notice::sendmail  = \"%s\";" % config.Config.sendmail
+    print >>out, "redef Notice::mail_subject_prefix  = \"%s\";" % config.Config.mailsubjectprefix
+    print >>out, "redef Notice::mail_from  = \"%s\";" % config.Config.mailfrom
     if manager.type != "standalone":
         print >>out, "@if ( Cluster::local_node_type() == Cluster::MANAGER )"
     print >>out, "redef Log::default_rotation_interval = %s secs;" % config.Config.logrotationinterval
