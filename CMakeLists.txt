@@ -182,19 +182,16 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
             DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${SPOOL}/tmp
             DIRECTORY_PERMISSIONS ${perms})
-    install(DIRECTORY DESTINATION ${SPOOL}/scripts
-            DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${LOGS}
             DIRECTORY_PERMISSIONS ${perms})
     set(EMPTY_WORLD_DIRS
-        "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${SPOOL}/scripts ${LOGS}"
+        "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${LOGS}"
         CACHE STRING "" FORCE)
     InstallSymlink(${SPOOL}/broctl-config.sh
                    ${PREFIX}/share/broctl/scripts/broctl-config.sh)
 else ()
     install(DIRECTORY DESTINATION spool)
     install(DIRECTORY DESTINATION spool/tmp)
-    install(DIRECTORY DESTINATION spool/scripts)
     install(DIRECTORY DESTINATION logs)
     InstallSymlink(${PREFIX}/spool/broctl-config.sh
                    ${PREFIX}/share/broctl/scripts/broctl-config.sh)
