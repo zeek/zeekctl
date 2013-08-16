@@ -174,7 +174,7 @@ options = [
            "Log file for statistics."),
 
     Option("SitePolicyPath", "${PolicyDir}/site", "string", Option.USER, False,
-           "Directories to search for local policy files, separated by colons."),
+           "Directories to search for local policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during 'broctl install' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),
     Option("SitePluginPath", "", "string", Option.USER, False,
            "Directories to search for custom plugins, separated by colons."),
 

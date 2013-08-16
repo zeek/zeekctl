@@ -1,4 +1,25 @@
 
+1.1-171 | 2013-08-16 15:36:14 -0700
+
+  * Changed and document the behavior of the SitePolicyPath broctl
+    option to not clobber existing files/directories when copying, in
+    order to match the expected behavior (directories earlier in the
+    list take precedence over directories later in the list when
+    duplicate filenames are encountered). Addresses BIT-714. (Daniel
+    Thayer)
+
+  * A series of changes to make broctl return useful exit codes. (Vlad
+    Grigorescu, Daniel Thayer).
+
+    Generally, broctl now returns 0 if everything went ok with regards
+    to what the documentation says should have happened, and 1
+    otherwise. We keep the following exceptions for now though:
+
+        - "cron" always returns 0.
+        - "status" and "top" return 0 if all bro nodes are
+          running, and returns 1 otherwise.
+        - commands provides by plugins always return 0.
+
 1.1-158 | 2013-08-02 17:06:57 -0700
 
   * Add ability to set environment variables in node.cfg and
