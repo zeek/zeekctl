@@ -33,7 +33,7 @@ http://www.bro.org/download.
 
 BroControl's git repository is located at
 `git://git.bro.org/broctl <git://git.bro.org/broctl>`_. You
-can browse the repository `here <http://git.bro.org/broctl>`_.
+can browse the repository `here <https://github.com/bro/broctl>`_.
 
 This document describes BroControl |version|. See the ``CHANGES``
 file for version history.
@@ -362,7 +362,8 @@ Mails
 3. NOTICES with a notice action ``EMAIL``.
 
 4. If `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
-   is installed, a traffic summary is sent each rotation interval.
+   is installed, a traffic summary is sent each rotation interval. This
+   can be disabled by setting ``MailConnectionSummary=0``.
 
 Performance Analysis
 ~~~~~~~~~~~~~~~~~~~~
