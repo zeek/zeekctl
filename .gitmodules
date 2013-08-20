@@ -1,12 +1,12 @@
 [submodule "aux/capstats"]
 	path = aux/capstats
-	url = git://git.bro-ids.org/capstats
+	url = ../capstats
 [submodule "aux/pysubnettree"]
 	path = aux/pysubnettree
-	url = git://git.bro-ids.org/pysubnettree
+	url = ../pysubnettree
 [submodule "aux/trace-summary"]
 	path = aux/trace-summary
-	url = git://git.bro-ids.org/trace-summary
+	url = ../trace-summary
 [submodule "cmake"]
 	path = cmake
-	url = git://git.bro-ids.org/cmake
+	url = ../cmake
