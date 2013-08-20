@@ -1,12 +1,7 @@
 # Functions to control the nodes' operations.
 
 import os
-import sys
-import glob
-import fileinput
 import time
-import tempfile
-import re
 
 import execute
 import util
@@ -51,7 +46,7 @@ def isRunning(nodes, setcrashed=True):
         if not success:
             if setcrashed:
                 # Grmpf. It crashed.
-                node.clearPID();
+                node.clearPID()
                 node.setCrashed()
 
     return results
@@ -147,7 +142,7 @@ def waitForBros(nodes, status, timeout, ensurerunning):
 
 # Build the Bro parameters for the given node. Include
 # script for live operation if live is true.
-def _makeBroParams(node, live, add_manager=False):
+def _makeBroParams(node, live):
     args = []
 
     if live and node.interface:
@@ -787,7 +782,7 @@ def cleanup(nodes, cleantmp=False):
         hadError = True
 
     for node in notrunning:
-        node.clearCrashed();
+        node.clearCrashed()
 
     for node in running:
         util.output("   %s is still running, not cleaning work directory" % node.name)
@@ -1220,7 +1215,7 @@ def processTrace(trace, bro_options, bro_scripts):
 
     env = _makeEnvParam(node)
 
-    bro_args =  " ".join(bro_options + _makeBroParams(node, False, add_manager=(not standalone)))
+    bro_args =  " ".join(bro_options + _makeBroParams(node, False))
 
     if bro_scripts:
         bro_args += " " + " ".join(bro_scripts)

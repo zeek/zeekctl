@@ -2,6 +2,8 @@
 #
 # If started directly, will print option reference documentation.
 
+import sys
+
 class Option:
     # Options category.
     USER = 1       # Standard user-configurable option.
@@ -108,7 +110,7 @@ options = [
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
     Option("IPv6Comm", "1", "bool", Option.USER, False,
-           "Enable IPv6 communication between cluster nodes (and also between them and BroControl)"),
+           "Enable IPv6 communication between cluster nodes (and also between them and BroControl)."),
     Option("ZoneID", "", "string", Option.USER, False,
            "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what RFC 4007 zone_id to append to node addresses when communicating with them."),
 

@@ -28,3 +28,6 @@ broctl stop
 # all nodes are stopped
 broctl status 2> stopped.out
 
+# status returns non-zero when not all nodes are running
+test $? -eq 1
+

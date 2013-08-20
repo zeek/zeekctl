@@ -6,7 +6,6 @@ import os
 import sys
 import cmd
 import time
-import signal
 import platform
 import atexit
 
@@ -266,7 +265,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes)
+            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes, clean)
             args = " ".join([ str(n) for n in nodes ])
 
             util.output("stopping ...")
@@ -452,7 +451,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         watch = True
 
         if args == "--no-watch":
-            watch=False
+            watch = False
 
         elif len(args) > 0:
             self.lock()
