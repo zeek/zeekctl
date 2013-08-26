@@ -50,15 +50,16 @@ class Node:
             a comma-separated list of network interface names to use.
 
         ``pin_cpus`` (string)
-            A comma-separated list of CPU numbers (minimum CPU number is 0)
-            to which the node's Bro processes will be pinned (if not specified,
-            then CPU pinning will not be used for this node).  If the length
-            of this list does not match the number of Bro processes for this
-            node, then some CPUs could have zero (if too many CPU numbers are
-            specified) or more than one (if not enough CPU numbers are
-            specified) Bro processes pinned to them.  Only the specified CPU
-            numbers will be used, regardless of whether additional CPU cores
-            exist.
+            A comma-separated list of CPU numbers to which the node's Bro
+            processes will be pinned (if not specified, then CPU pinning will
+            not be used for this node).  CPU numbering starts at zero (e.g.,
+            the only valid CPU numbers for a machine with one dual-core
+            processor would be 0 and 1).  If the length of this list does not
+            match the number of Bro processes for this node, then some CPUs
+            could have zero (if too many CPU numbers are specified) or more
+            than one (if not enough CPU numbers are specified) Bro processes
+            pinned to them.  Only the specified CPU numbers will be used,
+            regardless of whether additional CPU cores exist.
 
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.

@@ -59,6 +59,18 @@ fi
 sleep 1
 
 if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
+    # Test if the specified pin_command works, and if not, then output a more
+    # useful error message (but let the pin_command output its own error
+    # message just in case there's some other reason for the failure).
+    true
+    if [ $? -eq 0 ]; then
+        ${pin_command} $pin_cpu true
+        if [ $? -ne 0 ]; then
+            echo "Error: possibly invalid CPU number $pin_cpu given for pin_cpus option" >&2
+            exit
+        fi
+    fi
+
     nohup ${pin_command} $pin_cpu $mybro $@ &
 else
     nohup $mybro $@ &
