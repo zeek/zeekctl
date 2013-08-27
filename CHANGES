@@ -1,4 +1,21 @@
 
+1.1-182 | 2013-08-27 13:32:35 -0700
+
+  * Improve CPU pinning documentation and error message. Addresses
+    BIT-1068 (Daniel Thayer)
+
+  * Switching to relative submodule paths. (Robin Sommer)
+    
+  * Documentation fixes. (Daniel Thayer)
+    
+  * Minor fixes for broctl tests. (Daniel Thayer)
+    
+  * Fix bug with usage of cmd_restart_pre method. (Daniel Thayer)
+    
+  * Remove unused subdirectory "spool/scripts". (Daniel Thayer)
+    
+  * Remove unused imports, variables, and semicolons. (Daniel Thayer)
+    
 1.1-171 | 2013-08-16 15:36:14 -0700
 
   * Changed and document the behavior of the SitePolicyPath broctl
