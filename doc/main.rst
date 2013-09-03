@@ -60,7 +60,7 @@ Stand-alone Bro
 ~~~~~~~~~~~~~~~
 
 For installing a stand-alone Bro setup, just follow the
-Bro :doc:`Quick Start Guide<../../quickstart>`.
+Bro :doc:`Quick Start Guide <../../quickstart/index>`.
 
 Bro Cluster
 ~~~~~~~~~~~
@@ -91,7 +91,8 @@ A cluster consists of four types of components:
        running.
 
 For more information about the cluster architecture, including options
-for the frontend, see the :doc:`Bro Cluster<../../cluster>` documentation.
+for the frontend, see the :doc:`Bro Cluster <../../cluster/index>`
+documentation.
 
 This document focuses on the installation of manager,
 workers, and the proxies. If not otherwise
