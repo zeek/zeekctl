@@ -1,0 +1,7 @@
+# Don't send emails or summary reports, and turn on debug output.
+sendmail=
+tracesummary=
+debug=1
+
+env_vars=myvar1=someGlobal,MyVar2=anotherglobal
+

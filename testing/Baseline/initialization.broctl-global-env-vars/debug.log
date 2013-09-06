@@ -1,0 +1,1 @@
+06 Sep 20:22:36 [localhost] MyVar2=anotherglobal myvar1=someGlobal /home/repo/bro/aux/broctl/build/testing/test.11087/share/broctl/scripts/helpers/start /home/repo/bro/aux/broctl/build/testing/test.11087/spool/bro -1 -i "eth0" -U .status -p broctl -p broctl-live -p standalone -p local -p bro local.bro broctl broctl/standalone broctl/auto

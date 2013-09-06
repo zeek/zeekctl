@@ -1,0 +1,14 @@
+# Test that worker nodes using PF_RING load balancing can use the pin_cpus
+# option correctly.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__pfring_pin_cpus
+EOF
+
+broctl nodes > out
+

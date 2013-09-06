@@ -1,0 +1,16 @@
+# Test that a worker node using PF_RING load balancing on multiple interfaces
+# has different cluster IDs automatically assigned (one for each group of
+# processes sniffing the same interface).
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__pfring
+etc/node.cfg__pfring_2_nics
+EOF
+
+broctl nodes > out
+

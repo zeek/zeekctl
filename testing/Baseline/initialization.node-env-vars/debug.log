@@ -1,0 +1,1 @@
+06 Sep 20:23:08 [localhost] CLUSTER_NODE=worker-1 MYVAR3=nodeval3 myvar1=someNodeval /home/repo/bro/aux/broctl/build/testing/test.11795/share/broctl/scripts/helpers/start /home/repo/bro/aux/broctl/build/testing/test.11795/spool/worker-1 -1 -i "eth0" -U .status -p broctl -p broctl-live -p local -p worker-1 local.bro broctl base/frameworks/cluster local-worker.bro broctl/auto

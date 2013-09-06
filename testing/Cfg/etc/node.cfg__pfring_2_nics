@@ -1,0 +1,24 @@
+# Cluster PF_RING configuration.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+lb_procs=2
+lb_method=pf_ring
+
+[worker-2]
+type=worker
+host=localhost
+interface=eth1
+lb_procs=2
+lb_method=pf_ring
+
