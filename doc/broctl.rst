@@ -35,7 +35,7 @@ http://www.bro.org/download.
 
 BroControl's git repository is located at
 `git://git.bro.org/broctl <git://git.bro.org/broctl>`_. You
-can browse the repository `here <https://github.com/bro/broctl>`_.
+can browse the repository `here <http://git.bro.org/broctl.git>`_.
 
 This document describes BroControl |version|. See the ``CHANGES``
 file for version history.
