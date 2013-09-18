@@ -1,4 +1,14 @@
 
+1.1-188 | 2013-09-18 14:46:10 -0700
+
+  * Add tests for new BroControl features (CPU pinning, PF_RING
+    multiple cluster IDs, "env_vars") (Daniel Thayer)
+
+  * Fix link to git repo to be consistent with other links. (Daniel
+    Thayer)
+
+  * Fix broken doc links. (Jon Siwek)
+
 1.1-182 | 2013-08-27 13:32:35 -0700
 
   * Improve CPU pinning documentation and error message. Addresses

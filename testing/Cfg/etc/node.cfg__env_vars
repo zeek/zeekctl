@@ -1,0 +1,21 @@
+# Cluster configuration with a node-specific env_vars specified.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+env_vars=myvar1=someNodeval,MYVAR3=nodeval3
+
+[worker-2]
+type=worker
+host=localhost
+interface=eth1
+
