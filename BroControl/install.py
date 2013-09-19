@@ -198,7 +198,7 @@ def makeLayout(path, silent=False):
         return port
 
     global port
-    port = 47759
+    port = int(config.Config.port)
     manager = config.Config.manager()
 
     if not manager:
