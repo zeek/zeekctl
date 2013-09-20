@@ -25,7 +25,7 @@ export PATH=${bindir}:${scriptsdir}:$PATH
 echo $@ >.cmdline
 touch .checking
 
-${bro} $@
+${bro} "$@"
 rc=$?
 
 if [ "$rc" == "0" ] && [ "$print_scripts" == "1" ]; then

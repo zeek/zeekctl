@@ -20,5 +20,5 @@ cd $cwd
 echo $@ >.cmdline
 touch .testing
 
-${bro} -r $trace $@
+${bro} -r $trace "$@"
 
