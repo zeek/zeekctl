@@ -1,4 +1,8 @@
 
+1.1-190 | 2013-09-20 14:26:41 -0700
+
+  * Add more links in BroControl documentation. (Daniel Thayer)
+    
 1.1-188 | 2013-09-18 14:46:10 -0700
 
   * Add tests for new BroControl features (CPU pinning, PF_RING

@@ -24,7 +24,7 @@ options = [
            "Enable extensive debugging output in spool/debug.log."),
 
     Option("HaveNFS", "0", "bool", Option.USER, False,
-           "True if shared files are mounted across all nodes via NFS (see FAQ)."),
+           "True if shared files are mounted across all nodes via NFS (see the FAQ_)."),
     Option("SaveTraces", "0", "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
 
@@ -112,7 +112,7 @@ options = [
     Option("IPv6Comm", "1", "bool", Option.USER, False,
            "Enable IPv6 communication between cluster nodes (and also between them and BroControl)."),
     Option("ZoneID", "", "string", Option.USER, False,
-           "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what RFC 4007 zone_id to append to node addresses when communicating with them."),
+           "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what :rfc:`4007` zone_id to append to node addresses when communicating with them."),
 
     # Automatically set.
     Option("BroBase", "", "string", Option.AUTOMATIC, True,
