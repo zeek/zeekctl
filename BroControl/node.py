@@ -67,7 +67,7 @@ class Node:
         ``zone_id`` (string)
             If BroControl is managing a cluster comprised of nodes
             using non-global IPv6 addresses, then this configures the
-            RFC 4007 ``zone_id`` string that the node associates with
+            :rfc:`4007` ``zone_id`` string that the node associates with
             the common zone that all cluster nodes are a part of.  This
             identifier may differ between nodes.
 

@@ -372,6 +372,8 @@ Performance Analysis
 *TODO*: ``broctl cron`` logs a number of statistics, which can be
 analyzed/plotted for understanding the clusters run-time behavior.
 
+.. _FAQ:
+
 Questions and Answers
 ---------------------
 
@@ -417,5 +419,5 @@ Questions and Answers
     representing that particular node's zone identifier and set
     the ``host`` key to the IPv6 address assigned to the node within
     the scope zone.  Most nodes probably have the same ``zone_id``, but
-    may not if their interface configuration differs.  See RFC 4007 for
+    may not if their interface configuration differs.  See :rfc:`4007` for
     more information on IPv6 scoped addresses and zones.
