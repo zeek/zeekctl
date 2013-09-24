@@ -1,5 +1,7 @@
 
-1.1-197 | 2013-09-23 20:14:27 -0700
+1.2-beta | 2013-09-23 20:30:31 -0700
+
+  * Update 'make dist' target. (Jon Siwek)
 
   * Fix problem with the "broargs" options that would occur when a
     command-line argument in broargs contained a space. (Daniel
