@@ -1,4 +1,12 @@
 
+1.1-197 | 2013-09-23 20:14:27 -0700
+
+  * Fix problem with the "broargs" options that would occur when a
+    command-line argument in broargs contained a space. (Daniel
+    Thayer)
+
+  * Change submodules to fixed URL. (Jon Siwek)
+    
 1.1-190 | 2013-09-20 14:26:41 -0700
 
   * Add more links in BroControl documentation. (Daniel Thayer)

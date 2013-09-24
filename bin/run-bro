@@ -71,9 +71,9 @@ if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
         fi
     fi
 
-    nohup ${pin_command} $pin_cpu $mybro $@ &
+    nohup ${pin_command} $pin_cpu $mybro "$@" &
 else
-    nohup $mybro $@ &
+    nohup $mybro "$@" &
 fi
 
 child=$!

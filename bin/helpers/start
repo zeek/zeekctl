@@ -5,11 +5,11 @@
 . `dirname $0`/../broctl-config.sh
 
 cd $1 2>/dev/null
-shift 
+shift
 
 rm -f .pid
 
-nohup ${scriptsdir}/run-bro $@ >stdout.log 2>stderr.log &
+nohup ${scriptsdir}/run-bro "$@" >stdout.log 2>stderr.log &
 
 while [ ! -s .pid ]; do
    sleep 1
