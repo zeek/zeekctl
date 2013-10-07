@@ -8,6 +8,12 @@ if [ "${logexpireinterval}" -eq "0" ]; then
     exit 0
 fi
 
+if [ "${os}" == "openbsd" ]; then
+    find_cmd=gfind
+else
+    find_cmd=find
+fi
+
 base=${logdir}/
 
 file_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.*$'
@@ -16,15 +22,15 @@ dir_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$'
 exclude=""
 if [ "${keeplogs}" != "" ]; then
    for name in ${keeplogs}; do
-      exclude="$exclude -not -name $name"
+      exclude="$exclude ! -name $name"
    done
 fi
 
 # Remove old files.
-find $base -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete 2>/dev/null
+$find_cmd $base -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete 2>/dev/null
 rc=$?
 
 # Remove now empty directories (will fail for non-empty dirs).
-find $base -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null
+$find_cmd $base -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null
 
 exit $rc

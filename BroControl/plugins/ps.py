@@ -48,7 +48,7 @@ class PsBro(BroControl.plugin.Plugin):
 
         # Build commands to execute.
 
-        cmd = "POSIXLY_CORRECT=1 ps axco user,pid,ppid,%cpu,%mem,vsz,rss,tt,state,start,time,command | grep 'PID\\\\|bro$'"
+        cmd = "POSIXLY_CORRECT=1 ps axco user,pid,ppid,%cpu,%mem,vsz,rss,tt,state,start,time,command | grep -e PID -e 'bro$'"
         cmds = [(n, cmd) for n in host_nodes.values()]
         cmds.sort(key=lambda n: n[0].name)
 

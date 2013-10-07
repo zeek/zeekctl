@@ -17,6 +17,12 @@ function sig_handler
 
 . `dirname $0`/broctl-config.sh
 
+if [ "${os}" == "openbsd" ]; then
+    find_cmd=gfind
+else
+    find_cmd=find
+fi
+
 delete=1
 if [ "$1" == "-c" ]; then
     delete=0
@@ -70,7 +76,7 @@ if [ "$?" == "0" ]; then
         rm -rf $1
     else
         # Only delete if too large (>100MB).
-        find $1 -size +104857600c -delete
+        $find_cmd $1 -size +104857600c -delete
     fi
 fi
 
