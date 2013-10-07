@@ -238,8 +238,8 @@ def captureCmd(cmd, env = "", input = None):
 # with success being true if the command terminated with exit code 0,
 # and output being the combinded stdout/stderr output of the command.
 def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
-    proc = _runLocalCmdInit("single", cmd, env, input, donotcaptureoutput)
-    return _runLocalCmdWait(proc)
+    proc = _runLocalCmdInit("single", cmd, env, donotcaptureoutput)
+    return _runLocalCmdWait(proc, input)
 
 # Same as above but runs a set of local commands in parallel.
 # Cmds is a list of (id, cmd, envs, input) tuples, where id is
@@ -250,16 +250,16 @@ def runLocalCmdsParallel(cmds):
     running = []
 
     for (id, cmd, envs, input) in cmds:
-        proc = _runLocalCmdInit(id, cmd, envs, input)
-        running += [(id, proc)]
+        proc = _runLocalCmdInit(id, cmd, envs)
+        running += [(id, proc, input)]
 
-    for (id, proc) in running:
-        (success, output) = _runLocalCmdWait(proc)
+    for (id, proc, input) in running:
+        (success, output) = _runLocalCmdWait(proc, input)
         results += [(id, success, output)]
 
     return results
 
-def _runLocalCmdInit(id, cmd, env, input, donotcaptureoutput=False):
+def _runLocalCmdInit(id, cmd, env, donotcaptureoutput=False):
 
     if not env:
         env = ""
@@ -269,22 +269,16 @@ def _runLocalCmdInit(id, cmd, env, input, donotcaptureoutput=False):
 
     proc = popen(cmdline, stderr_to_stdout=True, donotcaptureoutput=donotcaptureoutput)
 
-    if input:
-        print >>proc.tochild, input
-
-    proc.tochild.close()
     return proc
 
-def stripNL(str):
-    if len(str) == 0 or str[-1] != "\n":
-        return str
+def _runLocalCmdWait(proc, input):
 
-    return str[0:-1]
+    out, err = proc.communicate(input)
+    rc = proc.returncode
 
-def _runLocalCmdWait(proc):
-
-    rc = proc.wait()
-    output = [stripNL(line) for line in proc.fromchild]
+    output = []
+    if out:
+        output = out.splitlines()
 
     util.debug(1, rc, prefix="local")
 
