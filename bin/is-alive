@@ -4,18 +4,19 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [[ "$1" == *:* ]]; then
-    cmd_linux='ping6 -c 1 -W 1'
-    cmd_bsd='ping6 -q -o'
+if [ "${os}" == "linux" ]; then
+    cmd='ping -q -c 1 -W 1'
+    cmd6='ping6 -q -c 1 -W 1'
+elif [ "${os}" == "openbsd" -o "${os}" == "netbsd" ]; then
+    cmd='ping -q -c 1 -w 1'
+    cmd6='ping6 -q -c 1'
 else
-    cmd_linux='ping -c 1 -W 1'
-    cmd_bsd='ping -q -t 1 -o'
+    cmd='ping -q -t 1 -o'
+    cmd6='ping6 -q -o'
 fi
 
-if [ "${os}" == "linux" ]; then
-   cmd=$cmd_linux
-else
-   cmd=$cmd_bsd
+if [[ "$1" == *:* ]]; then
+    cmd=$cmd6
 fi
 
 $cmd $1 >/dev/null 2>&1 || exit 1
