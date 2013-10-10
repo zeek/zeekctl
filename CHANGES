@@ -1,4 +1,21 @@
 
+1.2-beta-13 | 2013-10-10 13:38:58 -0700
+
+  * Updating copyright notice. (Robin Sommer)
+    
+  * Fix the broctl "top" command output on Linux. (Daniel Thayer)
+    
+  * Fix a race condition when sendmail option is empty string. (Daniel
+    Thayer)
+
+  * Fix a deadlock when capturing output from local command. (Daniel
+    Thayer)
+
+  * Improve portability of shell scripts used by broctl. (Daniel
+    Thayer)
+
+  * Fix for setting REPO in Makefile. (Robin Sommer)
+
 1.2-beta | 2013-09-23 20:30:31 -0700
 
   * Update 'make dist' target. (Jon Siwek)

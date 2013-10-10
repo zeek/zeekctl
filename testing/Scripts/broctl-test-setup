@@ -92,7 +92,7 @@ function installbro() {
     # Create test-specific bro installation
     newprefix=$basedir/test.$$
     mkdir "$newprefix"
-    (cd "$newprefix" && tar xf "$tarfile" && sed -i.orig "s#@PREFIX@#$newprefix#" etc/broctl.cfg)
+    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
 
     export BROCTL_INSTALL_PREFIX=$newprefix
     export BROMAGIC=$newprefix/share/bro/magic

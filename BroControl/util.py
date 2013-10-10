@@ -80,6 +80,9 @@ def debug(msglevel, msg, prefix="main"):
     DebugOut.flush()
 
 def sendMail(subject, body):
+    if not config.Config.sendmail:
+        return
+
     cmd = "%s '%s'" % (os.path.join(config.Config.scriptsdir, "send-mail"), subject)
     (success, output) = execute.captureCmd(cmd, "", body)
     if not success:
