@@ -1,0 +1,15 @@
+# Test that nodes can have unusual names.
+#
+# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-localhost-values" btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__node_names
+EOF
+
+broctl install || exit 1
+
+broctl nodes > out
+

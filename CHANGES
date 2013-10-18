@@ -1,4 +1,10 @@
 
+1.2-beta-17 | 2013-10-18 13:22:16 -0700
+
+  * Fix internal lookup of nodes, which would fail to return the right
+    items in some cases when node naming didn't match standard
+    terminology. Addresses BIT-1091. (Daniel Thayer)
+
 1.2-beta-13 | 2013-10-10 13:38:58 -0700
 
   * Updating copyright notice. (Robin Sommer)

@@ -1,0 +1,15 @@
+# Cluster configuration with unusual node names.
+
+[logcollector]
+type=manager
+host=localhost
+
+[communicator]
+type=proxy
+host=localhost
+
+[gatherer]
+type=worker
+host=localhost
+interface=eth0
+
