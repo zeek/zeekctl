@@ -1,0 +1,3 @@
+   logcollector - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=logcollector pin_cpus= test_mykey= type=manager zone_id=
+   communicator - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=communicator pin_cpus= test_mykey= type=proxy zone_id=
+       gatherer - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface=eth0 lb_interfaces= lb_method= lb_procs= name=gatherer pin_cpus= test_mykey= type=worker zone_id=

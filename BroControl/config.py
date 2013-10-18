@@ -126,12 +126,17 @@ class Configuration:
         else:
             return self.config.items()
 
-    # Returns a list of Nodes.
+    # Returns a list of Nodes (the list will be empty if no matching nodes
+    # are found).
+    # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
     # - If tag is "proxies", all proxy Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
-    # - If tag is "manager", the manager Node is returned.
+    # - If tag is "manager", the manager Node is returned (cluster config) or
+    #     the standalone Node is returned (standalone config).
+    # - If tag is "standalone", the standalone Node is returned.
+    # - If tag is the name of a node, then that node is returned.
     def nodes(self, tag=None, expand_all=True):
         nodes = []
         type = None
@@ -142,14 +147,17 @@ class Configuration:
 
             tag = None
 
+        elif tag == "standalone":
+            type = "standalone"
+
+        elif tag == "manager":
+            type = "manager"
+
         elif tag == "proxies":
             type = "proxy"
 
         elif tag == "workers":
             type = "worker"
-
-        elif tag in self.config:
-            type = tag
 
         for n in self.nodelist.values():
             if type:
@@ -166,7 +174,8 @@ class Configuration:
 
         return nodes
 
-    # Returns the manager Node.
+    # Returns the manager Node (cluster config) or standalone Node (standalone
+    # config).
     def manager(self):
         n = self.nodes("manager")
         if n:
