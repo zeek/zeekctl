@@ -52,7 +52,9 @@ class Node:
         ``pin_cpus`` (string)
             A comma-separated list of CPU numbers to which the node's Bro
             processes will be pinned (if not specified, then CPU pinning will
-            not be used for this node).  CPU numbering starts at zero (e.g.,
+            not be used for this node).  This option is only supported on
+            Linux and FreeBSD (it is ignored on all other platforms).  CPU
+            numbering starts at zero (e.g.,
             the only valid CPU numbers for a machine with one dual-core
             processor would be 0 and 1).  If the length of this list does not
             match the number of Bro processes for this node, then some CPUs

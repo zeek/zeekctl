@@ -33,7 +33,7 @@ options = [
     Option("CommTimeout", "10", "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
-           "The frequency of log rotation in seconds for the manager/standalone node."),
+           "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation)."),
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
            "Directory for archived log files."),
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
