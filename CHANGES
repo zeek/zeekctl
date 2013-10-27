@@ -1,4 +1,11 @@
 
+1.2-beta-22 | 2013-10-26 19:19:31 -0700
+
+  * Document which broctl options override Bro script variables.
+    (Daniel Thayer)
+
+  * Updates and clarifications to docs. (Daniel Thayer)
+    
 1.2-beta-17 | 2013-10-18 13:22:16 -0700
 
   * Fix internal lookup of nodes, which would fail to return the right
