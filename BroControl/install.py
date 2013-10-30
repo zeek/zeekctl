@@ -134,9 +134,10 @@ def install(local_only):
         if n == manager:
             continue
 
-        if not execute.isAlive(n.addr):
-            hadError = True
-            continue
+        if not execute.isLocal(n):
+            if not execute.isAlive(n.addr):
+                hadError = True
+                continue
 
         nodes += [n]
 
