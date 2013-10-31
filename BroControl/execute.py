@@ -200,6 +200,7 @@ _deadHosts = {}
 def isAlive(host):
 
     if host in _deadHosts:
+        util.warn("skipping host %s (is not alive)" % host)
         return False
 
     (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + util.scopeAddr(host))
