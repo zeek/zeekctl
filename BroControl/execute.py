@@ -192,9 +192,11 @@ def sync(nodes, paths):
 
     return result
 
-# Checks whether the given host is alive.
+# Keep track of hosts that are not alive.
 _deadHosts = {}
 
+# Return true if the given host is alive (i.e., we can ping it and establish
+# an ssh session), and false otherwise.
 def isAlive(host):
 
     if host in _deadHosts:

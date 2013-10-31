@@ -180,6 +180,8 @@ def _expireLogs():
 def _checkHosts():
 
     for node in config.Config.hosts():
+        if execute.isLocal(node):
+            continue
 
         tag = "alive-%s" % node.host.lower()
         alive = execute.isAlive(node.addr) and "1" or "0"
@@ -197,6 +199,9 @@ def _getProfLogs():
     cmds = []
 
     for node in config.Config.hosts():
+        if execute.isLocal(node):
+            continue
+
         if not execute.isAlive(node.addr):
             continue
 

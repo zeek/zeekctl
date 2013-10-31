@@ -1,4 +1,8 @@
 
+1.2-beta-24 | 2013-10-31 00:19:41 -0700
+
+  * Do not check if the local host is "alive". (Daniel Thayer)
+
 1.2-beta-22 | 2013-10-26 19:19:31 -0700
 
   * Document which broctl options override Bro script variables.
