@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 #
-#  check-pid <pid> 
+#  check-pid <pid>
 
-( ps aux | grep -v check-pid | grep -v "ps aux$" | grep -v grep | awk '{print $2}' | grep -q "^$1$" )  2>/dev/null
+ps -p $1 -o args | grep -q bro
 
 if [ $? = 0 ]; then
    echo 0
@@ -11,7 +11,4 @@ else
 fi
 
 echo ~~~
-
-
-
 

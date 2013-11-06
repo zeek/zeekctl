@@ -1,4 +1,8 @@
 
+1.2-beta-28 | 2013-11-06 00:22:24 -0800
+
+  * Improve check-pid helper script. (Daniel Thayer)
+
 1.2-beta-26 | 2013-11-01 04:51:57 -0700
 
   * Add another warning message when a host is not alive. (Daniel
