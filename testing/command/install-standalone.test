@@ -1,6 +1,6 @@
 # Test that the install command creates necessary directories and files.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
 
 . broctl-test-setup

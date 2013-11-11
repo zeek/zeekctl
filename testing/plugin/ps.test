@@ -2,7 +2,7 @@
 # specified node.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: grep '(+)' all.out
 # @TEST-EXEC-FAIL: grep '(+)' stopped.out
 

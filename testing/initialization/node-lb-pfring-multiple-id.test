@@ -2,7 +2,7 @@
 # has different cluster IDs automatically assigned (one for each group of
 # processes sniffing the same interface).
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
 
 . broctl-test-setup

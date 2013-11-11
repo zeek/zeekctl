@@ -1,7 +1,7 @@
 # Test that the start and stop commands can start and stop a standalone bro
 # and creates or removes certain files.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
 # @TEST-EXEC: btest-diff stop.out
 

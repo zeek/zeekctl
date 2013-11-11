@@ -1,7 +1,7 @@
 # Test that the top command can show all nodes in a cluster, or just a
 # specified node.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="awk '{ print $1,$2 }'" btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="awk '{ print $1,$2 }'" btest-diff onenode.out
 

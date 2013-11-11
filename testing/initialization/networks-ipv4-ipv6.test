@@ -1,7 +1,7 @@
 # Test that both IPv4 and IPv6 networks can be specified in networks.cfg and
 # are interpreted correctly.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

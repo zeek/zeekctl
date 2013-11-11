@@ -1,7 +1,7 @@
 # Test that the initial default cron state is correct, and that the state
 # can be set to either disabled or enabled.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

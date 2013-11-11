@@ -110,9 +110,12 @@ function installbro() {
 }
 
 function cleanup() {
+    set +x
     test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
 }
 
-set +x
 installbro
+
+# Output test commands (if a test fails, this might be useful for debugging)
 set -x
+

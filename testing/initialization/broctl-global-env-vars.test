@@ -2,7 +2,7 @@
 # environment variable names and values are case-sensitive, and that
 # they are correctly passed to Bro.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
 

@@ -1,6 +1,6 @@
 # Test that nodes can have unusual names.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-localhost-values" btest-diff out
 
 . broctl-test-setup

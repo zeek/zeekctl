@@ -2,7 +2,7 @@
 # specified node.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff onenode.out
 # @TEST-EXEC: btest-diff stopped.out

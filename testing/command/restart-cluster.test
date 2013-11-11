@@ -2,7 +2,7 @@
 # specified node. Test that the restart command can restart all running nodes,
 # or just a specified node.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start-all.out
 # @TEST-EXEC: btest-diff restart-one.out
 # @TEST-EXEC: btest-diff restart-all.out

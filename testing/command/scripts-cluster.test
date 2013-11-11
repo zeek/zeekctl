@@ -1,7 +1,7 @@
 # Test that the scripts command can output contents of loaded_scripts.log
 # on all nodes, or just a specified node.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 

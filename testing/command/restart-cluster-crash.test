@@ -1,6 +1,6 @@
 # Test that the restart command can restart all nodes (including crashed ones).
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

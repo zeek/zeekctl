@@ -2,7 +2,7 @@
 # node.  Test that the stop command can stop all running nodes, or just a
 # specified node.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start-all.out
 # @TEST-EXEC: btest-diff stop-one.out
 # @TEST-EXEC: btest-diff stop-remaining.out

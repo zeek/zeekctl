@@ -1,6 +1,6 @@
 # Test that the check command can check a standalone configuration.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

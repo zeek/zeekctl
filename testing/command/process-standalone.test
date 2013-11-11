@@ -1,7 +1,7 @@
 # Test that the process command can run bro on the specified trace file,
 # with or without extra Bro options or Bro scripts.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
 
 . broctl-test-setup

@@ -1,7 +1,7 @@
 # Test that the cleanup command can cleanup a crashed node in a cluster,
 # but does not clean the tmpdir unless "--all" is specified.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff cleanup.out
 # @TEST-EXEC: btest-diff cleanup-onenode.out
 # @TEST-EXEC: btest-diff cleanup-all.out
