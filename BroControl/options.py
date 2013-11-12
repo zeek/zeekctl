@@ -78,6 +78,9 @@ options = [
     Option("Env_Vars", "", "string", Option.USER, False,
            "A comma-separated list of environment variables (e.g. 'VAR1=123, VAR2=456') to pass to Bro on the command-line.  Node-specific values (specified in the node configuration file) override these global values."),
 
+    Option("CertDir", "${BroBase}/share/bro/certdir", "string", Option.USER, False,
+           "Directory which contains DER certificate files (these files must have file extension of '.der')."),
+
     Option("TimeFmt", "%d %b %H:%M:%S", "string", Option.USER, False,
            "Format string to print date/time specifications (see 'man strftime')."),
 
