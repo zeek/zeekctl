@@ -3,3 +3,4 @@
 ##! configuration or even the user's local-<node>.bro configuration.
 @load local-networks
 @load broctl-config
+@load certs
