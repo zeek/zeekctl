@@ -2,23 +2,31 @@
 DIAG=diag.log
 BTEST=../../btest/btest
 
-all: btest-verbose
+all: cleanup buildbro btest-verbose
 
 # Showing all tests.
-btest-verbose: buildbro
+btest-verbose:
 	@$(BTEST) -j -f $(DIAG)
 
-brief: btest-brief
+brief: cleanup buildbro btest-brief
 
 # Brief output showing only failed tests.
-btest-brief: buildbro
+btest-brief:
 	@$(BTEST) -j -b -f $(DIAG)
 
-buildbro: cleanup
+# Rerun only the failed tests.
+rerun:
+	@$(BTEST) -r -j -f $(DIAG)
+
+buildbro:
 	@./Scripts/build-bro
 
 cleanup:
 	@rm -f $(DIAG)
-	@./Scripts/build-bro cleanup
 
-.PHONY: all btest-verbose btest-brief brief buildbro cleanup
+# Remove the broctl test build dir.
+cleanall:
+	@rm -f $(DIAG)
+	@./Scripts/build-bro cleanall
+
+.PHONY: all btest-verbose btest-brief brief buildbro cleanup cleanall

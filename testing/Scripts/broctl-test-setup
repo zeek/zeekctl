@@ -1,10 +1,11 @@
 #! /usr/bin/env bash
 #
-# Broctl test setup script used with the tests in broctl/testing/btest/*.
-# This script should be sourced at the start of each test case.  This script
-# will install the necessary files (in directory BROCTL_INSTALL_PREFIX) for
-# each test (cleanup happens automatically unless BROCTL_TEST_DEBUG is
-# defined).
+# Broctl test setup script.
+# This script should be sourced at the start of each test case.
+# This script installs Bro to a directory that is unique to each test,
+# and provides a function "installcfgfile" that a test script can 
+# optionally use to install files.
+
 
 # installcfgfile <rel.path> [--new]
 #
@@ -70,13 +71,17 @@ function installcfgfile() {
     set -x
 }
 
+
+# This function creates a test-specific directory, installs Bro to this
+# directory, and exports BROCTL_INSTALL_PREFIX with the path of this directory.
+# Cleanup happens automatically unless BROCTL_TEST_DEBUG is defined.
 function installbro() {
     if [ -z "${INSTALL}" ]; then
-        echo "Error: INSTALL not defined (try 'make buildbro')" 1>&2
+        echo "Error: INSTALL not defined (check btest.cfg)" 1>&2
         exit 1
     fi
 
-    basedir=`dirname "${INSTALL}"`
+    basedir="${INSTALL}"
     tarfile=$basedir/bro-test-install.tar
 
     if [ ! -f "$tarfile" ]; then
@@ -89,13 +94,17 @@ function installbro() {
         trap "cleanup" EXIT
     fi
 
-    # Create test-specific bro installation
+    # Create test-specific bro installation directory
     newprefix=$basedir/test.$$
     mkdir "$newprefix"
-    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
-
+    test $? -ne 0 && exit 1
     export BROCTL_INSTALL_PREFIX=$newprefix
-    export BROMAGIC=$newprefix/share/bro/magic
+
+    # Install bro
+    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
+    test $? -ne 0 && exit 1
+
+    export BROMAGIC=$BROCTL_INSTALL_PREFIX/share/bro/magic
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
