@@ -72,6 +72,30 @@ function installcfgfile() {
 }
 
 
+# replaceprefix <rel.path>
+#
+# Replace the text "@PREFIX@" with the bro install prefix in the specified
+# file (given as a relative pathname).
+function replaceprefix() {
+    set +x
+
+    if [ -z "$1" ]; then
+        return
+    fi
+
+    destfile=$BROCTL_INSTALL_PREFIX/$1
+    if [ ! -f $destfile ]; then
+        echo "Error: file not found: $destfile"
+        exit 1
+    fi
+
+    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#" $destfile > $destfile.new && mv $destfile.new $destfile
+    test $? -ne 0 && exit 1
+
+    set -x
+}
+
+
 # This function creates a test-specific directory, installs Bro to this
 # directory, and exports BROCTL_INSTALL_PREFIX with the path of this directory.
 # Cleanup happens automatically unless BROCTL_TEST_DEBUG is defined.

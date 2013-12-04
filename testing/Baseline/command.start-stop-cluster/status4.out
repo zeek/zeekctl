@@ -1,0 +1,5 @@
+Name       Type       Host       Status        Pid    Peers  Started              
+proxy-1    proxy      localhost  stopped       
+worker-1   worker     localhost  stopped       
+worker-2   worker     localhost  stopped       
+manager    manager    localhost  running       10400  ???    04 Dec 06:17:59  

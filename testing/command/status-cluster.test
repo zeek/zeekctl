@@ -3,8 +3,8 @@
 #
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out
 # @TEST-EXEC: btest-diff stopped.out
 
 . broctl-test-setup
@@ -28,6 +28,6 @@ broctl stop
 # all nodes are stopped
 broctl status 2> stopped.out
 
-# status returns non-zero when not all nodes are running
+# broctl status returns non-zero when not all nodes are running
 test $? -eq 1
 

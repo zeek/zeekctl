@@ -1,0 +1,34 @@
+# Test that the stop command can handle a Bro that is slow to shutdown.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff start.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff stop.out
+# @TEST-EXEC: btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+slowstop=worker-1
+EOF
+
+broctl install
+
+# start all nodes
+broctl start 2> start.out
+
+broctl status 2> status1.out
+
+# stop all nodes
+broctl stop 2> stop.out
+
+broctl status 2> status2.out
+
+# broctl status returns non-zero if not all nodes are running
+exit 0

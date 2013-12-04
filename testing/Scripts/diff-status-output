@@ -1,5 +1,14 @@
 #! /usr/bin/env bash
 #
-# Remove columns from "broctl status" output that always differ (such as PID).
+# Remove columns from "broctl status" output that are not predictable
+# (such as PID).  If the "--peers" command-line option is given, then
+# the "Peers" column is included in the output.
 
-awk '{ print $1,$2,$3,$4,$6 }'
+if [ "$1" = "--peers" ]; then
+    # Output the "Peers" column.
+    awk '{ print $1,$2,$3,$4,$6 }'
+else
+    # By default, don't output the "Peers" column, because results are not
+    # always predictable.
+    awk '{ print $1,$2,$3,$4 }'
+fi

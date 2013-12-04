@@ -1,0 +1,24 @@
+Name       Type       Host       Status        Pid    Peers  Started              
+manager    manager    localhost  running       22404  ???    21 Nov 20:17:06  
+proxy-1    proxy      localhost  running       22443  ???    21 Nov 20:17:08  
+proxy-2    proxy      localhost  running       22442  ???    21 Nov 20:17:08  
+worker-1-1 worker     localhost  running       22741  ???    21 Nov 20:17:10  
+worker-1-10 worker     localhost  running       22734  ???    21 Nov 20:17:10  
+worker-1-2 worker     localhost  running       22744  ???    21 Nov 20:17:10  
+worker-1-3 worker     localhost  running       22729  ???    21 Nov 20:17:10  
+worker-1-4 worker     localhost  running       22731  ???    21 Nov 20:17:10  
+worker-1-5 worker     localhost  running       22748  ???    21 Nov 20:17:10  
+worker-1-6 worker     localhost  running       22733  ???    21 Nov 20:17:10  
+worker-1-7 worker     localhost  running       22742  ???    21 Nov 20:17:10  
+worker-1-8 worker     localhost  running       22750  ???    21 Nov 20:17:10  
+worker-1-9 worker     localhost  running       22753  ???    21 Nov 20:17:10  
+worker-2-1 worker     localhost  running       22752  ???    21 Nov 20:17:10  
+worker-2-10 worker     localhost  running       22754  ???    21 Nov 20:17:10  
+worker-2-2 worker     localhost  running       22756  ???    21 Nov 20:17:10  
+worker-2-3 worker     localhost  running       22759  ???    21 Nov 20:17:10  
+worker-2-4 worker     localhost  running       22746  ???    21 Nov 20:17:10  
+worker-2-5 worker     localhost  running       22745  ???    21 Nov 20:17:10  
+worker-2-6 worker     localhost  running       22757  ???    21 Nov 20:17:10  
+worker-2-7 worker     localhost  running       22760  ???    21 Nov 20:17:10  
+worker-2-8 worker     localhost  running       22758  ???    21 Nov 20:17:10  
+worker-2-9 worker     localhost  running       22761  ???    21 Nov 20:17:10  
