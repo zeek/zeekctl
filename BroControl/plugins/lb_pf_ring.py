@@ -19,6 +19,19 @@ class LBPFRing(BroControl.plugin.Plugin):
         if pfringid == 0:
             return True
 
+        pfringtype = BroControl.config.Config.pfringclustertype
+        if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",
+            "6-tuple", "round-robin"):
+            self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
+
+        # If the cluster type is not round-robin, then choose the corresponding
+        # environment variable.
+        pftype = ""
+        if pfringtype != "round-robin":
+            pftype = "PCAP_PF_RING_USE_CLUSTER_PER_FLOW"
+            if pfringtype != "6-tuple":
+                pftype += "_" + pfringtype.upper().replace("-", "_")
+
         dd = {}
         for nn in self.nodes():
             if nn.type != "worker" or nn.lb_method != "pf_ring":
@@ -32,7 +45,8 @@ class LBPFRing(BroControl.plugin.Plugin):
 
             # Apply environment variables, but do not override values from
             # the node.cfg or broctl.cfg files.
-            nn.env_vars.setdefault("PCAP_PF_RING_USE_CLUSTER_PER_FLOW", "1")
+            if pftype:
+                nn.env_vars.setdefault(pftype, "1")
             nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
 
         return True
