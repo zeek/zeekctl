@@ -2,8 +2,8 @@
 # just one node.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff onenode.out
 
 . broctl-test-setup
 

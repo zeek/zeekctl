@@ -1,14 +1,31 @@
 #! /usr/bin/env bash
 #
-# Remove columns from "broctl status" output that are not predictable
-# (such as PID).  If the "--peers" command-line option is given, then
-# the "Peers" column is included in the output.
+# Replace columns from "broctl status" output that are not predictable
+# (such as PID) with Xs.  If the "--peers" command-line option is given, then
+# the "Peers" column is not replaced.
 
+usepeers=0
 if [ "$1" = "--peers" ]; then
-    # Output the "Peers" column.
-    awk '{ print $1,$2,$3,$4,$6 }'
-else
-    # By default, don't output the "Peers" column, because results are not
-    # always predictable.
-    awk '{ print $1,$2,$3,$4 }'
+    usepeers=1
 fi
+
+awk -v peers=${usepeers} '{
+    if ( NR > 1 )
+    {
+        # Check the format of each field, and replace with Xs only if the
+        # format is expected (some fields have unpredictable length, but
+        # we need a constant-width string of Xs).
+        if ( $5 ~ /^[0-9]+$/ ) { $5 = "XXXXX" }   # Pid
+        if ( peers == 0 ) {
+            if ( $6 ~ /^([0-9]+|\?+)$/ ) { $6 = "X" }
+        }
+
+        # The "Started" column consists of three fields:
+        if ( $7 ~ /^[0-3][0-9]$/ ) { $7 = "XX" }
+        if ( $8 ~ /^[A-Za-z]+$/ ) { $8 = "XXX" }
+        if ( $9 ~ /^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$/ ) { $9 = "XX:XX:XX" }
+    }
+
+    print
+}'
+

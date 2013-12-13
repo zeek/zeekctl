@@ -2,14 +2,13 @@
 # just a specified node.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: btest-diff all.out
-# @TEST-EXEC: btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-df-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-df-output btest-diff onenode.out
 
 . broctl-test-setup
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster
-bin/df__test --new
 EOF
 
 broctl install

@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+#
+# Replace columns from "broctl top" output that are not predictable
+# (such as PID) with Xs.
+
+awk '{
+    if ( $1 !~ /Name/ )
+    {
+        # Check the format of each field, and replace with Xs only if the
+        # format is expected (some fields have unpredictable length, but
+        # we need a constant-width string of Xs).
+        if ( $4 ~ /^[0-9]+$/ ) { $4 = "XXXXX" }       # Pid
+        if ( $6 ~ /^[0-9]+[KMG]$/ ) { $6 = "XXX" }    # VSize
+        if ( $7 ~ /^[0-9]+[KMG]$/ ) { $7 = "XXX" }    # Rss
+        if ( $8 ~ /^[0-9]+%$/ ) { $8 = "XX%" }        # Cpu
+    }
+
+    print
+}' | sort
+

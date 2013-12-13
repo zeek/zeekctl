@@ -3,7 +3,7 @@
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="sed 's/sent [0-9][0-9]* /sent X /'" btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="sed 's/sent [0-9][0-9]* /sent X /'" btest-diff onenode.out
+# @TEST-EXEC: btest-diff onenode.out
 
 . broctl-test-setup
 
@@ -25,9 +25,8 @@ broctl update worker-2 2> onenode.out
 
 broctl stop
 
-# no nodes are running, so no update can happen
+# no nodes are running, so no output is expected
 broctl update 2> stopped.out
-# the file size should be zero
 test ! -s stopped.out || ret=1
 
 exit $ret
