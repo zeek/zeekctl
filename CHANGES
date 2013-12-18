@@ -1,4 +1,8 @@
 
+1.2-3 | 2013-12-09 13:24:28 -0800
+
+  * Remove unused Broxygen-style script comments. (Jon Siwek)
+    
 1.2 | 2013-11-07 07:04:54 -0800
 
   * Release 1.2.

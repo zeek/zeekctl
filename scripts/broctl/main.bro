@@ -1,7 +1,7 @@
-## Load the script to support the "scripts" command.
+# Load the script to support the "scripts" command.
 @load misc/loaded-scripts
 
-## All cluster nodes are inherently controllable with BroControl.
+# All cluster nodes are inherently controllable with BroControl.
 # TODO: This kind of sucks right now though because it always causes the
 #       communications framework to hold open a port which can cause
 #       high CPU usage on lightly loaded links due to the core packet
