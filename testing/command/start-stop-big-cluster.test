@@ -1,7 +1,7 @@
 # Test that the start and stop commands can handle a big cluster (i.e.,
 # a cluster with a large number of nodes).
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
 # @TEST-EXEC: btest-diff stop.out

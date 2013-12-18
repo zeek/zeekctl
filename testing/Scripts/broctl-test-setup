@@ -34,14 +34,14 @@ function installcfgfile() {
     # Make sure original file exists
     origpath=$BROCTLCFG/$origrelpath
     if [ ! -f "$origpath" ]; then
-        echo "Error: file not found: $origpath"
+        echo "Error: source file not found: $origpath" 1>&2
         exit 1
     fi
 
     # Use the double-underscore delimiter to derive the destination filename
     relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
     if [ "$origrelpath" = "$relpath" ]; then
-        echo "Error: filename needs '__': $origrelpath"
+        echo "Error: source filename needs '__': $origrelpath" 1>&2
         exit 1
     fi
     destfile=$(basename "$relpath")
@@ -51,7 +51,7 @@ function installcfgfile() {
 
     # Make sure destination directory exists
     if [ ! -d "$BROCTL_INSTALL_PREFIX/$destdir" ]; then
-        echo "Error: directory not found: $BROCTL_INSTALL_PREFIX/$destdir"
+        echo "Error: destination directory not found: $BROCTL_INSTALL_PREFIX/$destdir" 1>&2
         exit 1
     fi
 
@@ -62,7 +62,7 @@ function installcfgfile() {
         # Make sure destination file exists (usually, we're overwriting an
         # existing file, so this is a good safety check to catch typos)
         if [ ! -f "$destpath" ]; then
-            echo "Error: file not found: $destpath"
+            echo "Error: destination file not found: $destpath (maybe try --new option?)" 1>&2
             exit 1
         fi
     fi
@@ -85,7 +85,7 @@ function replaceprefix() {
 
     destfile=$BROCTL_INSTALL_PREFIX/$1
     if [ ! -f $destfile ]; then
-        echo "Error: file not found: $destfile"
+        echo "Error: file not found: $destfile" 1>&2
         exit 1
     fi
 
