@@ -1,0 +1,89 @@
+# Test that the broctl cron command sends an email warning on low disk free
+# space only when the amount of free disk space crosses the threshold
+# specified by the mindiskspace broctl option.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+bin/df__test --new
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+# Check if a low disk space email was received.  Return 0 if yes, and 1 if no.
+function check_email() {
+    email=$BROCTL_INSTALL_PREFIX/sendmail.out
+    test ! -e $email && return 1
+
+    grep -q "Disk space low on bro:/dev/sda6" $email
+    test $? -ne 0 && return 1
+    rm $email
+    return 0
+}
+
+ret=0
+broctl install
+
+# Verify the default value of mindiskspace
+broctl config | sed 's/ //g' | grep -q mindiskspace=5
+test $? -ne 0 && exit 1
+
+################
+# Test with lots of free disk space (no email warning)
+
+broctl cron
+
+check_email && ret=1
+
+################
+# Test with a disk that is almost full (email warning)
+
+export BROCTL_TEST_DISK_FULL=1
+broctl cron
+
+check_email || ret=1
+
+################
+# Test again with same disk usage as before (no duplicate warning is sent)
+
+broctl cron
+
+check_email && ret=1
+
+################
+# Test with lots of free disk space (no email warning)
+
+BROCTL_TEST_DISK_FULL=
+broctl cron
+
+check_email && ret=1
+
+################
+# Test with a disk that is almost full (another warning is sent)
+
+BROCTL_TEST_DISK_FULL=1
+broctl cron
+
+check_email || ret=1
+
+################
+# Test with lots of free disk space, but different mindiskspace (email warning)
+
+# Remove previous free disk space records (otherwise we won't get an email)
+rm $BROCTL_INSTALL_PREFIX/spool/broctl.dat
+
+# Update configuration
+echo "mindiskspace=50" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctl install
+
+BROCTL_TEST_DISK_FULL=
+broctl cron
+
+check_email || ret=1
+
+exit $ret
+

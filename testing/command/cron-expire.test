@@ -1,0 +1,71 @@
+# Test that the broctl cron command does not expire log files by default.
+# Also test that broctl cron expires log files when the logexpireinterval
+# option is set to a non-zero value (and that empty log dirs are also removed).
+# Also test that the keeplogs option prevents matching expired logs from being
+# removed.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+EOF
+
+ret=0
+testlogdir=$BROCTL_INSTALL_PREFIX/logs/2012-10-31
+broctl install
+
+# Verify that log expire is off by default
+broctl config | sed 's/ //g' | grep -q logexpireinterval=0
+test $? -ne 0 && exit 1
+
+# Create a log file with a recent timestamp and one with very old timestamp
+mkdir ${testlogdir}
+touch ${testlogdir}/recent.log
+touch -t 201210311030 ${testlogdir}/old.log
+
+broctl cron
+
+# Verify that broctl cron did not remove any log files
+test ! -e ${testlogdir}/recent.log && ret=1
+test ! -e ${testlogdir}/old.log && ret=1
+
+# Update the configuration by changing the "logexpireinterval" option
+echo "logexpireinterval=30" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctl install
+
+broctl cron
+
+# Verify that broctl cron removed the old log file (and not the recent one)
+test ! -e ${testlogdir}/recent.log && ret=1
+test -e ${testlogdir}/old.log && ret=1
+
+# Remove the recent log file and restore the old one
+rm ${testlogdir}/recent.log
+touch -t 201210311030 ${testlogdir}/old.log
+
+broctl cron
+
+# Verify that broctl cron removed the old log and the empty log dir
+test -e ${testlogdir} && ret=1
+
+# Update the configuration by changing the "keeplogs" option
+echo "keeplogs=old.*" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctl install
+
+# Create some log files with recent and old timestamps
+mkdir ${testlogdir}
+touch ${testlogdir}/recent.log
+touch -t 201210311030 ${testlogdir}/old.log
+touch -t 201210311030 ${testlogdir}/anotherold.log
+
+broctl cron
+
+# Verify that broctl cron removed only anotherold.log
+test ! -e ${testlogdir}/recent.log && ret=1
+test ! -e ${testlogdir}/old.log && ret=1
+test -e ${testlogdir}/anotherold.log && ret=1
+
+exit $ret
+

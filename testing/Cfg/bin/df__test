@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+#
+# This script is a replacement for the "df" command, and is used for certain
+# broctl test cases where we need predictable output.
+
+echo "Filesystem     1024-blocks      Used Available Capacity Mounted on"
+
+if [ -n "${BROCTL_TEST_DISK_FULL}" ]; then
+    echo "/dev/sda6        249577356 245042244   4535112      98% /"
+else
+    echo "/dev/sda6        249577356 131831812 105067708      56% /"
+fi
+
