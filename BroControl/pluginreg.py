@@ -221,8 +221,6 @@ class PluginRegistry:
             if is_plugin:
                 found = True
 
-                p = cls()
-
                 try:
                     p = cls()
                 except Exception, e:
