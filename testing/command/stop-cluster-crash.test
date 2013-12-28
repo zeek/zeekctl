@@ -40,6 +40,9 @@ EOF
 # verify that a node crashed
 broctl status 2> status1.out
 
+# verify that no email has been sent
+test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
 # test the stop command
 broctl stop 2> stop.out
 
