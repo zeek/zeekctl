@@ -1,0 +1,39 @@
+# Test that the to-bytes.awk helper script can correctly convert numeric
+# values that are typically found in the output of the df and top commands.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out1
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out2
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out3
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out4
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out5
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out6
+
+. broctl-test-setup
+
+tobytes=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/helpers/to-bytes.awk
+
+# Create a test file containing input values for the to-bytes.awk script.
+cat > testfile << _EOF_
+/99k 0B 10B 10k 10K 10m 10M 10g 10G 0 10 10000000000
+1.5m 1.5M 1.5g 1.5G
+_EOF_
+
+# test with no options
+cat testfile | awk -f ${tobytes} > out1
+
+# test with def_factor
+cat testfile | awk -v def_factor=1024 -f ${tobytes} > out2
+
+# test with start_field
+cat testfile | awk -v start_field=3 -f ${tobytes} > out3
+
+# test with end_field
+cat testfile | awk -v end_field=3 -f ${tobytes} > out4
+
+# test with start_field and end_field
+cat testfile | awk -v start_field=2 -v end_field=3 -f ${tobytes} > out5
+
+# test with all options
+cat testfile | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f ${tobytes} > out6
+
