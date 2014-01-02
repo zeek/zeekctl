@@ -1,0 +1,68 @@
+# Test that the archive-log script archives, but not compresses, a specified
+# log file (including a connection summary report) if CompressLogs=0.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+echo "CompressLogs=0" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
+logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
+connlog=${logdir}/conn.22:24:20-22:30:00.log
+testlog=${logdir}/broctltest.22:24:20-22:30:00.log
+connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log
+origconnlog=conn.2013-12-30-22-24-20.log
+origtestlog=broctltest.2013-12-30-22-24-20.log
+
+ret=0
+broctl install
+
+# Create Bro's working directory, chdir to that dir, and create rotated logs
+mkdir $BROCTL_INSTALL_PREFIX/spool/bro
+cd $BROCTL_INSTALL_PREFIX/spool/bro
+cat > ${origconnlog} << _EOF_
+# This is a test conn.log
+_EOF_
+cat > ${origtestlog} << _EOF_
+# This is a test broctltest.log
+_EOF_
+
+###############################################
+# Test archive-log for the conn.log file
+
+${archivelog} ${origconnlog} conn 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that the logs were archived
+test -f ${origconnlog} && ret=1
+test ! -f ${connlog} && ret=1
+test ! -f ${connsummarylog} && ret=1
+
+# verify that the logs were not compressed
+grep -q "This is a test" ${connlog} || ret=1
+grep -q ">== Total ===" ${connsummarylog} || ret=1
+
+###############################################
+# Test archive-log for a different log file
+
+# verify that the broctltest.log was not archived yet
+test -f ${testlog} && ret=1
+
+${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that broctltest.log was archived
+test -f ${origtestlog} && ret=1
+test ! -f ${testlog} && ret=1
+
+# verify that broctltest.log was not compressed
+grep -q "This is a test" ${testlog} || ret=1
+
+exit $ret
+
