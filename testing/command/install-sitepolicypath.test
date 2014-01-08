@@ -1,0 +1,55 @@
+# Test that the broctl install command copies files and subdirectories (in
+# the case of duplicates, only the first one is copied) from directories
+# specified in the sitepolicypath broctl option, and that empty and nonexistent
+# directories in sitepolicypath are ignored.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+ret=0
+
+echo "sitepolicypath=$BROCTL_INSTALL_PREFIX/doesnotexist:$BROCTL_INSTALL_PREFIX/test_site:$BROCTL_INSTALL_PREFIX/emptytestdir:$BROCTL_INSTALL_PREFIX/test_site2" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+# Create directories and files specified in sitepolicypath
+mkdir $BROCTL_INSTALL_PREFIX/emptytestdir
+
+mkdir -p $BROCTL_INSTALL_PREFIX/test_site/emptysubdir
+mkdir -p $BROCTL_INSTALL_PREFIX/test_site/testsubdir
+echo "my file" > $BROCTL_INSTALL_PREFIX/test_site/testfile
+echo "my subfile" > $BROCTL_INSTALL_PREFIX/test_site/testsubdir/testsubfile
+
+mkdir -p $BROCTL_INSTALL_PREFIX/test_site2/testsubdir
+echo "my file2" > $BROCTL_INSTALL_PREFIX/test_site2/testfile
+echo "other file" > $BROCTL_INSTALL_PREFIX/test_site2/testfile2
+echo "my subfile2" > $BROCTL_INSTALL_PREFIX/test_site2/testsubdir/testsubfile
+echo "other subfile" > $BROCTL_INSTALL_PREFIX/test_site2/testsubdir/testsubfile2
+
+# Verify that the files aren't already installed
+test ! -e spool/installed-scripts-do-not-touch/site || ret=1
+
+broctl install
+
+# Verify that the files and subdirectories were installed
+while read line; do
+    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+spool/installed-scripts-do-not-touch/site/testfile
+spool/installed-scripts-do-not-touch/site/testfile2
+spool/installed-scripts-do-not-touch/site/emptysubdir
+spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile
+EOF
+
+# Verify that for duplicate files, only the first one was installed
+while read line; do
+    grep -q 2 $BROCTL_INSTALL_PREFIX/$line && ret=1
+done << EOF
+spool/installed-scripts-do-not-touch/site/testfile
+spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile
+EOF
+
+# Verify that for duplicate subdirs, only the first one was installed
+test -e $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile2 && ret=1
+
+exit $ret
+
