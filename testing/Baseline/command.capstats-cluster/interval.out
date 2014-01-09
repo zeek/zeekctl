@@ -1,6 +1,6 @@
 
 Interface            kpps       mbps       (4s average)
-------------------------------
+----------------------------------------
 localhost/eth0       7.1        250.4      
 localhost/eth1       3.0        82.5       
 
