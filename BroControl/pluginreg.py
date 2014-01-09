@@ -35,6 +35,7 @@ class PluginRegistry:
 
         for p in self._plugins:
             if not p.init():
+                p.debug("Plugin disabled (plugin's init returned False)")
                 continue
 
             plugins += [p]

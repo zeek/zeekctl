@@ -17,7 +17,7 @@ class LBPFRing(BroControl.plugin.Plugin):
     def init(self):
         pfringid = int(BroControl.config.Config.pfringclusterid)
         if pfringid == 0:
-            return True
+            return False
 
         dd = {}
         for nn in self.nodes():
