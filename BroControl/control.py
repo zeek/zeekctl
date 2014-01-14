@@ -500,7 +500,7 @@ def stop(nodes):
 # Output status summary for nodes.
 def status(nodes):
 
-    util.output("%-12s %-10s %-10s %-12s %-6s %-6s %-15s" % ("Name",  "Type", "Host", "Status", "Pid", "Peers", "Started"))
+    util.output("%-12s %-10s %-13s %-9s %-6s %-6s %s" % ("Name",  "Type", "Host", "Status", "Pid", "Peers", "Started"))
 
     all = isRunning(nodes)
     running = []
@@ -536,15 +536,15 @@ def status(nodes):
     for (node, isrunning) in all:
 
         util.output("%-12s " % node.name, nl=False)
-        util.output("%-10s %-10s " % (node.type, node.host), nl=False)
+        util.output("%-10s %-13s " % (node.type, node.host), nl=False)
 
         if isrunning:
-            util.output("%-12s " % statuses[node.name], nl=False)
+            util.output("%-9s " % statuses[node.name], nl=False)
 
         elif node.hasCrashed():
-            util.output("%-12s " % "crashed", nl=False)
+            util.output("%-9s " % "crashed", nl=False)
         else:
-            util.output("%-12s " % "stopped", nl=False)
+            util.output("%-9s " % "stopped", nl=False)
 
         if isrunning:
             util.output("%-6s " % node.getPID(), nl=False)
@@ -554,7 +554,7 @@ def status(nodes):
             else:
                 util.output("%-6s " % "???", nl=False)
 
-            util.output("%-15s" % startups[node.name], nl=False)
+            util.output("%s" % startups[node.name], nl=False)
 
         util.output()
 
@@ -657,7 +657,7 @@ def getTopOutput(nodes):
 # If hdr is true, output column headers first.
 def top(nodes):
 
-    util.output("%-11s %-10s %-10s %-7s %-7s %-6s %-6s %-5s %-8s" % ("Name", "Type", "Node", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
+    util.output("%-11s %-10s %-13s %-7s %-7s %-6s %-5s %-5s %s" % ("Name", "Type", "Node", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
 
     hadError = False
     for (node, error, vals) in getTopOutput(nodes):
@@ -666,21 +666,19 @@ def top(nodes):
             for d in vals:
                 util.output("%-11s " % node.name, nl=False)
                 util.output("%-10s " % node.type, nl=False)
-                util.output("%-10s " % node.host, nl=False)
+                util.output("%-13s " % node.host, nl=False)
                 util.output("%-7s " % d["pid"], nl=False)
                 util.output("%-7s " % d["proc"], nl=False)
                 util.output("%-6s " % prettyPrintVal(d["vsize"]), nl=False)
-                util.output("%-6s " % prettyPrintVal(d["rss"]), nl=False)
+                util.output("%-5s " % prettyPrintVal(d["rss"]), nl=False)
                 util.output("%-5s " % ("%s%%" % d["cpu"]), nl=False)
-                util.output("%-8s " % d["cmd"], nl=False)
-                util.output()
+                util.output("%s" % d["cmd"])
         else:
             hadError = True
             util.output("%-11s " % node.name, nl=False)
             util.output("%-10s " % node.type, nl=False)
-            util.output("%-10s " % node.host, nl=False)
-            util.output("<%s> " % error, nl=False)
-            util.output()
+            util.output("%-13s " % node.host, nl=False)
+            util.output("<%s>" % error)
 
     return not hadError
 
@@ -963,16 +961,15 @@ def capstats(nodes, interval):
     def output(tag, data):
 
         def outputOne(tag, vals):
-            util.output("%-20s " % tag, nl=False)
+            util.output("%-21s " % tag, nl=False)
 
             if not error:
                 util.output("%-10s " % vals.get("kpps", ""), nl=False)
-                util.output("%-10s " % vals.get("mbps", ""), nl=False)
-                util.output()
+                util.output("%s" % vals.get("mbps", ""))
             else:
-                util.output("<%s> " % error)
+                util.output("<%s>" % error)
 
-        util.output("\n%-20s %-10s %-10s (%ds average)" % (tag, "kpps", "mbps", interval))
+        util.output("\n%-21s %-10s %-10s (%ds average)" % (tag, "kpps", "mbps", interval))
         util.output("-" * 40)
 
         totals = None
