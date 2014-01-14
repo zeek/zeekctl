@@ -77,9 +77,6 @@ def waitForBros(nodes, status, timeout, ensurerunning):
         else:
             results += [(node, False)]
 
-    more_than_one = (len(todo) > 1)
-
-    points = False
     while True:
         # Determine  whether process is still running. We need to do this
         # before we get the state to avoid a race condition.
@@ -121,22 +118,14 @@ def waitForBros(nodes, status, timeout, ensurerunning):
         if timeout <= 0:
             break
 
-        if more_than_one:
-            util.output("%d " % len(todo), nl=False)
-        else:
-            util.output(".", nl=False)
-
-        points = True
+        util.debug(1, "Waiting for %d nodes..." % len(todo))
 
     for node in todo.values():
         # These did time-out.
         results += [(node, False)]
 
-    if points:
-        if more_than_one:
-            util.output("%d " % len(todo))
-        else:
-            util.output("")
+    if todo:
+        util.debug(1, "Timeout while waiting for %d nodes" % len(todo))
 
     return results
 
