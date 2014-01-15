@@ -1,0 +1,2 @@
+bro failed.
+   error in /home/repo/bro/aux/broctl/testing/../build/testing/test.2835/share/bro/site/local.bro, line 81: unknown identifier this, at or near "this"
