@@ -2,7 +2,7 @@
 # arguments to Bro as specified in the broargs broctl option.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
 
 . broctl-test-setup
 
