@@ -1,6 +1,7 @@
 # Test that the check command can check a standalone configuration, and
 # that it does not look at installed policy files, but rather those in
-# the SitePolicyPath.
+# the SitePolicyPath.  Test that it returns zero exit status on success,
+# and nonzero otherwise.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff check1.out
@@ -9,10 +10,12 @@
 
 . broctl-test-setup
 
+ret=0
 broctl install
 
 # verify that initial config is ok
 broctl check 2> check1.out
+test $? -eq 0 || ret=1
 
 # verify that broctl check does not look at installed site policy
 echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.bro
@@ -21,7 +24,7 @@ broctl check 2> check2.out
 # verify that broctl check looks at policy files in SitePolicyPath
 echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro
 broctl check 2> check3.out
+test $? -ne 0 || ret=1
 
-# broctl check returns non-zero when the check fails
-exit 0
+exit $ret
 

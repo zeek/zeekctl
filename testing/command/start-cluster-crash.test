@@ -1,7 +1,8 @@
 # Test that the start command starts a cluster and reports to the user
 # that a node crashed, and does not log the crashed node in the stats.log file.
 # Test that the start command can start a node in the crashed state, and
-# that it sends a crash report.
+# that it sends a crash report.  Test that the start command returns nonzero
+# exit status when not all nodes start successfully.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start1.out
@@ -29,6 +30,7 @@ broctl install
 
 # start all nodes, and one will crash
 broctl start 2> start1.out
+test $? -ne 0 || ret=1
 
 # the crashed node should not be logged as "started" in stats.log
 grep started $BROCTL_INSTALL_PREFIX/spool/stats.log | grep worker-1 && ret=1

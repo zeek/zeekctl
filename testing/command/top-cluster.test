@@ -1,10 +1,12 @@
 # Test that the top command can show all nodes in a cluster, or just a
-# specified node.
+# specified node.  Also test that the exit status is zero if all nodes
+# are running, and nonzero otherwise.
 #
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-top-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-top-output btest-diff onenode.out
+# @TEST-EXEC: btest-diff stopped.out
 
 . broctl-test-setup
 
@@ -13,14 +15,28 @@ etc/broctl.cfg__no_email
 etc/node.cfg__cluster_no_netifs
 EOF
 
+ret=0
 broctl install
 broctl start
 
 # show all nodes
 broctl top 2> all.out
+test $? -eq 0 || ret=1
 
 # show one node
 broctl top proxy-1 2> onenode.out
 
+broctl stop worker-1
+
+# not all nodes are running
+broctl top
+test $? -ne 0 || ret=1
+
 broctl stop
+
+# all nodes are stopped
+broctl top 2> stopped.out
+test $? -ne 0 || ret=1
+
+exit $ret
 
