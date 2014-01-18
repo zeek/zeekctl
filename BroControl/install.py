@@ -353,7 +353,7 @@ def makeConfig(path, silent=False):
     print >>out, "redef Log::default_mail_alarms_interval = %s secs;" % config.Config.mailalarmsinterval
     if manager.type != "standalone":
         print >>out, "@endif"
-    if config.Config.ipv6comm:
+    if config.Config.ipv6comm == "1":
         print >>out, "redef Communication::listen_ipv6 = T ;"
     else:
         print >>out, "redef Communication::listen_ipv6 = F ;"
