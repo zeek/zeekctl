@@ -35,6 +35,7 @@ class PluginRegistry:
 
         for p in self._plugins:
             if not p.init():
+                p.debug("Plugin disabled (plugin's init returned False)")
                 continue
 
             plugins += [p]
@@ -70,14 +71,10 @@ class PluginRegistry:
         method = "cmd_%s_pre" % cmd
 
         for p in self._plugins:
-            try:
-                new_nodes = p.__class__.__dict__[method](p, nodes, *args)
-
-                if new_nodes != None:
-                    nodes = new_nodes
-
-            except LookupError:
-                pass
+            func = getattr(p, method)
+            new_nodes = func(nodes, *args)
+            if new_nodes != None:
+                nodes = new_nodes
 
         return nodes
 
@@ -90,11 +87,9 @@ class PluginRegistry:
         result = True
 
         for p in self._plugins:
-            try:
-                if p.__class__.__dict__[method](p, *args) == False:
-                    result = False
-            except LookupError:
-                pass
+            func = getattr(p, method)
+            if func(*args) == False:
+                result = False
 
         return result
 
@@ -105,10 +100,8 @@ class PluginRegistry:
         method = "cmd_%s_post" % cmd
 
         for p in self._plugins:
-            try:
-                p.__class__.__dict__[method](p, nodes, *args)
-            except LookupError:
-                pass
+            func = getattr(p, method)
+            func(nodes, *args)
 
     def cmdPostWithResults(self, cmd, results, *args):
         """Executes the ``cmd_<XXX>_post`` function for a command taking a
@@ -118,10 +111,8 @@ class PluginRegistry:
         method = "cmd_%s_post" % cmd
 
         for p in self._plugins:
-            try:
-                p.__class__.__dict__[method](p, results, *args)
-            except LookupError:
-                pass
+            func = getattr(p, method)
+            func(results, *args)
 
     def cmdPost(self, cmd, *args):
         """Executes the ``cmd_<XXX>_post`` function for a command *not* taking
@@ -130,10 +121,8 @@ class PluginRegistry:
         method = "cmd_%s_post" % cmd
 
         for p in self._plugins:
-            try:
-                p.__class__.__dict__[method](p, *args)
-            except LookupError:
-                pass
+            func = getattr(p, method)
+            func(*args)
 
     def runCustomCommand(self, cmd, args):
         """Runs a custom command *cmd* with string *args* as argument. Returns
@@ -220,8 +209,6 @@ class PluginRegistry:
 
             if is_plugin:
                 found = True
-
-                p = cls()
 
                 try:
                     p = cls()
