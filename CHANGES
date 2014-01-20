@@ -1,4 +1,8 @@
 
+1.2-24 | 2014-01-20 16:08:48 -0600
+
+  * Update the docs. (Daniel Thayer)
+
 1.2-23 | 2014-01-20 12:22:42 -0800
 
   * Move some output about slow nodes to debug.log. (Daniel Thayer)
@@ -16,8 +20,8 @@
 
   * Enable dead hosts caching while in cron mode. (Justin Azoff)
     
-  * Use getattr for looking up plugin methods for simplfying the
-    plugin code. (Daniel Thayer)
+  * Use getattr for looking up plugin methods for simplifying the
+    plugin code. (Justin Azoff)
 
   * Remove redundant plugin initialization. (Justin Azoff)
     
