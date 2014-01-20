@@ -1,4 +1,8 @@
 
+1.2-12 | 2014-01-20 11:23:23 -0800
+
+  * Fix bug with IPv6Comm broctl option, which had no effect. (Daniel Thayer)
+
 1.2-10 | 2014-01-13 01:57:53 -0800
 
   * Add a new option "PFRINGClusterType" that allows a user to specify
