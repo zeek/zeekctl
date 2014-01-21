@@ -89,7 +89,7 @@ function replaceprefix() {
         exit 1
     fi
 
-    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#" $destfile > $destfile.new && mv $destfile.new $destfile
+    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#g" $destfile > $destfile.new && mv $destfile.new $destfile
     test $? -ne 0 && exit 1
 
     set -x

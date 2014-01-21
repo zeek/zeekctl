@@ -29,4 +29,4 @@ cleanall:
 	@rm -f $(DIAG)
 	@./Scripts/build-bro cleanall
 
-.PHONY: all btest-verbose btest-brief brief buildbro cleanup cleanall
+.PHONY: all btest-verbose btest-brief brief rerun buildbro cleanup cleanall

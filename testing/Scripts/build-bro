@@ -62,7 +62,7 @@ if [ -e "${TARFILE}" ]; then
 fi
 
 mkdir -p ${BROCTL_TEST} || exit 1
-LOG=${BROCTL_TEST}/build-bro.log
+LOG=${BROCTL_TEST}/buildbro.log
 rm -f "$LOG"
 
 # Verify that the entire Bro git repo was cloned (not just the broctl repo).

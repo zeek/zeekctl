@@ -1,5 +1,6 @@
-# Test that the stop command can cleanup a crashed node and sends a
-# crash report, and does not log the crashed node in the stats.log file.
+# Test that the stop command can cleanup a crashed node (including resetting
+# its state to "stopped") and sends a crash report, and does not log the
+# crashed node in the stats.log file.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
