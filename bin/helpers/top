@@ -11,12 +11,15 @@
 cmd_linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
 cmd_freebsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$11, \$12)}"'
 cmd_freebsd_nonsmp='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$10, \$11)}"'
-# top on Mac OS X is different.  It doesn't give CPU utilization until the second 
-# sample so we are getting two samples with zero delay between them.  The
-# grep command at the end removes the first sample from the output.
-cmd_darwin='top -l 2 -s0 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$12, \$11, \$3, \$2)}" | sed "s/\+//g" | sed "s/- / /g" | egrep  -A 1000 "^1.*launchd"'
 cmd_openbsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
 cmd_netbsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
+
+# top on Mac OS X is different.  It doesn't give CPU utilization until the
+# second sample so we are getting two samples with zero delay between them.
+# The awk command removes the first sample from the output and converts the
+# CPU percentages to integers.  The sed command removes the trailing + or -
+# signs that sometimes occur with the memory statistics.
+cmd_darwin='top -l 2 -s0 -stats pid,vprvt,rsize,cpu,command | awk -v c=0 "{ if(\$1 == \"PID\") c++; else if(c>1) printf(\"%d %s %s %d %s\n\", \$1, \$2, \$3, \$4, \$5)}" | sed "s/[+-] / /g"'
 
 eval cmd="\$cmd_${os}"
 

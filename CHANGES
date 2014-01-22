@@ -1,4 +1,53 @@
 
+1.2-28 | 2014-01-22 10:47:49 -0800
+
+  * Fix bug with timemachineport broctl option. (Daniel Thayer)
+    
+  * Improved formatting of cluster-layout.bro for readability. (Daniel
+    Thayer)
+
+1.2-26 | 2014-01-21 07:12:38 -0800
+
+  * Update the docs. (Daniel Thayer)
+
+1.2-23 | 2014-01-20 12:22:42 -0800
+
+  * Move some output about slow nodes to debug.log. (Daniel Thayer)
+    
+  * Improve broctl output formatting. (Daniel Thayer)
+    
+  * Fix redundant emails from broctl cron when dead host found.
+    (Daniel Thayer)
+
+  * Fix broctl top on OS X Mavericks. (Daniel Thayer)
+    
+  * Fix plugin init return values. This also fixes the myricom plugin,
+    which wasn't explicitly returning a value from its init method and
+    therefore was being disabled as a result. (Daniel Thayer)
+
+  * Enable dead hosts caching while in cron mode. (Justin Azoff)
+    
+  * Use getattr for looking up plugin methods for simplifying the
+    plugin code. (Justin Azoff)
+
+  * Remove redundant plugin initialization. (Justin Azoff)
+    
+1.2-12 | 2014-01-20 11:23:23 -0800
+
+  * Fix bug with IPv6Comm broctl option, which had no effect. (Daniel Thayer)
+
+1.2-10 | 2014-01-13 01:57:53 -0800
+
+  * Add a new option "PFRINGClusterType" that allows a user to specify
+    a PF_RING cluster type; it defaults to 4-tuple (which is different
+    from the 6-tuple that previous versions used). The PF_RING plugin
+    uses this information to set the corrresponding environment
+    variable for a PF_RING-aware libpcap. Addresses BIT-1108. (Daniel
+    Thayer)
+
+  * Minor reorganization of the README to avoid redundancy. (Daniel
+    Thayer)
+
 1.2-3 | 2013-12-09 13:24:28 -0800
 
   * Remove unused Broxygen-style script comments. (Jon Siwek)

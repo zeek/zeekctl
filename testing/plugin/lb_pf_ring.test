@@ -3,7 +3,9 @@
 # options are specified.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug1.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug2.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug3.log
 
 . broctl-test-setup
 
@@ -13,10 +15,31 @@ etc/node.cfg__pfring
 bin/bro__test
 EOF
 
+broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
+
+# Default cluster type
 broctl install
 
 broctl start
-grep CLUSTER_NODE $BROCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+grep CLUSTER_NODE ${debuglog} > debug1.log
+broctl stop
 
+# Round-robin cluster type
+echo "pfringclustertype=round-robin" >> ${broctlcfg}
+broctl install
+rm ${debuglog}
+
+broctl start
+grep CLUSTER_NODE ${debuglog} > debug2.log
+broctl stop
+
+# 6-tuple cluster type
+sed "s/pfringclustertype=round-robin/pfringclustertype=6-tuple/" ${broctlcfg} > ${broctlcfg}.new && mv ${broctlcfg}.new ${broctlcfg}
+broctl install
+rm ${debuglog}
+
+broctl start
+grep CLUSTER_NODE ${debuglog} > debug3.log
 broctl stop
 

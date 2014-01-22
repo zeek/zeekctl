@@ -1,5 +1,5 @@
-                             total  avail  capacity
-  worker-1        /dev/sda6  238G   102G   55.0 %
-   proxy-1        /dev/sda6  238G   102G   55.0 %
-   manager        /dev/sda6  238G   102G   55.0 %
-  worker-2        /dev/sda6  238G   102G   55.0 %
+                               total  avail  capacity
+    worker-1        /dev/sda6  238G   102G   55.0 %
+     proxy-1        /dev/sda6  238G   102G   55.0 %
+     manager        /dev/sda6  238G   102G   55.0 %
+    worker-2        /dev/sda6  238G   102G   55.0 %
