@@ -6,4 +6,4 @@ redef Notice::mail_subject_prefix  = "This is Subject";
 redef Notice::mail_from  = "broctltestuser@mydomain";
 redef Log::default_rotation_interval = 12345 secs;
 redef Log::default_mail_alarms_interval = 98765 secs;
-redef Communication::listen_ipv6 = T ;
+redef Communication::listen_ipv6 = F ;
