@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #
 # Replace columns from "broctl ps.bro" output that are not predictable
-# (such as PID) with Xs.
+# (such as PID) with Xs, and then sort the lines.
 
 awk '{
     # Process only lines that have first field of "(+)" or "(-)"
@@ -25,7 +25,7 @@ awk '{
         if ( $12 ~ /^[0-9]/ ) { $12 = "XX:XX:XX" }   # TIME
     }
 
-    # Don't output the header line (it is system-dependent)
+    # Do not output the header line (it is system-dependent)
     if ( NR > 1 ) { print }
-}'
+}' | sort
 
