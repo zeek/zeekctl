@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+#
+# Replace IPv6 localhost in cluster-layout.bro with IPv4 localhost.
+
+sed "s/ip=\[::1\]/ip=127.0.0.1/"
+

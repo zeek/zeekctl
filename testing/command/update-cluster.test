@@ -3,7 +3,7 @@
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff all.out
-# @TEST-EXEC: btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff onenode.out
 
 . broctl-test-setup
 

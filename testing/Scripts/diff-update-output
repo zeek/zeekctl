@@ -1,6 +1,16 @@
 #! /usr/bin/env bash
 #
-# Replace numbers with Xs in the "broctl update" output.
+# Replace unpredictable "broctl update" output with a constant string.
 
-sed 's/sent [0-9][0-9]* ID/sent X ID/'
+awk '{
+    if ( $1 != "updating" )
+    {
+        if ( $0 ~ /sent [0-9][0-9]* ID/ || $0 ~ /processing suspended/ )
+        { 
+            $0 = $1 " (SOMETHING)"
+        }
+    }
+
+    print
+}'
 

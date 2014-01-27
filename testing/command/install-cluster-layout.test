@@ -2,7 +2,7 @@
 # that the contents of that file are affected by certain broctl options.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: btest-diff cluster-layout.bro
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff cluster-layout.bro
 
 . broctl-test-setup
 
