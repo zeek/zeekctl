@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+#
+# Replace numbers with Xs in the "broctl update" output.
+
+sed 's/sent [0-9][0-9]* ID/sent X ID/'
+

@@ -2,7 +2,7 @@
 #
 # @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="sed 's/sent [0-9][0-9]* /sent X /'" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 
 . broctl-test-setup

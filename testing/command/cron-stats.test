@@ -3,7 +3,7 @@
 # directory.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="awk '{ print $2,$3,$4 }'" btest-diff stats.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-stats btest-diff stats.out
 
 . broctl-test-setup
 

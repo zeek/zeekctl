@@ -2,7 +2,7 @@
 # files.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="awk '{ print $1 }'" btest-diff meta.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-meta btest-diff meta.out
 
 . broctl-test-setup
 
