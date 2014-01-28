@@ -1,4 +1,28 @@
 
+1.2-56 | 2014-01-28 15:54:14 -0800
+
+  * A large set of improvements to the test build scripts to address
+    error scenarios, fix failures to report problems, and provide
+    convenience features.  (Daniel Thayer)
+
+    Includes:
+
+        - New Makefile target "rerun" to more easily re-run failed
+          tests.
+
+        - Two new environment variables recognized by test scripts:
+          
+            * If Bro fails to build, you can define an environment
+              variable BROCTL_TEST_BUILDARGS which specifies
+              additional options that will be passed to Bro's
+              "configure" script.
+
+            * Defining BROCTL_TEST_USEBUILD will use the Bro default
+              build directory (instead of a custom build directory for
+              the broctl tests).
+
+  * Add lots of new tests. (Daniel Thayer)
+
 1.2-28 | 2014-01-22 10:47:49 -0800
 
   * Fix bug with timemachineport broctl option. (Daniel Thayer)

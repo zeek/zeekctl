@@ -1,0 +1,31 @@
+# Test that the install command installs the cluster-layout.bro file, and
+# that the contents of that file are affected by certain broctl options.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff cluster-layout.bro
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+EOF
+
+clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+
+ret=0
+
+broctl install
+
+# verify that there is no time machine info by default
+grep -q time-machine ${clusterlayout}
+test $? -ne 0 || ret=1
+
+echo "TimeMachineHost=192.168.0.11" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "TimeMachinePort=12345/tcp" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+broctl install
+
+cp ${clusterlayout} cluster-layout.bro
+
+exit $ret
+

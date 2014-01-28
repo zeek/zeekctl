@@ -1,5 +1,38 @@
 #! /usr/bin/env bash
 #
-# Remove columns from "broctl status" output that always differ (such as PID).
+# Replace columns from "broctl status" output that are not predictable
+# (such as PID) with Xs.  If the "--peers" command-line option is given, then
+# the "Peers" column is not replaced.  If the "--time" command-line option is
+# given, then the "Started" date/time columns are not replaced.
 
-awk '{ print $1,$2,$3,$4,$6 }'
+usepeers=0
+if [ "$1" = "--peers" ]; then
+    usepeers=1
+fi
+usetimefmt=0
+if [ "$1" = "--time" ]; then
+    usetimefmt=1
+fi
+
+awk -v peers=${usepeers} -v usetimefmt=${usetimefmt} '{
+    if ( NR > 1 )
+    {
+        # Check the format of each field, and replace with Xs only if the
+        # format is expected (some fields have unpredictable length, but
+        # we need a constant-width string of Xs).
+        if ( $5 ~ /^[0-9]+$/ ) { $5 = "XXXXX" }   # Pid
+        if ( peers == 0 ) {
+            if ( $6 ~ /^([0-9]+|\?+)$/ ) { $6 = "X" }
+        }
+
+        if ( usetimefmt == 0) {
+            # The "Started" column consists of three fields:
+            if ( $7 ~ /^[0-3][0-9]$/ ) { $7 = "XX" }
+            if ( $8 ~ /^[A-Za-z]+$/ ) { $8 = "XXX" }
+            if ( $9 ~ /^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$/ ) { $9 = "XX:XX:XX" }
+        }
+    }
+
+    print
+}'
+

@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+#
+# This script is a test compress script (broctl requires that a custom
+# compress command must write a transformed version of stdin to stdout).
+
+if [ "$1" = "-i" ]; then
+      msg="compress option specified"
+else
+      msg="compress no option specified"
+fi
+
+sed 's/This is a BROCTL TEST/<compressed>/'
+
+# show that command-line options are recognized
+echo $msg
+

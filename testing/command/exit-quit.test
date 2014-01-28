@@ -1,6 +1,6 @@
 # Test the exit and quit commands.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 
 . broctl-test-setup
 

@@ -1,0 +1,31 @@
+#! /usr/bin/env bash
+#
+# Replace columns from "broctl ps.bro" output that are not predictable
+# (such as PID) with Xs, and then sort the lines.
+
+awk '{
+    # Process only lines that have first field of "(+)" or "(-)"
+    if ( $1 ~ /\([+-]\)/ )
+    {
+        # replace username
+        $2 = "xxxxxx"
+
+        # Check the format of each field, and replace with Xs only if the
+        # format is expected (some fields have unpredictable length, but
+        # we need a constant-width string of Xs).
+        if ( $3 ~ /^[0-9]+$/ ) { $3 = "XXXXX" }      # PID
+        if ( $4 ~ /^[0-9]+$/ ) { $4 = "XXXXX" }      # PPID
+        if ( $5 ~ /^[0-9]+\.[0-9]$/ ) { $5 = "XX.X" }  # %CPU
+        if ( $6 ~ /^[0-9]+\.[0-9]$/ ) { $6 = "XX.X" }  # %MEM
+        if ( $7 ~ /^[0-9]+$/ ) { $7 = "XXXXX" }      # VSZ
+        if ( $8 ~ /^[0-9]+$/ ) { $8 = "XXXXX" }      # RSS
+        if ( $9 ~ /^\?/ ) { $9 = "X" }               # TT
+        if ( $10 ~ /^[RS]/ ) { $10 = "X" }           # S
+        if ( $11 ~ /[0-9]/ ) { $11 = "XX:XX:XX" }    # STARTED
+        if ( $12 ~ /^[0-9]/ ) { $12 = "XX:XX:XX" }   # TIME
+    }
+
+    # Do not output the header line (it is system-dependent)
+    if ( NR > 1 ) { print }
+}' | sort
+

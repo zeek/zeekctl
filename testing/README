@@ -19,7 +19,7 @@ Significant Subdirectories
 * Traces/
 	Packet captures utilized by the various BTest tests.
 
-* cfg/
+* Cfg/
 	This is a collection of config files utilized by various BTest tests.
 	The directory hierarchy emulates the hierarchy of the Bro installation
 	directory.
@@ -30,9 +30,15 @@ Running Tests
 In order to run the tests you must clone the entire Bro repo (not just the
 broctl repo).  Next, either use the ``make all`` or ``make brief``
 ``Makefile`` targets to run all the tests (these will automatically build
-Bro before running any of the broctl tests).  Alternatively, if you want
-to run just a subset of the tests, then build Bro with ``make buildbro``,
-followed by ``btest`` directly with desired options/arguments.  Examples:
+Bro before running any of the broctl tests).  If Bro fails to build, you can
+define an environment variable BROCTL_TEST_BUILDARGS which specifies 
+additional options that will be passed to Bro's "configure" script.
+If Bro builds successfully, but one or more tests fail, then you can
+re-run all failed tests with ``make rerun``.
+
+If you want to run just a subset of the tests, then build Bro with
+``make buildbro``, followed by ``btest`` directly with desired
+options/arguments.  Examples:
 
 * btest <no arguments>
 	If you simply execute btest in this directory with no arguments,
@@ -44,8 +50,8 @@ followed by ``btest`` directly with desired options/arguments.  Examples:
 	You can specify a directory on the command line to run just the
 	tests contained in that directory. This is useful if you wish to
 	run all of a given type of test, without running all the tests
-	there are. For example, "btest scripts" will run all of the Bro
-	script unit tests.
+	there are. For example, "btest command" will run all of the broctl
+	command unit tests.
 
 
 * btest <btest options> test_directory/test_file
@@ -54,7 +60,7 @@ followed by ``btest`` directly with desired options/arguments.  Examples:
 	a new test.
 
 Adding Tests
-=============
+============
 
 See either the `BTest documentation
 <http://www.bro.org/development/README.btest.html>`_ or the existing unit

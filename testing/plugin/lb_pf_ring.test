@@ -2,10 +2,10 @@
 # set by the lb_pf_ring plugin when the necessary broctl.cfg and node.cfg
 # options are specified.
 #
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug1.log
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug2.log
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-formatted-timestamps | $SCRIPTS/diff-remove-abspath" btest-diff debug3.log
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug1.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug2.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug3.log
 
 . broctl-test-setup
 

@@ -1,0 +1,28 @@
+# Test that the broctl cron command runs a command specified by the
+# croncmd broctl option.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+EOF
+
+outfile=$BROCTL_INSTALL_PREFIX/testcommand.out
+
+echo "croncmd=date -u >> ${outfile}" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+ret=0
+broctl install
+
+# verify that the output file does not exist
+test -f ${outfile} && ret=1
+
+broctl cron
+
+# verify that the croncmd ran successfully
+grep -q UTC ${outfile} || ret=1
+
+exit $ret
+

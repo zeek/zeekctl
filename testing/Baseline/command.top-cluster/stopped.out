@@ -1,0 +1,5 @@
+Name        Type       Node          Pid     Proc    VSize  Rss   Cpu   Cmd
+manager     manager    localhost     <not running>
+proxy-1     proxy      localhost     <not running>
+worker-1    worker     localhost     <not running>
+worker-2    worker     localhost     <not running>

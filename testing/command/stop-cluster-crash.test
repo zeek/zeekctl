@@ -1,0 +1,72 @@
+# Test that the stop command can cleanup a crashed node (including resetting
+# its state to "stopped") and sends a crash report, and does not log the
+# crashed node in the stats.log file.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff stop.out
+# @TEST-EXEC: btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+etc/node.cfg__cluster
+bin/bro__test
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+ret=0
+broctl install
+broctl start
+
+# the start command creates some files (these are NOT created by bro itself)
+while read line; do
+    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+spool/worker-1/.cmdline
+spool/worker-1/.env_vars
+spool/worker-1/.pid
+spool/worker-1/.startup
+spool/worker-1/stderr.log
+spool/worker-1/stdout.log
+EOF
+
+# verify that a node crashed
+broctl status 2> status1.out
+
+# verify that no email has been sent
+test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
+# test the stop command
+broctl stop 2> stop.out
+
+# the stop command should cleanup the crashed node directory
+while read line; do
+    test ! -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+spool/worker-1/.cmdline
+spool/worker-1/.env_vars
+spool/worker-1/.pid
+spool/worker-1/.startup
+spool/worker-1/stderr.log
+spool/worker-1/stdout.log
+EOF
+
+# the crashed node should not be logged as "stopped" in stats.log
+grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log | grep worker-1 && ret=1
+
+# verify that a crash report was sent
+grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
+# verify that all nodes are in the stopped state
+broctl status 2> status2.out
+
+exit $ret
+

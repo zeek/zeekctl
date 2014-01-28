@@ -1,0 +1,75 @@
+# Test that the archive-log script archives and compresses a specified log
+# file, and that a connection summary report is emailed and archived if
+# conn.log is being archived.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
+logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
+connlog=${logdir}/conn.22:24:20-22:30:00.log.gz
+testlog=${logdir}/broctltest.22:24:20-22:30:00.log.gz
+connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log.gz
+origconnlog=conn.2013-12-30-22-24-20.log
+origtestlog=broctltest.2013-12-30-22-24-20.log
+
+ret=0
+broctl install
+
+# Create Bro's working directory, chdir to that dir, and create rotated logs
+mkdir $BROCTL_INSTALL_PREFIX/spool/bro
+cd $BROCTL_INSTALL_PREFIX/spool/bro
+cat > ${origconnlog} << _EOF_
+# This is a test conn.log
+_EOF_
+cat > ${origtestlog} << _EOF_
+# This is a test broctltest.log
+_EOF_
+
+###############################################
+# Test archive-log for the conn.log file
+
+${archivelog} ${origconnlog} conn 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that the logs were archived
+test -f ${origconnlog} && ret=1
+test ! -f ${connlog} && ret=1
+test ! -f ${connsummarylog} && ret=1
+
+# verify that the logs were compressed
+grep -q "This is a test" ${connlog} && ret=1
+grep -q ">== Total ===" ${connsummarylog} && ret=1
+
+# verify that a connection summary report was emailed
+grep -q ">== Total ===" $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
+rm $BROCTL_INSTALL_PREFIX/sendmail.out
+
+###############################################
+# Test archive-log for a different log file
+
+# verify that the broctltest.log was not archived yet
+test -f ${testlog} && ret=1
+
+${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that broctltest.log was archived
+test -f ${origtestlog} && ret=1
+test ! -f ${testlog} && ret=1
+
+# verify that broctltest.log was compressed
+grep -q "This is a test" ${testlog} && ret=1
+
+# verify that no email was sent
+test -f $BROCTL_INSTALL_PREFIX/sendmail.out && ret=1
+
+exit $ret
+

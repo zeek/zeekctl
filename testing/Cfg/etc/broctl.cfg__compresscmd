@@ -1,0 +1,6 @@
+# Test the compresscmd and compressextension options.
+compresscmd=@PREFIX@/bin/compress -i
+compressextension=broctlcompress
+
+# Don't send email
+sendmail=

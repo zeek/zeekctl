@@ -71,8 +71,6 @@ endif ()
 ########################################################################
 ## Install
 
-configure_file(broctl-path.in ${CMAKE_CURRENT_BINARY_DIR}/broctl-path)
-
 include(InstallPackageConfigFile)
 include(InstallSymlink)
 include(InstallShellScript)

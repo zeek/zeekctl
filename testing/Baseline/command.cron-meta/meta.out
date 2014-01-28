@@ -1,0 +1,5 @@
+node manager manager localhost
+time Sun Dec 15 03:33:58 2013
+version 1.2
+os Linux test-machine 3.2.0-53-generic #81-Ubuntu SMP Thu Aug 22 21:01:03 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+host test-machine

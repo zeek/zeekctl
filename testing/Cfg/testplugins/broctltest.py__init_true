@@ -1,0 +1,16 @@
+# Broctl test plugin that does nothing except initialize.
+
+import BroControl.plugin
+
+class BroctlTest(BroControl.plugin.Plugin):
+    def __init__(self):
+        super(BroctlTest, self).__init__(apiversion=1)
+
+    def name(self):
+        return "broctltest"
+
+    def pluginVersion(self):
+        return 1
+
+    def init(self):
+        return True

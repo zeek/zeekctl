@@ -1,6 +1,6 @@
 # Test that IPv4 networks in networks.cfg are interpreted correctly.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup

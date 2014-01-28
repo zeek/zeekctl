@@ -21,7 +21,7 @@ def createloadedscriptslog(thisnode):
 
 livemode = False
 statusfile = None
-brotestcfg = { "crash" : "" }
+brotestcfg = { "crash" : "" , "slowstart" : "" , "slowstop" : "" }
 
 # Parse cmd-line args (most of them can be ignored).
 optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:K:LOPR:ST:U:WZ")
@@ -68,12 +68,21 @@ if livemode:
     if nodename in brotestcfg["crash"].split():
         sys.exit(1)
 
+    if nodename in brotestcfg["slowstart"].split():
+        # This delay time needs to be greater than the time broctl waits for
+        # bro to enter the "running" state.
+        time.sleep(10)
+
     # Set the status to notify broctl that we're up and running (broctl ignores
     # the part in brackets).
     setprocstate("RUNNING [net_run]\n")
 
-    # Catch SIGTERM so the exit handler runs after a "broctl stop".
-    signal.signal(signal.SIGTERM, catchsigterm)
+    if nodename in brotestcfg["slowstop"].split():
+        # Ignore SIGTERM so that "broctl stop" must fallback to using SIGKILL.
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    else:
+        # Catch SIGTERM so the exit handler runs after a "broctl stop".
+        signal.signal(signal.SIGTERM, catchsigterm)
 
     # Create loaded_scripts.log (only the broctl "scripts" and "diag" commands
     # check for this file).

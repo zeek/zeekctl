@@ -2,9 +2,10 @@
 # specified node.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: grep '(+)' all.out
-# @TEST-EXEC-FAIL: grep '(+)' stopped.out
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff stopped.out
 
 . broctl-test-setup
 

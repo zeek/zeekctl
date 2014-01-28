@@ -1,0 +1,44 @@
+# Test that the broctl cron command creates the meta.dat file, and some *.csv
+# files.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-meta btest-diff meta.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+bin/capstats__test
+EOF
+
+logsstats=$BROCTL_INSTALL_PREFIX/logs/stats
+ret=0
+broctl install
+broctl start
+
+# verify that we start with no meta.dat file
+test -e $logsstats/meta.dat && ret=1
+test -e $logsstats/www/meta.dat && ret=1
+
+# verify that there are no *.csv files
+find $logsstats/www -name *.csv > find1.out
+test -s find1.out && ret=1
+
+broctl cron
+
+# verify that broctl cron created the meta.dat file
+test ! -e $logsstats/meta.dat && ret=1
+test ! -e $logsstats/www/meta.dat && ret=1
+
+cp $logsstats/meta.dat meta.out
+
+# verify that some *.csv files were created
+find $logsstats/www -name *.csv > find2.out
+test ! -s find2.out && ret=1
+
+broctl stop
+
+exit $ret
+

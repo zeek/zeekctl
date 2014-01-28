@@ -5,22 +5,24 @@
 #
 # make-archive-name <basename> <writer> <timestamp-when-opened> [<timestamp-when-closed>]
 #
-#   basename: The base file name of the log file being archived (e.g., conn.log).
+#   basename: The base filename of the log file being archived (e.g., conn.log).
 #   writer:   The name of the log writer type that produced the file.
-#   timestamp-when-opened: The timestamp when the log file being archived was created. 
-#   timestamp-when-closed: The timestamp when the log file being archived was finished. 
-#                          Optional. If not given, the name is used to create a link to 
-#                          the current live version of the file.
+#   timestamp-when-opened: The timestamp when the log file being archived was
+#                          created.
+#   timestamp-when-closed: The timestamp when the log file being archived was
+#                          finished.  Optional.  If not given, the name is used
+#                          to create a link to the current live version of the
+#                          file.
 #
-# The writer is derived from the WRITER_* constants and lower-cased; e.g., "ascii"
-# for Log::WRITER_ASCII.
+# The writer is derived from the WRITER_* constants and lower-cased; e.g.,
+# "ascii" for Log::WRITER_ASCII.
 #
 # Times are given in the form "year-month-day-hour-minute-second",
 # e.g., "2010-03-30-13-12-04"
 #
 # The script must return the path under which the file should be
-# archived. If it's a relative path, it will be interpreted as
-# relative to BroControl's standard log directory. 
+# archived.  If it's a relative path, it will be interpreted as
+# relative to BroControl's standard log directory.
 #
 # Note that even if the logs will later be compressed, this script should
 # always return the filename without any compression extension (such as ".gz");
@@ -41,5 +43,4 @@ if [ "$closed" != "" ]; then
 else
    echo $day/$name.$from-current.$ext
 fi
-
 

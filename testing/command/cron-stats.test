@@ -1,0 +1,39 @@
+# Test that the broctl cron command logs "top" and "capstats" stats on all
+# nodes in a cluster to the stats.log file, and moves the file to a different
+# directory.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-stats btest-diff stats.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+bin/capstats__test
+EOF
+
+ret=0
+broctl install
+
+# verify that we start with no stats.log file
+test -e $BROCTL_INSTALL_PREFIX/spool/stats.log && exit 1
+
+broctl start
+
+# verify that we start with no stats.log file in the logs/stats directory
+test -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log && ret=1
+
+broctl cron
+
+# verify that broctl cron moved the stats.log file to the logs/stats directory
+test -e $BROCTL_INSTALL_PREFIX/spool/stats.log && ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log && ret=1
+
+cp $BROCTL_INSTALL_PREFIX/logs/stats/stats.log stats.out
+
+broctl stop
+
+exit $ret
+

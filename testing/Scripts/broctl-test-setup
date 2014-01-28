@@ -1,10 +1,11 @@
 #! /usr/bin/env bash
 #
-# Broctl test setup script used with the tests in broctl/testing/btest/*.
-# This script should be sourced at the start of each test case.  This script
-# will install the necessary files (in directory BROCTL_INSTALL_PREFIX) for
-# each test (cleanup happens automatically unless BROCTL_TEST_DEBUG is
-# defined).
+# Broctl test setup script.
+# This script should be sourced at the start of each test case.
+# This script installs Bro to a directory that is unique to each test,
+# and provides a function "installcfgfile" that a test script can 
+# optionally use to install files.
+
 
 # installcfgfile <rel.path> [--new]
 #
@@ -33,14 +34,14 @@ function installcfgfile() {
     # Make sure original file exists
     origpath=$BROCTLCFG/$origrelpath
     if [ ! -f "$origpath" ]; then
-        echo "Error: file not found: $origpath"
+        echo "Error: source file not found: $origpath" 1>&2
         exit 1
     fi
 
     # Use the double-underscore delimiter to derive the destination filename
     relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
     if [ "$origrelpath" = "$relpath" ]; then
-        echo "Error: filename needs '__': $origrelpath"
+        echo "Error: source filename needs '__': $origrelpath" 1>&2
         exit 1
     fi
     destfile=$(basename "$relpath")
@@ -50,7 +51,7 @@ function installcfgfile() {
 
     # Make sure destination directory exists
     if [ ! -d "$BROCTL_INSTALL_PREFIX/$destdir" ]; then
-        echo "Error: directory not found: $BROCTL_INSTALL_PREFIX/$destdir"
+        echo "Error: destination directory not found: $BROCTL_INSTALL_PREFIX/$destdir" 1>&2
         exit 1
     fi
 
@@ -61,7 +62,7 @@ function installcfgfile() {
         # Make sure destination file exists (usually, we're overwriting an
         # existing file, so this is a good safety check to catch typos)
         if [ ! -f "$destpath" ]; then
-            echo "Error: file not found: $destpath"
+            echo "Error: destination file not found: $destpath (maybe try --new option?)" 1>&2
             exit 1
         fi
     fi
@@ -70,13 +71,41 @@ function installcfgfile() {
     set -x
 }
 
-function installbro() {
-    if [ -z "${INSTALL}" ]; then
-        echo "Error: INSTALL not defined (try 'make buildbro')" 1>&2
+
+# replaceprefix <rel.path>
+#
+# Replace the text "@PREFIX@" with the bro install prefix in the specified
+# file (given as a relative pathname).
+function replaceprefix() {
+    set +x
+
+    if [ -z "$1" ]; then
+        return
+    fi
+
+    destfile=$BROCTL_INSTALL_PREFIX/$1
+    if [ ! -f $destfile ]; then
+        echo "Error: file not found: $destfile" 1>&2
         exit 1
     fi
 
-    basedir=`dirname "${INSTALL}"`
+    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#g" $destfile > $destfile.new && mv $destfile.new $destfile
+    test $? -ne 0 && exit 1
+
+    set -x
+}
+
+
+# This function creates a test-specific directory, installs Bro to this
+# directory, and exports BROCTL_INSTALL_PREFIX with the path of this directory.
+# Cleanup happens automatically unless BROCTL_TEST_DEBUG is defined.
+function installbro() {
+    if [ -z "${INSTALL}" ]; then
+        echo "Error: INSTALL not defined (check btest.cfg)" 1>&2
+        exit 1
+    fi
+
+    basedir="${INSTALL}"
     tarfile=$basedir/bro-test-install.tar
 
     if [ ! -f "$tarfile" ]; then
@@ -89,13 +118,17 @@ function installbro() {
         trap "cleanup" EXIT
     fi
 
-    # Create test-specific bro installation
+    # Create test-specific bro installation directory
     newprefix=$basedir/test.$$
     mkdir "$newprefix"
-    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
-
+    test $? -ne 0 && exit 1
     export BROCTL_INSTALL_PREFIX=$newprefix
-    export BROMAGIC=$newprefix/share/bro/magic
+
+    # Install bro
+    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
+    test $? -ne 0 && exit 1
+
+    export BROMAGIC=$BROCTL_INSTALL_PREFIX/share/bro/magic
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
@@ -110,9 +143,12 @@ function installbro() {
 }
 
 function cleanup() {
+    set +x
     test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
 }
 
-set +x
 installbro
+
+# Output test commands (if a test fails, this might be useful for debugging)
 set -x
+

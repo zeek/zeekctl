@@ -1,7 +1,7 @@
 # Test that the diag command can output diags for a standalone bro.
 #
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff out
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff out
 
 . broctl-test-setup
 

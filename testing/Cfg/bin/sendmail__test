@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+#
+# This script is a replacement for the "sendmail" command, and is used for
+# testing that broctl executes sendmail and gives it some message text.
+
+if [ -n "${BROCTL_INSTALL_PREFIX}" ]; then
+    # Write message text from stdin to a temporary file.
+    cat - >> ${BROCTL_INSTALL_PREFIX}/sendmail.out
+    exit $?
+fi
+
+exit 1
+

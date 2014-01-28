@@ -1,9 +1,9 @@
 # Test that the diag command can output diags for all nodes in a cluster, or
 # just one node.
 #
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-diag-output | $SCRIPTS/diff-remove-abspath" btest-diff onenode.out
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff onenode.out
 
 . broctl-test-setup
 
