@@ -17,7 +17,7 @@ class PsBro(BroControl.plugin.Plugin):
         return 1
 
     def commands(self):
-        return [("bro", "[<nodes>]", "Shows Bro processes currently running on nodes' systems.")]
+        return [("bro", "[<nodes>]", "Show Bro processes on nodes' systems")]
 
     def cmd_custom(self, cmd, args):
 
