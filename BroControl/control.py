@@ -1181,6 +1181,9 @@ def executeCmd(nodes, cmd):
     return not hadError
 
 def processTrace(trace, bro_options, bro_scripts):
+    if not os.path.isfile(trace):
+        util.error("file not found: %s" % trace)
+
     standalone = (config.Config.standalone == "1")
     if standalone:
         tag = "standalone"
@@ -1202,12 +1205,12 @@ def processTrace(trace, bro_options, bro_scripts):
     env = _makeEnvParam(node)
 
     bro_args =  " ".join(bro_options + _makeBroParams(node, False))
+    bro_args += " broctl/process-trace"
 
     if bro_scripts:
         bro_args += " " + " ".join(bro_scripts)
 
     cmd = os.path.join(config.Config.scriptsdir, "run-bro-on-trace") + " %s %s %s %s" % (0, cwd, trace, bro_args)
-    cmd += " broctl/process-trace"
 
     print cmd
 
