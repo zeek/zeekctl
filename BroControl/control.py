@@ -1182,7 +1182,8 @@ def executeCmd(nodes, cmd):
 
 def processTrace(trace, bro_options, bro_scripts):
     if not os.path.isfile(trace):
-        util.error("file not found: %s" % trace)
+        util.output("Error: trace file not found: %s" % trace)
+        return False
 
     standalone = (config.Config.standalone == "1")
     if standalone:
