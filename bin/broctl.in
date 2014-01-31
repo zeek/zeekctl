@@ -897,38 +897,37 @@ class BroCtlCmdLoop(cmd.Cmd):
             if args:
                 cmd = "%s %s" % (cmd, args)
 
-            plugin_help += "   %-29s - %s\n" % (cmd, descr)
+            plugin_help += "  %-32s - %s\n" % (cmd, descr)
 
         self.output(
 """
 BroControl Version %s
 
-   capstats <nodes> [secs]       - report interface statistics (needs capstats)
-   check <nodes>                 - check configuration before installing it
-   cleanup [--all] <nodes>       - delete working dirs on nodes (flushes state)
-   config                        - print broctl configuration
-   cron [--no-watch]             - perform jobs intended to run from cron
-   cron enable|disable|?         - enable/disable \"cron\" jobs
-   df <nodes>                    - print nodes' current disk usage
-   diag <nodes>                  - output diagnostics for nodes
-   exec <shell cmd>              - execute shell command on all nodes
-   exit                          - exit shell
-   install                       - update broctl installation/configuration
-   netstats <nodes>              - print nodes' current packet counters
-   nodes                         - print node configuration
-   print <id> <nodes>            - print current values of script variable at nodes
-   peerstatus <nodes>            - print current status of nodes' remote connections
-   process <trace> [Bro options] - runs Bro offline on trace file
-   quit                          - exit shell
-   restart [--clean] <nodes>     - stop and then restart processing
-   scripts [-c] <nodes>          - Lists the Bro scripts the nodes will be loading
-   start <nodes>                 - start processing
-   status <nodes>                - summarize node status
-   stop <nodes>                  - stop processing
-   update <nodes>                - update configuration of nodes on the fly
-   top <nodes>                   - show Bro processes ala top
-   %s
-   """ % (Version, plugin_help))
+  capstats [<nodes>] [<secs>]      - Report interface statistics with capstats
+  check [<nodes>]                  - Check configuration before installing it
+  cleanup [--all] [<nodes>]        - Delete working dirs (flush state) on nodes
+  config                           - Print broctl configuration
+  cron [--no-watch]                - Perform jobs intended to run from cron
+  cron enable|disable|?            - Enable/disable \"cron\" jobs
+  df [<nodes>]                     - Print nodes' current disk usage
+  diag [<nodes>]                   - Output diagnostics for nodes
+  exec <shell cmd>                 - Execute shell command on all nodes
+  exit                             - Exit shell
+  install                          - Update broctl installation/configuration
+  netstats [<nodes>]               - Print nodes' current packet counters
+  nodes                            - Print node configuration
+  peerstatus [<nodes>]             - Print status of nodes' remote connections
+  print <id> [<nodes>]             - Print values of script variable at nodes
+  process <trace> [<op>] [-- <sc>] - Run Bro (with options and scripts) on trace
+  quit                             - Exit shell
+  restart [--clean] [<nodes>]      - Stop and then restart processing
+  scripts [-c] [<nodes>]           - List the Bro scripts the nodes will load
+  start [<nodes>]                  - Start processing
+  status [<nodes>]                 - Summarize node status
+  stop [<nodes>]                   - Stop processing
+  top [<nodes>]                    - Show Bro processes ala top
+  update [<nodes>]                 - Update configuration of nodes on the fly
+  %s""" % (Version, plugin_help))
 
 # Hidden command to print the command documentation.
 if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":

@@ -1,4 +1,16 @@
 
+1.2-61 | 2014-01-31 11:11:39 -0800
+
+  * Fix error handling for process command. (Daniel Thayer)
+
+  * Update and improve the tests of broctl process. (Daniel Thayer)
+    
+  * Improve broctl help message for the process command. (Daniel
+    Thayer)
+
+  * Reorder the broctl process command Bro arguments. Addresses
+    BIT-1124. (Daniel Thayer)
+
 1.2-56 | 2014-01-28 15:54:14 -0800
 
   * A large set of improvements to the test build scripts to address
