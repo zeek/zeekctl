@@ -1,6 +1,7 @@
 # Test that the scripts command can output contents of loaded_scripts.log
 # on all nodes, or just a specified node.
 #
+# @TEST-SERIALIZE: broccoli
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-yyyy-mm-dd-hh-mm-ss btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-yyyy-mm-dd-hh-mm-ss btest-diff onenode.out
@@ -13,8 +14,9 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster
 EOF
 
-# replace one or more continuous lines of absolute paths with one line of text
-rmpaths='awk "{ if(\$1 ~ /\/.*/) { if(p==0) { print \"<...paths...>\"; p=1; } } else { p=0; print; } }"'
+# replace one or more continuous lines of absolute paths with one line of text,
+# and ignore lines with "processing suspended" or "processing continued"
+rmpaths='awk "{ if(\$1 ~ /\/.*/) { if(p==0) { print \"<...paths...>\"; p=1; } } else { p=0; if(\$1 != \"processing\" ) { print; } } }"'
 
 broctl install
 
