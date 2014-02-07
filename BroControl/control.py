@@ -396,10 +396,10 @@ def _stopNodes(nodes):
                     # crashed flag is set by isRunning().
                     util.output("%s crashed during shutdown" % node.name)
 
-    if len(kill):
+    if kill:
         # Kill those which did not terminate gracefully.
         stop(kill, 9)
-        # Given them a bit to disappear.
+        # Give them a bit to disappear.
         time.sleep(5)
 
     # Check which are still running. We check all nodes to be on the safe side
@@ -440,7 +440,11 @@ def _stopNodes(nodes):
 
     cmds = []
     for node in cleanup:
-        cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd()])]
+        crashflag = ""
+        if node in kill:
+            crashflag = "killed"
+
+        cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
 
     for (node, success, output) in execute.runHelperParallel(cmds):
         if not success:

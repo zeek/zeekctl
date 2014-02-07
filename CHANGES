@@ -1,4 +1,9 @@
 
+1.2-66 | 2014-02-06 20:29:20 -0800
+
+  * Make sure logs are archived after broctl kills Bro. Addresses
+    BIT-1126. (Daniel Thayer)
+
 1.2-63 | 2014-02-04 09:10:39 -0800
 
   * Fix a few sporadic test failures. (Daniel Thayer)
