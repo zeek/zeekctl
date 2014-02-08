@@ -240,7 +240,10 @@ def _startNodes(nodes):
     for (node, isrunning) in isRunning(nodes):
         if not isrunning:
             filtered += [node]
-            util.output("starting %s ..." % node.name)
+            if node.hasCrashed():
+                util.output("starting %s (was crashed) ..." % node.name)
+            else:
+                util.output("starting %s ..." % node.name)
         else:
             util.output("%s still running" % node.name)
 
@@ -356,8 +359,8 @@ def _stopNodes(nodes):
             results += [(node, True)]
 
             if node.hasCrashed():
-                _makeCrashReports([node])
                 util.output("%s not running (was crashed)" % node.name)
+                _makeCrashReports([node])
             else:
                 util.output("%s not running" % node.name)
 
