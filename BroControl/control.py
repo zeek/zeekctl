@@ -282,7 +282,7 @@ def _startNodes(nodes):
             nodes += [node]
             node.setPID(int(output[0]))
         else:
-            util.output("cannot start %s" % node.name)
+            util.output("cannot start %s; check output of \"diag\"" % node.name)
             results += [(node, False)]
 
     # Check whether processes did indeed start up.

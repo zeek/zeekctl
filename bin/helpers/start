@@ -15,9 +15,11 @@ while [ ! -s .pid ]; do
    sleep 1
 done
 
-cat .pid
-echo 0
+ret=0
+pid=`cat .pid`
+[ "$pid" = "-1" ] && ret=1
+
+echo $pid
+echo $ret
 echo ~~~
-
-
 
