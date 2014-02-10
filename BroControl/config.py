@@ -345,6 +345,8 @@ class Configuration:
                         util.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
                 except ValueError:
                     util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+            elif node.lb_method:
+                util.error("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
 
             try:
                 pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
