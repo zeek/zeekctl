@@ -9,6 +9,12 @@ shift
 
 rm -f .pid
 
+if [ ! -x ${scriptsdir}/run-bro ]; then
+    echo 1
+    echo ~~~
+    exit
+fi
+
 nohup ${scriptsdir}/run-bro "$@" >stdout.log 2>stderr.log &
 
 while [ ! -s .pid ]; do
