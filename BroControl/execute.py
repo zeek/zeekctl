@@ -20,7 +20,7 @@ except ImportError:
 
 LocalAddrs = None
 
-# Wrapper around subprocess.POpen()
+# Wrapper around subprocess.Popen()
 def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
 
     if donotcaptureoutput:
@@ -33,15 +33,9 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
     if stderr_to_stdout:
         stderr = subprocess.STDOUT
 
-    # os.setid makes sure that the child process doesn't receive our CTRL-Cs.
+    # os.setsid makes sure that the child process doesn't receive our CTRL-Cs.
     proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                             close_fds=True, shell=True, preexec_fn=os.setsid)
-    # Compatibility with older popen4.
-    proc.tochild = proc.stdin
-    if proc.stdout != None:
-        proc.fromchild = proc.stdout
-    else:
-        proc.fromchild = []
 
     return proc
 
@@ -86,7 +80,7 @@ def mkdirs(dirs):
 
         else:
             cmds += [(node, [], [])]
-                # Need to be careful here as our helper scripts may not be installed yet.
+            # Need to be careful here as our helper scripts may not be installed yet.
             fullcmds += [("test -d %s || mkdir -p %s 2>/dev/null; echo $?; echo ~~~" % (dir, dir))]
 
     for (node, success, output) in runHelperParallel(cmds, fullcmds=fullcmds):
@@ -106,7 +100,7 @@ def rmdirs(dirs):
     for (node, dir) in dirs:
         # We remove local directories directly.
         if isLocal(node):
-            (success, output) = captureCmd("rm -rf %s" % dir)
+            (success, output) = runLocalCmd("rm -rf %s" % dir)
             results += [(node, success)]
         else:
             cmds += [(node, "rmdir", [dir])]
@@ -213,35 +207,10 @@ def isAlive(host):
 
     return success
 
-# Runs command locally and returns tuple (success, output)
-# with success being true if the command terminated with exit code 0,
-# and output being the combinded stdout/stderr output of the command.
-def captureCmd(cmd, env = "", input = None):
-
-    cmdline = env + " " + cmd
-    util.debug(1, cmdline, prefix="local")
-
-    proc = popen(cmdline, stderr_to_stdout=True)
-
-    if input:
-        print >>proc.tochild, input
-        proc.tochild.close()
-
-    rc = proc.wait()
-    output = [line.strip() for line in proc.fromchild]
-
-    util.debug(1, rc, prefix="local")
-
-    for line in output:
-        util.debug(2, "           > %s" % line, prefix="local")
-
-    return (rc == 0, output)
-
-## FIXME: Replace "captureCmd" with "runLocalCmd".
 
 # Runs command locally and returns tuple (success, output)
 # with success being true if the command terminated with exit code 0,
-# and output being the combinded stdout/stderr output of the command.
+# and output being the combined stdout/stderr output of the command.
 def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
     proc = _runLocalCmdInit("single", cmd, env, donotcaptureoutput)
     return _runLocalCmdWait(proc, input)
@@ -310,7 +279,7 @@ def executeCmdsParallel(cmds):
 # If fullcmd is given, this is the exact & complete command line (incl. paths).
 # Otherwise, cmd is just the helper's name (wo/ path) and args are the
 # arguments. Env is an optional enviroment variable of the form
-# "key=val". Return value as for captureCmd().
+# "key=val". Return value as for runLocalCmd().
 # 'output' is None (vs. []) if we couldn't connect to host.
 def runHelper(host, cmd=None, args=None, fullcmd=None, env = ""):
     util.disableSignals()
@@ -394,7 +363,7 @@ def _getConnection(host):
 
     global WhoAmI
     if not WhoAmI:
-        (success, output) = captureCmd("whoami")
+        (success, output) = runLocalCmd("whoami")
         if not success:
             util.error("can't get 'whoami'")
         WhoAmI = output[0]

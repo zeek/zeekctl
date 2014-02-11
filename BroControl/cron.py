@@ -244,12 +244,12 @@ def _updateHTTPStats():
     print >>meta, "version", config.Config.version
 
     try:
-        print >>meta, "os", execute.captureCmd("uname -a")[1][0]
+        print >>meta, "os", execute.runLocalCmd("uname -a")[1][0]
     except IndexError:
         print >>meta, "os <error>"
 
     try:
-        print >>meta, "host", execute.captureCmd("hostname")[1][0]
+        print >>meta, "host", execute.runLocalCmd("hostname")[1][0]
     except IndexError:
         print >>meta, "host <error>"
 

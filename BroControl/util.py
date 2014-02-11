@@ -84,7 +84,7 @@ def sendMail(subject, body):
         return
 
     cmd = "%s '%s'" % (os.path.join(config.Config.scriptsdir, "send-mail"), subject)
-    (success, output) = execute.captureCmd(cmd, "", body)
+    (success, output) = execute.runLocalCmd(cmd, "", body)
     if not success:
         warn("cannot send mail")
 

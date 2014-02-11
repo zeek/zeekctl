@@ -50,7 +50,7 @@ class Configuration:
         self._setOption("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
-        (success, output) = execute.captureCmd("uname")
+        (success, output) = execute.runLocalCmd("uname")
         if not success:
             util.error("cannot run uname")
         self._setOption("os", output[0].lower().strip())
@@ -63,7 +63,7 @@ class Configuration:
             self._setOption("pin_command", "")
 
         # Find the time command (should be a GNU time for best results).
-        (success, output) = execute.captureCmd("which time")
+        (success, output) = execute.runLocalCmd("which time")
         if success:
             self._setOption("time", output[0].lower().strip())
         else:
@@ -492,7 +492,7 @@ class Configuration:
         version = None
         bro = self.subst("${bindir}/bro")
         if execute.exists(None, bro):
-            (success, output) = execute.captureCmd("%s -v 2>&1" % bro)
+            (success, output) = execute.runLocalCmd("%s -v 2>&1" % bro)
             if success:
                 version = output[len(output)-1]
 
