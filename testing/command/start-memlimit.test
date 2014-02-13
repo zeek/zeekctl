@@ -1,0 +1,32 @@
+# Test that the start command uses the memlimit broctl option when
+# starting bro.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+stdoutlog=$BROCTL_INSTALL_PREFIX/spool/bro/stdout.log
+
+ret=0
+
+# test using the default value of memlimit
+broctl install
+broctl start
+grep kbytes ${stdoutlog} | grep unlimited || ret=1
+broctl stop
+
+# test using a custom value of memlimit
+echo "memlimit=123456" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+broctl install
+broctl start
+grep kbytes ${stdoutlog} | grep 123456 || ret=1
+broctl stop
+
+exit $ret
+

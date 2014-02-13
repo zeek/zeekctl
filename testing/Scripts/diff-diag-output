@@ -1,11 +1,11 @@
 #! /usr/bin/env bash
 #
 # Remove content from "broctl diag" output that is too system-dependent
-# (currently, this includes the contents of stdout.log, PATH, bro version,
-# and system information).
+# (currently, this includes the contents of stderr.log, stdout.log, PATH,
+# bro version, and system information).
 
 awk '{
-    if ( $0 ~ /^==== stdout.log/ ) {
+    if ( $0 ~ /^==== std(err|out)\.log/ ) {
         print; skip=1
     } else if ( $0 ~ /^====/ ) {
         print; skip=0
