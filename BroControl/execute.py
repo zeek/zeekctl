@@ -389,7 +389,10 @@ def _getConnection(host):
         if not isAlive(host.host):
             return None
 
-        cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
+        # ServerAliveInterval and ServerAliveCountMax prevents broctl from
+        # hanging if a remote host is disconnected from network while an ssh
+        # session is open.
+        cmdline = "ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
 
     util.debug(1, cmdline, prefix="local")
 
