@@ -134,6 +134,7 @@ class BroCtlCmdLoop(cmd.Cmd):
             util.unlock()
             self._locked = False
 
+        execute.clearDeadHostConnections()
         util.debug(1, "done", prefix="command")
         return stop
 

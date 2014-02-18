@@ -194,8 +194,6 @@ _deadHosts = {}
 def isAlive(host):
 
     if host in _deadHosts:
-        if config.Config.cron == "0":
-            util.warn("skipping host %s (is not alive)" % host)
         return False
 
     (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + util.scopeAddr(host))
@@ -350,6 +348,20 @@ def runHelperParallel(cmds, fullcmds = None, envs = None):
 Connections = {}
 WhoAmI = None
 
+
+# Remove connections that are closed, and clear the list of dead hosts.
+def clearDeadHostConnections():
+    global Connections
+    global _deadHosts
+
+    to_remove = [ nn for nn in Connections if Connections[nn].poll() != None ]
+
+    for nn in to_remove:
+        del Connections[nn]
+
+    _deadHosts = {}
+
+
 # FIXME: This is an ugly hack. The __del__ method produces
 # strange unhandled exceptions in the child at termination
 # of the main process. Not sure if disabling the cleanup
@@ -376,8 +388,9 @@ def _getConnection(host):
         if p.poll() != None:
             # Terminated.
             global _deadHosts
-            _deadHosts[host.host] = True
-            util.warn("connection to %s broke" % host.host)
+            if host.host not in _deadHosts:
+                _deadHosts[host.host] = True
+                util.warn("connection to %s broke" % host.host)
             return None
 
         return (p.stdin, p.stdout)
