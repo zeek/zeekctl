@@ -1,8 +1,29 @@
 #! /usr/bin/env bash
 #
-# Delete logs older than ${log_expire_interval} days.
+# Delete logs older than ${logexpireinterval} days, and remove entries in
+# stats.log older than ${statslogexpireinterval} days.
 
 . `dirname $0`/broctl-config.sh
+
+if [ "${statslogexpireinterval}" -ne "0" ]; then
+    slfile=${statsdir}/stats.log
+    if [ -s $slfile ]; then
+        now=`date +%s`
+
+        # Convert to seconds and subtract this from the current time
+        exptime=$(( now - 86400*statslogexpireinterval ))
+
+        # Determine how many lines to remove from the beginning of stats.log
+        nl=`awk -v expiretime=${exptime} '{ if ( $1 > expiretime ) { print NR-1; exit } }' $slfile`
+
+        if [ -z "${nl}" ]; then
+            > $slfile
+        elif [ ${nl} -gt 0 ]; then
+            sed "1,${nl}d" $slfile > $slfile.new
+            mv $slfile.new $slfile
+        fi
+    fi
+fi
 
 if [ "${logexpireinterval}" -eq "0" ]; then
     exit 0
