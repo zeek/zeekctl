@@ -15,8 +15,8 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
-        pfringid = int(BroControl.config.Config.pfringclusterid)
-        if pfringid == 0:
+        cluster_id = int(BroControl.config.Config.pfringclusterid)
+        if cluster_id == 0:
             return False
 
         pfringtype = BroControl.config.Config.pfringclustertype
@@ -32,23 +32,40 @@ class LBPFRing(BroControl.plugin.Plugin):
             if pfringtype != "6-tuple":
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
+        first_app_instance = int(BroControl.config.Config.pfringdnafirstappinstance)
+
         dd = {}
+        i = 0
         for nn in self.nodes():
             if nn.type != "worker" or nn.lb_method != "pf_ring":
                 continue
 
             if nn.host in dd:
                 if nn.interface not in dd[nn.host]:
-                    dd[nn.host][nn.interface] = pfringid + len(dd[nn.host])
+                    dd[nn.host][nn.interface] = cluster_id + len(dd[nn.host])
             else:
-                dd[nn.host] = { nn.interface : pfringid }
+                dd[nn.host] = { nn.interface : cluster_id }
 
             # Apply environment variables, but do not override values from
             # the node.cfg or broctl.cfg files.
             if pftype:
                 nn.env_vars.setdefault(pftype, "1")
 
-            nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
+            if nn.interface.startswith("dnacluster"):
+                # For the case where a user is running pfdnacluster_master
+                nn.interface = "dnacluster:%d@%d" % (cluster_id, first_app_instance)
+                first_app_instance = first_app_instance + 1
+
+            elif nn.interface.startswith("dna"):
+                # For the case where someone is doing symmetric RSS with DNA.
+                nn.env_vars.setdefault("PCAP_PF_RING_DNA_RSS", "1")
+                nn.interface = "%s@%d" % (nn.interface, i)
+                i = i+1
+            else:
+                nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
+
+            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "%s-%s" % (nn.host, nn.interface))
 
         return True
+
 
