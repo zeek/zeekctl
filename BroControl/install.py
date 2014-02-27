@@ -199,7 +199,7 @@ def makeLayout(path, silent=False):
         return port
 
     global port
-    port = int(config.Config.port) - 1
+    port = int(config.Config.broport) - 1
     manager = config.Config.manager()
 
     if not manager:

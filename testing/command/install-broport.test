@@ -1,0 +1,23 @@
+# Test that the install command can install a custom value of the broport
+# broctl option.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+ret=0
+broctl install
+
+# Verify that the test port number is not installed by default
+grep -q 41234 $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.bro && ret=1
+
+# Change the configuration to use a test port number
+echo "broport=41234" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+broctl install
+
+# Verify that the test port number was installed
+grep -q 41234 $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.bro || ret=1
+
+exit $ret
+
