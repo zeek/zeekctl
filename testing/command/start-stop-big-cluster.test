@@ -1,0 +1,32 @@
+# Test that the start and stop commands can handle a big cluster (i.e.,
+# a cluster with a large number of nodes).
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff start.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff stop.out
+# @TEST-EXEC: btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__big_cluster
+bin/bro__test
+EOF
+
+broctl install
+
+broctl start 2> start.out
+
+# verify that all nodes are started
+broctl status 2> status1.out
+
+broctl stop 2> stop.out
+
+# verify that all nodes are stopped
+broctl status 2> status2.out
+
+# broctl status returns non-zero when not all nodes are running
+exit 0
+

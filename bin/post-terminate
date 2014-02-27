@@ -2,18 +2,23 @@
 #
 # Cleans-up after termination.
 #
-# post-terminate <dir> [crash]
+# post-terminate <dir> [<crashflag>]
 #
-# If $2 is "crash", then the scripts assumes that Bro crashed and will return
-# information about the crash on stdout which is suitable for mailing to the user.
+# If <crashflag> is "crash", then the scripts assumes that Bro crashed and
+# will return information about the crash on stdout which is suitable for
+# mailing to the user.  If <crashflag> is "killed", then Bro was terminated
+# forcefully (but intentionally) by SIGKILL.
 
 . `dirname $0`/broctl-config.sh
 
 dir=$1
 
 crash=0
-if [ "$2" == "crash" ]; then
+killed=0
+if [ "$2" = "crash" ]; then
    crash=1
+elif [ "$2" = "killed" ]; then
+   killed=1
 fi
 
 if [ ! -d $dir ]; then
@@ -28,7 +33,6 @@ if [ "$crash" = "1" ]; then
    cd $1
    ${scriptsdir}/crash-diag $dir
    tmp=$tmp-crash
-   archive_flags="-c" # Don't delete log files in work dir.
 fi
 
 if [ ! -d ${tmpdir} ]; then
@@ -83,7 +87,8 @@ fi
     done
 
     # Check if any log files remain (this could happen if the archival
-    # failed, or if archive-log terminated before a log was archived).
+    # failed, or if archive-log terminated before a log was archived) before
+    # removing the work dir.
     if [ -z "$(find . -maxdepth 1 -name '*.*-*.log' -type f -print)" ]; then
         rm -rf $tmp
     fi
@@ -92,21 +97,22 @@ fi
 
   for i in *.log; do
 
-    if [ "$crash" = "1" ]; then
-        # In the event of a crash, manually run log postprocessors on all
-        # remaining logs (including stderr.log and stdout.log).
+    if [ "$crash" = "1" -o "$killed" = "1" ]; then
+        # In the event of a crash, or if Bro was killed, manually run log
+        # postprocessors on all remaining logs (including stderr.log and
+        # stdout.log).
         basename=`echo $i | sed 's/\.log$//g'`
         strt=`cat .startup | tail -1`
         if [ -e .rotated.$basename ]; then
             strt=`cat .rotated.$basename`
         fi
         end=`date +%y-%m-%d_%H.%M.%S`
-        ${scriptsdir}/archive-log $archive_flags "$i" "$basename" "$strt" "$end" 1 ascii >/dev/null &
+
+        # The "-c" option tells archive-log to not delete logs in work dir.
+        ${scriptsdir}/archive-log -c "$i" "$basename" "$strt" "$end" 1 ascii >/dev/null &
     fi
 
     ${scriptsdir}/remove-link-for-log $i
 
   done && wait && waitforarchivelog ) &
-
-
 

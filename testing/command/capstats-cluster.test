@@ -2,7 +2,7 @@
 # pairs in a cluster, or on just the specified node, and also over a
 # specified time interval.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 # @TEST-EXEC: btest-diff interval.out

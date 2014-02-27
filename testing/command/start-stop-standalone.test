@@ -1,7 +1,7 @@
-# Test that the start and stop commands can start and stop a standalone bro
-# and creates or removes certain files.
+# Test that the start command can start a standalone bro and create certain
+# files, and test that the stop command can stop bro and remove those files.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
 # @TEST-EXEC: btest-diff stop.out
 
@@ -13,16 +13,15 @@ bin/bro__test
 EOF
 
 ret=0
-
 broctl install
 
+# verify that these files don't already exist before the start command runs
 test ! -e $BROCTL_INSTALL_PREFIX/spool/bro       || ret=1
 test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
 
-# test the start command
 broctl start 2> start.out
 
-# test that broctl created certain files (these are NOT created by bro itself)
+# the start command creates some files (these are NOT created by bro itself)
 while read line; do
     test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
 done << EOF
@@ -34,10 +33,10 @@ spool/bro/stderr.log
 spool/bro/stdout.log
 EOF
 
+# verify that starting the node was logged in stats.log
 grep started $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
 
 
-# test the stop command
 broctl stop 2> stop.out
 
 # the stop command should cleanup the node directory
@@ -52,6 +51,7 @@ spool/bro/stderr.log
 spool/bro/stdout.log
 EOF
 
+# verify that stopping the node was logged in stats.log
 grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
 
 exit $ret

@@ -17,7 +17,7 @@ class LBPFRing(BroControl.plugin.Plugin):
     def init(self):
         pfringid = int(BroControl.config.Config.pfringclusterid)
         if pfringid == 0:
-            return True
+            return False
 
         pfringtype = BroControl.config.Config.pfringclustertype
         if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",

@@ -1,0 +1,45 @@
+# Test that the stop command can stop a Bro that does not terminate within
+# "stoptimeout" seconds, and that remaining log files are archived.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff stop.out
+# @TEST-EXEC: btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+echo "stoptimeout=10" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+slowstop=bro
+EOF
+
+ret=0
+broctl install
+broctl start
+
+# verify that bro is running
+broctl status 2> status1.out
+
+# verify that a log file exists
+test -f $BROCTL_INSTALL_PREFIX/spool/bro/loaded_scripts.log || ret=1
+
+broctl stop 2> stop.out
+
+# verify that bro is stopped
+broctl status 2> status2.out
+
+# verify that the log file was archived
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/loaded_scripts.log || ret=1
+# wait for archive-log to finish in the background
+sleep 5
+find $BROCTL_INSTALL_PREFIX/logs/2* -type f > find.out
+grep -q loaded_scripts find.out || ret=1
+
+exit $ret
+

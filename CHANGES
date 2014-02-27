@@ -1,4 +1,86 @@
 
+1.2-66 | 2014-02-06 20:29:20 -0800
+
+  * Make sure logs are archived after broctl kills Bro. Addresses
+    BIT-1126. (Daniel Thayer)
+
+1.2-63 | 2014-02-04 09:10:39 -0800
+
+  * Fix a few sporadic test failures. (Daniel Thayer)
+
+1.2-61 | 2014-01-31 11:11:39 -0800
+
+  * Fix error handling for process command. (Daniel Thayer)
+
+  * Update and improve the tests of broctl process. (Daniel Thayer)
+    
+  * Improve broctl help message for the process command. (Daniel
+    Thayer)
+
+  * Reorder the broctl process command Bro arguments. Addresses
+    BIT-1124. (Daniel Thayer)
+
+1.2-56 | 2014-01-28 15:54:14 -0800
+
+  * A large set of improvements to the test build scripts to address
+    error scenarios, fix failures to report problems, and provide
+    convenience features.  (Daniel Thayer)
+
+    Includes:
+
+        - New Makefile target "rerun" to more easily re-run failed
+          tests.
+
+        - Two new environment variables recognized by test scripts:
+          
+            * If Bro fails to build, you can define an environment
+              variable BROCTL_TEST_BUILDARGS which specifies
+              additional options that will be passed to Bro's
+              "configure" script.
+
+            * Defining BROCTL_TEST_USEBUILD will use the Bro default
+              build directory (instead of a custom build directory for
+              the broctl tests).
+
+  * Add lots of new tests. (Daniel Thayer)
+
+1.2-28 | 2014-01-22 10:47:49 -0800
+
+  * Fix bug with timemachineport broctl option. (Daniel Thayer)
+    
+  * Improved formatting of cluster-layout.bro for readability. (Daniel
+    Thayer)
+
+1.2-26 | 2014-01-21 07:12:38 -0800
+
+  * Update the docs. (Daniel Thayer)
+
+1.2-23 | 2014-01-20 12:22:42 -0800
+
+  * Move some output about slow nodes to debug.log. (Daniel Thayer)
+    
+  * Improve broctl output formatting. (Daniel Thayer)
+    
+  * Fix redundant emails from broctl cron when dead host found.
+    (Daniel Thayer)
+
+  * Fix broctl top on OS X Mavericks. (Daniel Thayer)
+    
+  * Fix plugin init return values. This also fixes the myricom plugin,
+    which wasn't explicitly returning a value from its init method and
+    therefore was being disabled as a result. (Daniel Thayer)
+
+  * Enable dead hosts caching while in cron mode. (Justin Azoff)
+    
+  * Use getattr for looking up plugin methods for simplifying the
+    plugin code. (Justin Azoff)
+
+  * Remove redundant plugin initialization. (Justin Azoff)
+    
+1.2-12 | 2014-01-20 11:23:23 -0800
+
+  * Fix bug with IPv6Comm broctl option, which had no effect. (Daniel Thayer)
+
 1.2-10 | 2014-01-13 01:57:53 -0800
 
   * Add a new option "PFRINGClusterType" that allows a user to specify

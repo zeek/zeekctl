@@ -1,0 +1,48 @@
+# Test that the cron command restarts a crashed node and sends a crash report,
+# unless the "--no-watch" option is specified.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+etc/node.cfg__cluster
+bin/bro__test
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+ret=0
+broctl install
+broctl start
+
+# make sure cron can restart the crashed node
+rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
+
+# test with the "--no-watch" option
+broctl cron --no-watch
+
+broctl status 2> status1.out
+
+rm $BROCTL_INSTALL_PREFIX/sendmail.out
+
+# test without the "--no-watch" option
+broctl cron
+
+# verify that a crash report was sent
+grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
+broctl status 2> status2.out
+
+broctl stop
+
+exit $ret
+

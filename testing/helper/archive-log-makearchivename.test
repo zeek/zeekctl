@@ -1,0 +1,52 @@
+# Test that the archive-log script archives and compresses a specified log
+# file using an alternative make-archive-name script when the makearchivename
+# broctl option is specified.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+EOF
+
+makearchname=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/make-archive-name
+testarchname=$BROCTL_INSTALL_PREFIX/test-arch-name
+archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
+logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
+testlog=${logdir}/broctltest.22_24_20-22_30_00.log.gz
+origtestlog=broctltest.2013-12-30-22-24-20.log
+
+echo "makearchivename=${testarchname}" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+# Create the new script (behaves differently than original script)
+sed "s/%s:%s:%s/%s_%s_%s/" ${makearchname} > ${testarchname}
+chmod 755 ${testarchname}
+
+ret=0
+broctl install
+
+# Create Bro's working directory, chdir to that dir, and create a rotated log
+mkdir $BROCTL_INSTALL_PREFIX/spool/bro
+cd $BROCTL_INSTALL_PREFIX/spool/bro
+cat > ${origtestlog} << _EOF_
+# This is a test broctltest.log
+_EOF_
+
+###############################################
+# Test archive-log with an alternate make-archive-name
+
+# verify that broctltest.log was not archived yet
+test -f ${testlog} && ret=1
+
+${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that broctltest.log was archived
+test -f ${origtestlog} && ret=1
+test ! -f ${testlog} && ret=1
+
+# verify that broctltest.log was compressed
+grep -q "This is a test" ${testlog} && ret=1
+
+exit $ret
+

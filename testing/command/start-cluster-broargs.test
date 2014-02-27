@@ -1,0 +1,24 @@
+# Test that the start command starts a cluster and passes additional
+# arguments to Bro as specified in the broargs broctl option.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__debug
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+echo "broargs=mytest myscript" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+broctl install
+broctl start
+
+# extract the relevant lines from debug.log
+grep CLUSTER_NODE $BROCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+
+broctl stop
+

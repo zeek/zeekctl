@@ -1,0 +1,57 @@
+1387075318.44 manager action started
+1387075320.49 proxy-1 action started
+1387075322.54 worker-1 action started
+1387075322.54 worker-2 action started
+1387075328.26 manager parent vsize 30384128
+1387075328.26 manager parent cmd python
+1387075328.26 manager parent pid 13551
+1387075328.26 manager parent cpu 0
+1387075328.26 manager parent rss 5668864
+1387075328.26 proxy-1 parent vsize 30384128
+1387075328.26 proxy-1 parent cmd python
+1387075328.26 proxy-1 parent pid 13575
+1387075328.26 proxy-1 parent cpu 0
+1387075328.26 proxy-1 parent rss 5672960
+1387075328.26 worker-1 parent vsize 30384128
+1387075328.26 worker-1 parent cmd python
+1387075328.26 worker-1 parent pid 13613
+1387075328.26 worker-1 parent cpu 0
+1387075328.26 worker-1 parent rss 5668864
+1387075328.26 worker-2 parent vsize 30384128
+1387075328.26 worker-2 parent cmd python
+1387075328.26 worker-2 parent pid 13614
+1387075328.26 worker-2 parent cpu 0
+1387075328.26 worker-2 parent rss 5672960
+1387075328.26 worker-1 interface nic_drops 0.0
+1387075328.26 worker-1 interface o 0.0
+1387075328.26 worker-1 interface i 0.0
+1387075328.26 worker-1 interface mbps 250.4
+1387075328.26 worker-1 interface nonip 18.0
+1387075328.26 worker-1 interface kbytes 306810.0
+1387075328.26 worker-1 interface u 28.0
+1387075328.26 worker-1 interface t 71628.0
+1387075328.26 worker-1 interface pkts 71674.0
+1387075328.26 worker-1 interface nic_pkts 71703.0
+1387075328.26 worker-1 interface kpps 7.1
+1387075328.26 worker-2 interface nic_drops 0.0
+1387075328.26 worker-2 interface o 0.0
+1387075328.26 worker-2 interface i 0.0
+1387075328.26 worker-2 interface mbps 82.5
+1387075328.26 worker-2 interface nonip 35.0
+1387075328.26 worker-2 interface kbytes 101090.0
+1387075328.26 worker-2 interface u 26.0
+1387075328.26 worker-2 interface t 29749.0
+1387075328.26 worker-2 interface pkts 29810.0
+1387075328.26 worker-2 interface nic_pkts 29812.0
+1387075328.26 worker-2 interface kpps 3.0
+1387075328.26 $total interface nic_drops 0.0
+1387075328.26 $total interface o 0.0
+1387075328.26 $total interface i 0.0
+1387075328.26 $total interface mbps 332.9
+1387075328.26 $total interface nonip 53.0
+1387075328.26 $total interface kbytes 407900.0
+1387075328.26 $total interface u 54.0
+1387075328.26 $total interface t 101377.0
+1387075328.26 $total interface pkts 101484.0
+1387075328.26 $total interface nic_pkts 101515.0
+1387075328.26 $total interface kpps 10.1

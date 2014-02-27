@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+#
+# Output first column of cron's meta.dat file.
+
+awk '{ print $1 }'
+

@@ -1,0 +1,4 @@
+# Specify directories containing test plugins, and a couple other
+# directories that don't.
+SitePluginPath=@PREFIX@/doesnotexist:@PREFIX@/testplugins:@PREFIX@/emptydir:@PREFIX@/moreplugins
+debug=1

@@ -1,10 +1,11 @@
-# Test that the status command can get status of all nodes, or just a 
-# specified node.
+# Test that the status command can get status of all nodes, or just a
+# specified node.  Also test that the exit status is zero if all nodes
+# are running, and nonzero otherwise.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff onenode.out
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out
 # @TEST-EXEC: btest-diff stopped.out
 
 . broctl-test-setup
@@ -14,20 +15,28 @@ etc/broctl.cfg__no_email
 etc/node.cfg__cluster_no_netifs
 EOF
 
+ret=0
 broctl install
 broctl start
 
 # get status of all nodes
 broctl status 2> all.out
+test $? -eq 0 || ret=1
 
 # get status of one node
 broctl status manager 2> onenode.out
+
+broctl stop worker-1
+
+# not all nodes are running
+broctl status
+test $? -ne 0 || ret=1
 
 broctl stop
 
 # all nodes are stopped
 broctl status 2> stopped.out
+test $? -ne 0 || ret=1
 
-# status returns non-zero when not all nodes are running
-test $? -eq 1
+exit $ret
 

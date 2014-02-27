@@ -260,11 +260,11 @@ def makeLayout(path, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, util.formatBroAddr(w.addr), w.zone_id, nextPort(w), w.interface, manager.name, proxies[p].name),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, util.formatBroAddr(w.addr), w.zone_id, nextPort(w), w.interface, manager.name, proxies[p].name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
-            print >>out, "[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s/tcp]," % (config.Config.timemachinehost, config.Config.timemachineport),
+            print >>out, "\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s]," % (config.Config.timemachinehost, config.Config.timemachineport)
 
         print >>out, "};"
 
@@ -353,7 +353,7 @@ def makeConfig(path, silent=False):
     print >>out, "redef Log::default_mail_alarms_interval = %s secs;" % config.Config.mailalarmsinterval
     if manager.type != "standalone":
         print >>out, "@endif"
-    if config.Config.ipv6comm:
+    if config.Config.ipv6comm == "1":
         print >>out, "redef Communication::listen_ipv6 = T ;"
     else:
         print >>out, "redef Communication::listen_ipv6 = F ;"

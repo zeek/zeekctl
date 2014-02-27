@@ -1,0 +1,43 @@
+# Test that the "install --local" command creates necessary directories and
+# files.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+EOF
+
+ret=0
+
+while read line; do
+    test ! -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+logs/current
+spool/broctl-config.sh
+spool/broctl.dat
+spool/installed-scripts-do-not-touch/site/local.bro
+spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+spool/installed-scripts-do-not-touch/auto/local-networks.bro
+spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+EOF
+
+broctl install --local 2> out
+
+test -h $BROCTL_INSTALL_PREFIX/logs/current || ret=1
+
+while read line; do
+    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+spool/broctl-config.sh
+spool/broctl.dat
+spool/installed-scripts-do-not-touch/site/local.bro
+spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+spool/installed-scripts-do-not-touch/auto/local-networks.bro
+spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+EOF
+
+exit $ret
+

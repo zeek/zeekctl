@@ -1,0 +1,18 @@
+# Cluster myricom configuration with override of an env. var. set
+# by the broctl myricom plugin, and an additional env. var. specified.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+lb_procs=2
+lb_method=myricom
+env_vars=SNF_FLAGS=0x2,VAR=123

@@ -2,9 +2,9 @@
 # a specified node.
 #
 # @TEST-SERIALIZE: broccoli
-# @TEST-EXEC: bash -x %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | $SCRIPTS/diff-remove-integer-values | $SCRIPTS/diff-remove-localhost-values | sort" btest-diff all.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps | $SCRIPTS/diff-remove-integer-values | $SCRIPTS/diff-remove-localhost-values | sort" btest-diff onenode.out
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-peerstatus-output btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-peerstatus-output btest-diff onenode.out
 
 . broctl-test-setup
 

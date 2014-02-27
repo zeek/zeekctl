@@ -1,0 +1,31 @@
+# Test that the install command creates a broctl-config.bro policy file
+# containing the values of certain broctl options.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff broctl-config.bro
+
+. broctl-test-setup
+
+broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+
+# Specify non-default values for options that are written to broctl-config.bro
+echo "MailTo=broctltest@somedomain" >> ${broctlcfg}
+echo "MailAlarmsTo=broctltest2@somedomain2" >> ${broctlcfg}
+echo "SendMail=/path/to/sendmail" >> ${broctlcfg}
+echo "MailSubjectPrefix=This is Subject" >> ${broctlcfg}
+echo "MailFrom=broctltestuser@mydomain" >> ${broctlcfg}
+echo "LogRotationInterval=12345" >> ${broctlcfg}
+echo "MailAlarmsInterval=98765" >> ${broctlcfg}
+echo "IPv6Comm=0" >> ${broctlcfg}
+
+ret=0
+
+test ! -e ${broctlconfig} || ret=1
+
+broctl install
+
+cp ${broctlconfig} broctl-config.bro
+
+exit $ret
+

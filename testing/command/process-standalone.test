@@ -1,7 +1,7 @@
 # Test that the process command can run bro on the specified trace file,
 # with or without extra Bro options or Bro scripts.
 #
-# @TEST-EXEC: bash -x %INPUT
+# @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
 
 . broctl-test-setup
@@ -23,15 +23,24 @@ test -d $BROCTL_INSTALL_PREFIX/spool/tmp/testing || ret=1
 # run with extra bro options (but no extra bro scripts)
 broctl process $TRACES/dns-session.trace -p test
 
-# verify that specified bro options were handled correctly
+# verify that specified bro options are at the start of the Bro command-line
 grep "^-p test " $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline || ret=1
 
 #####################
-# run with extra bro scripts
+# run with extra bro scripts (but no bro options)
 broctl process $TRACES/dns-session.trace -- test123.bro test456.bro
 
-# verify that specified bro scripts were handled correctly
-grep " test123.bro test456.bro " $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline || ret=1
+# verify that specified bro scripts are at the end of the Bro command-line
+grep "test123.bro test456.bro$" $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline || ret=1
+
+#####################
+# run with extra bro options and scripts
+broctl process $TRACES/dns-session.trace -p opt2 -- script2.bro
+
+# verify that specified bro options are at the start of the Bro command-line
+grep "^-p opt2 " $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline || ret=1
+# verify that specified bro scripts are at the end of the Bro command-line
+grep "script2.bro$" $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline || ret=1
 
 exit $ret
 

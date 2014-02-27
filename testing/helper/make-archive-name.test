@@ -1,0 +1,18 @@
+# Test that the make-archive-name script produces the expected output.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out1
+# @TEST-EXEC: btest-diff out2
+# @TEST-EXEC: btest-diff out3
+
+. broctl-test-setup
+
+makearchivename=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/make-archive-name
+
+# Test with all arguments specified
+${makearchivename} conn.log ascii 2013-12-30-23-39-31 2013-12-30-23-40-00 > out1
+${makearchivename} broctltest.extension ascii 2013-01-02-00-03-05 2013-01-02-00-09-00 > out2
+
+# Test without the last optional argument
+${makearchivename} test.log ascii 2013-01-02-00-03-05 > out3
+
