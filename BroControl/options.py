@@ -69,6 +69,8 @@ options = [
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
+    Option("StatsLogExpireInterval", "0", "int", Option.USER, False,
+           "Number of days entries in the stats.log file are kept (zero means never expire)."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,
            "Number of days log files are kept (zero means log files never expire)."),
     Option("KeepLogs", "", "string", Option.USER, False,
