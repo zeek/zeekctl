@@ -15,6 +15,10 @@ def doCron(watch):
     if config.Config.cronenabled == "0":
         return
 
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')") 
+        return
+
     config.Config.config["cron"] = "1"  # Flag to indicate that we're running from cron.
 
     if not util.lock():
