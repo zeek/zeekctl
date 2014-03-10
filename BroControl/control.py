@@ -686,15 +686,23 @@ def _doCheckConfig(nodes, installed, list_scripts):
 
     all = [(node, os.path.join(config.Config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')")
+        # Return a failure for one node to indicate that the command failed
+        results += [(all[0][0], False)]
+        return results
+
     nodes = []
     for (node, cwd) in all:
         if os.path.isdir(cwd):
             if not execute.rmdir(config.Config.manager(), cwd):
                 util.output("cannot remove directory %s on manager" % cwd)
+                results += [(node, False)]
                 continue
 
         if not execute.mkdir(config.Config.manager(), cwd):
             util.output("cannot create directory %s on manager" % cwd)
+            results += [(node, False)]
             continue
 
         nodes += [(node, cwd)]

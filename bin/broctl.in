@@ -492,11 +492,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         Verifies a modified configuration in terms of syntactical correctness
         (most importantly correct syntax in policy scripts). This command
         should be executed for each configuration change *before*
-        install_ is used to put the change into place. Note
-        that ``check`` is the only command which operates correctly without a
-        former install_ command; ``check`` uses the policy
-        files as found in SitePolicyPath_ to make
-        sure they compile correctly. If they do, install_
+        install_ is used to put the change into place.
+        The ``check`` command uses the policy files as found in SitePolicyPath_
+        to make sure they compile correctly. If they do, install_
         will then copy them over to an internal place from where the nodes
         will read them at the next start_. This approach
         ensures that new errors in a policy script will not affect currently
