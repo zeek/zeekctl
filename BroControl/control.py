@@ -1087,16 +1087,21 @@ def getDf(nodes):
 
         for (node, success, output) in results:
             if success:
-                if len(output) > 0:
+                if output:
                     fields = output[0].split()
 
                     # Ignore NFS mounted volumes.
                     if fields[0].find(":") < 0:
                         df[node.name][fields[0]] = fields
                 else:
-                    util.warn("Invalid df output for node '%s'." % node)
+                    util.output("error checking disk space on node '%s': no df output" % node)
                     hadError = True
             else:
+                if output:
+                    msg = output[0]
+                else:
+                    msg = "unknown failure"
+                util.output("error checking disk space on node '%s': %s" % (node, msg))
                 hadError = True
 
     result = {}
