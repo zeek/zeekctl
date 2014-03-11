@@ -32,6 +32,8 @@ options = [
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", "10", "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
+    Option("BroPort", "47760", "int", Option.USER, False,
+           "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Bro script variable Log::default_rotation_interval."),
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
@@ -67,6 +69,8 @@ options = [
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
+    Option("StatsLogExpireInterval", "0", "int", Option.USER, False,
+           "Number of days entries in the stats.log file are kept (zero means never expire)."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,
            "Number of days log files are kept (zero means log files never expire)."),
     Option("KeepLogs", "", "string", Option.USER, False,

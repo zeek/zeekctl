@@ -171,8 +171,9 @@ def _checkDiskSpace():
 def _expireLogs():
 
     i = int(config.Config.logexpireinterval)
+    i2 = int(config.Config.statslogexpireinterval)
 
-    if not i:
+    if i == 0 and i2 == 0:
         return
 
     (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "expire-logs"))

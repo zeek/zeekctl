@@ -1,4 +1,13 @@
 
+1.2-73 | 2014-02-28 14:44:51 -0800
+
+  * Added ability of broctl cron to expire entries in stats.log that
+    are older than the number of days specified in the new broctl
+    option StatsLogExpireInterval. Addresses BIT-123. (Daniel Thayer)
+
+  * Add broctl option BroPort to change the starting Bro port.
+    Addresses BIT-1117. (Daniel Thayer)
+
 1.2-66 | 2014-02-06 20:29:20 -0800
 
   * Make sure logs are archived after broctl kills Bro. Addresses

@@ -1,0 +1,45 @@
+# Test that the broctl cron command does not expire entries in the stats.log
+# file by default.  Also test that broctl cron expires entries in the stats.log
+# file when the statslogexpireinterval option is set to a non-zero value.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+EOF
+
+ret=0
+testlogdir=$BROCTL_INSTALL_PREFIX/logs/stats
+teststatslog=$testlogdir/stats.log
+broctl install
+
+# Create a stats.log file with an old entry and a recent entry
+now=`date +%s`
+yesterday=$(( now - 86400 ))
+mkdir -p ${testlogdir}
+echo "${yesterday}.00 bro action old" >> ${teststatslog}
+echo "${now}.00 bro action new" >> ${teststatslog}
+
+# Verify that stats.log expire is off by default
+broctl config | sed 's/ //g' | grep -q statslogexpireinterval=0
+test $? -ne 0 && exit 1
+
+broctl cron
+
+# Verify that broctl cron did not remove any log entries
+grep -q "action old" ${teststatslog} || ret=1
+
+# Update the configuration by changing the "statslogexpireinterval" option
+echo "statslogexpireinterval=1" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctl install
+
+broctl cron
+
+# Verify that broctl cron removed the old log entry (and not the recent one)
+grep -q "action old" ${teststatslog} && ret=1
+grep -q "action new" ${teststatslog} || ret=1
+
+exit $ret
+
