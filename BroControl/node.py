@@ -122,7 +122,9 @@ class Node:
     # Stores the nodes process ID.
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
-        config.Config._setState("%s-pid" % self.name, str(pid))
+        key = "%s-pid" % self.name
+        config.Config._setState(key, str(pid))
+        config.Config.appendStateVal(key)
 
     @doc.api
     def getPID(self):
@@ -140,17 +142,23 @@ class Node:
     def clearPID(self):
         """Clears the stored process ID for the node's Bro process, indicating
         that it is no longer running."""
-        config.Config._setState("%s-pid" % self.name, "")
+        key = "%s-pid" % self.name
+        config.Config._setState(key, "")
+        config.Config.appendStateVal(key)
 
     def setCrashed(self):
         """Marks node's Bro process as having terminated unexpectedly."""
-        config.Config._setState("%s-crashed" % self.name, "1")
+        key = "%s-crashed" % self.name
+        config.Config._setState(key, "1")
+        config.Config.appendStateVal(key)
 
     # Unsets the flag for unexpected termination.
     def clearCrashed(self):
         """Clears the mark for the node's Bro process having terminated
         unexpectedly."""
-        config.Config._setState("%s-crashed" % self.name, "0")
+        key = "%s-crashed" % self.name
+        config.Config._setState(key, "0")
+        config.Config.appendStateVal(key)
 
     # Returns true if node has terminated unexpectedly.
     @doc.api

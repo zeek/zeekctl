@@ -431,7 +431,7 @@ class Configuration:
                     if n.addr != "127.0.0.1" and n.addr != "::1":
                         util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
-    # Parses broctl.cfg and returns a dictionary of all entries.
+    # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
     def _readConfig(self, file, allowstate = False):
         config = {}
         try:
@@ -452,6 +452,7 @@ class Configuration:
                 if not allowstate and ".state." in key:
                     util.error("state variable '%s' not allowed in file: %s" % (key, file))
 
+                # if the key already exists, just overwrite with new value
                 config[key] = val
 
         except IOError, e:
@@ -476,8 +477,9 @@ class Configuration:
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
     def writeState(self):
+        tmpstatefile = self.statefile + ".tmp"
         try:
-            out = open(self.statefile, "w")
+            out = open(tmpstatefile, "w")
         except IOError:
             util.warn("can't write '%s'" % self.statefile)
             return
@@ -486,6 +488,25 @@ class Configuration:
 
         for (key, val) in self.state.items():
             print >>out, "%s = %s" % (key, self.subst(str(val)))
+
+        out.close()
+
+        # update state file in an atomic operation
+        os.rename(tmpstatefile, self.statefile)
+
+    # Append the given dynamic state variable to {$spooldir}/broctl.dat .
+    def appendStateVal(self, key):
+        key = key.lower()
+
+        try:
+            out = open(self.statefile, "a")
+        except IOError:
+            util.warn("can't append to '%s'" % self.statefile)
+            return
+
+        print >>out, "%s = %s" % (key, self.state[key])
+
+        out.close()
 
     # Runs Bro to get its version numbers.
     def determineBroVersion(self):
