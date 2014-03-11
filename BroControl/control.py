@@ -1205,6 +1205,10 @@ def processTrace(trace, bro_options, bro_scripts):
         util.output("Error: trace file not found: %s" % trace)
         return False
 
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')")
+        return False
+
     standalone = (config.Config.standalone == "1")
     if standalone:
         tag = "standalone"
