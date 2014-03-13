@@ -156,7 +156,7 @@ options = [
     Option("TmpDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,
            "Directory for temporary data."),
     Option("TmpExecDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,
-           "Directory where binaries are copied before execution."),
+           "Directory where binaries are copied before execution.  This option is ignored if HaveNFS is 0."),
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
            "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
