@@ -508,20 +508,34 @@ class Configuration:
 
         out.close()
 
-    # Runs Bro to get its version numbers.
+    # Record the Bro version.
     def determineBroVersion(self):
-        version = None
+        version = self._getBroVersion()
+        self.state["broversion"] = version
+        self.state["bro"] = self.subst("${bindir}/bro")
+
+
+    # Check if the Bro version is different from previously-installed version.
+    def checkBroVersion(self):
+        if "broversion" not in self.state:
+            return
+
+        oldversion = self.state["broversion"]
+
+        version = self._getBroVersion()
+        if version != oldversion:
+            util.warn("new bro version detected (run 'broctl install')")
+
+
+    # Runs Bro to get its version numbers.
+    def _getBroVersion(self):
+        version = ""
         bro = self.subst("${bindir}/bro")
         if execute.exists(None, bro):
-            (success, output) = execute.runLocalCmd("%s -v 2>&1" % bro)
-            if success:
-                version = output[len(output)-1]
-
-        if not version:
-            # Ok if it's already set.
-            if "broversion" in self.state:
-                return
-
+            (success, output) = execute.runLocalCmd("%s -v" % bro)
+            if success and output:
+                version = output[-1]
+        else:
             util.error("cannot find Bro binary to determine version")
 
         m = re.search(".* version ([^ ]*).*$", version)
@@ -529,9 +543,10 @@ class Configuration:
             util.error("cannot determine Bro version [%s]" % version.strip())
 
         version = m.group(1)
+        # If bro is built with the "--enable-debug" configure option, then it
+        # appends "-debug" to the version string.
         if version.endswith("-debug"):
             version = version[:-6]
 
-        self.state["broversion"] = version
-        self.state["bro"] = self.subst("${bindir}/bro")
+        return version
 

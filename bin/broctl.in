@@ -83,6 +83,7 @@ class BroCtlCmdLoop(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.exit_code = 0
+        self._locked = False
         self.prompt = "[BroControl] > "
 
     def output(self, text):
@@ -970,6 +971,8 @@ try:
     os.chdir(Config.brobase)
 except:
     pass
+
+config.Config.checkBroVersion()
 
 if len(sys.argv) > 1:
     Interactive = False
