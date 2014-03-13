@@ -495,8 +495,14 @@ def stop(nodes):
 
 # Output status summary for nodes.
 def status(nodes):
-
-    util.output("%-12s %-10s %-13s %-9s %-6s %-6s %s" % ("Name",  "Type", "Host", "Status", "Pid", "Peers", "Started"))
+    typewidth = 7
+    hostwidth = 16
+    if config.Config.standalone == "1":
+        # In standalone mode, the "type" column needs more width
+        typewidth = 10
+        hostwidth = 13
+    
+    util.output("%-12s %-*s %-*s %-9s %-6s %-6s %s" % ("Name",  typewidth, "Type", hostwidth, "Host", "Status", "Pid", "Peers", "Started"))
 
     all = isRunning(nodes)
     running = []
@@ -532,7 +538,7 @@ def status(nodes):
     for (node, isrunning) in all:
 
         util.output("%-12s " % node.name, nl=False)
-        util.output("%-10s %-13s " % (node.type, node.host), nl=False)
+        util.output("%-*s %-*s " % (typewidth, node.type, hostwidth, node.host), nl=False)
 
         if isrunning:
             util.output("%-9s " % statuses[node.name], nl=False)
