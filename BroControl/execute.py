@@ -189,14 +189,14 @@ def sync(nodes, paths):
 # Keep track of hosts that are not alive.
 _deadHosts = {}
 
-# Return true if the given host is alive (i.e., we can ping it and establish
+# Return true if the given host is alive (i.e., we can establish
 # an ssh session), and false otherwise.
 def isAlive(host):
 
     if host in _deadHosts:
         return False
 
-    (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + util.scopeAddr(host))
+    (success, output) = runLocalCmd("ssh -o ConnectTimeout=30 %s true" % util.scopeAddr(host))
 
     if not success:
         _deadHosts[host] = True
