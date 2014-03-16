@@ -32,10 +32,13 @@ class LBPFRing(BroControl.plugin.Plugin):
             if pfringtype != "6-tuple":
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
+        useplugin = False
         dd = {}
         for nn in self.nodes():
             if nn.type != "worker" or nn.lb_method != "pf_ring":
                 continue
+
+            useplugin = True
 
             if nn.host in dd:
                 if nn.interface not in dd[nn.host]:
@@ -50,5 +53,5 @@ class LBPFRing(BroControl.plugin.Plugin):
 
             nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
 
-        return True
+        return useplugin
 

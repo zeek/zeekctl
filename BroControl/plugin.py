@@ -341,8 +341,8 @@ class Plugin(object):
         """Called when BroControl's ``cron`` command finds the availability of
         a cluster system to have changed. Initially, all systems are assumed
         to be up and running. Once BroControl notices that a system isn't
-        responding (defined as either it doesn't ping at all, or does not
-        accept SSH sessions), it calls this method, passing in a string with
+        responding (defined as not accepting SSH sessions), it calls
+        this method, passing in a string with
         the name of the *host* and a boolean *status* set to False. Once the
         host becomes available again, the method will be called again for the
         same host with *status* now set to True.

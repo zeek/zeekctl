@@ -240,7 +240,10 @@ def _startNodes(nodes):
     for (node, isrunning) in isRunning(nodes):
         if not isrunning:
             filtered += [node]
-            util.output("starting %s ..." % node.name)
+            if node.hasCrashed():
+                util.output("starting %s (was crashed) ..." % node.name)
+            else:
+                util.output("starting %s ..." % node.name)
         else:
             util.output("%s still running" % node.name)
 
@@ -279,7 +282,7 @@ def _startNodes(nodes):
             nodes += [node]
             node.setPID(int(output[0]))
         else:
-            util.output("cannot start %s" % node.name)
+            util.output("cannot start %s; check output of \"diag\"" % node.name)
             results += [(node, False)]
 
     # Check whether processes did indeed start up.
@@ -356,8 +359,8 @@ def _stopNodes(nodes):
             results += [(node, True)]
 
             if node.hasCrashed():
-                _makeCrashReports([node])
                 util.output("%s not running (was crashed)" % node.name)
+                _makeCrashReports([node])
             else:
                 util.output("%s not running" % node.name)
 
@@ -492,8 +495,14 @@ def stop(nodes):
 
 # Output status summary for nodes.
 def status(nodes):
-
-    util.output("%-12s %-10s %-13s %-9s %-6s %-6s %s" % ("Name",  "Type", "Host", "Status", "Pid", "Peers", "Started"))
+    typewidth = 7
+    hostwidth = 16
+    if config.Config.standalone == "1":
+        # In standalone mode, the "type" column needs more width
+        typewidth = 10
+        hostwidth = 13
+    
+    util.output("%-12s %-*s %-*s %-9s %-6s %-6s %s" % ("Name",  typewidth, "Type", hostwidth, "Host", "Status", "Pid", "Peers", "Started"))
 
     all = isRunning(nodes)
     running = []
@@ -529,7 +538,7 @@ def status(nodes):
     for (node, isrunning) in all:
 
         util.output("%-12s " % node.name, nl=False)
-        util.output("%-10s %-13s " % (node.type, node.host), nl=False)
+        util.output("%-*s %-*s " % (typewidth, node.type, hostwidth, node.host), nl=False)
 
         if isrunning:
             util.output("%-9s " % statuses[node.name], nl=False)
@@ -683,15 +692,23 @@ def _doCheckConfig(nodes, installed, list_scripts):
 
     all = [(node, os.path.join(config.Config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')")
+        # Return a failure for one node to indicate that the command failed
+        results += [(all[0][0], False)]
+        return results
+
     nodes = []
     for (node, cwd) in all:
         if os.path.isdir(cwd):
             if not execute.rmdir(config.Config.manager(), cwd):
                 util.output("cannot remove directory %s on manager" % cwd)
+                results += [(node, False)]
                 continue
 
         if not execute.mkdir(config.Config.manager(), cwd):
             util.output("cannot create directory %s on manager" % cwd)
+            results += [(node, False)]
             continue
 
         nodes += [(node, cwd)]
@@ -716,12 +733,12 @@ def _doCheckConfig(nodes, installed, list_scripts):
     for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
         results += [(node, success)]
         if success:
-            util.output("%s is ok." % node.name)
+            util.output("%s scripts are ok." % node.name)
             if list_scripts:
                 for line in output:
                     util.output("  %s" % line)
         else:
-            util.output("%s failed." % node.name)
+            util.output("%s scripts failed." % node.name)
             for line in output:
                 util.output("   %s" % line)
 
@@ -1076,16 +1093,21 @@ def getDf(nodes):
 
         for (node, success, output) in results:
             if success:
-                if len(output) > 0:
+                if output:
                     fields = output[0].split()
 
                     # Ignore NFS mounted volumes.
                     if fields[0].find(":") < 0:
                         df[node.name][fields[0]] = fields
                 else:
-                    util.warn("Invalid df output for node '%s'." % node)
+                    util.output("error checking disk space on node '%s': no df output" % node)
                     hadError = True
             else:
+                if output:
+                    msg = output[0]
+                else:
+                    msg = "unknown failure"
+                util.output("error checking disk space on node '%s': %s" % (node, msg))
                 hadError = True
 
     result = {}
@@ -1187,6 +1209,10 @@ def executeCmd(nodes, cmd):
 def processTrace(trace, bro_options, bro_scripts):
     if not os.path.isfile(trace):
         util.output("Error: trace file not found: %s" % trace)
+        return False
+
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')")
         return False
 
     standalone = (config.Config.standalone == "1")

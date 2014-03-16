@@ -1,0 +1,57 @@
+# Test that the stop command reports a node that crashed during shutdown,
+# and verify that broctl does not clean the crashed node's working directory
+# and does not send a crash report.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff stop.out
+# @TEST-EXEC: btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__test_sendmail
+etc/node.cfg__cluster
+bin/bro__test
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crashshutdown=worker-1
+EOF
+
+ret=0
+broctl install
+broctl start
+
+# verify that all nodes started
+broctl status 2> status1.out
+
+# test the stop command
+broctl stop 2> stop.out
+
+# verify that the crashed node is in the crashed state
+broctl status 2> status2.out
+
+# the stop command should not cleanup the crashed node directory
+while read line; do
+    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+done << EOF
+spool/worker-1/.cmdline
+spool/worker-1/.env_vars
+spool/worker-1/.pid
+spool/worker-1/.startup
+spool/worker-1/stderr.log
+spool/worker-1/stdout.log
+EOF
+
+# the crashed node should not be logged as "stopped" in stats.log
+grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log | grep worker-1 && ret=1
+
+# verify that a crash report was not sent
+test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
+
+exit $ret
+

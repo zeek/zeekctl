@@ -50,7 +50,7 @@ class Configuration:
         self._setOption("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
-        (success, output) = execute.captureCmd("uname")
+        (success, output) = execute.runLocalCmd("uname")
         if not success:
             util.error("cannot run uname")
         self._setOption("os", output[0].lower().strip())
@@ -63,7 +63,7 @@ class Configuration:
             self._setOption("pin_command", "")
 
         # Find the time command (should be a GNU time for best results).
-        (success, output) = execute.captureCmd("which time")
+        (success, output) = execute.runLocalCmd("which time")
         if success:
             self._setOption("time", output[0].lower().strip())
         else:
@@ -345,6 +345,8 @@ class Configuration:
                         util.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
                 except ValueError:
                     util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+            elif node.lb_method:
+                util.error("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
 
             try:
                 pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
@@ -429,7 +431,7 @@ class Configuration:
                     if n.addr != "127.0.0.1" and n.addr != "::1":
                         util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
-    # Parses broctl.cfg and returns a dictionary of all entries.
+    # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
     def _readConfig(self, file, allowstate = False):
         config = {}
         try:
@@ -450,6 +452,7 @@ class Configuration:
                 if not allowstate and ".state." in key:
                     util.error("state variable '%s' not allowed in file: %s" % (key, file))
 
+                # if the key already exists, just overwrite with new value
                 config[key] = val
 
         except IOError, e:
@@ -474,8 +477,9 @@ class Configuration:
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
     def writeState(self):
+        tmpstatefile = self.statefile + ".tmp"
         try:
-            out = open(self.statefile, "w")
+            out = open(tmpstatefile, "w")
         except IOError:
             util.warn("can't write '%s'" % self.statefile)
             return
@@ -485,20 +489,53 @@ class Configuration:
         for (key, val) in self.state.items():
             print >>out, "%s = %s" % (key, self.subst(str(val)))
 
-    # Runs Bro to get its version numbers.
+        out.close()
+
+        # update state file in an atomic operation
+        os.rename(tmpstatefile, self.statefile)
+
+    # Append the given dynamic state variable to {$spooldir}/broctl.dat .
+    def appendStateVal(self, key):
+        key = key.lower()
+
+        try:
+            out = open(self.statefile, "a")
+        except IOError:
+            util.warn("can't append to '%s'" % self.statefile)
+            return
+
+        print >>out, "%s = %s" % (key, self.state[key])
+
+        out.close()
+
+    # Record the Bro version.
     def determineBroVersion(self):
-        version = None
+        version = self._getBroVersion()
+        self.state["broversion"] = version
+        self.state["bro"] = self.subst("${bindir}/bro")
+
+
+    # Check if the Bro version is different from previously-installed version.
+    def checkBroVersion(self):
+        if "broversion" not in self.state:
+            return
+
+        oldversion = self.state["broversion"]
+
+        version = self._getBroVersion()
+        if version != oldversion:
+            util.warn("new bro version detected (run 'broctl install')")
+
+
+    # Runs Bro to get its version numbers.
+    def _getBroVersion(self):
+        version = ""
         bro = self.subst("${bindir}/bro")
         if execute.exists(None, bro):
-            (success, output) = execute.captureCmd("%s -v 2>&1" % bro)
-            if success:
-                version = output[len(output)-1]
-
-        if not version:
-            # Ok if it's already set.
-            if "broversion" in self.state:
-                return
-
+            (success, output) = execute.runLocalCmd("%s -v" % bro)
+            if success and output:
+                version = output[-1]
+        else:
             util.error("cannot find Bro binary to determine version")
 
         m = re.search(".* version ([^ ]*).*$", version)
@@ -506,9 +543,10 @@ class Configuration:
             util.error("cannot determine Bro version [%s]" % version.strip())
 
         version = m.group(1)
+        # If bro is built with the "--enable-debug" configure option, then it
+        # appends "-debug" to the version string.
         if version.endswith("-debug"):
             version = version[:-6]
 
-        self.state["broversion"] = version
-        self.state["bro"] = self.subst("${bindir}/bro")
+        return version
 

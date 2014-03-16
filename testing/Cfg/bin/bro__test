@@ -21,7 +21,8 @@ def createloadedscriptslog(thisnode):
 
 livemode = False
 statusfile = None
-brotestcfg = { "crash" : "" , "slowstart" : "" , "slowstop" : "" }
+brotestcfg = { "crash" : "", "crashshutdown" : "", "slowstart" : "",
+   "slowstop" : "" }
 
 # Parse cmd-line args (most of them can be ignored).
 optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:K:LOPR:ST:U:WZ")
@@ -62,7 +63,8 @@ nodename = os.getenv("CLUSTER_NODE", "bro")
 if livemode:
     # Set an exit handler to update status upon exit (broctl "start" and "stop"
     # check this status).
-    atexit.register(setprocstate, "TERMINATED [atexit]\n")
+    if nodename not in brotestcfg["crashshutdown"].split():
+        atexit.register(setprocstate, "TERMINATED [atexit]\n")
 
     # Check config file whether this node should simulate a Bro crash or not.
     if nodename in brotestcfg["crash"].split():

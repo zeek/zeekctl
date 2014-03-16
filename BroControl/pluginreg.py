@@ -216,8 +216,13 @@ class PluginRegistry:
                     util.output("Error running __init__ for plugin class %s: %s" % (cls.__name__, str(e)))
                     break
 
-                util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
+                # verify that the plugin overrides all required methods
+                try:
+                    util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
                                % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
+                except NotImplementedError:
+                    util.output("Error in plugin at %s (does not override required methods)" % path)
+                    continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
                     util.output("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"

@@ -15,6 +15,10 @@ def doCron(watch):
     if config.Config.cronenabled == "0":
         return
 
+    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
+        util.output("error: broctl-config.sh not found (try 'broctl install')") 
+        return
+
     config.Config.config["cron"] = "1"  # Flag to indicate that we're running from cron.
 
     if not util.lock():
@@ -245,12 +249,12 @@ def _updateHTTPStats():
     print >>meta, "version", config.Config.version
 
     try:
-        print >>meta, "os", execute.captureCmd("uname -a")[1][0]
+        print >>meta, "os", execute.runLocalCmd("uname -a")[1][0]
     except IndexError:
         print >>meta, "os <error>"
 
     try:
-        print >>meta, "host", execute.captureCmd("hostname")[1][0]
+        print >>meta, "host", execute.runLocalCmd("hostname")[1][0]
     except IndexError:
         print >>meta, "host <error>"
 

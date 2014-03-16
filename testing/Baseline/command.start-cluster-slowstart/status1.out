@@ -1,5 +1,5 @@
-Name         Type       Host          Status    Pid    Peers  Started
-manager      manager    localhost     running   10780  ???    21 Nov 23:20:34
-proxy-1      proxy      localhost     running   10804  ???    21 Nov 23:20:36
-worker-1     worker     localhost     ???       10842  ???    21 Nov 23:20:38
-worker-2     worker     localhost     running   10843  ???    21 Nov 23:20:38
+Name         Type    Host             Status    Pid    Peers  Started
+manager      manager localhost        running   10780  ???    21 Nov 23:20:34
+proxy-1      proxy   localhost        running   10804  ???    21 Nov 23:20:36
+worker-1     worker  localhost        ???       10842  ???    21 Nov 23:20:38
+worker-2     worker  localhost        running   10843  ???    21 Nov 23:20:38

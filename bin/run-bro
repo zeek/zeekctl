@@ -34,11 +34,14 @@ function sig_handler
     fi
 }
 
-LIMIT=${memlimit:1572864}
+LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
 ulimit -d $LIMIT
 ulimit -v $LIMIT
 ulimit -c unlimited
+
+# show current limits (visible in crash reports and "broctl diag")
+ulimit -m -d -v -c
 
 echo "PATH=${PATH}" >.env_vars
 echo "BROPATH=${BROPATH}" >>.env_vars

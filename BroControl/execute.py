@@ -20,7 +20,7 @@ except ImportError:
 
 LocalAddrs = None
 
-# Wrapper around subprocess.POpen()
+# Wrapper around subprocess.Popen()
 def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
 
     if donotcaptureoutput:
@@ -33,15 +33,9 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
     if stderr_to_stdout:
         stderr = subprocess.STDOUT
 
-    # os.setid makes sure that the child process doesn't receive our CTRL-Cs.
+    # os.setsid makes sure that the child process doesn't receive our CTRL-Cs.
     proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                             close_fds=True, shell=True, preexec_fn=os.setsid)
-    # Compatibility with older popen4.
-    proc.tochild = proc.stdin
-    if proc.stdout != None:
-        proc.fromchild = proc.stdout
-    else:
-        proc.fromchild = []
 
     return proc
 
@@ -86,7 +80,7 @@ def mkdirs(dirs):
 
         else:
             cmds += [(node, [], [])]
-                # Need to be careful here as our helper scripts may not be installed yet.
+            # Need to be careful here as our helper scripts may not be installed yet.
             fullcmds += [("test -d %s || mkdir -p %s 2>/dev/null; echo $?; echo ~~~" % (dir, dir))]
 
     for (node, success, output) in runHelperParallel(cmds, fullcmds=fullcmds):
@@ -106,7 +100,7 @@ def rmdirs(dirs):
     for (node, dir) in dirs:
         # We remove local directories directly.
         if isLocal(node):
-            (success, output) = captureCmd("rm -rf %s" % dir)
+            (success, output) = runLocalCmd("rm -rf %s" % dir)
             results += [(node, success)]
         else:
             cmds += [(node, "rmdir", [dir])]
@@ -195,16 +189,14 @@ def sync(nodes, paths):
 # Keep track of hosts that are not alive.
 _deadHosts = {}
 
-# Return true if the given host is alive (i.e., we can ping it and establish
+# Return true if the given host is alive (i.e., we can establish
 # an ssh session), and false otherwise.
 def isAlive(host):
 
     if host in _deadHosts:
-        if config.Config.cron == "0":
-            util.warn("skipping host %s (is not alive)" % host)
         return False
 
-    (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "is-alive") + " " + util.scopeAddr(host))
+    (success, output) = runLocalCmd("ssh -o ConnectTimeout=30 %s true" % util.scopeAddr(host))
 
     if not success:
         _deadHosts[host] = True
@@ -213,35 +205,10 @@ def isAlive(host):
 
     return success
 
-# Runs command locally and returns tuple (success, output)
-# with success being true if the command terminated with exit code 0,
-# and output being the combinded stdout/stderr output of the command.
-def captureCmd(cmd, env = "", input = None):
-
-    cmdline = env + " " + cmd
-    util.debug(1, cmdline, prefix="local")
-
-    proc = popen(cmdline, stderr_to_stdout=True)
-
-    if input:
-        print >>proc.tochild, input
-        proc.tochild.close()
-
-    rc = proc.wait()
-    output = [line.strip() for line in proc.fromchild]
-
-    util.debug(1, rc, prefix="local")
-
-    for line in output:
-        util.debug(2, "           > %s" % line, prefix="local")
-
-    return (rc == 0, output)
-
-## FIXME: Replace "captureCmd" with "runLocalCmd".
 
 # Runs command locally and returns tuple (success, output)
 # with success being true if the command terminated with exit code 0,
-# and output being the combinded stdout/stderr output of the command.
+# and output being the combined stdout/stderr output of the command.
 def runLocalCmd(cmd, env = "", input=None, donotcaptureoutput=False):
     proc = _runLocalCmdInit("single", cmd, env, donotcaptureoutput)
     return _runLocalCmdWait(proc, input)
@@ -310,7 +277,7 @@ def executeCmdsParallel(cmds):
 # If fullcmd is given, this is the exact & complete command line (incl. paths).
 # Otherwise, cmd is just the helper's name (wo/ path) and args are the
 # arguments. Env is an optional enviroment variable of the form
-# "key=val". Return value as for captureCmd().
+# "key=val". Return value as for runLocalCmd().
 # 'output' is None (vs. []) if we couldn't connect to host.
 def runHelper(host, cmd=None, args=None, fullcmd=None, env = ""):
     util.disableSignals()
@@ -381,6 +348,20 @@ def runHelperParallel(cmds, fullcmds = None, envs = None):
 Connections = {}
 WhoAmI = None
 
+
+# Remove connections that are closed, and clear the list of dead hosts.
+def clearDeadHostConnections():
+    global Connections
+    global _deadHosts
+
+    to_remove = [ nn for nn in Connections if Connections[nn].poll() != None ]
+
+    for nn in to_remove:
+        del Connections[nn]
+
+    _deadHosts = {}
+
+
 # FIXME: This is an ugly hack. The __del__ method produces
 # strange unhandled exceptions in the child at termination
 # of the main process. Not sure if disabling the cleanup
@@ -394,7 +375,7 @@ def _getConnection(host):
 
     global WhoAmI
     if not WhoAmI:
-        (success, output) = captureCmd("whoami")
+        (success, output) = runLocalCmd("whoami")
         if not success:
             util.error("can't get 'whoami'")
         WhoAmI = output[0]
@@ -407,8 +388,9 @@ def _getConnection(host):
         if p.poll() != None:
             # Terminated.
             global _deadHosts
-            _deadHosts[host.host] = True
-            util.warn("connection to %s broke" % host.host)
+            if host.host not in _deadHosts:
+                _deadHosts[host.host] = True
+                util.warn("connection to %s broke" % host.host)
             return None
 
         return (p.stdin, p.stdout)
@@ -420,7 +402,10 @@ def _getConnection(host):
         if not isAlive(host.host):
             return None
 
-        cmdline = "ssh -o ConnectTimeout=30 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
+        # ServerAliveInterval and ServerAliveCountMax prevents broctl from
+        # hanging if a remote host is disconnected from network while an ssh
+        # session is open.
+        cmdline = "ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
 
     util.debug(1, cmdline, prefix="local")
 
