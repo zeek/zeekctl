@@ -1201,7 +1201,7 @@ def executeCmd(nodes, cmd):
     hadError = False
     for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
         out = output and "\n> ".join(output) or ""
-        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
+        util.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
         if not success:
             hadError = True
     return not hadError

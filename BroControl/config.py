@@ -189,11 +189,13 @@ class Configuration:
     # nodes() would yield but within which each host appears only once.
     def hosts(self, tag = None):
         hosts = {}
+        nodelist = []
         for node in self.nodes(tag):
-            if not node.host in hosts:
-                hosts[node.host] = node
+            if node.host not in hosts:
+                hosts[node.host] = 1
+                nodelist.append(node)
 
-        return hosts.values()
+        return nodelist
 
     # Replace all occurences of "${option}", with option being either
     # broctl.cfg option or a dynamic variable, with the corresponding value.

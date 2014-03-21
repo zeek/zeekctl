@@ -717,13 +717,13 @@ class BroCtlCmdLoop(cmd.Cmd):
     def do_exec(self, args):
         """- <command line>
 
-		Executes the given Unix shell command line on all nodes configured to
+		Executes the given Unix shell command line on all hosts configured to
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
         self.lock()
         if plugin.Registry.cmdPre("exec", args):
-            result = control.executeCmd(Config.nodes(), args)
+            result = control.executeCmd(Config.hosts(), args)
             if not result:
                 self.exit_code = 1
         plugin.Registry.cmdPost("exec", args)
@@ -911,7 +911,7 @@ BroControl Version %s
   cron enable|disable|?            - Enable/disable \"cron\" jobs
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
-  exec <shell cmd>                 - Execute shell command on all nodes
+  exec <shell cmd>                 - Execute shell command on all hosts
   exit                             - Exit shell
   install                          - Update broctl installation/configuration
   netstats [<nodes>]               - Print nodes' current packet counters
