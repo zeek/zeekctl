@@ -121,23 +121,16 @@ def install(local_only):
     # Sync to clients.
     util.output("updating nodes ... ", False)
 
-    hosts = {}
     nodes = []
 
-    for n in config.Config.nodes():
-        # Make sure we do each host only once.
-        if n.host in hosts:
+    # Make sure we install each remote host only once.
+    for n in config.Config.hosts():
+        if execute.isLocal(n):
             continue
 
-        hosts[n.host] = 1
-
-        if n == manager:
+        if not execute.isAlive(n.addr):
+            hadError = True
             continue
-
-        if not execute.isLocal(n):
-            if not execute.isAlive(n.addr):
-                hadError = True
-                continue
 
         nodes += [n]
 
