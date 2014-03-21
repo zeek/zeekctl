@@ -563,16 +563,11 @@ def status(nodes):
     # Return True if all nodes are running
     return len(nodes) == len(all)
 
-# Outputs state of remote connections for host.
 
-
-# Helper for getting top output.
-#
-# Returns tuples of the form (node, error, vals) where  'error' is None if we
-# were able to get the data or otherwise a string with an  error message;
-# in case there's no error, 'vals' is a list of dicts which map tags to their values.
-#
-# Tags are "pid", "proc", "vsize", "rss", "cpu", and "cmd".
+# Returns a list of tuples of the form (node, error, vals) where 'error' is an
+# error message string, or None if there was no error.  'vals' is a list of
+# dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
+# "rss", "cpu", and "cmd".
 #
 # We do all the stuff in parallel across all nodes which is why this looks
 # a bit confusing ...
@@ -611,18 +606,33 @@ def getTopOutput(nodes):
         pids[node.name] += [int(line) for line in output]
 
     cmds = []
+    hosts = {}
 
-    # Now run top.
-    for node in nodes: # Do the loop again to keep the order.
+    # Now run top once per host.
+    for node in nodes:   # Do the loop again to keep the order.
         if not node.name in pids:
             continue
+
+        if node.host in hosts:
+            continue
+
+        hosts[node.host] = 1
 
         cmds += [(node, "top", [])]
 
     if not cmds:
         return results
 
+    res = {}
     for (node, success, output) in execute.runHelperParallel(cmds):
+        res[node.host] = (success, output)
+
+    # Gather results for all the nodes that are running
+    for node in nodes:
+        if not node.name in pids:
+            continue
+
+        success, output = res[node.host]
 
         if not success or not output:
             results += [(node, "cannot get top output", [{}])]
@@ -631,7 +641,7 @@ def getTopOutput(nodes):
         procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
 
         if not procs:
-            # It can happen that on the meantime the process is not there anymore.
+            # It's possible that the process is no longer there.
             results += [(node, "not running", [{}])]
             continue
 
@@ -656,30 +666,36 @@ def getTopOutput(nodes):
     return results
 
 # Produce a top-like output for node's processes.
-# If hdr is true, output column headers first.
 def top(nodes):
 
-    util.output("%-11s %-10s %-13s %-7s %-7s %-6s %-5s %-5s %s" % ("Name", "Type", "Node", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
+    typewidth = 7
+    hostwidth = 16
+    if config.Config.standalone == "1":
+        # In standalone mode, we need a wider "type" column.
+        typewidth = 10
+        hostwidth = 13
+
+    util.output("%-12s %-*s %-*s %-7s %-7s %-6s %-5s %-4s %s" % ("Name", typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
 
     hadError = False
     for (node, error, vals) in getTopOutput(nodes):
 
         if not error:
             for d in vals:
-                util.output("%-11s " % node.name, nl=False)
-                util.output("%-10s " % node.type, nl=False)
-                util.output("%-13s " % node.host, nl=False)
+                util.output("%-12s " % node.name, nl=False)
+                util.output("%-*s " % (typewidth, node.type), nl=False)
+                util.output("%-*s " % (hostwidth, node.host), nl=False)
                 util.output("%-7s " % d["pid"], nl=False)
                 util.output("%-7s " % d["proc"], nl=False)
                 util.output("%-6s " % prettyPrintVal(d["vsize"]), nl=False)
                 util.output("%-5s " % prettyPrintVal(d["rss"]), nl=False)
-                util.output("%-5s " % ("%s%%" % d["cpu"]), nl=False)
+                util.output("%-4s " % ("%s%%" % d["cpu"]), nl=False)
                 util.output("%s" % d["cmd"])
         else:
             hadError = True
-            util.output("%-11s " % node.name, nl=False)
-            util.output("%-10s " % node.type, nl=False)
-            util.output("%-13s " % node.host, nl=False)
+            util.output("%-12s " % node.name, nl=False)
+            util.output("%-*s " % (typewidth, node.type), nl=False)
+            util.output("%-*s " % (hostwidth, node.host), nl=False)
             util.output("<%s>" % error)
 
     return not hadError
@@ -1179,9 +1195,9 @@ def peerStatus(nodes):
     hadError = False
     for (node, success, args) in _queryPeerStatus(nodes):
         if success:
-            print "%10s\n%s" % (node, args[0])
+            print "%11s\n%s" % (node, args[0])
         else:
-            print "%10s   <error: %s>" % (node, args)
+            print "%11s   <error: %s>" % (node, args)
             hadError = True
 
     return not hadError
@@ -1190,9 +1206,9 @@ def netStats(nodes):
     hadError = False
     for (node, success, args) in _queryNetStats(nodes):
         if success:
-            print "%10s: %s" % (node, args[0]),
+            print "%11s: %s" % (node, args[0]),
         else:
-            print "%10s: <error: %s>" % (node, args)
+            print "%11s: <error: %s>" % (node, args)
             hadError = True
 
     return not hadError
