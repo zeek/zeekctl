@@ -2,6 +2,7 @@
 
 import os
 import time
+import shutil
 
 import util
 import config
@@ -238,8 +239,9 @@ def _updateHTTPStats():
 
         util.warn("creating directory for stats file: %s" % config.Config.statsdir)
 
+    metadat = os.path.join(config.Config.statsdir, "meta.dat")
     try:
-        meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
+        meta = open(metadat, "w")
     except IOError, err:
         util.output("error creating file: %s" % err)
         return
@@ -262,12 +264,35 @@ def _updateHTTPStats():
 
     meta.close()
 
-    # Run the update-stats script.
-    (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "update-stats"))
+    wwwdir = os.path.join(config.Config.statsdir, "www")
+    if not os.path.isdir(wwwdir):
+        try:
+            os.makedirs(wwwdir)
+        except OSError, err:
+            util.output("failed to create directory: %s" % err)
+            return
 
+    # Append the current stats.log in spool to the one in ${statsdir}
+    dst = os.path.join(config.Config.statsdir, os.path.basename(config.Config.statslog))
+    try:
+        fdst = open(dst, "a")
+    except IOError, err:
+        util.output("failed to append to file: %s" % err)
+        return
+
+    fsrc = open(config.Config.statslog, "r")
+    shutil.copyfileobj(fsrc, fdst)
+    fdst.close()
+    fsrc.close()
+
+    # Update the WWW data
+    statstocsv = os.path.join(config.Config.scriptsdir, "stats-to-csv")
+
+    (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, config.Config.statslog, metadat, wwwdir))
     if not success:
-        util.output("error running update-stats\n\n")
-        util.output(output)
+        util.output("stats-to-csv failed")
+        return
 
-
+    os.unlink(config.Config.statslog)
+    shutil.copy(metadat, wwwdir)
 
