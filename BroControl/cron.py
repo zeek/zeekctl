@@ -146,15 +146,17 @@ def _checkDiskSpace():
     if minspace == 0.0:
         return
 
-    hadError, results = control.getDf(config.Config.nodes())
-    for (node, dfs) in results.items():
+    hadError, results = control.getDf(config.Config.hosts())
+    for (nodehost, dfs) in results:
+        host = nodehost.split("/")[1]
+
         for df in dfs:
             fs = df[0]
             total = float(df[1])
             used = float(df[2])
             avail = float(df[3])
             perc = used * 100.0 / (used + avail)
-            key = ("disk-space-%s%s" % (node, fs.replace("/", "-"))).lower()
+            key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
 
             if perc > 100 - minspace:
                 try:
@@ -164,7 +166,7 @@ def _checkDiskSpace():
                 except KeyError:
                     pass
 
-                util.output("Disk space low on %s:%s - %.1f%% used." % (node, fs, perc))
+                util.output("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
             config.Config.state[key] = "%.1f" % perc
 

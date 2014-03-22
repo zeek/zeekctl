@@ -1085,14 +1085,14 @@ def update(nodes):
     return [(config.Config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
 
 # Gets disk space on all volumes relevant to broctl installation.
-# Returns dict which for each node has a list of tuples (fs, total, used, avail).
+# Returns a list of the form:  [ (host, [fs, total, used, avail]), ...]
 def getDf(nodes):
     hadError = False
     dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
 
     df = {}
     for node in nodes:
-        df[node.name] = {}
+        df["%s/%s" % (node.name, node.host)] = {}
 
     for dir in dirs:
         path = config.Config.config[dir]
@@ -1108,43 +1108,45 @@ def getDf(nodes):
         results = execute.runHelperParallel(cmds)
 
         for (node, success, output) in results:
+            nodehost = "%s/%s" % (node.name, node.host)
             if success:
                 if output:
                     fields = output[0].split()
 
                     # Ignore NFS mounted volumes.
                     if fields[0].find(":") < 0:
-                        df[node.name][fields[0]] = fields
+                        df[nodehost][fields[0]] = fields
                 else:
-                    util.output("error checking disk space on node '%s': no df output" % node)
+                    util.output("error checking disk space on %s: no df output" % node.host)
                     hadError = True
             else:
                 if output:
                     msg = output[0]
                 else:
                     msg = "unknown failure"
-                util.output("error checking disk space on node '%s': %s" % (node, msg))
+                util.output("error checking disk space on %s: %s" % (node.host, msg))
                 hadError = True
 
-    result = {}
-    for node in df:
-        result[node] = df[node].values()
+    result = []
+    for node in nodes:
+        nodehost = "%s/%s" % (node.name, node.host)
+        result.append((nodehost, df[nodehost].values()))
 
     return (hadError, result)
 
 def df(nodes):
 
-    util.output("%12s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
+    util.output("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
 
     hadError, results = getDf(nodes)
-    for (node, dfs) in results.items():
+    for (node, dfs) in results:
         for df in dfs:
             total = float(df[1])
             used = float(df[2])
             avail = float(df[3])
             perc = used * 100.0 / (used + avail)
 
-            util.output("%12s  %15s  %-5s  %-5s  %-5.1f%%" % (node, df[0],
+            util.output("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node, df[0],
                 prettyPrintVal(total),
                 prettyPrintVal(avail), perc))
 
