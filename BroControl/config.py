@@ -517,16 +517,33 @@ class Configuration:
         self.state["bro"] = self.subst("${bindir}/bro")
 
 
-    # Check if the Bro version is different from previously-installed version.
-    def checkBroVersion(self):
-        if "broversion" not in self.state:
+    # Warn user to run broctl install if any config changes are detected.
+    def warnBroctlInstall(self):
+        # Check if Bro version is different from previously-installed version.
+        if "broversion" in self.state:
+            oldversion = self.state["broversion"]
+
+            version = self._getBroVersion()
+            if version != oldversion:
+                util.warn("new bro version detected (run 'broctl install')")
+                return
+
+        # Check if broctl-config.sh exists.
+        broctlcfg = os.path.join(self.config["broctlconfigdir"], "broctl-config.sh")
+        if not os.path.exists(broctlcfg):
+            util.warn("file not found: %s (try 'broctl install')" % broctlcfg)
             return
 
-        oldversion = self.state["broversion"]
-
-        version = self._getBroVersion()
-        if version != oldversion:
-            util.warn("new bro version detected (run 'broctl install')")
+        # Check if any config values in broctl-config.sh are not up-to-date.
+        f = open(broctlcfg, "r")
+        for line in f:
+            key, val = line.split("=", 1)
+            if key in self.config:
+                val = val[1:-2]
+                if self.config[key] != val:
+                    util.warn("broctl.cfg change detected (run 'broctl install')")
+                    break
+        f.close()
 
 
     # Runs Bro to get its version numbers.

@@ -994,7 +994,7 @@ try:
 except:
     pass
 
-config.Config.checkBroVersion()
+config.Config.warnBroctlInstall()
 
 if len(sys.argv) > 1:
     Interactive = False
