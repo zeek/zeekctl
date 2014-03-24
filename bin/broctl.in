@@ -50,7 +50,7 @@ if platform.system() == "Darwin":
 
 old = os.environ.get(ldpath)
 dir = os.path.join(BroBase, "lib")
-if not old or not dir in old:
+if not old or dir not in old:
     if old:
         path = "%s:%s" % (dir, old)
     else:
@@ -477,7 +477,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         if args == "--no-watch":
             watch = False
 
-        elif len(args) > 0:
+        elif args:
             self.lock()
 
             if args == "enable":
@@ -718,7 +718,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         dropped packets."""
 
         if not args:
-            if len(config.Config.nodes("standalone")) >0:
+            if config.Config.nodes("standalone"):
                 args = "standalone"
             else:
                 args = "workers"
@@ -860,7 +860,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         args = line.split()
 
-        if not args or not args[0] in nodes_cmds:
+        if not args or args[0] not in nodes_cmds:
             return []
 
         nodes = ["manager", "workers", "proxies", "all"] + [n.name for n in Config.nodes()]

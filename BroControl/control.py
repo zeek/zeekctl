@@ -106,7 +106,7 @@ def waitForBros(nodes, status, timeout, ensurerunning):
                 del todo[node.name]
                 results += [(node, False)]
 
-        if len(todo) == 0:
+        if not todo:
             # All done.
             break
 
@@ -424,7 +424,7 @@ def _stopNodes(nodes):
                 terminated += [node]
                 results += [(node, True)]
 
-        if len(todo) == 0:
+        if not todo:
             # All done.
             break
 
@@ -610,7 +610,7 @@ def getTopOutput(nodes):
 
     # Now run top once per host.
     for node in nodes:   # Do the loop again to keep the order.
-        if not node.name in pids:
+        if node.name not in pids:
             continue
 
         if node.host in hosts:
@@ -629,7 +629,7 @@ def getTopOutput(nodes):
 
     # Gather results for all the nodes that are running
     for node in nodes:
-        if not node.name in pids:
+        if node.name not in pids:
             continue
 
         success, output = res[node.host]
@@ -887,13 +887,6 @@ def getCapstatsOutput(nodes, interval):
         # command is used).
         capstats = [config.Config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
 
-# Unfinished feature: only consider a particular MAC. Works here for capstats
-# but Bro config is not adapted currently so we disable it for now.
-#        try:
-#            capstats += ["-f", "\\'", "ether dst %s" % node.ether, "\\'"]
-#        except AttributeError:
-#            pass
-
         cmds += [(node, "run-cmd", capstats)]
 
     outputs = execute.runHelperParallel(cmds)
@@ -1062,7 +1055,7 @@ def update(nodes):
 
     running = isRunning(nodes)
     zone = config.Config.zoneid
-    if zone == "":
+    if not zone:
         zone = "NOZONE"
 
     cmds = []

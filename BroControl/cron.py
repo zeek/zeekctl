@@ -203,32 +203,8 @@ def _checkHosts():
 
         config.Config._setState(tag, alive)
 
-def _getProfLogs():
-    cmds = []
-
-    for node in config.Config.hosts():
-        if execute.isLocal(node):
-            continue
-
-        if not execute.isAlive(node.addr):
-            continue
-
-        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.name, node.host, node.cwd())
-        cmds += [(node, cmd, [], None)]
-
-    for (node, success, output) in execute.runLocalCmdsParallel(cmds):
-        if not success:
-            util.output("cannot get prof.log from %s" % node.name)
 
 def _updateHTTPStats():
-    # Get the prof.logs.
-
-    # FIXME: Disabled for now. This currently copies the complete prof.log
-    # each time. As these can get huge, that can take a while. We should
-    # change that to only copy the most recent chunk and then also expire old
-    # prof logs on the manager.
-    # _getProfLogs()
-
     # Create meta file.
     if not os.path.exists(config.Config.statsdir):
         try:

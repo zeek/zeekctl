@@ -877,14 +877,14 @@ class Plugin(object):
     # Internal methods.
 
     def _registerOptions(self):
-        if ( not self.prefix() ):
+        if not self.prefix():
             self.error("plugin prefix must not be empty")
 
         if "." in self.prefix() or " " in self.prefix():
             self.error("plugin prefix must not contain dots or spaces")
 
         for (name, ty, default, descr) in self.options():
-            if ( not name ):
+            if not name:
                 self.error("plugin option names must not be empty")
 
             if "." in name or " " in name:

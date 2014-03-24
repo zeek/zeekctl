@@ -101,7 +101,8 @@ class Configuration:
         self.config["cron"] = "0"
 
     # Provides access to the configuration options via the dereference operator.
-    # Lookups the attribute in broctl.cfg first, then in the dynamic variables from broctl.dat.
+    # Lookups the attribute in broctl.cfg first, then in the dynamic variables
+    # from broctl.dat.
     # Defaults to empty string for unknown options.
     def __getattr__(self, attr):
         if attr in self.config:
@@ -285,7 +286,7 @@ class Configuration:
 
                 key = key.replace(".", "_")
 
-                if not key in node_mod.Node._keys:
+                if key not in node_mod.Node._keys:
                     util.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 
@@ -465,7 +466,7 @@ class Configuration:
     # Initialize a global option if not already set.
     def _setOption(self, val, key):
         val = val.lower()
-        if not val in self.config:
+        if val not in self.config:
             self.config[val] = self.subst(key)
 
     # Set a dynamic state variable.
