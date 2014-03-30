@@ -184,7 +184,8 @@ class BroCtlCmdLoop(cmd.Cmd):
         configuration files and local policy scripts.  Usually all nodes
         should be reinstalled at the same time, as any inconsistencies between
         them will lead to strange effects.  This command must be
-        executed after *all* changes to any part of the broctl configuration,
+        executed after *all* changes to any part of the broctl configuration
+        (and after upgrading to a new version of Bro or BroControl),
         otherwise the modifications will not take effect.  Before executing
         ``install``, it is recommended to verify the configuration
         with check_."""

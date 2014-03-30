@@ -1,4 +1,9 @@
 
+1.2-99 | 2014-03-30 22:21:20 +0200
+
+  * Update documentation with better install/setup instructions.
+    Addresses BIT-1160 (Daniel Thayer)
+
 1.2-97 | 2014-03-16 07:40:31 -0700
 
   * Minor doc update for a broctl option. (Daniel Thayer)
