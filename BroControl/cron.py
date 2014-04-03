@@ -147,25 +147,25 @@ def _checkDiskSpace():
     if minspace == 0.0:
         return
 
-    hadError, results = control.getDf(config.Config.hosts())
+    results = control.getDf(config.Config.hosts())
     for (nodehost, dfs) in results:
         host = nodehost.split("/")[1]
 
         for df in dfs:
+            if df[0] == "FAIL":
+                # A failure here is normally caused by a host that is down, so
+                # we don't need to output the error message.
+                continue
+
             fs = df[0]
-            total = float(df[1])
-            used = float(df[2])
-            avail = float(df[3])
-            perc = used * 100.0 / (used + avail)
+            perc = df[4]
             key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
 
             if perc > 100 - minspace:
-                try:
+                if key in config.Config.state:
                     if float(config.Config.state[key]) > 100 - minspace:
                         # Already reported.
                         continue
-                except KeyError:
-                    pass
 
                 util.output("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
