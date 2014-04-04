@@ -112,10 +112,12 @@ def _logStats(interval):
     for (node, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
-                # Report if we don't see packets on an interface.
-                tag = "lastpkts-%s" % node.name.lower()
+                print >>out, t, node, "interface", key, val
 
-                if key == "pkts":
+                if key == "pkts" and str(node) != "$total":
+                    # Report if we don't see packets on an interface.
+                    tag = "lastpkts-%s" % node.name.lower()
+
                     if tag in config.Config.state:
                         last = float(config.Config.state[tag])
                     else:
@@ -128,8 +130,6 @@ def _logStats(interval):
                         util.output("%s is seeing packets again on interface %s" % (node.host, node.interface))
 
                     config.Config._setState(tag, val)
-
-                print >>out, t, node, "interface", key, val
 
         else:
             print >>out, t, node, "error", "error", error

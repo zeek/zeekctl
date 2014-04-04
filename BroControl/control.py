@@ -841,30 +841,22 @@ def attachGdb(nodes):
 
     return not hadError
 
-# Helper for getting capstats output.
+# Gather capstats from interfaces.
 #
-# Returns tuples of the form (node, error, vals) where  'error' is None if we
-# were able to get the data or otherwise a string with an error message;
-# in case there's no error, 'vals' maps tags to their values.
+# Returns a list of tuples of the form (node, error, vals) where 'error' is
+# None if we were able to get the data, or otherwise a string with an error
+# message; in case there's no error, 'vals' maps tags to their values.
 #
-# Tags are those as returned by capstats on the command-line
+# Tags are those as returned by capstats on the command-line.
 #
-# There is one "pseudo-node" of the name "$total" with the sum of all
-# individual values.
+# If there is more than one node, then the results will also contain
+# one "pseudo-node" of the name "$total" with the sum of all individual values.
 #
 # We do all the stuff in parallel across all nodes which is why this looks
 # a bit confusing ...
-
-# Gather capstats from interfaces.
 def getCapstatsOutput(nodes, interval):
 
-    if not config.Config.capstatspath:
-        if config.Config.cron == "0":
-            util.warn("do not have capstats binary available")
-        return []
-
     results = []
-    cmds = []
 
     hosts = {}
     for node in nodes:
@@ -875,6 +867,8 @@ def getCapstatsOutput(nodes, interval):
             hosts[(node.addr, node.interface)] = node
         except AttributeError:
             continue
+
+    cmds = []
 
     for (addr, interface) in hosts.keys():
         node = hosts[addr, interface]
@@ -912,7 +906,7 @@ def getCapstatsOutput(nodes, interval):
             results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
             continue
 
-        vals = { }
+        vals = {}
 
         try:
             for field in fields:
@@ -920,9 +914,9 @@ def getCapstatsOutput(nodes, interval):
                 val = float(val)
                 vals[key] = val
 
-                try:
+                if key in totals:
                     totals[key] += val
-                except KeyError:
+                else:
                     totals[key] = val
 
             results += [(node, None, vals)]
@@ -961,7 +955,7 @@ def getCFlowStatus():
     return vals
 
 # Calculates the differences between to getCFlowStatus() calls.
-# Returns tuples in the same form as getCapstatsOutput() does.
+# Returns a list of tuples in the same form as getCapstatsOutput() does.
 def calculateCFlowRate(start, stop, interval):
     diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
 
@@ -1042,11 +1036,11 @@ def capstats(nodes, interval):
             hadError = True
 
     if have_capstats:
-        output("Interface", sorted(capstats))
+        output("Interface", capstats)
 
     if have_cflow and cflow_start and cflow_stop:
         diffs = calculateCFlowRate(cflow_start, cflow_stop, interval)
-        output("cFlow Port", sorted(diffs))
+        output("cFlow Port", diffs)
 
     return not hadError
 
