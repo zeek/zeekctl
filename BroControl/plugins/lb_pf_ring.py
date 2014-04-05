@@ -33,6 +33,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
         first_app_instance = int(BroControl.config.Config.pfringdnafirstappinstance)
+        app_instance = first_app_instance
 
         dd = {}
         i = 0
@@ -42,6 +43,7 @@ class LBPFRing(BroControl.plugin.Plugin):
 
             if nn.host in dd:
                 if nn.interface not in dd[nn.host]:
+                    app_instance = first_app_instance
                     dd[nn.host][nn.interface] = cluster_id + len(dd[nn.host])
             else:
                 dd[nn.host] = { nn.interface : cluster_id }
@@ -53,8 +55,8 @@ class LBPFRing(BroControl.plugin.Plugin):
 
             if nn.interface.startswith("dnacluster"):
                 # For the case where a user is running pfdnacluster_master
-                nn.interface = "dnacluster:%d@%d" % (cluster_id, first_app_instance)
-                first_app_instance = first_app_instance + 1
+                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                app_instance = app_instance + 1
 
             elif nn.interface.startswith("dna"):
                 # For the case where someone is doing symmetric RSS with DNA.
