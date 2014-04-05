@@ -1,4 +1,8 @@
 
+1.2-104 | 2014-04-05 01:01:29 -0400
+
+  * Updated PF_Ring plugin now supports PF_Ring+DNA. (Seth Hall)
+
 1.2-99 | 2014-03-30 22:21:20 +0200
 
   * Update documentation with better install/setup instructions.
