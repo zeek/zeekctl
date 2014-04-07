@@ -46,7 +46,6 @@ class Configuration:
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))
         self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-        self._setOption("home", os.getenv("HOME"))
         self._setOption("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
@@ -526,7 +525,7 @@ class Configuration:
 
             version = self._getBroVersion()
             if version != oldversion:
-                util.warn("new bro version detected (run 'broctl install')")
+                util.warn("new bro version detected (run 'broctl restart --clean' or 'broctl install')")
                 return
 
         # Check if broctl-config.sh exists.
@@ -542,7 +541,7 @@ class Configuration:
             if key in self.config:
                 val = val[1:-2]
                 if self.config[key] != val:
-                    util.warn("broctl.cfg change detected (run 'broctl install')")
+                    util.warn("broctl config has changed (run 'broctl restart --clean' or 'broctl install')")
                     break
         f.close()
 

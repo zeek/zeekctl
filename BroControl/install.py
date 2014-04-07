@@ -301,24 +301,22 @@ def makeLocalNetworks(path, silent=False):
     if not silent:
         util.output("generating local-networks.bro ...", False)
 
+    nets = readNetworks(netcfg)
+
     out = open(os.path.join(path, "local-networks.bro"), "w")
     print >>out, "# Automatically generated. Do not edit.\n"
 
-    if os.path.exists(netcfg):
-        nets = readNetworks(netcfg)
-
-        print >>out, "redef Site::local_nets = {"
-        for (cidr, tag) in nets:
-            print >>out, "\t%s," % cidr,
-            if tag:
-                print >>out, "\t# %s" % tag,
-            print >>out
-        print >>out, "};\n"
+    print >>out, "redef Site::local_nets = {"
+    for (cidr, tag) in nets:
+        print >>out, "\t%s," % cidr,
+        if tag:
+            print >>out, "\t# %s" % tag,
+        print >>out
+    print >>out, "};\n"
+    out.close()
 
     if not silent:
         util.output(" done.")
-
-    out.close()
 
     return True
 

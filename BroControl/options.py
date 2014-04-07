@@ -196,9 +196,6 @@ options = [
     Option("SigInt", "0", "bool", Option.INTERNAL, False,
            "True if SIGINT has been received."),
 
-    Option("Home", "", "string", Option.INTERNAL, False,
-           "User's home directory."),
-
     Option("Cron", "0", "bool", Option.INTERNAL, False,
            "True if we are running from the cron command."),
 
