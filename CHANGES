@@ -1,4 +1,75 @@
 
+1.2-104 | 2014-04-05 01:01:29 -0400
+
+  * Updated PF_Ring plugin now supports PF_Ring+DNA. (Seth Hall)
+
+1.2-99 | 2014-03-30 22:21:20 +0200
+
+  * Update documentation with better install/setup instructions.
+    Addresses BIT-1160 (Daniel Thayer)
+
+1.2-97 | 2014-03-16 07:40:31 -0700
+
+  * Minor doc update for a broctl option. (Daniel Thayer)
+
+  * Adjust broctl status output to avoid bad column alignment. (Daniel
+    Thayer)
+
+  * Do not ping when checking if a host is alive. Removed the ping
+    from the host alive check because the ping might be blocked by a
+    firewall, and neither Bro nor broctl needs the ability to ping
+    hosts. (Daniel Thayer)
+
+  * If the current version of Bro doesn't match the version when
+    broctl install was previously run, then a warning message (to run
+    broctl install) is displayed when broctl starts. Addresses
+    BIT-1152. (Daniel Thayer)
+
+  * Reduce the risk of losing track of state info. Changed the way
+    broctl updates PIDs and crash flags by writing the new values to
+    disk immediately, one at a time, as soon as each new value is
+    available. Also changed the way that the state file is updated
+    when each command finishes by doing the update as an atomic
+    operation. (Daniel Thayer)
+
+  * Better error handling for a number of broctl commands. (Daniel Thayer)
+    
+  * Improve error output when broctl install has not been run yet.
+    (Daniel Thayer)
+
+  * Fix a failing test on FreeBSD 10. (Daniel Thayer)
+    
+  * Changed the output of the check command to be more specific about
+    what it is actually checking. (Daniel Thayer)
+
+  * Improve handling of dead hosts and closed/hanging connections.
+    (Daniel Thayer)
+
+  * Fixed a typo in the run-bro script that was causing the memlimit
+    option to be ignored. Added added a test to verify that memlimit
+    is used. (Daniel Thayer)
+
+  * Simplify code that execs commands locally. (Daniel Thayer)
+    
+  * Prevent infinite loop in start helper script if it cannot execute
+    the run-bro script. (Daniel Thayer)
+
+  * pf_ring plugin: Show error if lb_procs is needed but not given,
+    and disable plugin if not used. (Daniel Thayer)
+
+  * Catch an exception that is raised when loading a plugin that does
+    not override all required methods, and output an error message.
+    (Daniel Thayer)
+
+  * Fix start helper script to return nonzero on error. (Daniel
+    Thayer)
+
+  * Improve start/stop command output for crashed nodes.
+
+  * Added a test for stopping a node that crashes during shutdown.
+    (Daniel Thayer)
+
+
 1.2-73 | 2014-02-28 14:44:51 -0800
 
   * Added ability of broctl cron to expire entries in stats.log that
