@@ -1,4 +1,8 @@
 
+1.2-106 | 2014-04-10 08:32:18 -0700
+
+  * Update test baselines, and minor code cleanup. (Daniel Thayer)
+    
 1.2-104 | 2014-04-05 01:01:29 -0400
 
   * Updated PF_Ring plugin now supports PF_Ring+DNA. (Seth Hall)

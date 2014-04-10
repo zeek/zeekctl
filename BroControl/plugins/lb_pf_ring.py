@@ -60,16 +60,15 @@ class LBPFRing(BroControl.plugin.Plugin):
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
             elif nn.interface.startswith("dna"):
-                # For the case where someone is doing symmetric RSS with DNA.
+                # For the case where a user is doing symmetric RSS with DNA.
                 nn.env_vars.setdefault("PCAP_PF_RING_DNA_RSS", "1")
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
-            
+
             else:
                 nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
 
-            app_instance = app_instance + 1
-            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "bro-%s" % (nn.interface))
+            app_instance += 1
+            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "bro-%s" % nn.interface)
 
         return useplugin
-
 
