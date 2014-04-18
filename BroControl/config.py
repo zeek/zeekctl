@@ -525,25 +525,47 @@ class Configuration:
 
             version = self._getBroVersion()
             if version != oldversion:
-                util.warn("new bro version detected (run 'broctl restart --clean' or 'broctl install')")
+                util.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
                 return
 
         # Check if broctl-config.sh exists.
         broctlcfg = os.path.join(self.config["broctlconfigdir"], "broctl-config.sh")
         if not os.path.exists(broctlcfg):
-            util.warn("file not found: %s (try 'broctl install')" % broctlcfg)
+            util.warn("file not found: %s (run the broctl \"install\" command)" % broctlcfg)
             return
 
         # Check if any config values in broctl-config.sh are not up-to-date.
         f = open(broctlcfg, "r")
+        configdiff = False
         for line in f:
             key, val = line.split("=", 1)
             if key in self.config:
                 val = val[1:-2]
                 if self.config[key] != val:
-                    util.warn("broctl config has changed (run 'broctl restart --clean' or 'broctl install')")
+                    util.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                    configdiff = True
                     break
         f.close()
+
+        if configdiff:
+            return
+
+        nodecfg = os.path.join(self.config["spooldir"], ".nodeconfig")
+        if os.path.isfile(nodecfg):
+            # Get the previously-installed node config
+            fnodecfg = open(nodecfg, "r")
+            oldnodecfg = fnodecfg.readlines()
+            fnodecfg.close()
+
+            # Compare previous and current node config
+            ct = 1
+            for n in self.nodes():
+                newnodecfg = "%s\n" % n.describe()
+                if newnodecfg != oldnodecfg[ct]:
+                    util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                    break
+                ct += 1
+ 
 
 
     # Runs Bro to get its version numbers.

@@ -178,6 +178,14 @@ def install(local_only):
 
         util.output("done.")
 
+    # Save the current installed node configuration
+    nodecfg = os.path.join(config.Config.spooldir, ".nodeconfig")
+    fnodecfg = open(nodecfg, "w")
+    fnodecfg.write("# Automatically generated. Do not edit.\n")
+    for n in config.Config.nodes():
+        fnodecfg.write("%s\n" % n.describe())
+    fnodecfg.close() 
+
     return not hadError
 
 # Create Bro-side broctl configuration broctl-layout.bro.
