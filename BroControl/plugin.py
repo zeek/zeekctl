@@ -171,18 +171,23 @@ class Plugin(object):
 
     @doc.api
     def hosts(self, nodes=[]):
-        """Returns a list of all hosts running at least one node from the list
-        of Node_ objects in *nodes*, or configured in if *nodes* is empty."""
+        """Returns a list of Node_ objects which is a subset of the list in
+        *nodes*, such that only one node per host will be chosen.  If *nodes*
+        is empty, then the returned list will be a subset of the entire list
+        of configured nodes."""
 
         if not nodes:
-            return [ n.host for n in config.Config.hosts() ]
+            return [ n for n in config.Config.hosts() ]
 
-        result = {}
+        result = []
+        h = {}
 
         for n in nodes:
-            result[n.host] = n
+            if n.host not in h:
+                h[n.host] = 1
+                result.append(n)
 
-        return result.keys()
+        return result
 
     @doc.api
     def executeParallel(self, cmds):
