@@ -561,11 +561,16 @@ class Configuration:
             ct = 1
             for n in self.nodes():
                 newnodecfg = "%s\n" % n.describe()
-                if newnodecfg != oldnodecfg[ct]:
-                    util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                if ct >= len(oldnodecfg) or newnodecfg != oldnodecfg[ct]:
+                    configdiff = True
                     break
                 ct += 1
- 
+            else:
+                if ct != len(oldnodecfg):
+                    configdiff = True
+
+            if configdiff:
+                util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
 
 
     # Runs Bro to get its version numbers.
