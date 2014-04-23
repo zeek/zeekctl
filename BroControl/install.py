@@ -1,4 +1,4 @@
-# Functions to install files on all nodes. 
+# Functions to install files on all nodes.
 
 import os
 import glob
@@ -8,10 +8,11 @@ import util
 import execute
 import config
 
-# In all paths given in this file, ${<option>} will replaced with the value of the
-# corresponding configuration option.
+# In all paths given in this file, ${<option>} will replaced with the value of
+# the corresponding configuration option.
 
-# Diretories/files in form (path, mirror) which are synced from the manager to all nodes.
+# Directories/files in form (path, mirror) which are synced from the manager to
+# all nodes.
 # If 'mirror' is true, the path is fully mirrored recursively, otherwise the
 # directory is just created.
 Syncs = [
@@ -63,7 +64,7 @@ def generateDynamicVariableScript():
     except OSError, e:
         util.error("error checking status of symlink '%s': %s" % (symlink, e.strerror))
 
-# Performs the complete broctl installion process.
+# Performs the complete broctl installation process.
 #
 # If local_only is True, nothing is propagated to other nodes.
 def install(local_only):
@@ -121,23 +122,16 @@ def install(local_only):
     # Sync to clients.
     util.output("updating nodes ... ", False)
 
-    hosts = {}
     nodes = []
 
-    for n in config.Config.nodes():
-        # Make sure we do each host only once.
-        if n.host in hosts:
+    # Make sure we install each remote host only once.
+    for n in config.Config.hosts():
+        if execute.isLocal(n):
             continue
 
-        hosts[n.host] = 1
-
-        if n == manager:
+        if not execute.isAlive(n.addr):
+            hadError = True
             continue
-
-        if not execute.isLocal(n):
-            if not execute.isAlive(n.addr):
-                hadError = True
-                continue
 
         nodes += [n]
 
@@ -157,9 +151,6 @@ def install(local_only):
             hadError = True
 
         util.output("done.")
-
-        # Note: the old code created $brobase explicitly but it seems the loop above should
-        # already take care of that.
 
     else:
         # NFS. We only need to take care of the spool/log directories.
@@ -187,46 +178,59 @@ def install(local_only):
 
         util.output("done.")
 
+    # Save the current installed node configuration
+    nodecfg = os.path.join(config.Config.spooldir, "nodeconfig.dat")
+    fnodecfg = open(nodecfg, "w")
+    fnodecfg.write("# Automatically generated. Do not edit.\n")
+
+    for n in config.Config.nodes():
+        fnodecfg.write("%s\n" % n.describe())
+
+    fnodecfg.close()
+
     return not hadError
 
 # Create Bro-side broctl configuration broctl-layout.bro.
-port = -1
 def makeLayout(path, silent=False):
-    def nextPort(node):
-        global port
-        port += 1
-        node.setPort(port)
-        return port
+    class port:
+        def __init__(self, startport):
+            self.p = startport
 
-    global port
-    port = int(config.Config.broport) - 1
+        def nextPort(self, node):
+            self.p += 1
+            node.setPort(self.p)
+            return self.p
+
     manager = config.Config.manager()
 
     if not manager:
         return
 
+    broport = port(int(config.Config.broport) - 1)
+
     filename = os.path.join(path, "cluster-layout.bro")
 
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
-    if ( len(config.Config.nodes("standalone")) > 0 ):
+    if config.Config.nodes("standalone"):
         if os.access(filename, os.W_OK):
             os.unlink(filename)
         # We do need to establish the port for the manager.
-        if ( not silent ):
+        if not silent:
             util.output("generating standalone-layout.bro ...", False)
 
         filename = os.path.join(path, "standalone-layout.bro")
         out = open(filename, "w")
         print >>out, "# Automatically generated. Do not edit."
         # This is the port that standalone nodes listen on for remote control by default.
-        print >>out, "redef Communication::listen_port = %s/tcp;" % nextPort(manager)
+        print >>out, "redef Communication::listen_port = %s/tcp;" % broport.nextPort(manager)
         print >>out, "redef Communication::nodes += {"
         print >>out, "	[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events]," % (util.formatBroAddr(manager.addr), manager.zone_id)
         print >>out, "};"
+        out.close()
 
     else:
-        if ( not silent ):
+        if not silent:
             util.output("generating cluster-layout.bro ...", False)
 
         out = open(filename, "w")
@@ -238,10 +242,10 @@ def makeLayout(path, silent=False):
         print >>out, "redef Cluster::nodes = {"
 
         # Control definition.  For now just reuse the manager information.
-        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp]," % (util.formatBroAddr(manager.addr), config.Config.zoneid, nextPort(manager))
+        print >>out, "\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp]," % (util.formatBroAddr(manager.addr), config.Config.zoneid, broport.nextPort(manager))
 
         # Manager definition
-        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.formatBroAddr(manager.addr), manager.zone_id, nextPort(manager)),
+        print >>out, "\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.formatBroAddr(manager.addr), manager.zone_id, broport.nextPort(manager)),
         for s in workers:
             print >>out, "\"%s\"" % (s.name),
             if s != workers[-1]:
@@ -250,7 +254,7 @@ def makeLayout(path, silent=False):
 
         # Proxies definition
         for p in proxies:
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.formatBroAddr(p.addr), p.zone_id, nextPort(p), manager.name),
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.formatBroAddr(p.addr), p.zone_id, broport.nextPort(p), manager.name),
             for s in workers:
                 print >>out, "\"%s\"" % (s.name),
                 if s != workers[-1]:
@@ -260,7 +264,7 @@ def makeLayout(path, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, util.formatBroAddr(w.addr), w.zone_id, nextPort(w), w.interface, manager.name, proxies[p].name)
+            print >>out, "\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"]," % (w.name, util.formatBroAddr(w.addr), w.zone_id, broport.nextPort(w), w.interface, manager.name, proxies[p].name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
@@ -268,12 +272,9 @@ def makeLayout(path, silent=False):
 
         print >>out, "};"
 
-        # TODO: This is definitely the wrong spot for this.
-        #
-        # This doesn't work at all right now ... -Robin
-        #print >>out, "redef Cluster::log_dir = \"%s\";" % config.Config.subst(config.Config.logdir)
+        out.close()
 
-    if ( not silent ):
+    if not silent:
         util.output(" done.")
 
 # Reads in a list of networks from file.
@@ -286,12 +287,14 @@ def readNetworks(file):
         if not line or line.startswith("#"):
             continue
 
-        fields = line.split()
+        fields = line.split(None, 1)
 
-        for (i, e) in enumerate(fields):
-            fields[i] = util.formatBroPrefix(e)
+        cidr = util.formatBroPrefix(fields[0])
+        tag = ""
+        if len(fields) == 2:
+            tag = fields[1]
 
-        nets += [(fields[0], " ".join(fields[1:]))]
+        nets += [(cidr, tag)]
 
     return nets
 
@@ -305,26 +308,25 @@ def makeLocalNetworks(path, silent=False):
         util.warn("list of local networks does not exist in %s" % netcfg)
         return False
 
-    if ( not silent ):
+    if not silent:
         util.output("generating local-networks.bro ...", False)
+
+    nets = readNetworks(netcfg)
 
     out = open(os.path.join(path, "local-networks.bro"), "w")
     print >>out, "# Automatically generated. Do not edit.\n"
 
-    netcfg = config.Config.localnetscfg
+    print >>out, "redef Site::local_nets = {"
+    for (cidr, tag) in nets:
+        print >>out, "\t%s," % cidr,
+        if tag:
+            print >>out, "\t# %s" % tag,
+        print >>out
 
-    if os.path.exists(netcfg):
-        nets = readNetworks(netcfg)
+    print >>out, "};\n"
+    out.close()
 
-        print >>out, "redef Site::local_nets = {"
-        for (cidr, tag) in nets:
-            print >>out, "\t%s," % cidr,
-            if tag != "":
-                print >>out, "\t# %s" % tag,
-            print >>out
-        print >>out, "};\n"
-
-    if ( not silent ):
+    if not silent:
         util.output(" done.")
 
     return True
@@ -336,7 +338,7 @@ def makeConfig(path, silent=False):
     if not manager:
         return
 
-    if ( not silent ):
+    if not silent:
         util.output("generating broctl-config.bro ...", False)
 
     filename = os.path.join(path, "broctl-config.bro")
@@ -360,7 +362,7 @@ def makeConfig(path, silent=False):
 
     out.close()
 
-    if ( not silent ):
+    if not silent:
         util.output(" done.")
 
 
