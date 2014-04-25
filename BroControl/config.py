@@ -127,7 +127,8 @@ class Configuration:
             return self.config.items()
 
     # Returns a list of Nodes (the list will be empty if no matching nodes
-    # are found).
+    # are found).  The returned list is sorted by node type, and by node name
+    # for each type.
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
@@ -528,50 +529,42 @@ class Configuration:
                 util.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
                 return
 
-        # Check if broctl-config.sh exists.
-        broctlcfg = os.path.join(self.config["broctlconfigdir"], "broctl-config.sh")
-        if not os.path.exists(broctlcfg):
-            util.warn("file not found: %s (run the broctl \"install\" command)" % broctlcfg)
-            return
+        # Check if node config has changed since last install.
+        if "hash-nodecfg" in self.state:
+            nodehash = self.getNodeCfgHash()
 
-        # Check if any config values in broctl-config.sh are not up-to-date.
-        f = open(broctlcfg, "r")
-        configdiff = False
-        for line in f:
-            key, val = line.split("=", 1)
-            if key in self.config:
-                val = val[1:-2]
-                if self.config[key] != val:
-                    util.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
-                    configdiff = True
-                    break
-        f.close()
-
-        if configdiff:
-            return
-
-        nodecfg = os.path.join(self.config["spooldir"], ".nodeconfig")
-        if os.path.isfile(nodecfg):
-            # Get the previously-installed node config
-            fnodecfg = open(nodecfg, "r")
-            oldnodecfg = fnodecfg.readlines()
-            fnodecfg.close()
-
-            # Compare previous and current node config
-            ct = 1
-            for n in self.nodes():
-                newnodecfg = "%s\n" % n.describe()
-                if ct >= len(oldnodecfg) or newnodecfg != oldnodecfg[ct]:
-                    configdiff = True
-                    break
-                ct += 1
-            else:
-                if ct != len(oldnodecfg):
-                    configdiff = True
-
-            if configdiff:
+            if nodehash != self.state["hash-nodecfg"]:
                 util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return
 
+        # Check if any config values have changed since last install.
+        if "hash-broctlcfg" in self.state:
+            cfghash = self.getBroctlCfgHash()
+            if cfghash != self.state["hash-broctlcfg"]:
+                util.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return
+
+
+    # Return a hash value (as a string) of the current broctl configuration.
+    def getBroctlCfgHash(self):
+        return str(hash(tuple(sorted(self.config.items()))))
+    
+    # Update the stored hash value of the current broctl configuration.
+    def updateBroctlCfgHash(self):
+        cfghash = self.getBroctlCfgHash()
+        self._setState("hash-broctlcfg", cfghash)
+
+    # Return a hash value (as a string) of the current broctl node config.
+    def getNodeCfgHash(self):
+        nn = []
+        for n in self.nodes():
+            nn.append(tuple(n.items()))
+        return str(hash(tuple(nn)))
+
+    # Update the stored hash value of the current broctl node config.
+    def updateNodeCfgHash(self):
+        nodehash = self.getNodeCfgHash()
+        self._setState("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version numbers.
     def _getBroVersion(self):
