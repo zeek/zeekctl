@@ -48,6 +48,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                     app_instance = first_app_instance
                     dd[nn.host][nn.interface] = cluster_id + len(dd[nn.host])
             else:
+		app_instance = first_app_instance
                 dd[nn.host] = { nn.interface : cluster_id }
 
             # Apply environment variables, but do not override values from
@@ -55,7 +56,11 @@ class LBPFRing(BroControl.plugin.Plugin):
             if pftype:
                 nn.env_vars.setdefault(pftype, "1")
 
-            if nn.interface.startswith("dnacluster"):
+            if nn.interface.startswith("zc"):
+                # For the case where a user is running zbalance_ipc
+                nn.interface = "%s@%d" % (nn.interface, app_instance)
+
+            elif nn.interface.startswith("dnacluster"):
                 # For the case where a user is running pfdnacluster_master
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
