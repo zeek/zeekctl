@@ -46,7 +46,6 @@ class Configuration:
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))
         self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-        self._setOption("home", os.getenv("HOME"))
         self._setOption("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
@@ -101,7 +100,8 @@ class Configuration:
         self.config["cron"] = "0"
 
     # Provides access to the configuration options via the dereference operator.
-    # Lookups the attribute in broctl.cfg first, then in the dynamic variables from broctl.dat.
+    # Lookups the attribute in broctl.cfg first, then in the dynamic variables
+    # from broctl.dat.
     # Defaults to empty string for unknown options.
     def __getattr__(self, attr):
         if attr in self.config:
@@ -127,7 +127,8 @@ class Configuration:
             return self.config.items()
 
     # Returns a list of Nodes (the list will be empty if no matching nodes
-    # are found).
+    # are found).  The returned list is sorted by node type, and by node name
+    # for each type.
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
@@ -189,11 +190,13 @@ class Configuration:
     # nodes() would yield but within which each host appears only once.
     def hosts(self, tag = None):
         hosts = {}
+        nodelist = []
         for node in self.nodes(tag):
-            if not node.host in hosts:
-                hosts[node.host] = node
+            if node.host not in hosts:
+                hosts[node.host] = 1
+                nodelist.append(node)
 
-        return hosts.values()
+        return nodelist
 
     # Replace all occurences of "${option}", with option being either
     # broctl.cfg option or a dynamic variable, with the corresponding value.
@@ -283,7 +286,7 @@ class Configuration:
 
                 key = key.replace(".", "_")
 
-                if not key in node_mod.Node._keys:
+                if key not in node_mod.Node._keys:
                     util.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 
@@ -463,7 +466,7 @@ class Configuration:
     # Initialize a global option if not already set.
     def _setOption(self, val, key):
         val = val.lower()
-        if not val in self.config:
+        if val not in self.config:
             self.config[val] = self.subst(key)
 
     # Set a dynamic state variable.
@@ -515,17 +518,53 @@ class Configuration:
         self.state["bro"] = self.subst("${bindir}/bro")
 
 
-    # Check if the Bro version is different from previously-installed version.
-    def checkBroVersion(self):
-        if "broversion" not in self.state:
-            return
+    # Warn user to run broctl install if any config changes are detected.
+    def warnBroctlInstall(self):
+        # Check if Bro version is different from previously-installed version.
+        if "broversion" in self.state:
+            oldversion = self.state["broversion"]
 
-        oldversion = self.state["broversion"]
+            version = self._getBroVersion()
+            if version != oldversion:
+                util.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
+                return
 
-        version = self._getBroVersion()
-        if version != oldversion:
-            util.warn("new bro version detected (run 'broctl install')")
+        # Check if node config has changed since last install.
+        if "hash-nodecfg" in self.state:
+            nodehash = self.getNodeCfgHash()
 
+            if nodehash != self.state["hash-nodecfg"]:
+                util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return
+
+        # Check if any config values have changed since last install.
+        if "hash-broctlcfg" in self.state:
+            cfghash = self.getBroctlCfgHash()
+            if cfghash != self.state["hash-broctlcfg"]:
+                util.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return
+
+
+    # Return a hash value (as a string) of the current broctl configuration.
+    def getBroctlCfgHash(self):
+        return str(hash(tuple(sorted(self.config.items()))))
+
+    # Update the stored hash value of the current broctl configuration.
+    def updateBroctlCfgHash(self):
+        cfghash = self.getBroctlCfgHash()
+        self._setState("hash-broctlcfg", cfghash)
+
+    # Return a hash value (as a string) of the current broctl node config.
+    def getNodeCfgHash(self):
+        nn = []
+        for n in self.nodes():
+            nn.append(tuple(n.items()))
+        return str(hash(tuple(nn)))
+
+    # Update the stored hash value of the current broctl node config.
+    def updateNodeCfgHash(self):
+        nodehash = self.getNodeCfgHash()
+        self._setState("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version numbers.
     def _getBroVersion(self):

@@ -61,7 +61,8 @@ def isLocal(node):
 
     return not node or node.host == "localhost" or node.addr in LocalAddrs
 
-# Takes list of (node, dir) pairs and ensures the directories exist on the nodes' host.
+# Takes list of (node, dir) pairs and ensures the directories exist on the
+# nodes' host.
 # Returns list of (node, sucess) pairs.
 def mkdirs(dirs):
 
@@ -88,7 +89,8 @@ def mkdirs(dirs):
 
     return results
 
-# Takes list of (node, dir) pairs and ensures the directories exist on the nodes' host.
+# Takes list of (node, dir) pairs and ensures the directories exist on the
+# nodes' host.
 # Returns list of (node, sucess) pairs.
 def mkdir(node, dir):
     return mkdirs([(node, dir)])[0][1]
@@ -467,17 +469,20 @@ def _runHelperWait(host):
 
 # Broccoli communication with running nodes.
 
-# Sends event  to a set of nodes in parallel.
+# Sends event to a set of nodes in parallel.
 #
 # events is a list of tuples of the form (node, event, args, result_event).
 #   node:    the destination node.
-#   event:   the name of the event to send (node that receiver must subscribe to it as well).
-#   args:    a list of event args; each arg must be a data type understood by the Broccoli module.
-#   result_event: name of a event the node sends back. None if no event is sent back.
+#   event:   the name of the event to send (node that receiver must subscribe
+#            to it as well).
+#   args:    a list of event args; each arg must be a data type understood by
+#            the Broccoli module.
+#   result_event: name of a event the node sends back. None if no event is
+#                 sent back.
 #
 # Returns a list of tuples (node, success, results_args).
-#   If success is True, result_args is a list of arguments as shipped with the result event,
-#   or [] if no result_event was specified.
+#   If success is True, result_args is a list of arguments as shipped with the
+#   result event, or [] if no result_event was specified.
 #   If success is False, results_args is a string with an error message.
 
 def sendEventsParallel(events):
@@ -509,7 +514,7 @@ def _sendEventInit(node, event, args, result_event):
 
     try:
         bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
-                                 flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
+                           flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False
         bc.connect()

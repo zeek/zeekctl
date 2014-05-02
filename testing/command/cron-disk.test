@@ -19,7 +19,7 @@ function check_email() {
     email=$BROCTL_INSTALL_PREFIX/sendmail.out
     test ! -e $email && return 1
 
-    grep -q "Disk space low on bro:/dev/sda6" $email
+    grep -q "Disk space low on localhost:/dev/sda6" $email
     test $? -ne 0 && return 1
     rm $email
     return 0

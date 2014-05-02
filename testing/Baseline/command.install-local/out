@@ -1,5 +1,5 @@
-warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.12700/spool/broctl.dat' (this is ok on first run)
-warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.12700/spool/broctl.dat' (this is ok on first run)
+warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.2483/spool/broctl.dat' (this is ok on first run)
+warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.2483/spool/broctl.dat' (this is ok on first run)
 creating policy directories ... done.
 installing site policies ... done.
 generating cluster-layout.bro ... done.

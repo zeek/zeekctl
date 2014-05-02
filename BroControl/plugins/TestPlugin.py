@@ -36,7 +36,7 @@ class TestPlugin(BroControl.plugin.Plugin):
                 self.message("TestPlugin: mykey is not set")
 
         for h in self.hosts():
-            self.message("TestPlugin: host %s" % h)
+            self.message("TestPlugin: host %s" % h.host)
 
         return True
 
