@@ -48,7 +48,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                     app_instance = first_app_instance
                     dd[nn.host][nn.interface] = cluster_id + len(dd[nn.host])
             else:
-		app_instance = first_app_instance
+                app_instance = first_app_instance
                 dd[nn.host] = { nn.interface : cluster_id }
 
             # Apply environment variables, but do not override values from

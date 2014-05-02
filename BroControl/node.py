@@ -100,14 +100,26 @@ class Node:
     def __str__(self):
         return self.name
 
+    def items(self):
+        """Returns a list of (key, value) tuples, sorted by key, of a node."""
+
+        def tostr(v):
+            if type(v) is dict:
+                return ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
+            else:
+                return str(v)
+
+        return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())] 
+
     @doc.api
     def describe(self):
         """Returns an extended string representation of the node including all
-        its keys with values."""
+        its keys with values (sorted by key)."""
+
         def fmt(v):
-            if type(v) == type([]):
+            if type(v) is list:
                 v = ",".join(v)
-            elif type(v) == type({}):
+            elif type(v) is dict:
                 v = ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
 
             return v

@@ -1,4 +1,49 @@
 
+1.2-129 | 2014-05-01 20:58:28 -0700
+
+  * A bug fix and feature add for PF_Ring support. (Seth Hall)
+
+     - Reset the app_instance for the case where there
+       are multiple dnaclusters on a single host.
+
+     - Add naming support for zerocopy (zc) clusters.
+
+  * Use a hash to determine if a config change occurred. (Daniel Thayer)
+
+  * Change hosts() function in the plugin API to return a list of
+    nodes instead of just hostnames. (Daniel Thayer)
+
+  * Add warnings when node config or broctl.cfg has changed. (Daniel Thayer)
+
+  * Code simplification, remove the unused broctl "home" option, and
+    improved a couple warning messages. (Daniel Thayer)
+
+  * Fixed a bug where broctl cron could email about the "$total"
+    pseudo-node not receiving any packets. (Daniel Thayer)
+
+  * Code reorganization for the getDf function to avoid direct output
+    and thereby reporting the same error message multiple times for
+    the same host. (Daniel Thayer)
+
+  * Cleanup some code for style consistency, reformat some comments to
+    fit on an 80-column display, and remove some dead code. (Daniel
+    Thayer)
+
+  * Replace the update-stats script with Python code. (Daniel Thayer)
+    
+  * Gather disk usage by host rather than by node. The output now also
+    shows both node and host names and is now sorted by node type.
+
+  * Adjust column widths for top, netstats, peerstatus commands.
+    (Daniel Thayer)
+
+  * Change the broctl exec command to run only once per host. (Daniel
+    Thayer)
+
+  * Changed the hosts() function so that it preserves the order of the
+    returned node list as it was sorted by the nodes() function.
+    (Daniel Thayer)
+
 1.2-106 | 2014-04-10 08:32:18 -0700
 
   * Update test baselines, and minor code cleanup. (Daniel Thayer)

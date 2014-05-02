@@ -106,7 +106,7 @@ def waitForBros(nodes, status, timeout, ensurerunning):
                 del todo[node.name]
                 results += [(node, False)]
 
-        if len(todo) == 0:
+        if not todo:
             # All done.
             break
 
@@ -424,7 +424,7 @@ def _stopNodes(nodes):
                 terminated += [node]
                 results += [(node, True)]
 
-        if len(todo) == 0:
+        if not todo:
             # All done.
             break
 
@@ -563,16 +563,11 @@ def status(nodes):
     # Return True if all nodes are running
     return len(nodes) == len(all)
 
-# Outputs state of remote connections for host.
 
-
-# Helper for getting top output.
-#
-# Returns tuples of the form (node, error, vals) where  'error' is None if we
-# were able to get the data or otherwise a string with an  error message;
-# in case there's no error, 'vals' is a list of dicts which map tags to their values.
-#
-# Tags are "pid", "proc", "vsize", "rss", "cpu", and "cmd".
+# Returns a list of tuples of the form (node, error, vals) where 'error' is an
+# error message string, or None if there was no error.  'vals' is a list of
+# dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
+# "rss", "cpu", and "cmd".
 #
 # We do all the stuff in parallel across all nodes which is why this looks
 # a bit confusing ...
@@ -611,18 +606,33 @@ def getTopOutput(nodes):
         pids[node.name] += [int(line) for line in output]
 
     cmds = []
+    hosts = {}
 
-    # Now run top.
-    for node in nodes: # Do the loop again to keep the order.
-        if not node.name in pids:
+    # Now run top once per host.
+    for node in nodes:   # Do the loop again to keep the order.
+        if node.name not in pids:
             continue
+
+        if node.host in hosts:
+            continue
+
+        hosts[node.host] = 1
 
         cmds += [(node, "top", [])]
 
     if not cmds:
         return results
 
+    res = {}
     for (node, success, output) in execute.runHelperParallel(cmds):
+        res[node.host] = (success, output)
+
+    # Gather results for all the nodes that are running
+    for node in nodes:
+        if node.name not in pids:
+            continue
+
+        success, output = res[node.host]
 
         if not success or not output:
             results += [(node, "cannot get top output", [{}])]
@@ -631,7 +641,7 @@ def getTopOutput(nodes):
         procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
 
         if not procs:
-            # It can happen that on the meantime the process is not there anymore.
+            # It's possible that the process is no longer there.
             results += [(node, "not running", [{}])]
             continue
 
@@ -656,30 +666,36 @@ def getTopOutput(nodes):
     return results
 
 # Produce a top-like output for node's processes.
-# If hdr is true, output column headers first.
 def top(nodes):
 
-    util.output("%-11s %-10s %-13s %-7s %-7s %-6s %-5s %-5s %s" % ("Name", "Type", "Node", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
+    typewidth = 7
+    hostwidth = 16
+    if config.Config.standalone == "1":
+        # In standalone mode, we need a wider "type" column.
+        typewidth = 10
+        hostwidth = 13
+
+    util.output("%-12s %-*s %-*s %-7s %-7s %-6s %-5s %-4s %s" % ("Name", typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
 
     hadError = False
     for (node, error, vals) in getTopOutput(nodes):
 
         if not error:
             for d in vals:
-                util.output("%-11s " % node.name, nl=False)
-                util.output("%-10s " % node.type, nl=False)
-                util.output("%-13s " % node.host, nl=False)
+                util.output("%-12s " % node.name, nl=False)
+                util.output("%-*s " % (typewidth, node.type), nl=False)
+                util.output("%-*s " % (hostwidth, node.host), nl=False)
                 util.output("%-7s " % d["pid"], nl=False)
                 util.output("%-7s " % d["proc"], nl=False)
                 util.output("%-6s " % prettyPrintVal(d["vsize"]), nl=False)
                 util.output("%-5s " % prettyPrintVal(d["rss"]), nl=False)
-                util.output("%-5s " % ("%s%%" % d["cpu"]), nl=False)
+                util.output("%-4s " % ("%s%%" % d["cpu"]), nl=False)
                 util.output("%s" % d["cmd"])
         else:
             hadError = True
-            util.output("%-11s " % node.name, nl=False)
-            util.output("%-10s " % node.type, nl=False)
-            util.output("%-13s " % node.host, nl=False)
+            util.output("%-12s " % node.name, nl=False)
+            util.output("%-*s " % (typewidth, node.type), nl=False)
+            util.output("%-*s " % (hostwidth, node.host), nl=False)
             util.output("<%s>" % error)
 
     return not hadError
@@ -825,30 +841,22 @@ def attachGdb(nodes):
 
     return not hadError
 
-# Helper for getting capstats output.
+# Gather capstats from interfaces.
 #
-# Returns tuples of the form (node, error, vals) where  'error' is None if we
-# were able to get the data or otherwise a string with an error message;
-# in case there's no error, 'vals' maps tags to their values.
+# Returns a list of tuples of the form (node, error, vals) where 'error' is
+# None if we were able to get the data, or otherwise a string with an error
+# message; in case there's no error, 'vals' maps tags to their values.
 #
-# Tags are those as returned by capstats on the command-line
+# Tags are those as returned by capstats on the command-line.
 #
-# There is one "pseudo-node" of the name "$total" with the sum of all
-# individual values.
+# If there is more than one node, then the results will also contain
+# one "pseudo-node" of the name "$total" with the sum of all individual values.
 #
 # We do all the stuff in parallel across all nodes which is why this looks
 # a bit confusing ...
-
-# Gather capstats from interfaces.
 def getCapstatsOutput(nodes, interval):
 
-    if not config.Config.capstatspath:
-        if config.Config.cron == "0":
-            util.warn("do not have capstats binary available")
-        return []
-
     results = []
-    cmds = []
 
     hosts = {}
     for node in nodes:
@@ -860,6 +868,8 @@ def getCapstatsOutput(nodes, interval):
         except AttributeError:
             continue
 
+    cmds = []
+
     for (addr, interface) in hosts.keys():
         node = hosts[addr, interface]
 
@@ -870,13 +880,6 @@ def getCapstatsOutput(nodes, interval):
         # separator (another layer of quotes is needed because the eval
         # command is used).
         capstats = [config.Config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
-
-# Unfinished feature: only consider a particular MAC. Works here for capstats
-# but Bro config is not adapted currently so we disable it for now.
-#        try:
-#            capstats += ["-f", "\\'", "ether dst %s" % node.ether, "\\'"]
-#        except AttributeError:
-#            pass
 
         cmds += [(node, "run-cmd", capstats)]
 
@@ -903,7 +906,7 @@ def getCapstatsOutput(nodes, interval):
             results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
             continue
 
-        vals = { }
+        vals = {}
 
         try:
             for field in fields:
@@ -911,9 +914,9 @@ def getCapstatsOutput(nodes, interval):
                 val = float(val)
                 vals[key] = val
 
-                try:
+                if key in totals:
                     totals[key] += val
-                except KeyError:
+                else:
                     totals[key] = val
 
             results += [(node, None, vals)]
@@ -952,7 +955,7 @@ def getCFlowStatus():
     return vals
 
 # Calculates the differences between to getCFlowStatus() calls.
-# Returns tuples in the same form as getCapstatsOutput() does.
+# Returns a list of tuples in the same form as getCapstatsOutput() does.
 def calculateCFlowRate(start, stop, interval):
     diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
 
@@ -1033,11 +1036,11 @@ def capstats(nodes, interval):
             hadError = True
 
     if have_capstats:
-        output("Interface", sorted(capstats))
+        output("Interface", capstats)
 
     if have_cflow and cflow_start and cflow_stop:
         diffs = calculateCFlowRate(cflow_start, cflow_stop, interval)
-        output("cFlow Port", sorted(diffs))
+        output("cFlow Port", diffs)
 
     return not hadError
 
@@ -1046,7 +1049,7 @@ def update(nodes):
 
     running = isRunning(nodes)
     zone = config.Config.zoneid
-    if zone == "":
+    if not zone:
         zone = "NOZONE"
 
     cmds = []
@@ -1069,14 +1072,15 @@ def update(nodes):
     return [(config.Config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
 
 # Gets disk space on all volumes relevant to broctl installation.
-# Returns dict which for each node has a list of tuples (fs, total, used, avail).
+# Returns a list of the form:  [ (host, diskinfo), ...]
+# where diskinfo is a list of the form [fs, total, used, avail, perc] or
+# ["FAIL", <error message>] if an error is encountered.
 def getDf(nodes):
-    hadError = False
     dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
 
     df = {}
     for node in nodes:
-        df[node.name] = {}
+        df["%s/%s" % (node.name, node.host)] = {}
 
     for dir in dirs:
         path = config.Config.config[dir]
@@ -1092,43 +1096,52 @@ def getDf(nodes):
         results = execute.runHelperParallel(cmds)
 
         for (node, success, output) in results:
+            nodehost = "%s/%s" % (node.name, node.host)
             if success:
                 if output:
                     fields = output[0].split()
 
                     # Ignore NFS mounted volumes.
                     if fields[0].find(":") < 0:
-                        df[node.name][fields[0]] = fields
+                        total = float(fields[1])
+                        used = float(fields[2])
+                        avail = float(fields[3])
+                        perc = used * 100.0 / (used + avail)
+                        df[nodehost][fields[0]] = [fields[0], total, used,
+                                                   avail, perc]
                 else:
-                    util.output("error checking disk space on node '%s': no df output" % node)
-                    hadError = True
+                    df[nodehost]["FAIL"] = ["FAIL", "no output from df helper"]
             else:
                 if output:
                     msg = output[0]
                 else:
                     msg = "unknown failure"
-                util.output("error checking disk space on node '%s': %s" % (node, msg))
-                hadError = True
+                df[nodehost]["FAIL"] = ["FAIL", msg]
 
-    result = {}
-    for node in df:
-        result[node] = df[node].values()
+    result = []
+    for node in nodes:
+        nodehost = "%s/%s" % (node.name, node.host)
+        result.append((nodehost, df[nodehost].values()))
 
-    return (hadError, result)
+    return result
 
 def df(nodes):
 
-    util.output("%12s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
+    hadError = False
+    util.output("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
 
-    hadError, results = getDf(nodes)
-    for (node, dfs) in results.items():
+    results = getDf(nodes)
+
+    for (node, dfs) in results:
         for df in dfs:
-            total = float(df[1])
-            used = float(df[2])
-            avail = float(df[3])
-            perc = used * 100.0 / (used + avail)
+            if df[0] == "FAIL":
+                hadError = True
+                util.output("error on node %s: %s" % (node, df[1]))
+                continue
 
-            util.output("%12s  %15s  %-5s  %-5s  %-5.1f%%" % (node, df[0],
+            (fs, total, used, avail, perc) = df
+
+            util.output("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node, fs,
                 prettyPrintVal(total),
                 prettyPrintVal(avail), perc))
 
@@ -1179,9 +1192,9 @@ def peerStatus(nodes):
     hadError = False
     for (node, success, args) in _queryPeerStatus(nodes):
         if success:
-            print "%10s\n%s" % (node, args[0])
+            print "%11s\n%s" % (node, args[0])
         else:
-            print "%10s   <error: %s>" % (node, args)
+            print "%11s   <error: %s>" % (node, args)
             hadError = True
 
     return not hadError
@@ -1190,9 +1203,9 @@ def netStats(nodes):
     hadError = False
     for (node, success, args) in _queryNetStats(nodes):
         if success:
-            print "%10s: %s" % (node, args[0]),
+            print "%11s: %s" % (node, args[0]),
         else:
-            print "%10s: <error: %s>" % (node, args)
+            print "%11s: <error: %s>" % (node, args)
             hadError = True
 
     return not hadError
@@ -1201,7 +1214,7 @@ def executeCmd(nodes, cmd):
     hadError = False
     for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes]):
         out = output and "\n> ".join(output) or ""
-        util.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
+        util.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
         if not success:
             hadError = True
     return not hadError

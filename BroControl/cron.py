@@ -2,6 +2,7 @@
 
 import os
 import time
+import shutil
 
 import util
 import config
@@ -111,10 +112,12 @@ def _logStats(interval):
     for (node, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
-                # Report if we don't see packets on an interface.
-                tag = "lastpkts-%s" % node.name.lower()
+                print >>out, t, node, "interface", key, val
 
-                if key == "pkts":
+                if key == "pkts" and str(node) != "$total":
+                    # Report if we don't see packets on an interface.
+                    tag = "lastpkts-%s" % node.name.lower()
+
                     if tag in config.Config.state:
                         last = float(config.Config.state[tag])
                     else:
@@ -127,8 +130,6 @@ def _logStats(interval):
                         util.output("%s is seeing packets again on interface %s" % (node.host, node.interface))
 
                     config.Config._setState(tag, val)
-
-                print >>out, t, node, "interface", key, val
 
         else:
             print >>out, t, node, "error", "error", error
@@ -146,25 +147,27 @@ def _checkDiskSpace():
     if minspace == 0.0:
         return
 
-    hadError, results = control.getDf(config.Config.nodes())
-    for (node, dfs) in results.items():
+    results = control.getDf(config.Config.hosts())
+    for (nodehost, dfs) in results:
+        host = nodehost.split("/")[1]
+
         for df in dfs:
+            if df[0] == "FAIL":
+                # A failure here is normally caused by a host that is down, so
+                # we don't need to output the error message.
+                continue
+
             fs = df[0]
-            total = float(df[1])
-            used = float(df[2])
-            avail = float(df[3])
-            perc = used * 100.0 / (used + avail)
-            key = ("disk-space-%s%s" % (node, fs.replace("/", "-"))).lower()
+            perc = df[4]
+            key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
 
             if perc > 100 - minspace:
-                try:
+                if key in config.Config.state:
                     if float(config.Config.state[key]) > 100 - minspace:
                         # Already reported.
                         continue
-                except KeyError:
-                    pass
 
-                util.output("Disk space low on %s:%s - %.1f%% used." % (node, fs, perc))
+                util.output("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
             config.Config.state[key] = "%.1f" % perc
 
@@ -200,32 +203,8 @@ def _checkHosts():
 
         config.Config._setState(tag, alive)
 
-def _getProfLogs():
-    cmds = []
-
-    for node in config.Config.hosts():
-        if execute.isLocal(node):
-            continue
-
-        if not execute.isAlive(node.addr):
-            continue
-
-        cmd = os.path.join(config.Config.scriptsdir, "get-prof-log") + " %s %s %s/prof.log" % (node.name, node.host, node.cwd())
-        cmds += [(node, cmd, [], None)]
-
-    for (node, success, output) in execute.runLocalCmdsParallel(cmds):
-        if not success:
-            util.output("cannot get prof.log from %s" % node.name)
 
 def _updateHTTPStats():
-    # Get the prof.logs.
-
-    # FIXME: Disabled for now. This currently copies the complete prof.log
-    # each time. As these can get huge, that can take a while. We should
-    # change that to only copy the most recent chunk and then also expire old
-    # prof logs on the manager.
-    # _getProfLogs()
-
     # Create meta file.
     if not os.path.exists(config.Config.statsdir):
         try:
@@ -236,8 +215,9 @@ def _updateHTTPStats():
 
         util.warn("creating directory for stats file: %s" % config.Config.statsdir)
 
+    metadat = os.path.join(config.Config.statsdir, "meta.dat")
     try:
-        meta = open(os.path.join(config.Config.statsdir, "meta.dat"), "w")
+        meta = open(metadat, "w")
     except IOError, err:
         util.output("error creating file: %s" % err)
         return
@@ -260,12 +240,35 @@ def _updateHTTPStats():
 
     meta.close()
 
-    # Run the update-stats script.
-    (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "update-stats"))
+    wwwdir = os.path.join(config.Config.statsdir, "www")
+    if not os.path.isdir(wwwdir):
+        try:
+            os.makedirs(wwwdir)
+        except OSError, err:
+            util.output("failed to create directory: %s" % err)
+            return
 
+    # Append the current stats.log in spool to the one in ${statsdir}
+    dst = os.path.join(config.Config.statsdir, os.path.basename(config.Config.statslog))
+    try:
+        fdst = open(dst, "a")
+    except IOError, err:
+        util.output("failed to append to file: %s" % err)
+        return
+
+    fsrc = open(config.Config.statslog, "r")
+    shutil.copyfileobj(fsrc, fdst)
+    fdst.close()
+    fsrc.close()
+
+    # Update the WWW data
+    statstocsv = os.path.join(config.Config.scriptsdir, "stats-to-csv")
+
+    (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, config.Config.statslog, metadat, wwwdir))
     if not success:
-        util.output("error running update-stats\n\n")
-        util.output(output)
+        util.output("stats-to-csv failed")
+        return
 
-
+    os.unlink(config.Config.statslog)
+    shutil.copy(metadat, wwwdir)
 
