@@ -1,4 +1,4 @@
-# Functions to install files on all nodes.
+# Functions to install files on all nodes. 
 
 import os
 import glob
@@ -178,15 +178,11 @@ def install(local_only):
 
         util.output("done.")
 
-    # Save the current installed node configuration
-    nodecfg = os.path.join(config.Config.spooldir, "nodeconfig.dat")
-    fnodecfg = open(nodecfg, "w")
-    fnodecfg.write("# Automatically generated. Do not edit.\n")
+    # Save current node configuration state.
+    config.Config.updateNodeCfgHash()
 
-    for n in config.Config.nodes():
-        fnodecfg.write("%s\n" % n.describe())
-
-    fnodecfg.close()
+    # Save current configuration state.
+    config.Config.updateBroctlCfgHash()
 
     return not hadError
 
@@ -322,7 +318,6 @@ def makeLocalNetworks(path, silent=False):
         if tag:
             print >>out, "\t# %s" % tag,
         print >>out
-
     print >>out, "};\n"
     out.close()
 
