@@ -1,5 +1,5 @@
 Name         Type    Host             Status    Pid    Peers  Started
-worker-1     worker  localhost        stopped   
+worker-1     worker  localhost        stopped
 manager      manager localhost        running   10012  ???    04 Dec 06:17:48
 proxy-1      proxy   localhost        running   10036  ???    04 Dec 06:17:50
 worker-2     worker  localhost        running   10075  ???    04 Dec 06:17:52

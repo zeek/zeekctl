@@ -3,7 +3,7 @@
 # processes sniffing the same interface).
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-abspath | $SCRIPTS/diff-remove-localhost-values" btest-diff out
 
 . broctl-test-setup
 
@@ -12,5 +12,5 @@ etc/broctl.cfg__pfring
 etc/node.cfg__pfring_2_nics
 EOF
 
-broctl nodes > out
+broctl nodes 2> out
 

@@ -23,7 +23,7 @@ import util
 Config = None # Globally accessible instance of Configuration.
 
 class Configuration:
-    def __init__(self, config, basedir, broscriptdir, version):
+    def __init__(self, config, basedir, broscriptdir, version, cmdout):
         global Config
         Config = self
 
@@ -31,7 +31,9 @@ class Configuration:
         self.state = {}
 
         # Read broctl.cfg.
-        self.config = self._readConfig(config)
+        self.config = self._readConfig(config, cmdout)
+        if self.config is None:
+            raise RuntimeError
 
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
@@ -51,7 +53,8 @@ class Configuration:
         # Determine operating system.
         (success, output) = execute.runLocalCmd("uname")
         if not success:
-            util.error("cannot run uname")
+            cmdout.error("cannot run uname")
+            raise RuntimeError
         self._setOption("os", output[0].lower().strip())
 
         if self.config["os"] == "linux":
@@ -68,12 +71,14 @@ class Configuration:
         else:
             self._setOption("time", "")
 
-    def initPostPlugins(self):
+    def initPostPlugins(self, cmdout):
         plugin.Registry.addNodeKeys()
 
         # Read node.cfg and broctl.dat.
-        self._readNodes()
-        self.readState()
+        if not self._readNodes(cmdout):
+            return False
+        if not self.readState(cmdout):
+            return False
 
         # If "env_vars" was specified in broctl.cfg, then apply to all nodes.
         varlist = self.config.get("env_vars")
@@ -81,7 +86,8 @@ class Configuration:
             try:
                 global_env_vars = self._getEnvVarDict(varlist)
             except ValueError, err:
-                util.error("broctl.cfg: %s" % err)
+                cmdout.error("env_vars option in broctl.cfg: %s" % err)
+                return False
 
             for node in self.nodes("all"):
                 for (key, val) in global_env_vars.items():
@@ -98,6 +104,8 @@ class Configuration:
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
+
+        return True
 
     # Provides access to the configuration options via the dereference operator.
     # Lookups the attribute in broctl.cfg first, then in the dynamic variables
@@ -264,11 +272,12 @@ class Configuration:
         return env_vars
 
     # Parse node.cfg.
-    def _readNodes(self):
+    def _readNodes(self, cmdout):
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
         if not config.read(self.nodecfg):
-            util.error("cannot read '%s'" % self.nodecfg)
+            cmdout.error("cannot read '%s'" % self.nodecfg)
+            return False
 
         manager = False
         proxy = False
@@ -287,13 +296,14 @@ class Configuration:
                 key = key.replace(".", "_")
 
                 if key not in node_mod.Node._keys:
-                    util.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
+                    cmdout.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 
                 if key == "type":
                     if val == "manager":
                         if manager:
-                            util.error("only one manager can be defined")
+                            cmdout.error("only one manager can be defined")
+                            return False
                         manager = True
 
                     elif val == "proxy":
@@ -306,7 +316,8 @@ class Configuration:
                         standalone = True
 
                     else:
-                        util.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
+                        cmdout.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
+                        return False
 
 
                 node.__dict__[key] = val
@@ -315,20 +326,24 @@ class Configuration:
             try:
                 node.env_vars = self._getEnvVarDict(node.env_vars)
             except ValueError, err:
-                util.error("%s: section %s: %s" % (file, sec, err))
+                cmdout.error("%s: section %s: %s" % (file, sec, err))
+                return False
 
             try:
                 addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
                 if len(addrinfo) == 0:
-                    util.error("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
+                    cmdout.error("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
+                    return False
 
                 addr_str = addrinfo[0][4][0]
                 # zone_id is handled manually, so strip it if it's there
                 node.addr = addr_str.split('%')[0]
             except AttributeError:
-                util.error("%s: no host given in section '%s'" % (file, sec))
+                cmdout.error("%s: no host given in section '%s'" % (file, sec))
+                return False
             except socket.gaierror, e:
-                util.error("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
+                cmdout.error("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
+                return False
 
             # Each node gets a number unique across its type.
             type = self.nodelist[sec].type
@@ -345,36 +360,44 @@ class Configuration:
                 try:
                     numprocs = int(node.lb_procs)
                     if numprocs < 1:
-                        util.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
+                        cmdout.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
+                        return False
                 except ValueError:
-                    util.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+                    cmdout.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
+                    return False
             elif node.lb_method:
-                util.error("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
+                cmdout.error("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
+                return False
 
             try:
                 pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
             except ValueError:
-                util.error("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
+                cmdout.error("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
+                return False
 
             if pin_cpus:
                 node.pin_cpus = pin_cpus[0]
 
             if node.lb_procs:
                 if not node.lb_method:
-                    util.error("%s: no load balancing method given in section '%s'" % (file, sec))
+                    cmdout.error("%s: no load balancing method given in section '%s'" % (file, sec))
+                    return False
 
                 if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
-                    util.error("%s: unknown load balancing method given in section '%s'" % (file, sec))
+                    cmdout.error("%s: unknown load balancing method given in section '%s'" % (file, sec))
+                    return False
 
                 if node.lb_method == "interfaces":
                     if not node.lb_interfaces:
-                        util.error("%s: no list of interfaces given in section '%s'" % (file, sec))
+                        cmdout.error("%s: no list of interfaces given in section '%s'" % (file, sec))
+                        return False
 
                     # get list of interfaces to use, and assign one to each node
                     netifs = node.lb_interfaces.split(",")
 
                     if len(netifs) != int(node.lb_procs):
-                        util.error("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
+                        cmdout.error("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
+                        return False
 
                     node.interface = netifs.pop().strip()
 
@@ -399,30 +422,37 @@ class Configuration:
 
             if not standalone:
                 if not manager:
-                    util.error("%s: no manager defined" % file)
+                    cmdout.error("%s: no manager defined" % file)
+                    return False
 
                 if not proxy:
-                    util.error("%s: no proxy defined" % file)
+                    cmdout.error("%s: no proxy defined" % file)
+                    return False
 
             else:
                 if len(self.nodelist) > 1:
-                    util.error("%s: more than one node defined in stand-alone setup" % file)
+                    cmdout.error("%s: more than one node defined in stand-alone setup" % file)
+                    return False
 
         manageronlocalhost = False
 
         for n in self.nodelist.values():
             if not n.name:
-                util.error("node configured without a name")
+                cmdout.error("node configured without a name")
+                return False
 
             if not n.host:
-                util.error("no host given for node %s" % n.name)
+                cmdout.error("no host given for node %s" % n.name)
+                return False
 
             if not n.type:
-                util.error("no type given for node %s" % n.name)
+                cmdout.error("no type given for node %s" % n.name)
+                return False
 
             if n.type == "manager":
-                if not execute.isLocal(n):
-                    util.error("script must be run on manager node")
+                if not execute.isLocal(n, cmdout):
+                    cmdout.error("script must be run on manager node")
+                    return False
 
                 if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
                     manageronlocalhost = True
@@ -432,10 +462,14 @@ class Configuration:
             for n in self.nodelist.values():
                 if n.type != "manager" and n.type != "standalone":
                     if n.addr != "127.0.0.1" and n.addr != "::1":
-                        util.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
+                        cmdout.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
+                        return False
+
+        return True
+
 
     # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
-    def _readConfig(self, file, allowstate = False):
+    def _readConfig(self, file, cmdout, allowstate = False):
         config = {}
         try:
             for line in open(file):
@@ -446,20 +480,22 @@ class Configuration:
 
                 args = line.split("=", 1)
                 if len(args) != 2:
-                    util.error("%s: syntax error '%s'" % (file, line))
+                    cmdout.error("%s: syntax error '%s'" % (file, line))
+                    return None
 
                 (key, val) = args
                 key = key.strip().lower()
                 val = val.strip()
 
                 if not allowstate and ".state." in key:
-                    util.error("state variable '%s' not allowed in file: %s" % (key, file))
+                    cmdout.error("state variable '%s' not allowed in file: %s" % (key, file))
+                    return None
 
                 # if the key already exists, just overwrite with new value
                 config[key] = val
 
         except IOError, e:
-            util.warn("cannot read '%s' (this is ok on first run)" % file)
+            cmdout.warn("cannot read '%s' (this is ok on first run)" % file)
 
         return config
 
@@ -475,16 +511,20 @@ class Configuration:
         self.state[val] = key
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
-    def readState(self):
-        self.state = self._readConfig(self.statefile, True)
+    def readState(self, cmdout):
+        self.state = self._readConfig(self.statefile, cmdout, True)
+        if self.state is None:
+            return False
+
+        return True
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
-    def writeState(self):
+    def writeState(self, cmdout):
         tmpstatefile = self.statefile + ".tmp"
         try:
             out = open(tmpstatefile, "w")
         except IOError:
-            util.warn("can't write '%s'" % self.statefile)
+            cmdout.error("can't write '%s'" % self.statefile)
             return
 
         print >>out, "# Automatically generated. Do not edit.\n"
@@ -504,45 +544,54 @@ class Configuration:
         try:
             out = open(self.statefile, "a")
         except IOError:
-            util.warn("can't append to '%s'" % self.statefile)
-            return
+            return (False, "can't append to '%s'" % self.statefile)
 
         print >>out, "%s = %s" % (key, self.state[key])
 
         out.close()
+        return (True, "")
 
     # Record the Bro version.
-    def determineBroVersion(self):
-        version = self._getBroVersion()
+    def determineBroVersion(self, cmdout):
+        version = self._getBroVersion(cmdout)
+        if not version:
+            return False
+
         self.state["broversion"] = version
         self.state["bro"] = self.subst("${bindir}/bro")
+        return True
 
 
     # Warn user to run broctl install if any config changes are detected.
-    def warnBroctlInstall(self):
+    def warnBroctlInstall(self, cmdout):
         # Check if Bro version is different from previously-installed version.
         if "broversion" in self.state:
             oldversion = self.state["broversion"]
 
-            version = self._getBroVersion()
+            version = self._getBroVersion(cmdout)
+            if not version:
+                return False
+
             if version != oldversion:
-                util.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
-                return
+                cmdout.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
+                return True
 
         # Check if node config has changed since last install.
         if "hash-nodecfg" in self.state:
             nodehash = self.getNodeCfgHash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                util.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
-                return
+                cmdout.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return True
 
         # Check if any config values have changed since last install.
         if "hash-broctlcfg" in self.state:
             cfghash = self.getBroctlCfgHash()
             if cfghash != self.state["hash-broctlcfg"]:
-                util.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
-                return
+                cmdout.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                return True
+
+        return True
 
 
     # Return a hash value (as a string) of the current broctl configuration.
@@ -567,19 +616,21 @@ class Configuration:
         self._setState("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version numbers.
-    def _getBroVersion(self):
+    def _getBroVersion(self, cmdout):
         version = ""
         bro = self.subst("${bindir}/bro")
-        if execute.exists(None, bro):
+        if execute.exists(None, bro, cmdout):
             (success, output) = execute.runLocalCmd("%s -v" % bro)
             if success and output:
                 version = output[-1]
         else:
-            util.error("cannot find Bro binary to determine version")
+            cmdout.error("cannot find Bro binary to determine version")
+            return None
 
         m = re.search(".* version ([^ ]*).*$", version)
         if not m:
-            util.error("cannot determine Bro version [%s]" % version.strip())
+            cmdout.error("cannot determine Bro version [%s]" % version.strip())
+            return None
 
         version = m.group(1)
         # If bro is built with the "--enable-debug" configure option, then it

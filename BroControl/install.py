@@ -5,6 +5,7 @@ import glob
 import re
 
 import util
+import cmdoutput
 import execute
 import config
 
@@ -41,7 +42,7 @@ NFSSyncs = [
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
 # other scripts.
-def generateDynamicVariableScript():
+def generateDynamicVariableScript(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
     cfg_file = open(cfg_path, 'w')
     for substvartuple in config.Config.options():
@@ -60,18 +61,24 @@ def generateDynamicVariableScript():
             try:
                 util.force_symlink(cfg_path, symlink)
             except OSError, e:
-                util.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+                cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+                return False
     except OSError, e:
-        util.error("error checking status of symlink '%s': %s" % (symlink, e.strerror))
+        cmdout.error("failed to resolve symlink '%s': %s" % (symlink, e.strerror))
+        return False
+
+    return True
 
 # Performs the complete broctl installation process.
 #
 # If local_only is True, nothing is propagated to other nodes.
 def install(local_only):
+    cmdout = cmdoutput.CommandOutput()
+    cmdSuccess = True
 
-    hadError = False
-
-    config.Config.determineBroVersion()
+    if not config.Config.determineBroVersion(cmdout):
+        cmdSuccess = False
+        return (cmdSuccess, cmdout)
 
     manager = config.Config.manager()
 
@@ -80,57 +87,58 @@ def install(local_only):
 
     for p in policies:
         if os.path.isdir(p):
-            util.output("removing old policies in %s ..." % p, False)
-            if not execute.rmdir(manager, p):
-                hadError = True
-            util.output(" done.")
+            cmdout.info("removing old policies in %s ..." % p)
+            if not execute.rmdir(manager, p, cmdout):
+                cmdSuccess = False
 
-    util.output("creating policy directories ...", False)
+    cmdout.info("creating policy directories ...")
     for p in policies:
-        if not execute.mkdir(manager, p):
-            hadError = True
-    util.output(" done.")
+        if not execute.mkdir(manager, p, cmdout):
+            cmdSuccess = False
 
     # Install local site policy.
 
     if config.Config.sitepolicypath:
-        util.output("installing site policies ...", False)
+        cmdout.info("installing site policies ...")
         dst = config.Config.policydirsiteinstall
         for dir in config.Config.sitepolicypath.split(":"):
             dir = config.Config.subst(dir)
             for file in glob.glob(os.path.join(dir, "*")):
-                if not execute.install(manager, file, dst):
-                    hadError = True
-        util.output(" done.")
+                if not execute.install(manager, file, dst, cmdout):
+                    cmdSuccess = False
 
-    makeLayout(config.Config.policydirsiteinstallauto)
-    if not makeLocalNetworks(config.Config.policydirsiteinstallauto):
-        hadError = True
-    makeConfig(config.Config.policydirsiteinstallauto)
+    makeLayout(config.Config.policydirsiteinstallauto, cmdout)
+    if not makeLocalNetworks(config.Config.policydirsiteinstallauto, cmdout):
+        cmdSuccess = False
+    makeConfig(config.Config.policydirsiteinstallauto, cmdout)
 
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     try:
         util.force_symlink(manager.cwd(), current)
     except (IOError, OSError), e:
-        util.error("failed to update current log symlink")
+        cmdSuccess = False
+        cmdout.error("failed to update current log symlink")
+        return (cmdSuccess, cmdout)
 
-    generateDynamicVariableScript()
+    if not generateDynamicVariableScript(cmdout):
+        cmdSuccess = False
+        return (cmdSuccess, cmdout)
 
     if local_only:
-        return not hadError
+        return (cmdSuccess, cmdout)
 
     # Sync to clients.
-    util.output("updating nodes ... ", False)
+    cmdout.info("updating nodes ...")
 
     nodes = []
 
     # Make sure we install each remote host only once.
     for n in config.Config.hosts():
-        if execute.isLocal(n):
+        if execute.isLocal(n, cmdout):
             continue
 
-        if not execute.isAlive(n.addr):
-            hadError = True
+        if not execute.isAlive(n.addr, cmdout):
+            cmdSuccess = False
             continue
 
         nodes += [n]
@@ -141,16 +149,14 @@ def install(local_only):
         for dir in [config.Config.subst(dir) for (dir, mirror) in Syncs if not mirror]:
             dirs += [(n, dir) for n in nodes]
 
-        for (node, success) in execute.mkdirs(dirs):
+        for (node, success) in execute.mkdirs(dirs, cmdout):
             if not success:
-                util.warn("cannot create directory %s on %s" % (dir, node.name))
-                hadError = True
+                cmdout.error("cannot create directory %s on %s" % (dir, node.name))
+                cmdSuccess = False
 
         paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
-        if not execute.sync(nodes, paths):
-            hadError = True
-
-        util.output("done.")
+        if not execute.sync(nodes, paths, cmdout):
+            cmdSuccess = False
 
     else:
         # NFS. We only need to take care of the spool/log directories.
@@ -167,16 +173,14 @@ def install(local_only):
         # We need this only on the manager.
         dirs += [(manager, config.Config.logdir)]
 
-        for (node, success) in execute.mkdirs(dirs):
+        for (node, success) in execute.mkdirs(dirs, cmdout):
             if not success:
-                util.warn("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
-                hadError = True
+                cmdout.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
+                cmdSuccess = False
 
         paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
-        if not execute.sync(nodes, paths):
-            hadError = True
-
-        util.output("done.")
+        if not execute.sync(nodes, paths, cmdout):
+            cmdSuccess = False
 
     # Save current node configuration state.
     config.Config.updateNodeCfgHash()
@@ -184,10 +188,10 @@ def install(local_only):
     # Save current configuration state.
     config.Config.updateBroctlCfgHash()
 
-    return not hadError
+    return (cmdSuccess, cmdout)
 
 # Create Bro-side broctl configuration broctl-layout.bro.
-def makeLayout(path, silent=False):
+def makeLayout(path, cmdout, silent=False):
     class port:
         def __init__(self, startport):
             self.p = startport
@@ -213,7 +217,7 @@ def makeLayout(path, silent=False):
             os.unlink(filename)
         # We do need to establish the port for the manager.
         if not silent:
-            util.output("generating standalone-layout.bro ...", False)
+            cmdout.info("generating standalone-layout.bro ...")
 
         filename = os.path.join(path, "standalone-layout.bro")
         out = open(filename, "w")
@@ -227,7 +231,7 @@ def makeLayout(path, silent=False):
 
     else:
         if not silent:
-            util.output("generating cluster-layout.bro ...", False)
+            cmdout.info("generating cluster-layout.bro ...")
 
         out = open(filename, "w")
 
@@ -270,9 +274,6 @@ def makeLayout(path, silent=False):
 
         out.close()
 
-    if not silent:
-        util.output(" done.")
-
 # Reads in a list of networks from file.
 def readNetworks(file):
 
@@ -296,16 +297,16 @@ def readNetworks(file):
 
 
 # Create Bro script which contains a list of local networks.
-def makeLocalNetworks(path, silent=False):
+def makeLocalNetworks(path, cmdout, silent=False):
 
     netcfg = config.Config.localnetscfg
 
     if not os.path.exists(netcfg):
-        util.warn("list of local networks does not exist in %s" % netcfg)
+        cmdout.error("list of local networks does not exist in %s" % netcfg)
         return False
 
     if not silent:
-        util.output("generating local-networks.bro ...", False)
+        cmdout.info("generating local-networks.bro ...")
 
     nets = readNetworks(netcfg)
 
@@ -321,20 +322,17 @@ def makeLocalNetworks(path, silent=False):
     print >>out, "};\n"
     out.close()
 
-    if not silent:
-        util.output(" done.")
-
     return True
 
 
-def makeConfig(path, silent=False):
+def makeConfig(path, cmdout, silent=False):
     manager = config.Config.manager()
 
     if not manager:
         return
 
     if not silent:
-        util.output("generating broctl-config.bro ...", False)
+        cmdout.info("generating broctl-config.bro ...")
 
     filename = os.path.join(path, "broctl-config.bro")
     out = open(filename, "w")
@@ -356,8 +354,4 @@ def makeConfig(path, silent=False):
         print >>out, "redef Communication::listen_ipv6 = F ;"
 
     out.close()
-
-    if not silent:
-        util.output(" done.")
-
 

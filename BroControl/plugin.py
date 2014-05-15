@@ -125,20 +125,22 @@ class Plugin(object):
 
     @doc.api
     def parseNodes(self, names):
-        """Returns a list of `Node`_ objects for a string of space-separated
-        node names. If a name does not correspond to a known node, an error
-        message is printed and the node is skipped from the returned list. If
-        no names are known, an empty list is returned."""
+        """Returns a tuple which contains two lists. The first list is a list
+        of `Node`_ objects for a string of space-separated node names. If a
+        name does not correspond to a known node, then the name is added
+        to the second list in the returned tuple.
+        """
         nodes = []
+        notnodes = []
 
         for arg in names.split():
             h = config.Config.nodes(arg, True)
-            if not h:
-                util.output("unknown node '%s'" % arg)
-            else:
+            if h:
                 nodes += h
+            else:
+                notnodes.append(arg)
 
-        return nodes
+        return (nodes, notnodes)
 
     @doc.api
     def message(self, msg):
@@ -152,7 +154,7 @@ class Plugin(object):
 
     @doc.api
     def error(self, msg):
-        """Reports an error to the user and terminates broctl."""
+        """Reports an error to the user."""
         util.error(msg, prefix="plugin:%s" % self.prefix())
 
     @doc.api
@@ -190,7 +192,7 @@ class Plugin(object):
         return result
 
     @doc.api
-    def executeParallel(self, cmds):
+    def executeParallel(self, cmds, cmdout):
         """Executes a set of commands in parallel on multiple hosts. ``cmds``
         is a list of tuples ``(node, cmd)``, in which the *node* is a `Node`_
         instance and *cmd* is a string with the command to execute for it. The
@@ -198,7 +200,7 @@ class Plugin(object):
         ``success`` is True if the command ran successfully and ``output`` is
         the combined stdout/stderr output (or None if we couldn't connect to
         the host) for the corresponding ``node``."""
-        return execute.executeCmdsParallel(cmds)
+        return execute.executeCmdsParallel(cmds, cmdout)
 
     ### Methods that must be overridden by plugins.
 
@@ -602,7 +604,7 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_custom(self, cmd, args):
+    def cmd_custom(self, cmd, args, cmdout):
         """Called when a command defined by the ``commands`` method is executed.
         *cmd* is the command (without the plugin's prefix), and *args* is a
         single string with all arguments.

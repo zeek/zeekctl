@@ -23,7 +23,7 @@ echo "${yesterday}.00 bro action old" >> ${teststatslog}
 echo "${now}.00 bro action new" >> ${teststatslog}
 
 # Verify that stats.log expire is off by default
-broctl config | sed 's/ //g' | grep -q statslogexpireinterval=0
+broctl config 2>&1 | sed 's/ //g' | grep -q statslogexpireinterval=0
 test $? -ne 0 && exit 1
 
 broctl cron

@@ -10,5 +10,5 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__mixedcase
 EOF
 
-broctl config | grep -i LogRotationInterval > out
+broctl config 2>&1 | grep -i LogRotationInterval > out
 

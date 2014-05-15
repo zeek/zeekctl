@@ -17,7 +17,7 @@ testlogdir=$BROCTL_INSTALL_PREFIX/logs/2012-10-31
 broctl install
 
 # Verify that log expire is off by default
-broctl config | sed 's/ //g' | grep -q logexpireinterval=0
+broctl config 2>&1 | sed 's/ //g' | grep -q logexpireinterval=0
 test $? -ne 0 && exit 1
 
 # Create a log file with a recent timestamp and one with very old timestamp

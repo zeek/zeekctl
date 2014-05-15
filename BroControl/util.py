@@ -8,6 +8,7 @@ import curses
 import atexit
 
 import config
+import cmdoutput
 import execute
 
 def fmttime(t):
@@ -41,7 +42,6 @@ def output(msg = "", nl = True, prefix="output"):
 
 def error(msg, prefix=None):
     output("error: %s" % msg, prefix=prefix)
-    sys.exit(1)
 
 def warn(msg, prefix=None):
     output("warning: %s" % msg)
@@ -55,7 +55,7 @@ def debug(msglevel, msg, prefix="main"):
 
     try:
         level = int(config.Config.debug)
-    except ValueError:
+    except Exception:
         level = 0
 
     if level < msglevel:
@@ -73,41 +73,40 @@ def debug(msglevel, msg, prefix="main"):
                 DebugOut = open(fn, "a")
             except IOError, e:
                 # Can't use error() here as that would recurse.
-                print >>sys.stderr, "Error, can't open %s: %s" % (fn, e.strerror)
-                sys.exit(1)
+                print >>sys.stderr, "Error: can't open %s: %s" % (fn, e.strerror)
+                return
 
     print >>DebugOut, time.strftime(config.Config.timefmt, time.localtime(time.time())), msg
     DebugOut.flush()
 
 def sendMail(subject, body):
     if not config.Config.sendmail:
-        return
+        return True
 
     cmd = "%s '%s'" % (os.path.join(config.Config.scriptsdir, "send-mail"), subject)
     (success, output) = execute.runLocalCmd(cmd, "", body)
-    if not success:
-        warn("cannot send mail")
+    return success
 
 lockCount = 0
 
-def _breakLock():
+def _breakLock(cmdout):
     try:
         # Check whether lock is stale.
         pid = open(config.Config.lockfile, "r").readline().strip()
-        (success, output) = execute.runHelper(config.Config.manager(), "check-pid", args=[pid])
+        (success, output) = execute.runHelper(config.Config.manager(), cmdout, "check-pid", args=[pid])
         if success:
             # Process still exissts.
             return False
 
         # Break lock.
-        warn("removing stale lock")
+        cmdout.info("removing stale lock")
         os.unlink(config.Config.lockfile)
         return True
 
     except (OSError, IOError):
         return False
 
-def _aquireLock():
+def _aquireLock(cmdout):
     if not config.Config.manager():
         # Initial install.
         return True
@@ -117,7 +116,7 @@ def _aquireLock():
 
     lockdir = os.path.dirname(config.Config.lockfile)
     if not os.path.exists(lockdir):
-        warn("creating directory for lock file: %s" % lockdir)
+        cmdout.info("creating directory for lock file: %s" % lockdir)
         os.makedirs(lockdir)
 
     try:
@@ -135,16 +134,16 @@ def _aquireLock():
                 return True
 
             # File is locked.
-            if _breakLock():
-                return _aquireLock()
+            if _breakLock(cmdout):
+                return _aquireLock(cmdout)
 
         except OSError, e:
             # File is already locked.
-            if _breakLock():
-                return _aquireLock()
+            if _breakLock(cmdout):
+                return _aquireLock(cmdout)
 
         except IOError, e:
-            error("cannot acquire lock: %s" % e)
+            cmdout.error("cannot acquire lock: %s" % e)
             return False
 
     finally:
@@ -157,13 +156,13 @@ def _aquireLock():
 
     return False
 
-def _releaseLock():
+def _releaseLock(cmdout):
     try:
         os.unlink(config.Config.lockfile)
     except OSError, e:
-        warn("cannot remove lock file: %s" % e)
+        cmdout.error("cannot remove lock file: %s" % e)
 
-def lock():
+def lock(cmdout):
     global lockCount
 
     if lockCount > 0:
@@ -171,7 +170,7 @@ def lock():
         lockCount += 1
         return True
 
-    if not _aquireLock():
+    if not _aquireLock(cmdout):
 
         if config.Config.cron == "1":
             do_output = 0
@@ -179,37 +178,33 @@ def lock():
             do_output = 2
 
         if do_output:
-            output("waiting for lock ...", nl=False)
+            cmdout.info("waiting for lock ...")
 
         count = 0
-        while not _aquireLock():
-            if do_output:
-                output(".", nl=False)
+        while not _aquireLock(cmdout):
             time.sleep(1)
 
             count += 1
             if count > 30:
-                output("cannot get lock") # always output this one.
+                cmdout.info("cannot get lock") # always output this one.
                 return False
-
-        if do_output:
-            output(" ok")
 
     lockCount = 1
     return True
 
-def unlock():
+def unlock(cmdout):
     global lockCount
 
     if lockCount == 0:
-        error("mismatched lock/unlock")
+        cmdout.error("mismatched lock/unlock")
+        return
 
     if lockCount > 1:
         # Still locked.
         lockCount -= 1
         return
 
-    _releaseLock()
+    _releaseLock(cmdout)
 
     lockCount = 0
 

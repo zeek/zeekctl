@@ -29,7 +29,7 @@ ret=0
 broctl install
 
 # Verify the default value of mindiskspace
-broctl config | sed 's/ //g' | grep -q mindiskspace=5
+broctl config 2>&1 | sed 's/ //g' | grep -q mindiskspace=5
 test $? -ne 0 && exit 1
 
 ################

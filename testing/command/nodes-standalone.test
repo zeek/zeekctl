@@ -7,5 +7,5 @@
 
 broctl install
 
-broctl nodes > out
+broctl nodes 2> out
 

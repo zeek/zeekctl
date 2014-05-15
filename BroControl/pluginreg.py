@@ -21,13 +21,16 @@ class PluginRegistry:
         """Adds a directory to search for plugins."""
         self._dirs += [dir]
 
-    def loadPlugins(self):
+    def loadPlugins(self, cmdout):
         """Loads all plugins found in any of the added directories."""
-        self._loadPlugins()
+        if not self._loadPlugins(cmdout):
+            return False
 
         # Init options.
         for plugin in self._plugins:
             plugin._registerOptions()
+
+        return True
 
     def initPlugins(self):
         """Initialize all loaded plugins."""
@@ -124,7 +127,7 @@ class PluginRegistry:
             func = getattr(p, method)
             func(*args)
 
-    def runCustomCommand(self, cmd, args):
+    def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
         False if no such command is known."""
         try:
@@ -137,7 +140,7 @@ class PluginRegistry:
         if cmd.startswith("%s." % prefix):
             cmd = cmd[len(prefix) + 1:]
 
-        plugin.cmd_custom(cmd, args)
+        plugin.cmd_custom(cmd, args, cmdout)
         return True
 
     def allCustomCommands(self):
@@ -179,22 +182,26 @@ class PluginRegistry:
                 p.debug("adding analysis %s for plugin %s (%s)" % (name, p.name(), mechanism))
                 analysis.addAnalysis(name, mechanism, descr)
 
-    def _loadPlugins(self):
+    def _loadPlugins(self, cmdout):
         sys.path.append(config.Config.libdirinternal)
 
         for path in self._dirs:
             for root, dirs, files in os.walk(os.path.abspath(path)):
                 for name in files:
                     if name.endswith(".py") and not name.startswith("__"):
-                        self._importPlugin(os.path.join(root, name[:-3]))
+                        if not self._importPlugin(os.path.join(root, name[:-3]), cmdout):
+                            return False
 
-    def _importPlugin(self, path):
+        return True
+
+    def _importPlugin(self, path, cmdout):
         sys.path = [os.path.dirname(path)] + sys.path
 
         try:
             module = __import__(os.path.basename(path))
         except Exception, e:
-            util.error("cannot import plugin %s: %s" % (path, e))
+            cmdout.error("cannot import plugin %s: %s" % (path, e))
+            return False
 
         sys.path = sys.path[1:]
 
@@ -213,7 +220,7 @@ class PluginRegistry:
                 try:
                     p = cls()
                 except Exception, e:
-                    util.output("Error running __init__ for plugin class %s: %s" % (cls.__name__, str(e)))
+                    cmdout.error("plugin class %s __init__ failed: %s" % (cls.__name__, str(e)))
                     break
 
                 # verify that the plugin overrides all required methods
@@ -221,11 +228,11 @@ class PluginRegistry:
                     util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
                                % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
                 except NotImplementedError:
-                    util.output("Error in plugin at %s (does not override required methods)" % path)
+                    cmdout.error("plugin at %s does not override required methods" % path)
                     continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
-                    util.output("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
+                    cmdout.warn("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
@@ -234,14 +241,16 @@ class PluginRegistry:
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        util.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
                         break
 
                 if not sameprefix:
                     self._plugins += [p]
 
         if not found:
-            util.warn("No plugin found in %s" % module.__file__)
+            cmdout.warn("No plugin found in %s" % module.__file__)
+
+        return True
 
 
 import plugin

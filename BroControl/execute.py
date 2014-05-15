@@ -10,6 +10,7 @@ import subprocess
 
 import config
 import util
+import cmdoutput
 
 haveBroccoli = True
 
@@ -40,12 +41,12 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
     return proc
 
 # Returns true if given node corresponds to the host we're running on.
-def isLocal(node):
+def isLocal(node, cmdout):
     global LocalAddrs
     if not LocalAddrs:
         (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "local-interfaces"))
         if not success:
-            util.warn("cannot get list of local IP addresses")
+            cmdout.error("cannot get list of local IP addresses")
 
             try:
                 LocalAddrs = ["127.0.0.1", "::1"]
@@ -64,7 +65,7 @@ def isLocal(node):
 # Takes list of (node, dir) pairs and ensures the directories exist on the
 # nodes' host.
 # Returns list of (node, sucess) pairs.
-def mkdirs(dirs):
+def mkdirs(dirs, cmdout):
 
     results = []
     cmds = []
@@ -72,8 +73,8 @@ def mkdirs(dirs):
 
     for (node, dir) in dirs:
         # We make local directories directly.
-        if isLocal(node):
-            if not exists(node, dir):
+        if isLocal(node, cmdout):
+            if not exists(node, dir, cmdout):
                 util.debug(1, "mkdir -p %s" % dir, prefix="local")
                 os.makedirs(dir)
 
@@ -84,7 +85,7 @@ def mkdirs(dirs):
             # Need to be careful here as our helper scripts may not be installed yet.
             fullcmds += [("test -d %s || mkdir -p %s 2>/dev/null; echo $?; echo ~~~" % (dir, dir))]
 
-    for (node, success, output) in runHelperParallel(cmds, fullcmds=fullcmds):
+    for (node, success, output) in runHelperParallel(cmds, cmdout, fullcmds=fullcmds):
         results += [(node, success)]
 
     return results
@@ -92,64 +93,57 @@ def mkdirs(dirs):
 # Takes list of (node, dir) pairs and ensures the directories exist on the
 # nodes' host.
 # Returns list of (node, sucess) pairs.
-def mkdir(node, dir):
-    return mkdirs([(node, dir)])[0][1]
+def mkdir(node, dir, cmdout):
+    return mkdirs([(node, dir)], cmdout)[0][1]
 
-def rmdirs(dirs):
+def rmdirs(dirs, cmdout):
     results = []
     cmds = []
 
     for (node, dir) in dirs:
         # We remove local directories directly.
-        if isLocal(node):
+        if isLocal(node, cmdout):
             (success, output) = runLocalCmd("rm -rf %s" % dir)
             results += [(node, success)]
         else:
             cmds += [(node, "rmdir", [dir])]
 
-    for (node, success, output) in runHelperParallel(cmds):
+    for (node, success, output) in runHelperParallel(cmds, cmdout):
         results += [(node, success)]
 
     return results
 
 # Removes the directory on the host if it's there.
-def rmdir(node, dir):
-    return rmdirs([(node, dir)])[0][1]
+def rmdir(node, dir, cmdout):
+    return rmdirs([(node, dir)], cmdout)[0][1]
 
 # Returns true if the path exists on the host.
-def exists(host, path):
-    if isLocal(host):
+def exists(host, path, cmdout):
+    if isLocal(host, cmdout):
         return os.path.lexists(path)
     else:
-        (success, output) = runHelper(host, "exists", [path])
+        (success, output) = runHelper(host, cmdout, "exists", [path])
         return success
 
-# Returns true if the path exists and refers to a file on the host.
-def isfile(host, path):
-    if isLocal(host):
-        return os.path.isfile(path)
-    else:
-        util.error("isfile() not yet supported for remote hosts")
-
 # Returns true if the path exists and refers to a directory on the host.
-def isdir(host, path):
-    if isLocal(host):
+def isdir(host, path, cmdout):
+    if isLocal(host, cmdout):
         return os.path.isdir(path)
     else:
-        (success, output) = runHelper(host, "is-dir", [path])
+        (success, output) = runHelper(host, cmdout, "is-dir", [path])
         return success
 
 # Copies src to dst, preserving permission bits, but does not clobber existing
 # files/directories.
 # Works for files and directories (recursive).
-def install(host, src, dstdir):
-    if isLocal(host):
-        if not exists(host, src):
-            util.output("file does not exist: %s" % src)
+def install(host, src, dstdir, cmdout):
+    if isLocal(host, cmdout):
+        if not exists(host, src, cmdout):
+            cmdout.error("file does not exist: %s" % src)
             return False
 
         dst = os.path.join(dstdir, os.path.basename(src))
-        if exists(host, dst):
+        if exists(host, dst, cmdout):
             # Do not clobber existing files/dirs (this is not an error)
             return True
 
@@ -166,12 +160,13 @@ def install(host, src, dstdir):
             pass
 
     else:
-        util.error("install() not yet supported for remote hosts")
+        cmdout.error("install() not yet supported for remote hosts")
+        return False
 
     return True
 
 # rsyncs paths from localhost to destination hosts.
-def sync(nodes, paths):
+def sync(nodes, paths, cmdout):
     result = True
     cmds = []
     for n in nodes:
@@ -183,7 +178,7 @@ def sync(nodes, paths):
 
     for (id, success, output) in runLocalCmdsParallel(cmds):
         if not success:
-            util.warn("error rsyncing to %s: %s" % (util.scopeAddr(id.host), output))
+            cmdout.error("rsync to %s failed: %s" % (util.scopeAddr(id.host), output))
             result = False
 
     return result
@@ -193,7 +188,7 @@ _deadHosts = {}
 
 # Return true if the given host is alive (i.e., we can establish
 # an ssh session), and false otherwise.
-def isAlive(host):
+def isAlive(host, cmdout):
 
     if host in _deadHosts:
         return False
@@ -203,7 +198,7 @@ def isAlive(host):
     if not success:
         _deadHosts[host] = True
         if config.Config.cron == "0":
-            util.warn("host %s is not alive" % host)
+            cmdout.error("host %s is not alive" % host)
 
     return success
 
@@ -263,7 +258,7 @@ def _runLocalCmdWait(proc, input):
 
 
 # Runs arbitrary commands in parallel on nodes. Input is list of (node, cmd).
-def executeCmdsParallel(cmds):
+def executeCmdsParallel(cmds, cmdout):
     helpers = []
 
     for (node, cmd) in cmds:
@@ -272,7 +267,7 @@ def executeCmdsParallel(cmds):
 
         helpers += [(node, "run-cmd", [cmd])]
 
-    return runHelperParallel(helpers)
+    return runHelperParallel(helpers, cmdout)
 
 # Runs a helper script from bin/helpers, according to the helper
 # protocol.
@@ -281,14 +276,14 @@ def executeCmdsParallel(cmds):
 # arguments. Env is an optional enviroment variable of the form
 # "key=val". Return value as for runLocalCmd().
 # 'output' is None (vs. []) if we couldn't connect to host.
-def runHelper(host, cmd=None, args=None, fullcmd=None, env = ""):
+def runHelper(host, cmdout, cmd=None, args=None, fullcmd=None, env = ""):
     util.disableSignals()
     try:
-        status = _runHelperInit(host, cmd, args, fullcmd, env)
+        status = _runHelperInit(host, cmdout, cmd, args, fullcmd, env)
         if not status:
             return (False, None)
 
-        status = _runHelperWait(status)
+        status = _runHelperWait(status, cmdout)
         if not status:
             return (False, None)
 
@@ -303,7 +298,7 @@ def runHelper(host, cmd=None, args=None, fullcmd=None, env = ""):
 # Envs, if given, is a parallel list of env variables.
 # Returns a list of (node, success, output) tuples.
 # 'output' is None (vs. []) if we couldn't connect to host.
-def runHelperParallel(cmds, fullcmds = None, envs = None):
+def runHelperParallel(cmds, cmdout, fullcmds = None, envs = None):
 
     util.disableSignals()
 
@@ -325,14 +320,14 @@ def runHelperParallel(cmds, fullcmds = None, envs = None):
             else:
                 env = ""
 
-            status = _runHelperInit(node, cmd, args, fullcmd, env)
+            status = _runHelperInit(node, cmdout, cmd, args, fullcmd, env)
             if status:
                 running += [node]
             else:
                 results += [(node, False, None)]
 
         for node in running:
-            status =  _runHelperWait(node)
+            status =  _runHelperWait(node, cmdout)
             if status:
                 (success, output) = status
                 results += [(node, success, output)]
@@ -373,13 +368,14 @@ def _emptyDel(self):
     pass
 subprocess.Popen.__del__ = _emptyDel
 
-def _getConnection(host):
+def _getConnection(host, cmdout):
 
     global WhoAmI
     if not WhoAmI:
         (success, output) = runLocalCmd("whoami")
         if not success:
-            util.error("can't get 'whoami'")
+            cmdout.error("can't run 'whoami'")
+            return None
         WhoAmI = output[0]
 
     if not host:
@@ -392,16 +388,16 @@ def _getConnection(host):
             global _deadHosts
             if host.host not in _deadHosts:
                 _deadHosts[host.host] = True
-                util.warn("connection to %s broke" % host.host)
+                cmdout.error("connection to %s broke" % host.host)
             return None
 
         return (p.stdin, p.stdout)
 
-    if isLocal(host):
+    if isLocal(host, cmdout):
         cmdline = "sh"
     else:
         # Check whether host is alive.
-        if not isAlive(host.host):
+        if not isAlive(host.host, cmdout):
             return None
 
         # ServerAliveInterval and ServerAliveCountMax prevents broctl from
@@ -414,15 +410,15 @@ def _getConnection(host):
     try:
         p = popen(cmdline)
     except OSError, e:
-        util.warn("cannot login into %s [IOError: %s]" % (host.host, e))
+        cmdout.error("cannot login to %s: %s" % (host.host, e))
         return None
 
     Connections[host.name] = p
     return (p.stdin, p.stdout)
 
-def _runHelperInit(host, cmd, args, fullcmd, env):
+def _runHelperInit(host, cmdout, cmd, args, fullcmd, env):
 
-    c = _getConnection(host)
+    c = _getConnection(host, cmdout)
     if not c:
         return None
 
@@ -439,11 +435,11 @@ def _runHelperInit(host, cmd, args, fullcmd, env):
 
     return host
 
-def _runHelperWait(host):
+def _runHelperWait(host, cmdout):
     output = []
     while True:
 
-        c = _getConnection(host)
+        c = _getConnection(host, cmdout)
         if not c:
             return None
 
@@ -457,7 +453,7 @@ def _runHelperWait(host):
     try:
         rc = int(output[-1])
     except ValueError:
-        util.warn("cannot parse exit code from helper on %s: %s" % (host.host, output[-1]))
+        cmdout.error("cannot parse exit code from helper on %s: %s" % (host.host, output[-1]))
         rc = 1
 
     util.debug(1, "exit code %d" % rc, prefix=host.host)

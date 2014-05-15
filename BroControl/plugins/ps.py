@@ -5,6 +5,7 @@
 # processes get a "(+)".
 
 import BroControl.plugin
+import BroControl.cmdoutput
 
 class PsBro(BroControl.plugin.Plugin):
     def __init__(self):
@@ -19,18 +20,20 @@ class PsBro(BroControl.plugin.Plugin):
     def commands(self):
         return [("bro", "[<nodes>]", "Show Bro processes on nodes' systems")]
 
-    def cmd_custom(self, cmd, args):
+    def cmd_custom(self, cmd, args, cmdout):
 
         assert(cmd == "bro") # Can't be anything else.
 
         # Get the nodes the user wants.
         if args:
-            nodes = self.parseNodes(args)
+            nodes, notnodes = self.parseNodes(args)
+            for n in notnodes:
+                cmdout.error("unknown node '%s'" % n)
         else:
             nodes = self.nodes()
 
         if not nodes:
-            self.message("No nodes given.")
+            cmdout.error("No nodes given.")
             return
 
         # Get one node for every host running at least one of the nodes. Also
@@ -58,17 +61,17 @@ class PsBro(BroControl.plugin.Plugin):
             # Note: output might be None or an empty list, in which case we
             # still want the "failed" message below.
             if first_node and output:
-                print "       ", output[0]
+                cmdout.info("        %s" % output[0])
 
             if not success:
-                print ">>>", n.host, "failed"
+                cmdout.error(">>> %s failed" % n.host)
             else:
-                print ">>>", n.host
+                cmdout.info(">>> %s" % n.host)
 
 
         first_node = True
 
-        for (n, success, output) in self.executeParallel(cmds):
+        for (n, success, output) in self.executeParallel(cmds, cmdout):
             # Remove stderr output (if any)
             while output and not output[0].startswith("USER"):
                 output = output[1:]
@@ -88,8 +91,8 @@ class PsBro(BroControl.plugin.Plugin):
                     known = False
 
                 if known:
-                    print "   (+)", line.strip()
+                    cmdout.info("   (+) %s" % line.strip())
                 else:
-                    print "   (-)", line.strip()
+                    cmdout.info("   (-) %s" % line.strip())
 
             first_node = False

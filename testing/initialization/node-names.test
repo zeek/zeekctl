@@ -11,5 +11,5 @@ EOF
 
 broctl install || exit 1
 
-broctl nodes > out
+broctl nodes 2> out
 
