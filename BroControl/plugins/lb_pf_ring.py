@@ -33,7 +33,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
         useplugin = False
-        first_app_instance = int(BroControl.config.Config.pfringdnafirstappinstance)
+        first_app_instance = int(BroControl.config.Config.pfringfirstappinstance)
         app_instance = first_app_instance
 
         dd = {}
