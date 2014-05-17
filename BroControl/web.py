@@ -1,9 +1,9 @@
 from BroControl.broctld import Client
 from BroControl.ser import dumps
-from bottle import Bottle, run
+import bottle
 import json
 
-app = Bottle(autojson=False)
+app = bottle.Bottle(autojson=False)
 app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, default=dumps)))
 
 @app.route('/start')
@@ -16,9 +16,19 @@ def start():
     i = app.daemon.call("stop")
     return {"id": i} 
 
+@app.route('/restart')
+def restart():
+    i = app.daemon.call("restart")
+    return {"id": i} 
+
 @app.route('/status')
 def status():
-    s = app.daemon.sync_call("status")
+    i = app.daemon.call("status")
+    return {"id": i} 
+
+@app.route('/nodes')
+def nodes():
+    s = app.daemon.sync_call("nodes")
     return {"result": s}
 
 @app.route('/time')
@@ -44,7 +54,7 @@ def result(id, since=0):
 
 def main():
     app.daemon = Client('ipc:///bro/socket')
-    run(app, host='localhost', port=8082)
+    bottle.run(app, host='localhost', port=8082)
 
 if __name__ == "__main__":
     main()
