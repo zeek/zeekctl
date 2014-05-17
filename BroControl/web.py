@@ -4,15 +4,6 @@ from bottle import Bottle, run
 import json
 
 app = Bottle(autojson=False)
-ontrol.node.Node
-
-class MyJsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return str(obj.strftime("%Y-%m-%d %H:%M:%S"))
-        return json.JSONEncoder.default(self, obj)
-
-#app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, cls=MyJsonEncoder)))
 app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, default=dumps)))
 
 @app.route('/start')
