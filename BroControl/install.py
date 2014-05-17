@@ -72,13 +72,12 @@ def generateDynamicVariableScript(cmdout):
 # Performs the complete broctl installation process.
 #
 # If local_only is True, nothing is propagated to other nodes.
-def install(local_only):
-    cmdout = cmdoutput.CommandOutput()
+def install(local_only, cmdout):
     cmdSuccess = True
 
     if not config.Config.determineBroVersion(cmdout):
         cmdSuccess = False
-        return (cmdSuccess, cmdout)
+        return cmdSuccess
 
     manager = config.Config.manager()
 
@@ -118,14 +117,14 @@ def install(local_only):
     except (IOError, OSError), e:
         cmdSuccess = False
         cmdout.error("failed to update current log symlink")
-        return (cmdSuccess, cmdout)
+        return cmdSuccess
 
     if not generateDynamicVariableScript(cmdout):
         cmdSuccess = False
-        return (cmdSuccess, cmdout)
+        return cmdSuccess
 
     if local_only:
-        return (cmdSuccess, cmdout)
+        return cmdSuccess
 
     # Sync to clients.
     cmdout.info("updating nodes ...")
@@ -188,7 +187,7 @@ def install(local_only):
     # Save current configuration state.
     config.Config.updateBroctlCfgHash()
 
-    return (cmdSuccess, cmdout)
+    return cmdSuccess
 
 # Create Bro-side broctl configuration broctl-layout.bro.
 def makeLayout(path, cmdout, silent=False):

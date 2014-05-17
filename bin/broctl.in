@@ -2,6 +2,9 @@
 #
 # The BroControl interactive shell.
 
+BroBase = "@PREFIX@"
+Version = "@VERSION@"
+
 import os
 import sys
 import cmd
@@ -9,112 +12,30 @@ import time
 import platform
 import atexit
 
-# Configured by CMake
-# Base directory of broctl installation.
-BroBase = "@PREFIX@"
-
-# Configured by CMake
-# Base directory of bro script files.
-BroScriptDir = "@BROSCRIPTDIR@"
-
-# Configured by CMake
-# Base directory of broctl configuration files.
-BroCfgDir = "@ETC@"
-
-# Configured by CMake
-# Version of the broctl distribution.
-Version = "@VERSION@"
-
-# Allow user to override default broctl install directory
-tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
-if tmpbrobase and os.path.isdir(tmpbrobase):
-    BroBase = tmpbrobase
-    # Note: for now we assume these are subdirectories of BroBase
-    tmpbrocfgdir = os.path.join(BroBase, "etc")
-    if os.path.isdir(tmpbrocfgdir):
-        BroCfgDir = tmpbrocfgdir
-
-    tmpbroscriptdir = os.path.join(BroBase, "share/bro")
-    if os.path.isdir(tmpbroscriptdir):
-        BroScriptDir = tmpbroscriptdir
-
-# Adjust the PYTHONPATH
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
-# We need to add the directory of the Broccoli library files
-# to the linker's runtime search path. This is hack which
-# restarts the script with the new environment.
-ldpath = "LD_LIBRARY_PATH"
-if platform.system() == "Darwin":
-    ldpath = "DYLD_LIBRARY_PATH"
-
-old = os.environ.get(ldpath)
-dir = os.path.join(BroBase, "lib")
-if not old or dir not in old:
-    if old:
-        path = "%s:%s" % (dir, old)
-    else:
-        path = dir
-    os.environ[ldpath] = path
-    os.execv(sys.argv[0], sys.argv)
-
-## End of library hack.
-
-# Turns node name arguments into a list of nodes.
-def nodeArgs(args):
-    if not args:
-        args = "all"
-
-    nodes = []
-
-    for arg in args.split():
-        h = Config.nodes(arg)
-        if not h and arg != "all":
-            util.error("unknown node '%s'" % arg)
-            return (False, [])
-
-        nodes += h
-
-    return (True, nodes)
-
-# Turns node name arguments into a list of nodes.  The result is a subset of
-# a similar call to nodeArgs() but here only one node is chosen for each host.
-def nodeHostArgs(args):
-    if not args:
-        args = "all"
-
-    hosts = {}
-    nodes = []
-
-    for arg in args.split():
-        h = Config.hosts(arg)
-        if not h and arg != "all":
-            util.error("unknown node '%s'" % arg)
-            return (False, [])
-
-        for node in h:
-            if node.host not in hosts:
-                hosts[node.host] = 1
-                nodes.append(node)
-
-    return (True, nodes)
+from BroControl.broctl import BroCtl
+from BroControl import util
 
 # Main command loop.
 class BroCtlCmdLoop(cmd.Cmd):
 
-    def __init__(self):
+    def __init__(self, broctl_class=BroCtl):
         cmd.Cmd.__init__(self)
         self.exit_code = 0
         self._locked = False
         self.prompt = "[BroControl] > "
+        self.broctl = broctl_class(ui=self)
 
     def output(self, text):
         self.stdout.write(text)
         self.stdout.write("\n")
+    info = output
 
     def error(self, str):
         self.output("Error: %s" % str)
         self.exit_code = 1
+    warn = error
 
     def syntax(self, args):
         self.output("Syntax error: %s" % args)
@@ -131,26 +52,6 @@ class BroCtlCmdLoop(cmd.Cmd):
     def emptyline(self):
         pass
 
-    def lock(self):
-        cmdout = cmdoutput.CommandOutput()
-        lockstatus = util.lock(cmdout)
-        cmdout.printResults()
-        if not lockstatus:
-            sys.exit(1)
-
-        self._locked = True
-        statestatus = Config.readState(cmdout)
-        cmdout.printResults()
-        if not statestatus:
-            sys.exit(1)
-        config.Config.config["sigint"] = "0"
-
-    def precmd(self, line):
-        util.debug(1, line, prefix="command")
-        self._locked = False
-        self._failed = False
-        return line
-
     def checkForFailure(self, results):
         if control.nodeFailed(results):
             self._failed = True
@@ -159,15 +60,17 @@ class BroCtlCmdLoop(cmd.Cmd):
     def failed(self):
         return self._failed
 
-    def postcmd(self, stop, line):
-        Config.writeState(cmdout)
-        if self._locked:
-            util.unlock(cmdout)
-            self._locked = False
+    def precmd(self, line):
+        util.debug(1, line, prefix="command")
+        self._locked = False
+        self._failed = False
+        return line
 
-        execute.clearDeadHostConnections()
+    def postcmd(self, stop, line):
+        self.broctl.saveState()
+
+        #execute.clearDeadHostConnections()
         util.debug(1, "done", prefix="command")
-        cmdout.printResults()
         return stop
 
     def do_EOF(self, args):
@@ -187,13 +90,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax(args)
             return
 
-        self.lock()
-
-        if plugin.Registry.cmdPre("nodes"):
-            for n in Config.nodes():
-                util.output(n.describe())
-
-        plugin.Registry.cmdPost("nodes")
+        for node in self.broctl.nodes():
+            print node.describe()
 
     def do_config(self, args):
         """Prints all configuration options with their current values."""
@@ -201,11 +99,8 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax(args)
             return
 
-        if plugin.Registry.cmdPre("config"):
-            for (key, val) in sorted(Config.options()):
-                util.output("%s = %s" % (key, val))
-
-        plugin.Registry.cmdPost("config")
+        for (key, val) in sorted(self.broctl.get_config()):
+            self.output("%s = %s" % (key, val))
 
     def do_install(self, args):
         """- [--local]
@@ -230,15 +125,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.syntax(args)
                 return
 
-        self.lock()
-
-        if plugin.Registry.cmdPre("install"):
-            cmdSuccess, cmdOutput = install.install(local)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-
-        plugin.Registry.cmdPost("install")
+        self.broctl.install(local)
 
     def do_start(self, args):
         """- [<nodes>]
@@ -347,19 +234,12 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         Prints the current status of the given nodes."""
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("status", nodes)
-            cmdSuccess, cmdOutput = control.status(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("status", nodes)
-        else:
-            self.exit_code = 1
 
-        return False
+        node_info = self.broctl.status(node_list=args)
+        header = dict((x,x.title()) for x in 'name type host status pid peers started'.split())
+        self.output("%(name)-12s %(type)10s %(host)-16s %(status)-9s %(pid)-6s %(peers)-6s %(started)s" % header)
+        for node in node_info:
+            self.output("%(name)-12s %(type)10s %(host)-16s %(status)-9s %(pid)-6s %(peers)-6s %(started)s" % node)
 
     def _do_top_once(self, args):
         cmdout = cmdoutput.CommandOutput()
@@ -995,70 +875,13 @@ BroControl Version %s
   update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (Version, plugin_help))
 
+loop = BroCtlCmdLoop(BroCtl)
+
 # Hidden command to print the command documentation.
 if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":
-    loop = BroCtlCmdLoop()
     loop.printReference()
     sys.exit(loop.exit_code)
 
-# Here so that we don't need the PYTHONPATH to be setup for --print-doc.
-from BroControl import util
-from BroControl import cmdoutput
-from BroControl import config
-from BroControl import execute
-from BroControl import install
-from BroControl import control
-from BroControl import cron
-from BroControl import plugin
-from BroControl.config import Config
-
-
-def saveState(loop):
-    global cmdout
-    # If we're still locked, we might have unsaved changed.
-    if loop._locked:
-        print >>sys.stderr, "abnormal termination, saving state ..."
-        Config.writeState(cmdout)
-        cmdout.printResults()
-
-cmdout = cmdoutput.CommandOutput()
-try:
-    Config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), BroBase, BroScriptDir, Version, cmdout)
-except RuntimeError:
-    cmdout.printResults()
-    sys.exit(1)
-
-cmdout.printResults()
-
-for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
-    if dir:
-        plugin.Registry.addDir(dir)
-
-if not plugin.Registry.loadPlugins(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-if not Config.initPostPlugins(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-    
-plugin.Registry.initPlugins()
-
-util.enableSignals()
-
-loop = BroCtlCmdLoop()
-
-atexit.register(saveState, loop)
-
-try:
-    os.chdir(Config.brobase)
-except:
-    pass
-
-if not config.Config.warnBroctlInstall(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-
-cmdout.printResults()
 
 if len(sys.argv) > 1:
     Interactive = False
@@ -1070,5 +893,4 @@ else:
     Interactive = True
     loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % Version)
 
-plugin.Registry.finishPlugins()
 sys.exit(loop.exit_code)

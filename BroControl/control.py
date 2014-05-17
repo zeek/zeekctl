@@ -318,8 +318,7 @@ def _startNodes(nodes, cmdout):
     return results
 
 # Start Bro processes on nodes if not already running.
-def start(nodes):
-    cmdout = cmdoutput.CommandOutput()
+def start(nodes, cmdout):
     manager = []
     proxies = []
     workers = []
@@ -346,7 +345,7 @@ def start(nodes):
 
     results3 = _startNodes(workers, cmdout)
 
-    return (results1 + results2 + results3, cmdout)
+    return results1 + results2 + results3
 
 def _stopNodes(nodes, cmdout):
 
@@ -498,17 +497,9 @@ def stop(nodes):
     return (results1 + results2 + results3, cmdout)
 
 # Output status summary for nodes.
-def status(nodes):
-    cmdout = cmdoutput.CommandOutput()
+def status(nodes, cmdout):
 
-    typewidth = 7
-    hostwidth = 16
-    if config.Config.standalone == "1":
-        # In standalone mode, the "type" column needs more width
-        typewidth = 10
-        hostwidth = 13
-
-    cmdout.info("%-12s %-*s %-*s %-9s %-6s %-6s %s" % ("Name",  typewidth, "Type", hostwidth, "Host", "Status", "Pid", "Peers", "Started"))    
+    result = []
 
     all = isRunning(nodes, cmdout)
     running = []
@@ -521,6 +512,7 @@ def status(nodes):
             cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
             cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
 
+    cmdout.info("Getting bro process status..")
     startups = execute.runHelperParallel(cmds1, cmdout)
     statuses = execute.runHelperParallel(cmds2, cmdout)
 
@@ -529,6 +521,7 @@ def status(nodes):
 
     peers = {}
     nodes = [n for n in running if statuses[n.name] == "running"]
+    cmdout.info("Getting bro peer status..")
     for (node, success, args) in _queryPeerStatus(nodes, cmdout):
         if success:
             peers[node.name] = []
@@ -542,31 +535,32 @@ def status(nodes):
             peers[node.name] = None
 
     for (node, isrunning) in all:
-        outputline = "%-12s %-*s %-*s" % (node.name, typewidth, node.type, hostwidth, node.host)
-
+        node_info = {
+            'name': node.name,
+            'type': node.type,
+            'host': node.host,
+            "status": "stopped",
+            "pid": None,
+            "peers": None,
+            "started": None,
+        }
         if isrunning:
-            outputline += " %-9s" % statuses[node.name]
+            node_info['status'] = statuses[node.name]
         elif node.hasCrashed():
-            outputline += " %-9s" % "crashed"
-        else:
-            outputline += " %-9s" % "stopped"
+            node_info['status'] = "crashed"
 
         if isrunning:
-            outputline += " %-6s" % node.getPID()
+            node_info["pid"] = node.getPID()
 
             if node.name in peers and peers[node.name] != None:
-                outputline += " %-6s" % len(peers[node.name])
-            else:
-                outputline += " %-6s" % "???"
+                node_info["peers"] = len(peers[node.name])
 
-            outputline += " %s" % startups[node.name]
-        else:
-            outputline = outputline.strip()
+            node_info["started"] = startups[node.name]
 
-        cmdout.info(outputline)
+        result.append(node_info)
 
     # Return status code of True only if all nodes are running
-    return (len(nodes) == len(all), cmdout)
+    return result
 
 
 # Returns a list of tuples of the form (node, error, vals) where 'error' is an
@@ -707,9 +701,7 @@ def top(nodes):
 
     return (cmdSuccess, cmdout)
 
-def _doCheckConfig(nodes, installed, list_scripts):
-
-    cmdout = cmdoutput.CommandOutput()
+def _doCheckConfig(nodes, cmdout, installed, list_scripts):
     results = []
 
     manager = config.Config.manager()
@@ -720,7 +712,7 @@ def _doCheckConfig(nodes, installed, list_scripts):
         cmdout.error("broctl-config.sh not found (try 'broctl install')")
         # Return a failure for one node to indicate that the command failed
         results += [(all[0][0], False)]
-        return (results, cmdout)
+        return results
 
     nodes = []
     for (node, cwd) in all:
@@ -768,11 +760,11 @@ def _doCheckConfig(nodes, installed, list_scripts):
 
         execute.rmdir(manager, cwd, cmdout)
 
-    return (results, cmdout)
+    return results
 
 # Check the configuration for nodes without installing first.
-def checkConfigs(nodes):
-    return _doCheckConfig(nodes, False, False)
+def checkConfigs(nodes, cmdout):
+    return _doCheckConfig(nodes, cmdout, False, False)
 
 # Prints the loaded_scripts.log for either the installed scripts
 # (if check argument is false), or the original scripts (if check arg is true)
@@ -802,8 +794,7 @@ def crashDiag(node):
 # Clean up the working directory for nodes (flushes state).
 # If cleantmp is true, also wipes ${tmpdir}; this is done
 # even when the node is still running.
-def cleanup(nodes, cleantmp=False):
-    cmdout = cmdoutput.CommandOutput()
+def cleanup(nodes, cleantmp=False, cmdout=cmdoutput.CommandOutput()):
     cmdSuccess = True
 
     cmdout.info("cleaning up nodes ...")
@@ -828,7 +819,7 @@ def cleanup(nodes, cleantmp=False):
         if nodeFailed(results3) or nodeFailed(results4):
             cmdSuccess = False
 
-    return (cmdSuccess, cmdout)
+    return cmdSuccess
 
 # Attach gdb to the main Bro processes on the given nodes.
 def attachGdb(nodes):
@@ -1228,17 +1219,8 @@ def netStats(nodes):
 
     return (cmdSuccess, cmdout)
 
-def executeCmd(nodes, cmd):
-    cmdout = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    for (node, success, output) in execute.executeCmdsParallel([(n, cmd) for n in nodes], cmdout):
-        out = output and "\n> ".join(output) or ""
-        cmdout.info("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
-        if not success:
-            cmdSuccess = False
-
-    return (cmdSuccess, cmdout)
+def executeCmd(nodes, cmd, cmdout):
+    return execute.executeCmdsParallel([(n, cmd) for n in nodes], cmdout)
 
 def processTrace(trace, bro_options, bro_scripts):
     cmdout = cmdoutput.CommandOutput()

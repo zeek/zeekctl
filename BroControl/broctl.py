@@ -36,7 +36,7 @@ def expose(func):
     func.api_exposed = True
     return func
 
-def lock(func):
+def lock_required(func):
     func.lock_required = True
     return func
 
@@ -49,18 +49,20 @@ class BroCtl(object):
         sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
         self.setup()
 
+        self._locked = False
+
     def setup(self):
         BroCfgDir = os.path.join(self.BroBase, "etc")
         BroScriptDir = os.path.join(self.BroBase, "share/bro")
         Version = "xx"
-        self.config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), self.BroBase, BroScriptDir, Version)
+        self.config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), self.BroBase, BroScriptDir, Version, self.ui)
 
         for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
             if dir:
                 plugin.Registry.addDir(dir)
 
-        plugin.Registry.loadPlugins()
-        self.config.initPostPlugins()
+        plugin.Registry.loadPlugins(self.ui)
+        self.config.initPostPlugins(self.ui)
         plugin.Registry.initPlugins()
         util.enableSignals()
         os.chdir(self.config.brobase)
@@ -161,19 +163,13 @@ class BroCtl(object):
     def nodes(self):
         """Prints a list of all configured nodes."""
 
-        nodes = []
         if self.plugins.cmdPre("nodes"):
-            for n in self.config.nodes():
-                data = {}
-                data['description'] = n.describe()
-                for k,v in n.items():
-                    data[k] = v
-                nodes.append((n.name, data))
+            nodes = self.config.nodes()
         self.plugins.cmdPost("nodes")
         return nodes
 
     @expose
-    def config(self):
+    def get_config(self):
         """Prints all configuration options with their current values."""
 
         config = {}
@@ -184,7 +180,7 @@ class BroCtl(object):
         return config
 
     @expose
-    @lock
+    @lock_required
     def install(self, local=False):
         """- [--local]
 
@@ -206,7 +202,7 @@ class BroCtl(object):
         return cmdSuccess
 
     @expose
-    @lock
+    @lock_required
     def start(self, node_list=None):
         """- [<nodes>]
 
@@ -225,7 +221,7 @@ class BroCtl(object):
             return False
 
     @expose
-    @lock
+    @lock_required
     def stop(self, node_list=None):
         """- [<nodes>]
 
@@ -243,7 +239,7 @@ class BroCtl(object):
             self.exit_code = 1
 
     @expose
-    @lock
+    @lock_required
     def restart(self, node_list=None, clean=False):
         """- [--clean] [<nodes>]
 
@@ -304,7 +300,7 @@ class BroCtl(object):
         self.plugins.cmdPostWithNodes("restart", nodes)
 
     @expose
-    @lock
+    @lock_required
     def status(self, node_list=None):
         """- [<nodes>]
 
@@ -500,7 +496,7 @@ class BroCtl(object):
         return False
 
     @expose
-    @lock
+    @lock_required
     def check(self, node_list=None):
         """- [<nodes>]
 
@@ -527,7 +523,7 @@ class BroCtl(object):
         return results
 
     @expose
-    @lock
+    @lock_required
     def cleanup(self, node_list=None, all=False):
         """- [--all] [<nodes>]
 
@@ -734,7 +730,7 @@ class BroCtl(object):
 
         if self.plugins.cmdPre("exec", [cmd]):
             cmdSuccess = control.executeCmd(self.config.hosts(), cmd, self.ui)
-        self.plugins.cmdPost("exec", args)
+        self.plugins.cmdPost("exec", [cmd])
 
         return cmdSuccess
 
