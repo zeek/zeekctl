@@ -78,6 +78,8 @@ include(InstallShellScript)
 set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 
 InstallShellScript(bin bin/broctl.in broctl)
+InstallShellScript(bin bin/broctld.in broctld)
+InstallShellScript(bin bin/broctld-web.in broctld-web)
 InstallShellScript(share/broctl/scripts bin/archive-log)
 InstallShellScript(share/broctl/scripts bin/cflow-stats)
 InstallShellScript(share/broctl/scripts bin/check-config)
