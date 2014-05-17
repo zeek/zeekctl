@@ -9,141 +9,129 @@ import time
 import platform
 import atexit
 
-# Configured by CMake
-# Base directory of broctl installation.
-BroBase = "@PREFIX@"
+from BroControl import util
+from BroControl import config
+from BroControl import execute
+from BroControl import install
+from BroControl import control
+from BroControl import cron
+from BroControl import plugin
+from BroControl.config import Config
 
-# Configured by CMake
-# Base directory of bro script files.
-BroScriptDir = "@BROSCRIPTDIR@"
 
-# Configured by CMake
-# Base directory of broctl configuration files.
-BroCfgDir = "@ETC@"
-
-# Configured by CMake
-# Version of the broctl distribution.
-Version = "@VERSION@"
-
-# Allow user to override default broctl install directory
-tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
-if tmpbrobase and os.path.isdir(tmpbrobase):
-    BroBase = tmpbrobase
-    # Note: for now we assume these are subdirectories of BroBase
-    tmpbrocfgdir = os.path.join(BroBase, "etc")
-    if os.path.isdir(tmpbrocfgdir):
-        BroCfgDir = tmpbrocfgdir
-
-    tmpbroscriptdir = os.path.join(BroBase, "share/bro")
-    if os.path.isdir(tmpbroscriptdir):
-        BroScriptDir = tmpbroscriptdir
-
-# Adjust the PYTHONPATH
-sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
-
-# We need to add the directory of the Broccoli library files
-# to the linker's runtime search path. This is hack which
-# restarts the script with the new environment.
-ldpath = "LD_LIBRARY_PATH"
-if platform.system() == "Darwin":
-    ldpath = "DYLD_LIBRARY_PATH"
-
-old = os.environ.get(ldpath)
-dir = os.path.join(BroBase, "lib")
-if not old or dir not in old:
-    if old:
-        path = "%s:%s" % (dir, old)
-    else:
-        path = dir
-    os.environ[ldpath] = path
-    os.execv(sys.argv[0], sys.argv)
-
-## End of library hack.
-
-# Turns node name arguments into a list of nodes.
-def nodeArgs(args):
-    if not args:
-        args = "all"
-
-    nodes = []
-
-    for arg in args.split():
-        h = Config.nodes(arg)
-        if not h and arg != "all":
-            util.error("unknown node '%s'" % arg)
-            return (False, [])
-
-        nodes += h
-
-    return (True, nodes)
-
-# Turns node name arguments into a list of nodes.  The result is a subset of
-# a similar call to nodeArgs() but here only one node is chosen for each host.
-def nodeHostArgs(args):
-    if not args:
-        args = "all"
-
-    hosts = {}
-    nodes = []
-
-    for arg in args.split():
-        h = Config.hosts(arg)
-        if not h and arg != "all":
-            util.error("unknown node '%s'" % arg)
-            return (False, [])
-
-        for node in h:
-            if node.host not in hosts:
-                hosts[node.host] = 1
-                nodes.append(node)
-
-    return (True, nodes)
-
-# Main command loop.
-class BroCtlCmdLoop(cmd.Cmd):
-
+class TermUI:
     def __init__(self):
-        cmd.Cmd.__init__(self)
-        self.exit_code = 0
-        self._locked = False
-        self.prompt = "[BroControl] > "
-
-    def output(self, text):
-        self.stdout.write(text)
-        self.stdout.write("\n")
-
-    def error(self, str):
-        self.output("Error: %s" % str)
-        self.exit_code = 1
-
-    def syntax(self, args):
-        self.output("Syntax error: %s" % args)
-        self.exit_code = 1
-
-    def default(self, line):
-        m = line.split()
-
-        cmdout = cmdoutput.CommandOutput()
-        if not plugin.Registry.runCustomCommand(m[0], " ".join(m[1:]), cmdout):
-            self.error("unknown command '%s'" % m[0])
-        cmdout.printResults()
-
-    def emptyline(self):
         pass
 
+    def output(self, txt):
+        print txt
+    info = output
+    debuf = output
+
+    def error(self, txt):
+        print >>sys.stderr, txt
+    warn = error
+
+def expose(func):
+    func.api_exposed = True
+    return func
+
+def lock(func):
+    func.lock_required = True
+    return func
+
+class BroCtl(object):
+    def __init__(self, BroBase="/bro", ui=TermUI()):
+        self.ui = ui
+        self.BroBase = BroBase
+
+        # Adjust the PYTHONPATH
+        sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
+        self.setup()
+
+    def setup(self):
+        BroCfgDir = os.path.join(self.BroBase, "etc")
+        BroScriptDir = os.path.join(self.BroBase, "share/bro")
+        Version = "xx"
+        self.config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), self.BroBase, BroScriptDir, Version)
+
+        for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
+            if dir:
+                plugin.Registry.addDir(dir)
+
+        plugin.Registry.loadPlugins()
+        self.config.initPostPlugins()
+        plugin.Registry.initPlugins()
+        util.enableSignals()
+        os.chdir(self.config.brobase)
+
+        self.plugins = plugin.Registry
+
+    def saveState(self):
+        # If we're still locked, we might have unsaved changed.
+        if self._locked:
+            self.error("abnormal termination, saving state ...")
+            self.config.writeState()
+
+
+    # Turns nodes arguments into a list of node names.
+    def nodeArgs(self, args=None):
+        if not args:
+            args = "all"
+
+        nodes = []
+
+        for arg in args.split():
+            h = self.config.nodes(arg)
+            if not h and arg != "all":
+                util.output("unknown node '%s'" % arg)
+                return (False, [])
+
+            nodes += h
+
+        return (True, nodes)
+
+    # Turns node name arguments into a list of nodes.  The result is a subset of
+    # a similar call to nodeArgs() but here only one node is chosen for each host.
+    def nodeHostArgs(self, args=None):
+        if not args:
+            args = "all"
+
+        hosts = {}
+        nodes = []
+
+        for arg in args.split():
+            h = self.config.hosts(arg)
+            if not h and arg != "all":
+                util.error("unknown node '%s'" % arg)
+                return (False, [])
+
+            for node in h:
+                if node.host not in hosts:
+                    hosts[node.host] = 1
+                    nodes.append(node)
+
+        return (True, nodes)
+
+    def output(self, text):
+        self.ui.out(text)
+
+    def error(self, text):
+        self.ui.err(text)
+
+    def syntax(self, args):
+        self.errror("Syntax error: %s" % args)
+
     def lock(self):
-        cmdout = cmdoutput.CommandOutput()
-        lockstatus = util.lock(cmdout)
-        cmdout.printResults()
+        lockstatus = util.lock(self.ui)
         if not lockstatus:
             sys.exit(1)
 
         self._locked = True
-        statestatus = Config.readState(cmdout)
-        cmdout.printResults()
+        statestatus = self.config.readState(self.ui)
         if not statestatus:
             sys.exit(1)
-        config.Config.config["sigint"] = "0"
+        self.config.config["sigint"] = "0"
 
     def precmd(self, line):
         util.debug(1, line, prefix="command")
@@ -160,54 +148,44 @@ class BroCtlCmdLoop(cmd.Cmd):
         return self._failed
 
     def postcmd(self, stop, line):
-        Config.writeState(cmdout)
+        self.config.writeState(self.ui)
         if self._locked:
-            util.unlock(cmdout)
+            util.unlock(self.ui)
             self._locked = False
 
         execute.clearDeadHostConnections()
         util.debug(1, "done", prefix="command")
-        cmdout.printResults()
         return stop
 
-    def do_EOF(self, args):
-        return True
-
-    def do_exit(self, args):
-        """Terminates the shell."""
-        return True
-
-    def do_quit(self, args):
-        """Terminates the shell."""
-        return True
-
-    def do_nodes(self, args):
+    @expose
+    def nodes(self):
         """Prints a list of all configured nodes."""
-        if args:
-            self.syntax(args)
-            return
 
-        self.lock()
+        nodes = []
+        if self.plugins.cmdPre("nodes"):
+            for n in self.config.nodes():
+                data = {}
+                data['description'] = n.describe()
+                for k,v in n.items():
+                    data[k] = v
+                nodes.append((n.name, data))
+        self.plugins.cmdPost("nodes")
+        return nodes
 
-        if plugin.Registry.cmdPre("nodes"):
-            for n in Config.nodes():
-                util.output(n.describe())
-
-        plugin.Registry.cmdPost("nodes")
-
-    def do_config(self, args):
+    @expose
+    def config(self):
         """Prints all configuration options with their current values."""
-        if args:
-            self.syntax(args)
-            return
 
-        if plugin.Registry.cmdPre("config"):
-            for (key, val) in sorted(Config.options()):
-                util.output("%s = %s" % (key, val))
+        config = {}
+        if self.plugins.cmdPre("config"):
+            config = self.config.options()
 
-        plugin.Registry.cmdPost("config")
+        self.plugins.cmdPost("config")
+        return config
 
-    def do_install(self, args):
+    @expose
+    @lock
+    def install(self, local=False):
         """- [--local]
 
         Reinstalls on all nodes (unless the ``--local`` option is given, in
@@ -221,61 +199,52 @@ class BroCtlCmdLoop(cmd.Cmd):
         ``install``, it is recommended to verify the configuration
         with check_."""
 
-        local = False
+        if self.plugins.cmdPre("install"):
+            cmdSuccess = install.install(local, self.ui)
 
-        for arg in args.split():
-            if arg == "--local":
-                local = True
-            else:
-                self.syntax(args)
-                return
+        self.plugins.cmdPost("install")
+        return cmdSuccess
 
-        self.lock()
-
-        if plugin.Registry.cmdPre("install"):
-            cmdSuccess, cmdOutput = install.install(local)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-
-        plugin.Registry.cmdPost("install")
-
-    def do_start(self, args):
+    @expose
+    @lock
+    def start(self, node_list=None):
         """- [<nodes>]
 
         Starts the given nodes, or all nodes if none are specified. Nodes
         already running are left untouched.
         """
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
+        (success, nodes) = self.nodeArgs(node_list)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("start", nodes)
-            results, cmdOutput = control.start(nodes)
+            nodes = self.plugins.cmdPreWithNodes("start", nodes)
+            results = control.start(nodes, self.ui)
             self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("start", results)
+            self.plugins.cmdPostWithResults("start", results)
+            return True
         else:
-            self.exit_code = 1
+            return False
 
-    def do_stop(self, args):
+    @expose
+    @lock
+    def stop(self, node_list=None):
         """- [<nodes>]
 
         Stops the given nodes, or all nodes if none are specified. Nodes not
         running are left untouched.
         """
-        self.lock()
-        (success, nodes) = nodeArgs(args)
+        (success, nodes) = self.nodeArgs(node_list)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("stop", nodes)
+            nodes = self.plugins.cmdPreWithNodes("stop", nodes)
             results, cmdOutput = control.stop(nodes)
             self.checkForFailure(results)
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("stop", results)
+            self.plugins.cmdPostWithResults("stop", results)
         else:
             self.exit_code = 1
 
-    def do_restart(self, args):
+    @expose
+    @lock
+    def restart(self, node_list=None, clean=False):
         """- [--clean] [<nodes>]
 
         Restarts the given nodes, or all nodes if none are specified. The
@@ -292,74 +261,63 @@ class BroCtlCmdLoop(cmd.Cmd):
         start_.
         """
 
-        clean = False
-        try:
-            if args.startswith("--clean"):
-                args = args[7:]
-                clean = True
-        except IndexError:
-            pass
+        (success, nodes) = self.nodeArgs(node_list)
+        if not success:
+            return False
 
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes, clean)
-            args = " ".join([ str(n) for n in nodes ])
+        nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
+        args = " ".join([ str(n) for n in nodes ])
 
-            util.output("stopping ...")
-            self.do_stop(args)
-            self.postcmd(False, args) # Need to call manually.
+        self.output("stopping ...")
+        self.stop(node_list)
+        self.postcmd(False, node_list) # Need to call manually.
+
+        if self.failed():
+            return False
+
+        if clean:
+            self.output("cleaning up ...")
+            self.cleanup(node_list)
+            self.postcmd(False, node_list)
 
             if self.failed():
-                return
+                return False
 
-            if clean:
-                util.output("cleaning up ...")
-                self.do_cleanup(args)
-                self.postcmd(False, args)
+            self.output("checking configurations...")
+            self.check(node_list)
+            self.postcmd(False, node_list)
 
-                if self.failed():
-                    return
+            if self.failed():
+                return False
 
-                util.output("checking configurations...")
-                self.do_check(args)
-                self.postcmd(False, args)
+            util.output("installing ...")
+            self.do_install("")
+            self.postcmd(False, node_list)
 
-                if self.failed():
-                    return
+            if self.failed():
+                return False
 
-                util.output("installing ...")
-                self.do_install("")
-                self.postcmd(False, args)
+        self.output("starting ...")
+        self.do_start(node_list)
+        self.postcmd(False, node_list)
 
-                if self.failed():
-                    return
+        self.plugins.cmdPostWithNodes("restart", nodes)
 
-            util.output("starting ...")
-            self.do_start(args)
-            self.postcmd(False, args)
-
-            plugin.Registry.cmdPostWithNodes("restart", nodes)
-        else:
-            self.exit_code = 1
-
-    def do_status(self, args):
+    @expose
+    @lock
+    def status(self, node_list=None):
         """- [<nodes>]
 
         Prints the current status of the given nodes."""
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("status", nodes)
-            cmdSuccess, cmdOutput = control.status(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("status", nodes)
-        else:
-            self.exit_code = 1
+        (success, nodes) = self.nodeArgs(node_list)
+        if not success:
+            return False
 
-        return False
+        nodes = self.plugins.cmdPreWithNodes("status", nodes)
+        node_infos = control.status(nodes, self.ui)
+        self.plugins.cmdPostWithNodes("status", nodes)
+        return node_infos
 
     def _do_top_once(self, args):
         cmdout = cmdoutput.CommandOutput()
@@ -372,12 +330,12 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             (success, nodes) = nodeArgs(args)
             if success:
-                nodes = plugin.Registry.cmdPreWithNodes("top", nodes)
+                nodes = self.plugins.cmdPreWithNodes("top", nodes)
                 cmdSuccess, cmdOutput = control.top(nodes)
                 if not cmdSuccess:
                     self.exit_code = 1
                 cmdout.append(cmdOutput)
-                plugin.Registry.cmdPostWithNodes("top", nodes)
+                self.plugins.cmdPostWithNodes("top", nodes)
             else:
                 self.exit_code = 1
 
@@ -448,7 +406,7 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.exit_code = 1
             return
 
-        nodes = plugin.Registry.cmdPreWithNodes("diag", nodes)
+        nodes = self.plugins.cmdPreWithNodes("diag", nodes)
 
         for h in nodes:
             cmdSuccess, cmdOutput = control.crashDiag(h)
@@ -456,7 +414,7 @@ class BroCtlCmdLoop(cmd.Cmd):
                 self.exit_code = 1
             cmdOutput.printResults()
 
-        plugin.Registry.cmdPostWithNodes("diag", nodes)
+        self.plugins.cmdPostWithNodes("diag", nodes)
 
         return False
 
@@ -469,12 +427,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("attachgdb", nodes)
+            nodes = self.plugins.cmdPreWithNodes("attachgdb", nodes)
             cmdSuccess, cmdOutput = control.attachGdb(nodes)
             if not cmdSuccess:
                 self.exit_code = 1
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("attachgdb", nodes)
+            self.plugins.cmdPostWithNodes("attachgdb", nodes)
         else:
             self.exit_code = 1
 
@@ -512,21 +470,21 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.lock()
 
             if args == "enable":
-                if plugin.Registry.cmdPre("cron", args, False):
+                if self.plugins.cmdPre("cron", args, False):
                     config.Config._setState("cronenabled", "1")
                     util.output("cron enabled")
-                plugin.Registry.cmdPost("cron", args, False)
+                self.plugins.cmdPost("cron", args, False)
 
             elif args == "disable":
-                if plugin.Registry.cmdPre("cron", args, False):
+                if self.plugins.cmdPre("cron", args, False):
                     config.Config._setState("cronenabled", "0")
                     util.output("cron disabled")
-                plugin.Registry.cmdPost("cron", args, False)
+                self.plugins.cmdPost("cron", args, False)
 
             elif args == "?":
-                if plugin.Registry.cmdPre("cron", args, False):
+                if self.plugins.cmdPre("cron", args, False):
                     util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
-                plugin.Registry.cmdPost("cron", args, False)
+                self.plugins.cmdPost("cron", args, False)
 
             else:
                 util.error("invalid cron argument")
@@ -534,14 +492,16 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             return
 
-        if plugin.Registry.cmdPre("cron", "", watch):
+        if self.plugins.cmdPre("cron", "", watch):
             cmdOutput = cron.doCron(watch)
             cmdOutput.printResults()
-        plugin.Registry.cmdPost("cron", "", watch)
+        self.plugins.cmdPost("cron", "", watch)
 
         return False
 
-    def do_check(self, args):
+    @expose
+    @lock
+    def check(self, node_list=None):
         """- [<nodes>]
 
         Verifies a modified configuration in terms of syntactical correctness
@@ -555,22 +515,20 @@ class BroCtlCmdLoop(cmd.Cmd):
         ensures that new errors in a policy script will not affect currently
         running nodes, even when one or more of them needs to be restarted."""
 
-        self.lock()
+        (success, nodes) = self.nodeArgs(node_list)
+        if not success:
+            return False
 
-        (success, nodes) = nodeArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("check", nodes)
+        results = control.checkConfigs(nodes, self.ui)
+        self.checkForFailure(results)
+        self.plugins.cmdPostWithResults("check", results)
 
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("check", nodes)
-            results, cmdOutput = control.checkConfigs(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("check", results)
-        else:
-            self.exit_code = 1
+        return results
 
-        return False
-
-    def do_cleanup(self, args):
+    @expose
+    @lock
+    def cleanup(self, node_list=None, all=False):
         """- [--all] [<nodes>]
 
         Clears the nodes' spool directories (if they are not running
@@ -584,28 +542,17 @@ class BroCtlCmdLoop(cmd.Cmd):
         ``cleanup --all``, and finally start_ all nodes
         again."""
 
-        cleantmp = False
-        try:
-            if args.startswith("--all"):
-                args = args[5:]
-                cleantmp = True
-        except IndexError:
-            pass
+        cleantmp = all
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
+        (success, nodes) = self.nodeArgs(node_list)
         if not success:
-            self.exit_code = 1
-            return
+            return False
 
-        nodes = plugin.Registry.cmdPreWithNodes("cleanup", nodes, cleantmp)
-        cmdSuccess, cmdOutput = control.cleanup(nodes, cleantmp)
-        if not cmdSuccess:
-            self.exit_code = 1
-        cmdOutput.printResults()
-        plugin.Registry.cmdPostWithNodes("cleanup", nodes, cleantmp)
+        nodes = self.plugins.cmdPreWithNodes("cleanup", nodes, cleantmp)
+        cmdSuccess = control.cleanup(nodes, cleantmp, self.ui)
+        self.plugins.cmdPostWithNodes("cleanup", nodes, cleantmp)
 
-        return False
+        return cmdSuccess
 
     def do_capstats(self, args):
         """- [<nodes>] [<interval>]
@@ -636,13 +583,13 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("capstats", nodes, interval)
+            nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
             cmdSuccess, cmdOutput_cap, cmdOutput_cflow = control.capstats(nodes, interval)
             if not cmdSuccess:
                 self.exit_code = 1
             cmdOutput_cap.printResults()
             cmdOutput_cflow.printResults()
-            plugin.Registry.cmdPostWithNodes("capstats", nodes, interval)
+            self.plugins.cmdPostWithNodes("capstats", nodes, interval)
         else:
             self.exit_code = 1
 
@@ -668,11 +615,11 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("update", nodes)
+            nodes = self.plugins.cmdPreWithNodes("update", nodes)
             results, cmdOutput = control.update(nodes)
             self.checkForFailure(results)
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("update", results)
+            self.plugins.cmdPostWithResults("update", results)
         else:
             self.exit_code = 1
 
@@ -687,12 +634,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeHostArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("df", nodes)
+            nodes = self.plugins.cmdPreWithNodes("df", nodes)
             cmdSuccess, cmdOutput = control.df(nodes)
             if not cmdSuccess:
                 self.exit_code = 1
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("df", nodes)
+            self.plugins.cmdPostWithNodes("df", nodes)
         else:
             self.exit_code = 1
 
@@ -717,12 +664,12 @@ class BroCtlCmdLoop(cmd.Cmd):
 
             (success, nodes) = nodeArgs(" ".join(args[1:]))
             if success:
-                nodes = plugin.Registry.cmdPreWithNodes("print", nodes, id)
+                nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
                 cmdSuccess, cmdOutput = control.printID(nodes, id)
                 if not cmdSuccess:
                     self.exit_code = 1
                 cmdOutput.printResults()
-                plugin.Registry.cmdPostWithNodes("print", nodes, id)
+                self.plugins.cmdPostWithNodes("print", nodes, id)
             else:
                 self.exit_code = 1
         except IndexError:
@@ -740,12 +687,12 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("peerstatus", nodes)
+            nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
             cmdSuccess, cmdOutput = control.peerStatus(nodes)
             if not cmdSuccess:
                 self.exit_code = 1
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("peerstatus", nodes)
+            self.plugins.cmdPostWithNodes("peerstatus", nodes)
         else:
             self.exit_code = 1
 
@@ -766,33 +713,30 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.lock()
         (success, nodes) = nodeArgs(args)
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("netstats", nodes)
+            nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
             cmdSuccess, cmdOutput = control.netStats(nodes)
             if not cmdSuccess:
                 self.exit_code = 1
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("netstats", nodes)
+            self.plugins.cmdPostWithNodes("netstats", nodes)
         else:
             self.exit_code = 1
 
         return False
 
-    def do_exec(self, args):
+    @expose
+    def execute(self, cmd):
         """- <command line>
 
 		Executes the given Unix shell command line on all hosts configured to
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
-        self.lock()
-        if plugin.Registry.cmdPre("exec", args):
-            cmdSuccess, cmdOutput = control.executeCmd(Config.hosts(), args)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-        plugin.Registry.cmdPost("exec", args)
+        if self.plugins.cmdPre("exec", [cmd]):
+            cmdSuccess = control.executeCmd(self.config.hosts(), cmd, self.ui)
+        self.plugins.cmdPost("exec", args)
 
-        return False
+        return cmdSuccess
 
     def do_scripts(self, args):
         """- [-c] [<nodes>]
@@ -833,11 +777,11 @@ class BroCtlCmdLoop(cmd.Cmd):
         (success, nodes) = nodeArgs(args)
 
         if success:
-            nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, check)
+            nodes = self.plugins.cmdPreWithNodes("scripts", nodes, check)
             results, cmdOutput = control.listScripts(nodes, check)
             self.checkForFailure(results)
             cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("scripts", nodes, check)
+            self.plugins.cmdPostWithNodes("scripts", nodes, check)
         else:
             self.exit_code = 1
 
@@ -890,10 +834,10 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax("no trace file given")
             return
 
-        if plugin.Registry.cmdPre("process", trace, options, scripts):
+        if self.plugins.cmdPre("process", trace, options, scripts):
             cmdSuccess, cmdOutput = control.processTrace(trace, options, scripts)
             cmdOutput.printResults()
-        plugin.Registry.cmdPost("process", trace, options, scripts, cmdSuccess)
+        self.plugins.cmdPost("process", trace, options, scripts, cmdSuccess)
 
         if not cmdSuccess:
             self.exit_code = 1
@@ -956,7 +900,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         plugin_help = ""
 
-        for (cmd, args, descr) in plugin.Registry.allCustomCommands():
+        for (cmd, args, descr) in self.plugins.allCustomCommands():
             if not plugin_help:
                 plugin_help += "\nCommands provided by plugins:\n\n"
 
@@ -994,81 +938,3 @@ BroControl Version %s
   top [<nodes>]                    - Show Bro processes ala top
   update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (Version, plugin_help))
-
-# Hidden command to print the command documentation.
-if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":
-    loop = BroCtlCmdLoop()
-    loop.printReference()
-    sys.exit(loop.exit_code)
-
-# Here so that we don't need the PYTHONPATH to be setup for --print-doc.
-from BroControl import util
-from BroControl import cmdoutput
-from BroControl import config
-from BroControl import execute
-from BroControl import install
-from BroControl import control
-from BroControl import cron
-from BroControl import plugin
-from BroControl.config import Config
-
-
-def saveState(loop):
-    global cmdout
-    # If we're still locked, we might have unsaved changed.
-    if loop._locked:
-        print >>sys.stderr, "abnormal termination, saving state ..."
-        Config.writeState(cmdout)
-        cmdout.printResults()
-
-cmdout = cmdoutput.CommandOutput()
-try:
-    Config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), BroBase, BroScriptDir, Version, cmdout)
-except RuntimeError:
-    cmdout.printResults()
-    sys.exit(1)
-
-cmdout.printResults()
-
-for dir in Config.sitepluginpath.split(":") + [Config.plugindir]:
-    if dir:
-        plugin.Registry.addDir(dir)
-
-if not plugin.Registry.loadPlugins(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-if not Config.initPostPlugins(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-    
-plugin.Registry.initPlugins()
-
-util.enableSignals()
-
-loop = BroCtlCmdLoop()
-
-atexit.register(saveState, loop)
-
-try:
-    os.chdir(Config.brobase)
-except:
-    pass
-
-if not config.Config.warnBroctlInstall(cmdout):
-    cmdout.printResults()
-    sys.exit(1)
-
-cmdout.printResults()
-
-if len(sys.argv) > 1:
-    Interactive = False
-    line = " ".join(sys.argv[1:])
-    loop.precmd(line)
-    loop.onecmd(line)
-    loop.postcmd(False, line)
-else:
-    Interactive = True
-    loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % Version)
-
-plugin.Registry.finishPlugins()
-sys.exit(loop.exit_code)
