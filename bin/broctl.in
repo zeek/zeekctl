@@ -393,20 +393,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         except IndexError:
             pass
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if not success:
-            self.exit_code = 1
-            return
-
-        nodes = plugin.Registry.cmdPreWithNodes("cleanup", nodes, cleantmp)
-        cmdSuccess, cmdOutput = control.cleanup(nodes, cleantmp)
-        if not cmdSuccess:
-            self.exit_code = 1
-        cmdOutput.printResults()
-        plugin.Registry.cmdPostWithNodes("cleanup", nodes, cleantmp)
-
-        return False
+        return self.broctl.cleanup(node_list=args, all=cleantmp)
 
     def do_capstats(self, args):
         """- [<nodes>] [<interval>]
@@ -751,7 +738,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         plugin_help = ""
 
-        for (cmd, args, descr) in plugin.Registry.allCustomCommands():
+        for (cmd, args, descr) in self.broctl.plugins.allCustomCommands():
             if not plugin_help:
                 plugin_help += "\nCommands provided by plugins:\n\n"
 
