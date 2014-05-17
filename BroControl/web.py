@@ -21,19 +21,11 @@ def restart():
     i = app.daemon.call("restart")
     return {"id": i} 
 
-@app.route('/status')
-def status():
-    i = app.daemon.call("status")
-    return {"id": i} 
 
 @app.route('/nodes')
 def nodes():
     s = app.daemon.sync_call("nodes")
     return {"result": s}
-
-@app.route('/time')
-def time():
-    return app.daemon.sync_call("time")
 
 @app.route('/exec/:cmd')
 def start(cmd):
@@ -51,6 +43,11 @@ def result(id, since=0):
     id = int(id)
     since = int(since)
     return {"log": app.daemon.getlog(id, since) or []}
+
+@app.route('/:cmd')
+def cmd(cmd):
+    i = app.daemon.call(cmd)
+    return {"id": i} 
 
 def main():
     app.daemon = Client('ipc:///bro/socket')
