@@ -50,6 +50,7 @@ class BroCtl(object):
         self.setup()
 
         self._locked = False
+        self._failed = False
 
     def setup(self):
         BroCfgDir = os.path.join(self.BroBase, "etc")
@@ -116,10 +117,10 @@ class BroCtl(object):
         return (True, nodes)
 
     def output(self, text):
-        self.ui.out(text)
+        self.ui.info(text)
 
     def error(self, text):
-        self.ui.err(text)
+        self.ui.error(text)
 
     def syntax(self, args):
         self.errror("Syntax error: %s" % args)
@@ -145,6 +146,8 @@ class BroCtl(object):
         if control.nodeFailed(results):
             self._failed = True
             self.exit_code = 1
+            return False
+        return True
 
     def failed(self):
         return self._failed
@@ -216,9 +219,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = control.start(nodes, self.ui)
-        self.checkForFailure(results)
+        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("start", results)
-        return True
+        return status
 
     @expose
     @lock_required
@@ -234,9 +237,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
         results = control.stop(nodes, self.ui)
-        self.checkForFailure(results)
+        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("stop", results)
-        return True
+        return status
 
     @expose
     @lock_required
@@ -265,39 +268,40 @@ class BroCtl(object):
         args = " ".join([ str(n) for n in nodes ])
 
         self.output("stopping ...")
-        self.stop(node_list)
+        success = self.stop(node_list)
         self.postcmd(False, node_list) # Need to call manually.
 
-        if self.failed():
+        if not success:
             return False
 
         if clean:
             self.output("cleaning up ...")
-            self.cleanup(node_list)
+            success = self.cleanup(node_list)
             self.postcmd(False, node_list)
 
-            if self.failed():
+            if not success:
                 return False
 
             self.output("checking configurations...")
-            self.check(node_list)
+            success = self.check(node_list)
             self.postcmd(False, node_list)
 
-            if self.failed():
+            if success:
                 return False
 
             util.output("installing ...")
-            self.do_install("")
+            success = self.install()
             self.postcmd(False, node_list)
 
-            if self.failed():
+            if not success:
                 return False
 
         self.output("starting ...")
-        self.do_start(node_list)
+        success = self.start(node_list)
         self.postcmd(False, node_list)
 
         self.plugins.cmdPostWithNodes("restart", nodes)
+        return success
 
     @expose
     @lock_required
@@ -517,10 +521,10 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = control.checkConfigs(nodes, self.ui)
-        self.checkForFailure(results)
+        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("check", results)
 
-        return results
+        return status
 
     @expose
     @lock_required
