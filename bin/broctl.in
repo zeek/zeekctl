@@ -134,16 +134,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         already running are left untouched.
         """
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("start", nodes)
-            results, cmdOutput = control.start(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("start", results)
-        else:
-            self.exit_code = 1
+        self.broctl.start(node_list=args)
 
     def do_stop(self, args):
         """- [<nodes>]
@@ -151,16 +142,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         Stops the given nodes, or all nodes if none are specified. Nodes not
         running are left untouched.
         """
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("stop", nodes)
-            results, cmdOutput = control.stop(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("stop", results)
-        else:
-            self.exit_code = 1
+        self.broctl.stop(node_list=args)
 
     def do_restart(self, args):
         """- [--clean] [<nodes>]
@@ -179,55 +161,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         start_.
         """
 
-        clean = False
-        try:
-            if args.startswith("--clean"):
-                args = args[7:]
-                clean = True
-        except IndexError:
-            pass
-
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("restart", nodes, clean)
-            args = " ".join([ str(n) for n in nodes ])
-
-            util.output("stopping ...")
-            self.do_stop(args)
-            self.postcmd(False, args) # Need to call manually.
-
-            if self.failed():
-                return
-
-            if clean:
-                util.output("cleaning up ...")
-                self.do_cleanup(args)
-                self.postcmd(False, args)
-
-                if self.failed():
-                    return
-
-                util.output("checking configurations...")
-                self.do_check(args)
-                self.postcmd(False, args)
-
-                if self.failed():
-                    return
-
-                util.output("installing ...")
-                self.do_install("")
-                self.postcmd(False, args)
-
-                if self.failed():
-                    return
-
-            util.output("starting ...")
-            self.do_start(args)
-            self.postcmd(False, args)
-
-            plugin.Registry.cmdPostWithNodes("restart", nodes)
-        else:
-            self.exit_code = 1
+        self.broctl.restart(node_list=args, clean='--clean' in args)
 
     def do_status(self, args):
         """- [<nodes>]
@@ -435,20 +369,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         ensures that new errors in a policy script will not affect currently
         running nodes, even when one or more of them needs to be restarted."""
 
-        self.lock()
-
-        (success, nodes) = nodeArgs(args)
-
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("check", nodes)
-            results, cmdOutput = control.checkConfigs(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("check", results)
-        else:
-            self.exit_code = 1
-
-        return False
+        self.broctl.check(node_list=args)
 
     def do_cleanup(self, args):
         """- [--all] [<nodes>]
@@ -664,15 +585,9 @@ class BroCtlCmdLoop(cmd.Cmd):
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
-        self.lock()
-        if plugin.Registry.cmdPre("exec", args):
-            cmdSuccess, cmdOutput = control.executeCmd(Config.hosts(), args)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-        plugin.Registry.cmdPost("exec", args)
-
-        return False
+        for node, success, output in self.broctl.execute(cmd=args):
+            out = output and "\n> ".join(output) or ""
+            self.output("[%s] %s\n> %s" % (node.name, (success and " " or "error"), out))
 
     def do_scripts(self, args):
         """- [-c] [<nodes>]

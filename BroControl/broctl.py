@@ -728,9 +728,9 @@ class BroCtl(object):
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
-        if self.plugins.cmdPre("exec", [cmd]):
+        if self.plugins.cmdPre("exec", cmd):
             cmdSuccess = control.executeCmd(self.config.hosts(), cmd, self.ui)
-        self.plugins.cmdPost("exec", [cmd])
+        self.plugins.cmdPost("exec", cmd)
 
         return cmdSuccess
 
