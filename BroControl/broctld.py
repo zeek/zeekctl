@@ -4,6 +4,7 @@ from Queue import Queue
 from nanomsg import Socket, REQ, REP
 import time
 import random
+import traceback
 
 from BroControl.broctl import BroCtl
 from BroControl import ser as json
@@ -176,7 +177,7 @@ class Daemon(Common):
             try :
                 res = func(*args)
             except Exception, e:
-                res = repr(e)
+                res = traceback.format_exc()
             respond(res)
         finally:
             if hasattr(func, 'lock_required'):

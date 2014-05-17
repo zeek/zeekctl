@@ -211,14 +211,14 @@ class BroCtl(object):
         """
 
         (success, nodes) = self.nodeArgs(node_list)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("start", nodes)
-            results = control.start(nodes, self.ui)
-            self.checkForFailure(results)
-            self.plugins.cmdPostWithResults("start", results)
-            return True
-        else:
+        if not success:
             return False
+
+        nodes = self.plugins.cmdPreWithNodes("start", nodes)
+        results = control.start(nodes, self.ui)
+        self.checkForFailure(results)
+        self.plugins.cmdPostWithResults("start", results)
+        return True
 
     @expose
     @lock_required
@@ -229,14 +229,14 @@ class BroCtl(object):
         running are left untouched.
         """
         (success, nodes) = self.nodeArgs(node_list)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("stop", nodes)
-            results, cmdOutput = control.stop(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithResults("stop", results)
-        else:
-            self.exit_code = 1
+        if not success:
+            return False
+
+        nodes = self.plugins.cmdPreWithNodes("stop", nodes)
+        results = control.stop(nodes, self.ui)
+        self.checkForFailure(results)
+        self.plugins.cmdPostWithResults("stop", results)
+        return True
 
     @expose
     @lock_required

@@ -464,8 +464,7 @@ def _stopNodes(nodes, cmdout):
     return results
 
 # Stop Bro processes on nodes.
-def stop(nodes):
-    cmdout = cmdoutput.CommandOutput()
+def stop(nodes, cmdout):
     manager = []
     proxies = []
     workers = []
@@ -485,16 +484,16 @@ def stop(nodes):
     results1 = _stopNodes(workers, cmdout)
 
     if nodeFailed(results1):
-        return (results1 + [(n, False) for n in (proxies + manager)], cmdout)
+        return results1 + [(n, False) for n in (proxies + manager)]
 
     results2 = _stopNodes(proxies, cmdout)
 
     if nodeFailed(results2):
-        return (results1 + results2 + [(n, False) for n in manager], cmdout)
+        return results1 + results2 + [(n, False) for n in manager]
 
     results3 = _stopNodes(manager, cmdout)
 
-    return (results1 + results2 + results3, cmdout)
+    return results1 + results2 + results3
 
 # Output status summary for nodes.
 def status(nodes, cmdout):
