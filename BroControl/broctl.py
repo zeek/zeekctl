@@ -165,7 +165,7 @@ class BroCtl(object):
     @expose
     def nodes(self):
         """Prints a list of all configured nodes."""
-
+        nodes = []
         if self.plugins.cmdPre("nodes"):
             nodes = self.config.nodes()
         self.plugins.cmdPost("nodes")
