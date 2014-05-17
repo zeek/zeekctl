@@ -126,6 +126,12 @@ class Node:
 
         return ("%15s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
 
+    def to_dict(self):
+        d = dict(self.items())
+        d["name"] = self.name
+        d["description"] = self.describe()
+        return d
+
     @doc.api
     def cwd(self):
         """Returns a string with the node's working directory."""

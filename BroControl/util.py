@@ -213,10 +213,12 @@ def sigIntHandler(signum, frame):
     config.Config.config["sigint"] = "1"
 
 def enableSignals():
-    signal.signal(signal.SIGINT, sigIntHandler)
+    pass
+    #signal.signal(signal.SIGINT, sigIntHandler)
 
 def disableSignals():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    pass
+    #signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 # Curses functions

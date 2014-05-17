@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 from threading import Thread, Lock
 from Queue import Queue
@@ -7,6 +6,7 @@ import time
 import random
 
 from BroControl.broctl import BroCtl
+from BroControl import ser as json
 
 class State:
     def __init__(self):
@@ -57,7 +57,7 @@ class Daemon(Common):
 
         self.sock = Socket(REP)
         self.sock.bind('inproc://server')
-        self.sock.bind('ipc://socket')
+        self.sock.bind('ipc:///bro/socket')
 
         self.results = {}
         self.threads = {}
@@ -156,23 +156,30 @@ class Daemon(Common):
         t.start()
         return t_id, t
 
+    def noop(self, *args, **kwargs):
+        return True
+
     def wrap(self, id, cmd, args):
-        func = getattr(w, cmd, w.noop)
+        w = self.worker_class(id)
+        func = getattr(w, cmd, self.noop)
+
+        def respond(r):
+            w.cl.call("result", id, r)
+            w.cl.close()
+
+        if not hasattr(func, 'api_exposed'):
+            return respond("invalid function")
+
         if hasattr(func, 'lock_required'):
             self.change_lock.acquire()
         try :
-            w = self.worker_class(id)
-            if hasattr(func, 'api_exposed'):
-                try :
-                    res = func(*args)
-                except Exception, e:
-                    res = repr(e)
-            else:
-                res = "invalid function"
-            w.cl.call("result", id, res)
-            w.cl.close()
+            try :
+                res = func(*args)
+            except Exception, e:
+                res = repr(e)
+            respond(res)
         finally:
-            if cmd in self.change_funcs:
+            if hasattr(func, 'lock_required'):
                 self.change_lock.release()
 
 class Client(Common):
@@ -213,11 +220,12 @@ class Client(Common):
     def getlog(self, id, since=0):
         return self.call("getlog", id, since)
 
-    def out(self, msg):
+    def info(self, msg):
         return self.call("out", self.id, msg)
 
-    def err(self, msg):
+    def error(self, msg):
         return self.call("err", self.id, msg)
+    warn = error
 
 class Broctld(Daemon):
     pass

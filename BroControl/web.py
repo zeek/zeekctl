@@ -1,7 +1,19 @@
 from BroControl.broctld import Client
+from BroControl.ser import dumps
 from bottle import Bottle, run
+import json
 
-app = Bottle()
+app = Bottle(autojson=False)
+ontrol.node.Node
+
+class MyJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return str(obj.strftime("%Y-%m-%d %H:%M:%S"))
+        return json.JSONEncoder.default(self, obj)
+
+#app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, cls=MyJsonEncoder)))
+app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, default=dumps)))
 
 @app.route('/start')
 def start():
@@ -16,7 +28,7 @@ def start():
 @app.route('/status')
 def status():
     s = app.daemon.sync_call("status")
-    return s
+    return {"result": s}
 
 @app.route('/time')
 def time():
@@ -24,7 +36,7 @@ def time():
 
 @app.route('/exec/:cmd')
 def start(cmd):
-    i = app.daemon.call("exec_command", cmd)
+    i = app.daemon.call("execute", cmd)
     return {"id": i} 
 
 @app.route('/result/:id')
@@ -40,7 +52,7 @@ def result(id, since=0):
     return {"log": app.daemon.getlog(id, since) or []}
 
 def main():
-    app.daemon = Client('ipc://socket')
+    app.daemon = Client('ipc:///bro/socket')
     run(app, host='localhost', port=8082)
 
 if __name__ == "__main__":
