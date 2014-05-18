@@ -36,6 +36,7 @@ class SqliteState:
             return
 
         self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
+        self.db.commit()
     setstate = set
 
     def setdefault(self, key, value):
