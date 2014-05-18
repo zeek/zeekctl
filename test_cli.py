@@ -29,7 +29,7 @@ def wait(id):
 
 def run(action):
     res = requests.get("http://localhost:8082/%s" % action).json()
-    pprint.pprint(wait(res['id']))
+    print(wait(res['id']))
 
 def call(action):
     out = requests.get("http://localhost:8082/%s" % action).text
