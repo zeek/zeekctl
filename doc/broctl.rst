@@ -663,7 +663,7 @@ User Options
 .. _PFRINGFirstAppInstance:
 
 *PFRINGFirstAppInstance* (int, default 0)
-    The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work.
+    The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work.
 
 .. _Prefixes:
 
