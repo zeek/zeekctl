@@ -10,4 +10,4 @@ sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 from BroControl import broctld
 
 if __name__ == "__main__":
-    broctld.main()
+    broctld.main(BroBase)

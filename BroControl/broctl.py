@@ -41,19 +41,19 @@ def lock_required(func):
     return func
 
 class BroCtl(object):
-    def __init__(self, basedir="/bro", ui=TermUI()):
+    def __init__(self, basedir="/bro", ui=TermUI(), state=None):
         self.ui = ui
         self.BroBase = basedir
 
-        self.setup()
 
         self._locked = False
         self._failed = False
 
+        self.config = config.Configuration(self.BroBase, self.ui, state)
+        self.setup()
         self.controller = control.Controller(self.config, self.ui)
 
     def setup(self):
-        self.config = config.Configuration(self.BroBase, self.ui)
 
         for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
             if dir:

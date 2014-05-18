@@ -28,11 +28,8 @@ Config = None # Globally accessible instance of Configuration.
 class ConfigurationError(Exception):
     pass
 
-def sqlite_state_factory(config):
-    return SqliteState(config.statefile)
-
 class Configuration:
-    def __init__(self, basedir, cmdout, state_factory=sqlite_state_factory):
+    def __init__(self, basedir, cmdout, state=None):
         config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
         global Config
@@ -56,7 +53,10 @@ class Configuration:
             if not opt.dontinit:
                 self._setOption(opt.name, opt.default)
 
-        self.state_store = state_factory(self)
+        if state:
+            self.state_store = state
+        else:
+            self.state_store = SqliteState(self.statefile)
 
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))

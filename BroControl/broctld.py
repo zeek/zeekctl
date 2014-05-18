@@ -6,6 +6,7 @@ import time
 import random
 import traceback
 
+from BroControl import config
 from BroControl.state import SqliteState as State
 from BroControl.broctl import BroCtl
 from BroControl import ser as json
@@ -27,10 +28,11 @@ class TermUI:
     def __init__(self):
         pass
 
-    def out(self, msg):
+    def output(self, msg):
         print msg
+    warn = info = output
 
-    def err(self, msg):
+    def error(self, msg):
         print "ERROR", msg
 
 class Logs:
@@ -87,9 +89,7 @@ class Daemon(Common):
     def run(self):
         t = Thread(target=self._bg)
         t.start()
-        t = Thread(target=self._run)
-        t.start()
-        return t
+        return self._run()
 
     def _bg(self):
         sock = Socket(REQ)
@@ -117,7 +117,7 @@ class Daemon(Common):
         self.send(value)
 
     def handle_getstateitems(self):
-        value = self.state.items(key)
+        value = self.state.items()
         self.send(value)
 
     def handle_out(self, id, txt):
@@ -246,18 +246,17 @@ NODES = ['node-%d' %x for x in range(48)]
 
 def broctl_worker_factory(id):
     cl = Client(id=id)
-    worker = BroCtl(ui=cl)
+    state = StateClientWrapper(cl)
+    worker = BroCtl(state=state, ui=cl)
     worker.cl = cl
     return worker
 
-def main():
-
-    state = State("/bro/spool/broctl.dat") #FIXME
+def main(basedir):
+    #import os
+    #state = State(os.path.join(basedir,"spool/broctl.dat"))
+    cfg = config.Configuration(basedir, TermUI())
+    state = State(cfg.statefile)
     logs = Logs()
 
     d = Broctld(state, logs, broctl_worker_factory)
-    dt = d.run()
-    dt.join()
-
-if __name__ == "__main__":
-    main()
+    d.run()
