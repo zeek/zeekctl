@@ -30,3 +30,14 @@ def test_state_setdefault():
 
     s.setdefault("key", "newvalue")
     assert s.get("key") == "value"
+
+def test_state_items():
+    s = SqliteState(":memory:")
+    s.set("a", 1)
+    s.set("b", "two")
+
+    d = dict(s.items())
+    print d
+
+    assert d["a"] == 1
+    assert d["b"] == "two"

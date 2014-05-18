@@ -45,3 +45,7 @@ class SqliteState:
             return True
         except sqlite3.IntegrityError:
             return False
+
+    def items(self):
+        self.c.execute("select key, value from state")
+        return [(k, json.loads(v)) for (k,v) in self.c.fetchall()]
