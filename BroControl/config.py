@@ -12,6 +12,8 @@ import options
 import plugin
 import util
 
+from .state import SqliteState
+
 # Class storing the broctl configuration.
 #
 # This class provides access to four types of configuration/state:
@@ -22,8 +24,11 @@ import util
 
 Config = None # Globally accessible instance of Configuration.
 
+def sqlite_state_factory(config):
+    return SqliteState(config.statefile)
+
 class Configuration:
-    def __init__(self, config, basedir, broscriptdir, version, cmdout):
+    def __init__(self, config, basedir, broscriptdir, version, cmdout, state_factory=sqlite_state_factory):
         global Config
         Config = self
 
@@ -44,6 +49,8 @@ class Configuration:
         for opt in options.options:
             if not opt.dontinit:
                 self._setOption(opt.name, opt.default)
+
+        self.state_store = state_factory(self)
 
         # Set defaults for options we derive dynamically.
         self._setOption("mailto", "%s" % os.getenv("USER"))
@@ -509,10 +516,11 @@ class Configuration:
     def _setState(self, key, val):
         key = key.lower()
         self.state[key] = val
+        self.state_store.setstate(key, val)
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self, cmdout):
-        self.state = self._readConfig(self.statefile, cmdout, True)
+        self.state = dict(self.state_store.items())
         if self.state is None:
             return False
 
@@ -520,36 +528,11 @@ class Configuration:
 
     # Write the dynamic state variables into {$spooldir}/broctl.dat .
     def writeState(self, cmdout):
-        tmpstatefile = self.statefile + ".tmp"
-        try:
-            out = open(tmpstatefile, "w")
-        except IOError:
-            cmdout.error("can't write '%s'" % self.statefile)
-            return
-
-        print >>out, "# Automatically generated. Do not edit.\n"
-
-        for (key, val) in self.state.items():
-            print >>out, "%s = %s" % (key, self.subst(str(val)))
-
-        out.close()
-
-        # update state file in an atomic operation
-        os.rename(tmpstatefile, self.statefile)
+        pass
 
     # Append the given dynamic state variable to {$spooldir}/broctl.dat .
     def appendStateVal(self, key):
-        key = key.lower()
-
-        try:
-            out = open(self.statefile, "a")
-        except IOError:
-            return (False, "can't append to '%s'" % self.statefile)
-
-        print >>out, "%s = %s" % (key, self.state[key])
-
-        out.close()
-        return (True, "")
+        pass
 
     # Record the Bro version.
     def determineBroVersion(self, cmdout):
