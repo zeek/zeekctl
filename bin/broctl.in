@@ -67,8 +67,6 @@ class BroCtlCmdLoop(cmd.Cmd):
         return line
 
     def postcmd(self, stop, line):
-        self.broctl.saveState()
-
         #execute.clearDeadHostConnections()
         util.debug(1, "done", prefix="command")
         return stop

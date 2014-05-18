@@ -505,10 +505,6 @@ class Configuration:
 
         return True
 
-    # Write the dynamic state variables into {$spooldir}/broctl.dat .
-    def writeState(self, cmdout):
-        pass
-
     # Append the given dynamic state variable to {$spooldir}/broctl.dat .
     def appendStateVal(self, key):
         pass

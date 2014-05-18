@@ -67,14 +67,6 @@ class BroCtl(object):
 
         self.plugins = plugin.Registry
 
-
-    def saveState(self):
-        # If we're still locked, we might have unsaved changed.
-        if self._locked:
-            self.error("abnormal termination, saving state ...")
-            self.config.writeState()
-
-
     # Turns nodes arguments into a list of node names.
     def nodeArgs(self, args=None):
         if not args:
