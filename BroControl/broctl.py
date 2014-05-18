@@ -26,7 +26,7 @@ class TermUI:
     def output(self, txt):
         print txt
     info = output
-    debuf = output
+    debug = output
 
     def error(self, txt):
         print >>sys.stderr, txt
