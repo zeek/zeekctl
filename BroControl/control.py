@@ -20,38 +20,6 @@ def prettyPrintVal(val):
     return " %3.0f" % (val)
 
 # Checks multiple nodes in parallel and returns list of tuples (node, isrunning).
-def isRunning(nodes, cmdout, setcrashed=True):
-
-    results = []
-    cmds = []
-
-    for node in nodes:
-        pid = node.getPID()
-        if not pid:
-            results += [(node, False)]
-            continue
-
-        cmds += [(node, "check-pid", [str(pid)])]
-
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-
-        # If we cannot connect to the host at all, we filter it out because
-        # the process might actually still be running but we can't tell.
-        if output == None:
-            if config.Config.cron == "0":
-                cmdout.error("cannot connect to %s" % node.name)
-            continue
-
-        results += [(node, success)]
-
-        if not success:
-            if setcrashed:
-                # Grmpf. It crashed.
-                node.clearPID()
-                node.setCrashed()
-
-    return results
-
 # For a list of (node, bool), returns True if at least one boolean is False.
 def nodeFailed(nodes):
     for (node, success) in nodes:
@@ -60,76 +28,6 @@ def nodeFailed(nodes):
     return False
 
 # Waits for the nodes' Bro processes to reach the given status.
-def waitForBros(nodes, status, timeout, ensurerunning, cmdout):
-
-    # If ensurerunning is true, process must still be running.
-    if ensurerunning:
-        running = isRunning(nodes, cmdout)
-    else:
-        running = [(node, True) for node in nodes]
-
-    results = []
-
-    # Determine set of nodes still to check.
-    todo = {}
-    for (node, isrunning) in running:
-        if isrunning:
-            todo[node.name] = node
-        else:
-            results += [(node, False)]
-
-    while True:
-        # Determine  whether process is still running. We need to do this
-        # before we get the state to avoid a race condition.
-        running = isRunning(todo.values(), cmdout, setcrashed=False)
-
-        # Check nodes' .status file
-        cmds = []
-        for node in todo.values():
-            cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
-
-        for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-            if success:
-                try:
-                    (stat, loc) = output[0].split()
-                    if status in stat:
-                        # Status reached. Cool.
-                        del todo[node.name]
-                        results += [(node, True)]
-                except IndexError:
-                    # Something's wrong. We give up on that node.
-                    del todo[node.name]
-                    results += [(node, False)]
-
-        for (node, isrunning) in running:
-            if node.name in todo and not isrunning:
-                # Alright, a dead node's status will not change anymore.
-                del todo[node.name]
-                results += [(node, False)]
-
-        if not todo:
-            # All done.
-            break
-
-        # Wait a bit before we start over.
-        time.sleep(1)
-
-        # Timeout reached?
-        timeout -= 1
-        if timeout <= 0:
-            break
-
-        util.debug(1, "Waiting for %d node(s)..." % len(todo))
-
-    for node in todo.values():
-        # These did time-out.
-        results += [(node, False)]
-
-    if todo:
-        util.debug(1, "Timeout while waiting for %d node(s)" % len(todo))
-
-    return results
-
 # Build the Bro parameters for the given node. Include
 # script for live operation if live is true.
 def _makeBroParams(node, live):
@@ -212,355 +110,6 @@ def _makeEnvParam(node):
         env += " " + vars
 
     return env
-
-# Do a "post-terminate crash" for the given nodes.
-def _makeCrashReports(nodes, cmdout):
-
-    for n in nodes:
-        plugin.Registry.broProcessDied(n)
-
-    msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
-    cmds = []
-    for node in nodes:
-        cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]
-
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-        if not success:
-            cmdout.error("cannot run post-terminate for %s" % node.name)
-        else:
-            if not util.sendMail("Crash report from %s" % node.name, msg + "\n".join(output)):
-                cmdout.error("cannot send mail")
-
-        node.clearCrashed()
-
-# Starts the given nodes.
-def _startNodes(nodes, cmdout):
-    results = []
-
-    filtered = []
-    # Ignore nodes which are still running.
-    for (node, isrunning) in isRunning(nodes, cmdout):
-        if not isrunning:
-            filtered += [node]
-            if node.hasCrashed():
-                cmdout.info("starting %s (was crashed) ..." % node.name)
-            else:
-                cmdout.info("starting %s ..." % node.name)
-        else:
-            cmdout.info("%s still running" % node.name)
-
-    nodes = filtered
-
-    # Generate crash report for any crashed nodes.
-    crashed = [node for node in nodes if node.hasCrashed()]
-    _makeCrashReports(crashed, cmdout)
-
-    # Make working directories.
-    dirs = [(node, node.cwd()) for node in nodes]
-    nodes = []
-    for (node, success) in execute.mkdirs(dirs, cmdout):
-        if success:
-            nodes += [node]
-        else:
-            cmdout.error("cannot create working directory for %s" % node.name)
-            results += [(node, False)]
-
-    # Start Bro process.
-    cmds = []
-    envs = []
-    for node in nodes:
-        pin_cpu = node.pin_cpus
-
-        # If this node isn't using CPU pinning, then use a placeholder value
-        if pin_cpu == "":
-            pin_cpu = -1
-
-        cmds += [(node, "start", [node.cwd(), str(pin_cpu)] + _makeBroParams(node, True))]
-        envs += [_makeEnvParam(node)]
-
-    nodes = []
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout, envs=envs):
-        if success:
-            nodes += [node]
-            node.setPID(int(output[0]))
-        else:
-            cmdout.error("cannot start %s; check output of \"diag\"" % node.name)
-            results += [(node, False)]
-
-    # Check whether processes did indeed start up.
-    hanging = []
-    running = []
-
-    for (node, success) in waitForBros(nodes, "RUNNING", 3, True, cmdout):
-        if success:
-            running += [node]
-        else:
-            hanging += [node]
-
-    # It can happen that Bro hangs in DNS lookups at startup
-    # which can take a while. At this point we already know
-    # that the process has been started (waitForBro ensures that).
-    # If by now there is not a TERMINATED status, we assume that it
-    # is doing fine and will move on to RUNNING once DNS is done.
-    for (node, success) in waitForBros(hanging, "TERMINATED", 0, False, cmdout):
-        if success:
-            cmdout.error("%s terminated immediately after starting; check output with \"diag\"" % node.name)
-            node.clearPID()
-            results += [(node, False)]
-        else:
-            cmdout.info("(%s still initializing)" % node.name)
-            running += [node]
-
-    for node in running:
-        cron.logAction(node, "started")
-        results += [(node, True)]
-
-    return results
-
-# Start Bro processes on nodes if not already running.
-def start(nodes, cmdout):
-    manager = []
-    proxies = []
-    workers = []
-
-    for n in nodes:
-        if n.type == "worker":
-            workers += [n]
-        elif n.type == "proxy":
-            proxies += [n]
-        else:
-            manager += [n]
-
-    # Start nodes. Do it in the order manager, proxies, workers.
-
-    results1 = _startNodes(manager, cmdout)
-
-    if nodeFailed(results1):
-        return (results1 + [(n, False) for n in (proxies + workers)], cmdout)
-
-    results2 = _startNodes(proxies, cmdout)
-
-    if nodeFailed(results2):
-        return (results1 + results2 + [(n, False) for n in workers], cmdout)
-
-    results3 = _startNodes(workers, cmdout)
-
-    return results1 + results2 + results3
-
-def _stopNodes(nodes, cmdout):
-
-    results = []
-    running = []
-
-    # Check for crashed nodes.
-    for (node, isrunning) in isRunning(nodes, cmdout):
-        if isrunning:
-            running += [node]
-            cmdout.info("stopping %s ..." % node.name)
-        else:
-            results += [(node, True)]
-
-            if node.hasCrashed():
-                cmdout.info("%s not running (was crashed)" % node.name)
-                _makeCrashReports([node], cmdout)
-            else:
-                cmdout.info("%s not running" % node.name)
-
-    # Helper function to stop nodes with given signal.
-    def stop(nodes, signal):
-        cmds = []
-        for node in nodes:
-            cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
-
-        return execute.runHelperParallel(cmds, cmdout)
-        #events = []
-        #for node in nodes:
-        #    events += [(node, "Control::shutdown_request", [], "Control::shutdown_response")]
-        #return execute.sendEventsParallel(events)
-
-    # Stop nodes.
-    for (node, success, output) in stop(running, 15):
-        if not success:
-            cmdout.error("failed to send stop signal to %s" % node.name)
-
-    if running:
-        time.sleep(1)
-
-    # Check whether they terminated.
-    terminated = []
-    kill = []
-    for (node, success) in waitForBros(running, "TERMINATED", int(config.Config.stoptimeout), False, cmdout):
-        if not success:
-            # Check whether it crashed during shutdown ...
-            result = isRunning([node], cmdout)
-            for (node, isrunning) in result:
-                if isrunning:
-                    cmdout.info("%s did not terminate ... killing ..." % node.name)
-                    kill += [node]
-                else:
-                    # crashed flag is set by isRunning().
-                    cmdout.info("%s crashed during shutdown" % node.name)
-
-    if kill:
-        # Kill those which did not terminate gracefully.
-        stop(kill, 9)
-        # Give them a bit to disappear.
-        time.sleep(5)
-
-    # Check which are still running. We check all nodes to be on the safe side
-    # and give them a bit more time to finally disappear.
-    timeout = 10
-
-    todo = {}
-    for node in running:
-        todo[node.name] = node
-
-    while True:
-
-        running = isRunning(todo.values(), cmdout, setcrashed=False)
-
-        for (node, isrunning) in running:
-            if node.name in todo and not isrunning:
-                # Alright, it's gone.
-                del todo[node.name]
-                terminated += [node]
-                results += [(node, True)]
-
-        if not todo:
-            # All done.
-            break
-
-        # Wait a bit before we start over.
-
-        if timeout <= 0:
-            break
-
-        time.sleep(1)
-        timeout -= 1
-
-    results += [(node, False) for node in todo]
-
-    # Do post-terminate cleanup for those which terminated gracefully.
-    cleanup = [node for node in terminated if not node.hasCrashed()]
-
-    cmds = []
-    for node in cleanup:
-        crashflag = ""
-        if node in kill:
-            crashflag = "killed"
-
-        cmds += [(node, "run-cmd",  [os.path.join(config.Config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
-
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-        if not success:
-            cmdout.error("cannot run post-terminate for %s" % node.name)
-            cron.logAction(node, "stopped (failed)")
-        else:
-            cron.logAction(node, "stopped")
-
-        node.clearPID()
-        node.clearCrashed()
-
-    return results
-
-# Stop Bro processes on nodes.
-def stop(nodes, cmdout):
-    manager = []
-    proxies = []
-    workers = []
-
-    for n in nodes:
-        if n.type == "worker":
-            workers += [n]
-        elif n.type == "proxy":
-            proxies += [n]
-        else:
-            manager += [n]
-
-
-    # Stop nodes. Do it in the order workers, proxies, manager
-    # (the reverse of "start").
-
-    results1 = _stopNodes(workers, cmdout)
-
-    if nodeFailed(results1):
-        return results1 + [(n, False) for n in (proxies + manager)]
-
-    results2 = _stopNodes(proxies, cmdout)
-
-    if nodeFailed(results2):
-        return results1 + results2 + [(n, False) for n in manager]
-
-    results3 = _stopNodes(manager, cmdout)
-
-    return results1 + results2 + results3
-
-# Output status summary for nodes.
-def status(nodes, cmdout):
-
-    result = []
-
-    all = isRunning(nodes, cmdout)
-    running = []
-
-    cmds1 = []
-    cmds2 = []
-    for (node, isrunning) in all:
-        if isrunning:
-            running += [node]
-            cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
-            cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
-
-    cmdout.info("Getting bro process status..")
-    startups = execute.runHelperParallel(cmds1, cmdout)
-    statuses = execute.runHelperParallel(cmds2, cmdout)
-
-    startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
-    statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
-
-    peers = {}
-    nodes = [n for n in running if statuses[n.name] == "running"]
-    cmdout.info("Getting bro peer status..")
-    for (node, success, args) in _queryPeerStatus(nodes, cmdout):
-        if success:
-            peers[node.name] = []
-            for f in args[0].split():
-                keyval = f.split("=")
-                if len(keyval) > 1:
-                    (key, val) = keyval
-                    if key == "peer" and val != "":
-                        peers[node.name] += [val]
-        else:
-            peers[node.name] = None
-
-    for (node, isrunning) in all:
-        node_info = {
-            'name': node.name,
-            'type': node.type,
-            'host': node.host,
-            "status": "stopped",
-            "pid": None,
-            "peers": None,
-            "started": None,
-        }
-        if isrunning:
-            node_info['status'] = statuses[node.name]
-        elif node.hasCrashed():
-            node_info['status'] = "crashed"
-
-        if isrunning:
-            node_info["pid"] = node.getPID()
-
-            if node.name in peers and peers[node.name] != None:
-                node_info["peers"] = len(peers[node.name])
-
-            node_info["started"] = startups[node.name]
-
-        result.append(node_info)
-
-    # Return status code of True only if all nodes are running
-    return result
-
 
 # Returns a list of tuples of the form (node, error, vals) where 'error' is an
 # error message string, or None if there was no error.  'vals' is a list of
@@ -699,76 +248,6 @@ def top(nodes):
             cmdout.error(" ".join(msg), False)
 
     return (cmdSuccess, cmdout)
-
-def _doCheckConfig(nodes, cmdout, installed, list_scripts):
-    results = []
-
-    manager = config.Config.manager()
-
-    all = [(node, os.path.join(config.Config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
-
-    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
-        cmdout.error("broctl-config.sh not found (try 'broctl install')")
-        # Return a failure for one node to indicate that the command failed
-        results += [(all[0][0], False)]
-        return results
-
-    nodes = []
-    for (node, cwd) in all:
-        if os.path.isdir(cwd):
-            if not execute.rmdir(config.Config.manager(), cwd, cmdout):
-                cmdout.error("cannot remove directory %s on manager" % cwd)
-                results += [(node, False)]
-                continue
-
-        if not execute.mkdir(config.Config.manager(), cwd, cmdout):
-            cmdout.error("cannot create directory %s on manager" % cwd)
-            results += [(node, False)]
-            continue
-
-        nodes += [(node, cwd)]
-
-    cmds = []
-    for (node, cwd) in nodes:
-
-        env = _makeEnvParam(node)
-
-        installed_policies = installed and "1" or "0"
-        print_scripts = list_scripts and "1" or "0"
-
-        install.makeLayout(cwd, cmdout, True)
-        install.makeLocalNetworks(cwd, cmdout, True)
-        install.makeConfig(cwd, cmdout, True)
-
-        cmd = os.path.join(config.Config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
-        cmd += " broctl/check"
-
-        cmds += [((node, cwd), cmd, env, None)]
-
-    for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
-        results += [(node, success)]
-        if success:
-            cmdout.info("%s scripts are ok." % node.name)
-            if list_scripts:
-                for line in output:
-                    cmdout.info("  %s" % line)
-        else:
-            cmdout.error("%s scripts failed." % node.name)
-            for line in output:
-                cmdout.error("   %s" % line)
-
-        execute.rmdir(manager, cwd, cmdout)
-
-    return results
-
-# Check the configuration for nodes without installing first.
-def checkConfigs(nodes, cmdout):
-    return _doCheckConfig(nodes, cmdout, False, False)
-
-# Prints the loaded_scripts.log for either the installed scripts
-# (if check argument is false), or the original scripts (if check arg is true)
-def listScripts(nodes, check):
-    return _doCheckConfig(nodes, not check, True)
 
 # Report diagostics for node (e.g., stderr output).
 def crashDiag(node):
@@ -1171,15 +650,6 @@ def printID(nodes, id):
 
     return (cmdSuccess, cmdout)
 
-def _queryPeerStatus(nodes, cmdout):
-    running = isRunning(nodes, cmdout)
-
-    events = []
-    for (node, isrunning) in running:
-        if isrunning:
-            events += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
-
-    return execute.sendEventsParallel(events)
 
 def _queryNetStats(nodes, cmdout):
     running = isRunning(nodes, cmdout)
@@ -1217,9 +687,6 @@ def netStats(nodes):
             cmdSuccess = False
 
     return (cmdSuccess, cmdout)
-
-def executeCmd(nodes, cmd, cmdout):
-    return execute.executeCmdsParallel([(n, cmd) for n in nodes], cmdout)
 
 def processTrace(trace, bro_options, bro_scripts):
     cmdout = cmdoutput.CommandOutput()
@@ -1271,4 +738,542 @@ def processTrace(trace, bro_options, bro_scripts):
     cmdout.info("### Bro output in %s" % cwd)
 
     return (success, cmdout)
+
+class Controller:
+    def __init__(self, config, ui):
+        self.config = config
+        self.ui = ui
+
+    def start(self, nodes):
+        manager = []
+        proxies = []
+        workers = []
+
+        for n in nodes:
+            if n.type == "worker":
+                workers += [n]
+            elif n.type == "proxy":
+                proxies += [n]
+            else:
+                manager += [n]
+
+        # Start nodes. Do it in the order manager, proxies, workers.
+
+        results1 = self._startNodes(manager)
+
+        if nodeFailed(results1):
+            return results1 + [(n, False) for n in (proxies + workers)]
+
+        results2 = self._startNodes(proxies)
+
+        if nodeFailed(results2):
+            return results1 + results2 + [(n, False) for n in workers]
+
+        results3 = self._startNodes(workers)
+
+        return results1 + results2 + results3
+
+
+    # Starts the given nodes.
+    def _startNodes(self, nodes):
+        results = []
+
+        filtered = []
+        # Ignore nodes which are still running.
+        for (node, isrunning) in self.isRunning(nodes):
+            if not isrunning:
+                filtered += [node]
+                if node.hasCrashed():
+                    self.ui.info("starting %s (was crashed) ..." % node.name)
+                else:
+                    self.ui.info("starting %s ..." % node.name)
+            else:
+                self.ui.info("%s still running" % node.name)
+
+        nodes = filtered
+
+        # Generate crash report for any crashed nodes.
+        crashed = [node for node in nodes if node.hasCrashed()]
+        self._makeCrashReports(crashed)
+
+        # Make working directories.
+        dirs = [(node, node.cwd()) for node in nodes]
+        nodes = []
+        for (node, success) in execute.mkdirs(dirs, self.ui):
+            if success:
+                nodes += [node]
+            else:
+                self.ui.error("cannot create working directory for %s" % node.name)
+                results += [(node, False)]
+
+        # Start Bro process.
+        cmds = []
+        envs = []
+        for node in nodes:
+            pin_cpu = node.pin_cpus
+
+            # If this node isn't using CPU pinning, then use a placeholder value
+            if pin_cpu == "":
+                pin_cpu = -1
+
+            cmds += [(node, "start", [node.cwd(), str(pin_cpu)] + _makeBroParams(node, True))]
+            envs += [_makeEnvParam(node)]
+
+        nodes = []
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui, envs=envs):
+            if success:
+                nodes += [node]
+                node.setPID(int(output[0]))
+            else:
+                self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
+                results += [(node, False)]
+
+        # Check whether processes did indeed start up.
+        hanging = []
+        running = []
+
+        for (node, success) in self.waitForBros(nodes, "RUNNING", 3, True):
+            if success:
+                running += [node]
+            else:
+                hanging += [node]
+
+        # It can happen that Bro hangs in DNS lookups at startup
+        # which can take a while. At this point we already know
+        # that the process has been started (waitForBro ensures that).
+        # If by now there is not a TERMINATED status, we assume that it
+        # is doing fine and will move on to RUNNING once DNS is done.
+        for (node, success) in self.waitForBros(hanging, "TERMINATED", 0, False):
+            if success:
+                self.ui.error("%s terminated immediately after starting; check output with \"diag\"" % node.name)
+                node.clearPID()
+                results += [(node, False)]
+            else:
+                self.ui.info("(%s still initializing)" % node.name)
+                running += [node]
+
+        for node in running:
+            cron.logAction(node, "started")
+            results += [(node, True)]
+
+        return results
+
+    def isRunning(self, nodes, setcrashed=True):
+
+        results = []
+        cmds = []
+
+        for node in nodes:
+            pid = node.getPID()
+            if not pid:
+                results += [(node, False)]
+                continue
+
+            cmds += [(node, "check-pid", [str(pid)])]
+
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+
+            # If we cannot connect to the host at all, we filter it out because
+            # the process might actually still be running but we can't tell.
+            if output == None:
+                if self.config.cron == "0":
+                    self.ui.error("cannot connect to %s" % node.name)
+                continue
+
+            results += [(node, success)]
+
+            if not success:
+                if setcrashed:
+                    # Grmpf. It crashed.
+                    node.clearPID()
+                    node.setCrashed()
+
+        return results
+
+    def waitForBros(self, nodes, status, timeout, ensurerunning):
+        # If ensurerunning is true, process must still be running.
+        if ensurerunning:
+            running = self.isRunning(nodes)
+        else:
+            running = [(node, True) for node in nodes]
+
+        results = []
+
+        # Determine set of nodes still to check.
+        todo = {}
+        for (node, isrunning) in running:
+            if isrunning:
+                todo[node.name] = node
+            else:
+                results += [(node, False)]
+
+        while True:
+            # Determine  whether process is still running. We need to do this
+            # before we get the state to avoid a race condition.
+            running = self.isRunning(todo.values(), setcrashed=False)
+
+            # Check nodes' .status file
+            cmds = []
+            for node in todo.values():
+                cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+
+            for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+                if success:
+                    try:
+                        (stat, loc) = output[0].split()
+                        if status in stat:
+                            # Status reached. Cool.
+                            del todo[node.name]
+                            results += [(node, True)]
+                    except IndexError:
+                        # Something's wrong. We give up on that node.
+                        del todo[node.name]
+                        results += [(node, False)]
+
+            for (node, isrunning) in running:
+                if node.name in todo and not isrunning:
+                    # Alright, a dead node's status will not change anymore.
+                    del todo[node.name]
+                    results += [(node, False)]
+
+            if not todo:
+                # All done.
+                break
+
+            # Wait a bit before we start over.
+            time.sleep(1)
+
+            # Timeout reached?
+            timeout -= 1
+            if timeout <= 0:
+                break
+
+            util.debug(1, "Waiting for %d node(s)..." % len(todo))
+
+        for node in todo.values():
+            # These did time-out.
+            results += [(node, False)]
+
+        if todo:
+            util.debug(1, "Timeout while waiting for %d node(s)" % len(todo))
+
+        return results
+
+
+    # Do a "post-terminate crash" for the given nodes.
+    def _makeCrashReports(self, nodes):
+        for n in nodes:
+            plugin.Registry.broProcessDied(n)
+
+        msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
+        cmds = []
+        for node in nodes:
+            cmds += [(node, "run-cmd",  [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]
+
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+            if not success:
+                self.ui.error("cannot run post-terminate for %s" % node.name)
+            else:
+                if not util.sendMail("Crash report from %s" % node.name, msg + "\n".join(output)):
+                    self.ui.error("cannot send mail")
+
+            node.clearCrashed()
+
+    # Stop Bro processes on nodes.
+    def stop(self, nodes):
+        manager = []
+        proxies = []
+        workers = []
+
+        for n in nodes:
+            if n.type == "worker":
+                workers += [n]
+            elif n.type == "proxy":
+                proxies += [n]
+            else:
+                manager += [n]
+
+
+        # Stop nodes. Do it in the order workers, proxies, manager
+        # (the reverse of "start").
+
+        results1 = self._stopNodes(workers)
+
+        if nodeFailed(results1):
+            return results1 + [(n, False) for n in (proxies + manager)]
+
+        results2 = self._stopNodes(proxies)
+
+        if nodeFailed(results2):
+            return results1 + results2 + [(n, False) for n in manager]
+
+        results3 = self._stopNodes(manager)
+
+        return results1 + results2 + results3
+
+    def _stopNodes(self, nodes):
+
+        results = []
+        running = []
+
+        # Check for crashed nodes.
+        for (node, isrunning) in self.isRunning(nodes):
+            if isrunning:
+                running += [node]
+                self.ui.info("stopping %s ..." % node.name)
+            else:
+                results += [(node, True)]
+
+                if node.hasCrashed():
+                    self.ui.info("%s not running (was crashed)" % node.name)
+                    self._makeCrashReports([node])
+                else:
+                    self.ui.info("%s not running" % node.name)
+
+        # Helper function to stop nodes with given signal.
+        def stop(nodes, signal):
+            cmds = []
+            for node in nodes:
+                cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
+
+            return execute.runHelperParallel(cmds, self.ui)
+            #events = []
+            #for node in nodes:
+            #    events += [(node, "Control::shutdown_request", [], "Control::shutdown_response")]
+            #return execute.sendEventsParallel(events)
+
+        # Stop nodes.
+        for (node, success, output) in stop(running, 15):
+            if not success:
+                self.ui.error("failed to send stop signal to %s" % node.name)
+
+        if running:
+            time.sleep(1)
+
+        # Check whether they terminated.
+        terminated = []
+        kill = []
+        for (node, success) in self.waitForBros(running, "TERMINATED", int(self.config.stoptimeout), False):
+            if not success:
+                # Check whether it crashed during shutdown ...
+                result = self.isRunning([node])
+                for (node, isrunning) in result:
+                    if isrunning:
+                        self.ui.info("%s did not terminate ... killing ..." % node.name)
+                        kill += [node]
+                    else:
+                        # crashed flag is set by isRunning().
+                        self.ui.info("%s crashed during shutdown" % node.name)
+
+        if kill:
+            # Kill those which did not terminate gracefully.
+            stop(kill, 9)
+            # Give them a bit to disappear.
+            time.sleep(5)
+
+        # Check which are still running. We check all nodes to be on the safe side
+        # and give them a bit more time to finally disappear.
+        timeout = 10
+
+        todo = {}
+        for node in running:
+            todo[node.name] = node
+
+        while True:
+
+            running = self.isRunning(todo.values(), setcrashed=False)
+
+            for (node, isrunning) in running:
+                if node.name in todo and not isrunning:
+                    # Alright, it's gone.
+                    del todo[node.name]
+                    terminated += [node]
+                    results += [(node, True)]
+
+            if not todo:
+                # All done.
+                break
+
+            # Wait a bit before we start over.
+
+            if timeout <= 0:
+                break
+
+            time.sleep(1)
+            timeout -= 1
+
+        results += [(node, False) for node in todo]
+
+        # Do post-terminate cleanup for those which terminated gracefully.
+        cleanup = [node for node in terminated if not node.hasCrashed()]
+
+        cmds = []
+        for node in cleanup:
+            crashflag = ""
+            if node in kill:
+                crashflag = "killed"
+
+            cmds += [(node, "run-cmd",  [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
+
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+            if not success:
+                self.ui.error("cannot run post-terminate for %s" % node.name)
+                cron.logAction(node, "stopped (failed)")
+            else:
+                cron.logAction(node, "stopped")
+
+            node.clearPID()
+            node.clearCrashed()
+
+        return results
+
+
+    # Output status summary for nodes.
+    def status(self, nodes):
+        result = []
+
+        all = self.isRunning(nodes)
+        running = []
+
+        cmds1 = []
+        cmds2 = []
+        for (node, isrunning) in all:
+            if isrunning:
+                running += [node]
+                cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
+                cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+
+        self.ui.info("Getting bro process status..")
+        startups = execute.runHelperParallel(cmds1, self.ui)
+        statuses = execute.runHelperParallel(cmds2, self.ui)
+
+        startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
+        statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
+
+        peers = {}
+        nodes = [n for n in running if statuses[n.name] == "running"]
+        self.ui.info("Getting bro peer status..")
+        for (node, success, args) in self._queryPeerStatus(nodes):
+            if success:
+                peers[node.name] = []
+                for f in args[0].split():
+                    keyval = f.split("=")
+                    if len(keyval) > 1:
+                        (key, val) = keyval
+                        if key == "peer" and val != "":
+                            peers[node.name] += [val]
+            else:
+                peers[node.name] = None
+
+        for (node, isrunning) in all:
+            node_info = {
+                'name': node.name,
+                'type': node.type,
+                'host': node.host,
+                "status": "stopped",
+                "pid": None,
+                "peers": None,
+                "started": None,
+            }
+            if isrunning:
+                node_info['status'] = statuses[node.name]
+            elif node.hasCrashed():
+                node_info['status'] = "crashed"
+
+            if isrunning:
+                node_info["pid"] = node.getPID()
+
+                if node.name in peers and peers[node.name] != None:
+                    node_info["peers"] = len(peers[node.name])
+
+                node_info["started"] = startups[node.name]
+
+            result.append(node_info)
+
+        # Return status code of True only if all nodes are running
+        return result
+
+    # Check the configuration for nodes without installing first.
+    def checkConfigs(self, nodes):
+        return self._doCheckConfig(nodes, False, False)
+
+    # Prints the loaded_scripts.log for either the installed scripts
+    # (if check argument is false), or the original scripts (if check arg is true)
+    def listScripts(nodes, check):
+        return self._doCheckConfig(nodes, not check, True)
+
+
+    def _doCheckConfig(self, nodes, installed, list_scripts):
+        results = []
+
+        manager = self.config.manager()
+
+        all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
+
+        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            # Return a failure for one node to indicate that the command failed
+            results += [(all[0][0], False)]
+            return results
+
+        nodes = []
+        for (node, cwd) in all:
+            if os.path.isdir(cwd):
+                if not execute.rmdir(self.config.manager(), cwd, self.ui):
+                    cmdout.error("cannot remove directory %s on manager" % cwd)
+                    results += [(node, False)]
+                    continue
+
+            if not execute.mkdir(self.config.manager(), cwd, self.ui):
+                self.ui.error("cannot create directory %s on manager" % cwd)
+                results += [(node, False)]
+                continue
+
+            nodes += [(node, cwd)]
+
+        cmds = []
+        for (node, cwd) in nodes:
+
+            env = _makeEnvParam(node)
+
+            installed_policies = installed and "1" or "0"
+            print_scripts = list_scripts and "1" or "0"
+
+            install.makeLayout(cwd, self.ui, True)
+            install.makeLocalNetworks(cwd, self.ui, True)
+            install.makeConfig(cwd, self.ui, True)
+
+            cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_makeBroParams(node, False)))
+            cmd += " broctl/check"
+
+            cmds += [((node, cwd), cmd, env, None)]
+
+        for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
+            results += [(node, success)]
+            if success:
+                self.ui.info("%s scripts are ok." % node.name)
+                if list_scripts:
+                    for line in output:
+                        cmdout.info("  %s" % line)
+            else:
+                self.ui.error("%s scripts failed." % node.name)
+                for line in output:
+                    self.ui.error("   %s" % line)
+
+            execute.rmdir(manager, cwd, self.ui)
+
+        return results
+
+    def _queryPeerStatus(self, nodes):
+        running = self.isRunning(nodes)
+
+        events = []
+        for (node, isrunning) in running:
+            if isrunning:
+                events += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
+
+        return execute.sendEventsParallel(events)
+
+    def executeCmd(self, nodes, cmd):
+        return execute.executeCmdsParallel([(n, cmd) for n in nodes], self.ui)
 

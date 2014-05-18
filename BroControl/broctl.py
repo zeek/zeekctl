@@ -52,6 +52,8 @@ class BroCtl(object):
         self._locked = False
         self._failed = False
 
+        self.controller = control.Controller(self.config, self.ui)
+
     def setup(self):
         BroCfgDir = os.path.join(self.BroBase, "etc")
         BroScriptDir = os.path.join(self.BroBase, "share/bro")
@@ -69,6 +71,7 @@ class BroCtl(object):
         os.chdir(self.config.brobase)
 
         self.plugins = plugin.Registry
+
 
     def saveState(self):
         # If we're still locked, we might have unsaved changed.
@@ -218,7 +221,7 @@ class BroCtl(object):
             return False
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
-        results = control.start(nodes, self.ui)
+        results = self.controller.start(nodes)
         status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("start", results)
         return status
@@ -236,7 +239,7 @@ class BroCtl(object):
             return False
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
-        results = control.stop(nodes, self.ui)
+        results = self.controller.stop(nodes)
         status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("stop", results)
         return status
@@ -315,7 +318,7 @@ class BroCtl(object):
             return False
 
         nodes = self.plugins.cmdPreWithNodes("status", nodes)
-        node_infos = control.status(nodes, self.ui)
+        node_infos = self.controller.status(nodes)
         self.plugins.cmdPostWithNodes("status", nodes)
         return node_infos
 
@@ -520,7 +523,7 @@ class BroCtl(object):
             return False
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
-        results = control.checkConfigs(nodes, self.ui)
+        results = self.controller.checkConfigs(nodes)
         status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("check", results)
 
@@ -549,7 +552,7 @@ class BroCtl(object):
             return False
 
         nodes = self.plugins.cmdPreWithNodes("cleanup", nodes, cleantmp)
-        cmdSuccess = control.cleanup(nodes, cleantmp, self.ui)
+        cmdSuccess = self.controller.cleanup(nodes, cleantmp)
         self.plugins.cmdPostWithNodes("cleanup", nodes, cleantmp)
 
         return cmdSuccess
@@ -733,7 +736,7 @@ class BroCtl(object):
         action across all systems."""
 
         if self.plugins.cmdPre("exec", cmd):
-            cmdSuccess = control.executeCmd(self.config.hosts(), cmd, self.ui)
+            cmdSuccess = self.controller.executeCmd(self.config.hosts(), cmd)
         self.plugins.cmdPost("exec", cmd)
 
         return cmdSuccess
