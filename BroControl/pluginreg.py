@@ -19,7 +19,8 @@ class PluginRegistry:
 
     def addDir(self, dir):
         """Adds a directory to search for plugins."""
-        self._dirs += [dir]
+        if dir not in self._dirs:
+            self._dirs += [dir]
 
     def loadPlugins(self, cmdout):
         """Loads all plugins found in any of the added directories."""
