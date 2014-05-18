@@ -135,7 +135,7 @@ class Node:
     @doc.api
     def cwd(self):
         """Returns a string with the node's working directory."""
-        return os.path.join(config.Config.spooldir, self.name)
+        return os.path.join(self.config.spooldir, self.name)
 
     # Stores the nodes process ID.
     def setPID(self, pid):
