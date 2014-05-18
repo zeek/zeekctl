@@ -508,19 +508,16 @@ class Configuration:
 
     # Initialize a global option if not already set.
     def _setOption(self, key, val):
-        key = key.lower()
         if key not in self.config:
             self.config[key] = self.subst(val)
 
     # Set a dynamic state variable.
     def _setState(self, key, val):
-        key = key.lower()
         self.state[key] = val
-        self.state_store.setstate(key, val)
+        self.state_store.sete(key, val)
 
     def _getState(self, key):
-        key = key.lower()
-        return self.state_store.getstate(key)
+        return self.state_store.get(key)
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self, cmdout):

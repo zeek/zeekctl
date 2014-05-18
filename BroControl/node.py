@@ -141,7 +141,7 @@ class Node:
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
         key = "%s-pid" % self.name
-        self.config._setState(key, str(pid))
+        self.config._setState(key, pid)
 
     @doc.api
     def getPID(self):

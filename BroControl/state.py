@@ -22,22 +22,23 @@ class SqliteState:
             pass
 
     def get(self, key):
+        key = key.lower()
         self.c.execute("select value from state where key=?", [key])
         records = self.c.fetchall()
         if records:
             return json.loads(records[0][0])
         return None
-    getstate = get
 
     def set(self, key, value):
+        key = key.lower()
         value = json.dumps(value)
         self.c.execute("update state set value=? where key=?", [value, key])
         if not self.c.rowcount:
             self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
         self.db.commit()
-    setstate = set
 
     def setdefault(self, key, value):
+        key = key.lower()
         value = json.dumps(value)
         try :
             self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
