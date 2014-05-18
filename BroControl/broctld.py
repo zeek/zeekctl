@@ -6,20 +6,22 @@ import time
 import random
 import traceback
 
+from BroControl.state import SqliteState as State
 from BroControl.broctl import BroCtl
 from BroControl import ser as json
 
-class State:
-    def __init__(self):
-        self.store = {}
+class StateClientWrapper:
+    def __init__(self, client):
+        self.cl = client
 
     def set(self, key, value):
-        self.store[key] = value
-    setstate = set
+        return self.cl.setstate(key, value)
 
     def get(self, key):
-        return self.store.get(key)
-    getstate = get
+        return self.cl.getstate(key)
+
+    def items(self):
+        return self.cl.getstateitems()
 
 class TermUI:
     def __init__(self):
@@ -112,6 +114,10 @@ class Daemon(Common):
     def handle_getstate(self, key):
         value = self.state.get(key)
         print "Get state key=%r value=%r" % (key, value)
+        self.send(value)
+
+    def handle_getstateitems(self):
+        value = self.state.items(key)
         self.send(value)
 
     def handle_out(self, id, txt):
@@ -218,6 +224,9 @@ class Client(Common):
     def setstate(self, key, value):
         return self.call("setstate", key, value)
 
+    def getstateitems(self):
+        return self.call("getstateitems")
+
     def getlog(self, id, since=0):
         return self.call("getlog", id, since)
 
@@ -243,7 +252,7 @@ def broctl_worker_factory(id):
 
 def main():
 
-    state = State()
+    state = State("/bro/spool/broctl.dat") #FIXME
     logs = Logs()
 
     d = Broctld(state, logs, broctl_worker_factory)

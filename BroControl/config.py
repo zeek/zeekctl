@@ -13,6 +13,7 @@ import plugin
 import util
 
 from .state import SqliteState
+from .version import VERSION
 
 # Class storing the broctl configuration.
 #
@@ -24,11 +25,16 @@ from .state import SqliteState
 
 Config = None # Globally accessible instance of Configuration.
 
+class ConfigurationError(Exception):
+    pass
+
 def sqlite_state_factory(config):
     return SqliteState(config.statefile)
 
 class Configuration:
-    def __init__(self, config, basedir, broscriptdir, version, cmdout, state_factory=sqlite_state_factory):
+    def __init__(self, basedir, cmdout, state_factory=sqlite_state_factory):
+        config_file = os.path.join(BroCfgDir, "etc", "broctl.cfg")
+        broscriptdir = os.path.join(basedir, "share/bro")
         global Config
         Config = self
 
@@ -43,7 +49,7 @@ class Configuration:
         # Set defaults for options we get passed in.
         self._setOption("brobase", basedir)
         self._setOption("broscriptdir", broscriptdir)
-        self._setOption("version", version)
+        self._setOption("version", VERSION)
 
         # Initialize options.
         for opt in options.options:
@@ -60,8 +66,7 @@ class Configuration:
         # Determine operating system.
         (success, output) = execute.runLocalCmd("uname")
         if not success:
-            cmdout.error("cannot run uname")
-            raise RuntimeError
+            raise RuntimeError("cannot run uname")
         self._setOption("os", output[0].lower().strip())
 
         if self.config["os"] == "linux":
@@ -93,8 +98,7 @@ class Configuration:
             try:
                 global_env_vars = self._getEnvVarDict(varlist)
             except ValueError, err:
-                cmdout.error("env_vars option in broctl.cfg: %s" % err)
-                return False
+                raise ConfigurationError("env_vars option in broctl.cfg: %s" % err)
 
             for node in self.nodes("all"):
                 for (key, val) in global_env_vars.items():
@@ -269,10 +273,10 @@ class Configuration:
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ValueError("missing '=' after environment variable name")
+                    raise ConfigurationError("missing '=' after environment variable name")
 
                 if not key.strip():
-                    raise ValueError("missing environment variable name")
+                    raise ConfigurationError("missing environment variable name")
 
                 env_vars[key.strip()] = val.strip()
 
@@ -283,8 +287,7 @@ class Configuration:
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
         if not config.read(self.nodecfg):
-            cmdout.error("cannot read '%s'" % self.nodecfg)
-            return False
+            raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
         manager = False
         proxy = False
@@ -323,8 +326,7 @@ class Configuration:
                         standalone = True
 
                     else:
-                        cmdout.error("%s: unknown type '%s' in section '%s'" % (file, val, sec))
-                        return False
+                        raise ConfigurationError("%s: unknown type '%s' in section '%s'" % (file, val, sec))
 
 
                 node.__dict__[key] = val
@@ -333,24 +335,20 @@ class Configuration:
             try:
                 node.env_vars = self._getEnvVarDict(node.env_vars)
             except ValueError, err:
-                cmdout.error("%s: section %s: %s" % (file, sec, err))
-                return False
+                raise ConfigurationError("%s: section %s: %s" % (file, sec, err))
 
             try:
                 addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
                 if len(addrinfo) == 0:
-                    cmdout.error("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
-                    return False
+                    raise ConfigurationError("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
 
                 addr_str = addrinfo[0][4][0]
                 # zone_id is handled manually, so strip it if it's there
                 node.addr = addr_str.split('%')[0]
             except AttributeError:
-                cmdout.error("%s: no host given in section '%s'" % (file, sec))
-                return False
+                raise ConfigurationError("%s: no host given in section '%s'" % (file, sec))
             except socket.gaierror, e:
-                cmdout.error("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
-                return False
+                raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
 
             # Each node gets a number unique across its type.
             type = self.nodelist[sec].type
@@ -367,44 +365,37 @@ class Configuration:
                 try:
                     numprocs = int(node.lb_procs)
                     if numprocs < 1:
-                        cmdout.error("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
-                        return False
+                        raise ConfigurationError("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
                 except ValueError:
-                    cmdout.error("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
-                    return False
+                    raise ConfigurationError("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
             elif node.lb_method:
-                cmdout.error("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
-                return False
+                raise ConfigurationError("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
 
             try:
                 pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
             except ValueError:
-                cmdout.error("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
-                return False
+                raise ConfigurationError("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
 
             if pin_cpus:
                 node.pin_cpus = pin_cpus[0]
 
             if node.lb_procs:
                 if not node.lb_method:
-                    cmdout.error("%s: no load balancing method given in section '%s'" % (file, sec))
-                    return False
+                    raise ConfigurationError("%s: no load balancing method given in section '%s'" % (file, sec))
 
                 if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
-                    cmdout.error("%s: unknown load balancing method given in section '%s'" % (file, sec))
-                    return False
+                    raise ConfigurationError("%s: unknown load balancing method given in section '%s'" % (file, sec))
 
                 if node.lb_method == "interfaces":
                     if not node.lb_interfaces:
-                        cmdout.error("%s: no list of interfaces given in section '%s'" % (file, sec))
+                        raise ConfigurationError("%s: no list of interfaces given in section '%s'" % (file, sec))
                         return False
 
                     # get list of interfaces to use, and assign one to each node
                     netifs = node.lb_interfaces.split(",")
 
                     if len(netifs) != int(node.lb_procs):
-                        cmdout.error("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
-                        return False
+                        raise ConfigurationError("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
 
                     node.interface = netifs.pop().strip()
 
@@ -429,37 +420,30 @@ class Configuration:
 
             if not standalone:
                 if not manager:
-                    cmdout.error("%s: no manager defined" % file)
-                    return False
+                    raise ConfigurationError("%s: no manager defined" % file)
 
                 if not proxy:
-                    cmdout.error("%s: no proxy defined" % file)
-                    return False
+                    raise ConfigurationError("%s: no proxy defined" % file)
 
             else:
                 if len(self.nodelist) > 1:
-                    cmdout.error("%s: more than one node defined in stand-alone setup" % file)
-                    return False
+                    raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
 
         manageronlocalhost = False
 
         for n in self.nodelist.values():
             if not n.name:
-                cmdout.error("node configured without a name")
-                return False
+                raise ConfigurationError("node configured without a name")
 
             if not n.host:
-                cmdout.error("no host given for node %s" % n.name)
-                return False
+                raise ConfigurationError("no host given for node %s" % n.name)
 
             if not n.type:
-                cmdout.error("no type given for node %s" % n.name)
-                return False
+                raise ConfigurationError("no type given for node %s" % n.name)
 
             if n.type == "manager":
                 if not execute.isLocal(n, cmdout):
-                    cmdout.error("script must be run on manager node")
-                    return False
+                    raise ConfigurationError("script must be run on manager node")
 
                 if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
                     manageronlocalhost = True
@@ -469,8 +453,7 @@ class Configuration:
             for n in self.nodelist.values():
                 if n.type != "manager" and n.type != "standalone":
                     if n.addr != "127.0.0.1" and n.addr != "::1":
-                        cmdout.error("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
-                        return False
+                        raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
         return True
 
@@ -478,31 +461,25 @@ class Configuration:
     # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
     def _readConfig(self, file, cmdout, allowstate = False):
         config = {}
-        try:
-            for line in open(file):
+        for line in open(file):
 
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
 
-                args = line.split("=", 1)
-                if len(args) != 2:
-                    cmdout.error("%s: syntax error '%s'" % (file, line))
-                    return None
+            args = line.split("=", 1)
+            if len(args) != 2:
+                raise ConfigurationError("%s: syntax error '%s'" % (file, line))
 
-                (key, val) = args
-                key = key.strip().lower()
-                val = val.strip()
+            (key, val) = args
+            key = key.strip().lower()
+            val = val.strip()
 
-                if not allowstate and ".state." in key:
-                    cmdout.error("state variable '%s' not allowed in file: %s" % (key, file))
-                    return None
+            if not allowstate and ".state." in key:
+                raise ConfigurationError("state variable '%s' not allowed in file: %s" % (key, file))
 
-                # if the key already exists, just overwrite with new value
-                config[key] = val
-
-        except IOError, e:
-            cmdout.warn("cannot read '%s' (this is ok on first run)" % file)
+            # if the key already exists, just overwrite with new value
+            config[key] = val
 
         return config
 
