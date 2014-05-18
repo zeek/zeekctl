@@ -32,10 +32,8 @@ class SqliteState:
     def set(self, key, value):
         value = json.dumps(value)
         self.c.execute("update state set value=? where key=?", [value, key])
-        if self.c.rowcount:
-            return
-
-        self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
+        if not self.c.rowcount:
+            self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
         self.db.commit()
     setstate = set
 
