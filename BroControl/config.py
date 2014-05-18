@@ -295,7 +295,7 @@ class Configuration:
 
         counts = {}
         for sec in config.sections():
-            node = node_mod.Node(sec)
+            node = node_mod.Node(self, sec)
             self.nodelist[sec] = node
 
             for (key, val) in config.items(sec):
@@ -517,6 +517,10 @@ class Configuration:
         key = key.lower()
         self.state[key] = val
         self.state_store.setstate(key, val)
+
+    def _getState(self, key):
+        key = key.lower()
+        return self.state_store.getstate(key)
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self, cmdout):

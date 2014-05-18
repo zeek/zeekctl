@@ -5,7 +5,6 @@
 import os
 
 import doc
-import config
 
 class Node:
     """Class representing one node of the BroControl maintained setup. In
@@ -90,9 +89,10 @@ class Node:
               "pin_cpus": 1, "env_vars": 1 }
 
 
-    def __init__(self, name):
+    def __init__(self, config, name):
         """Instantiates a new node of the given name."""
         self.name = name
+        self.config = config
 
         for key in Node._keys:
             self.__dict__[key] = ""
@@ -141,49 +141,44 @@ class Node:
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
         key = "%s-pid" % self.name
-        config.Config._setState(key, str(pid))
+        self.config._setState(key, str(pid))
 
     @doc.api
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
         t = "%s-pid" % self.name.lower()
-        if t in config.Config.state:
-            try:
-                return int(config.Config.state[t])
-            except ValueError:
-                pass
-
-        return None
+        return self.config._getState(t)
 
     def clearPID(self):
         """Clears the stored process ID for the node's Bro process, indicating
         that it is no longer running."""
         key = "%s-pid" % self.name
-        config.Config._setState(key, "")
+        self.config._setState(key, None)
 
     def setCrashed(self):
         """Marks node's Bro process as having terminated unexpectedly."""
         key = "%s-crashed" % self.name
-        config.Config._setState(key, "1")
+        self.config._setState(key, True)
 
     # Unsets the flag for unexpected termination.
     def clearCrashed(self):
         """Clears the mark for the node's Bro process having terminated
         unexpectedly."""
         key = "%s-crashed" % self.name
-        config.Config._setState(key, "0")
+        self.config._setState(key, False)
 
     # Returns true if node has terminated unexpectedly.
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
         t = "%s-crashed" % self.name.lower()
-        return t in config.Config.state and config.Config.state[t] == "1"
+        return self.config._getState(t)
 
     # Set the Bro port this node is using.
     def setPort(self, port):
-        config.Config._setState("%s-port" % self.name, str(port))
+        t = "%s-port" % self.name
+        self.config._setState(t, port)
 
     # Get the Bro port this node is using.
     @doc.api
@@ -193,7 +188,7 @@ class Node:
         has been set yet.
         """
         t = "%s-port" % self.name.lower()
-        return t in config.Config.state and int(config.Config.state[t]) or -1
+        return self.config._getState(t) or -1
 
     @staticmethod
     def addKey(kw):
