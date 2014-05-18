@@ -284,7 +284,7 @@ class BroCtl(object):
             success = self.check(node_list)
             self.postcmd(False, node_list)
 
-            if success:
+            if not success:
                 return False
 
             util.output("installing ...")

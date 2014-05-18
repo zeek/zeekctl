@@ -160,8 +160,14 @@ class BroCtlCmdLoop(cmd.Cmd):
         the command sequence stop_, cleanup_, check_, install_, and
         start_.
         """
-
-        self.broctl.restart(node_list=args, clean='--clean' in args)
+        clean = False
+        try:
+            if args.startswith("--clean"):
+                args = args[7:]
+                clean = True
+        except IndexError:
+            pass
+        self.broctl.restart(node_list=args, clean=clean)
 
     def do_status(self, args):
         """- [<nodes>]

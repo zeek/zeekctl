@@ -269,35 +269,6 @@ def crashDiag(node):
 
     return (True, cmdout)
 
-# Clean up the working directory for nodes (flushes state).
-# If cleantmp is true, also wipes ${tmpdir}; this is done
-# even when the node is still running.
-def cleanup(nodes, cleantmp=False, cmdout=cmdoutput.CommandOutput()):
-    cmdSuccess = True
-
-    cmdout.info("cleaning up nodes ...")
-    result = isRunning(nodes, cmdout)
-    running =    [node for (node, on) in result if on]
-    notrunning = [node for (node, on) in result if not on]
-
-    results1 = execute.rmdirs([(n, n.cwd()) for n in notrunning], cmdout)
-    results2 = execute.mkdirs([(n, n.cwd()) for n in notrunning], cmdout)
-    if nodeFailed(results1) or nodeFailed(results2):
-        cmdSuccess = False
-
-    for node in notrunning:
-        node.clearCrashed()
-
-    for node in running:
-        cmdout.info("   %s is still running, not cleaning work directory" % node.name)
-
-    if cleantmp:
-        results3 = execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning], cmdout)
-        results4 = execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning], cmdout)
-        if nodeFailed(results3) or nodeFailed(results4):
-            cmdSuccess = False
-
-    return cmdSuccess
 
 # Attach gdb to the main Bro processes on the given nodes.
 def attachGdb(nodes):
@@ -1277,3 +1248,32 @@ class Controller:
     def executeCmd(self, nodes, cmd):
         return execute.executeCmdsParallel([(n, cmd) for n in nodes], self.ui)
 
+    # Clean up the working directory for nodes (flushes state).
+    # If cleantmp is true, also wipes ${tmpdir}; this is done
+    # even when the node is still running.
+    def cleanup(self, nodes, cleantmp=False):
+        cmdSuccess = True
+
+        self.ui.info("cleaning up nodes ...")
+        result = self.isRunning(nodes)
+        running =    [node for (node, on) in result if on]
+        notrunning = [node for (node, on) in result if not on]
+
+        results1 = execute.rmdirs([(n, n.cwd()) for n in notrunning], self.ui)
+        results2 = execute.mkdirs([(n, n.cwd()) for n in notrunning], self.ui)
+        if nodeFailed(results1) or nodeFailed(results2):
+            cmdSuccess = False
+
+        for node in notrunning:
+            node.clearCrashed()
+
+        for node in running:
+            self.ui.info("   %s is still running, not cleaning work directory" % node.name)
+
+        if cleantmp:
+            results3 = execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
+            results4 = execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
+            if nodeFailed(results3) or nodeFailed(results4):
+                cmdSuccess = False
+
+        return cmdSuccess
