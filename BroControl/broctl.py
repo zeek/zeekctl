@@ -41,12 +41,10 @@ def lock_required(func):
     return func
 
 class BroCtl(object):
-    def __init__(self, BroBase="/bro", ui=TermUI()):
+    def __init__(self, basedir="/bro", ui=TermUI()):
         self.ui = ui
-        self.BroBase = BroBase
+        self.BroBase = basedir
 
-        # Adjust the PYTHONPATH
-        sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
         self.setup()
 
         self._locked = False
@@ -55,10 +53,7 @@ class BroCtl(object):
         self.controller = control.Controller(self.config, self.ui)
 
     def setup(self):
-        BroCfgDir = os.path.join(self.BroBase, "etc")
-        BroScriptDir = os.path.join(self.BroBase, "share/bro")
-        Version = "xx"
-        self.config = config.Configuration(os.path.join(BroCfgDir, "broctl.cfg"), self.BroBase, BroScriptDir, Version, self.ui)
+        self.config = config.Configuration(self.BroBase, self.ui)
 
         for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
             if dir:

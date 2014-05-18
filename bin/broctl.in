@@ -25,7 +25,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         self.exit_code = 0
         self._locked = False
         self.prompt = "[BroControl] > "
-        self.broctl = broctl_class(ui=self)
+        self.broctl = broctl_class(BroBase, ui=self)
 
     def output(self, text):
         self.stdout.write(text)

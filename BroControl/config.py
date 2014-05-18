@@ -33,7 +33,7 @@ def sqlite_state_factory(config):
 
 class Configuration:
     def __init__(self, basedir, cmdout, state_factory=sqlite_state_factory):
-        config_file = os.path.join(BroCfgDir, "etc", "broctl.cfg")
+        config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
         global Config
         Config = self
@@ -42,7 +42,7 @@ class Configuration:
         self.state = {}
 
         # Read broctl.cfg.
-        self.config = self._readConfig(config, cmdout)
+        self.config = self._readConfig(config_file, cmdout)
         if self.config is None:
             raise RuntimeError
 
@@ -127,7 +127,7 @@ class Configuration:
             return self.config[attr]
         if attr in self.state:
             return self.state[attr]
-        return ""
+        raise AttributeError(attr)
 
     # Returns True if attribute is defined.
     def hasAttr(self, attr):
@@ -485,13 +485,14 @@ class Configuration:
 
     # Initialize a global option if not already set.
     def _setOption(self, key, val):
+        key = key.lower()
         if key not in self.config:
             self.config[key] = self.subst(val)
 
     # Set a dynamic state variable.
     def _setState(self, key, val):
         self.state[key] = val
-        self.state_store.sete(key, val)
+        self.state_store.set(key, val)
 
     def _getState(self, key):
         return self.state_store.get(key)
