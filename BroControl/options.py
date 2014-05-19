@@ -103,7 +103,7 @@ options = [
     Option("PFRINGClusterType", "4-tuple", "string", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
     Option("PFRINGFirstAppInstance", "0", "int", Option.USER, False,
-           "The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
+           "The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work."),
 
     Option("CFlowAddress", "", "string", Option.USER, False,
            "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
