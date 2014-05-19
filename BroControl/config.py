@@ -312,8 +312,7 @@ class Configuration:
                 if key == "type":
                     if val == "manager":
                         if manager:
-                            cmdout.error("only one manager can be defined")
-                            return False
+                            raise ConfigurationError("only one manager can be defined")
                         manager = True
 
                     elif val == "proxy":
@@ -389,7 +388,6 @@ class Configuration:
                 if node.lb_method == "interfaces":
                     if not node.lb_interfaces:
                         raise ConfigurationError("%s: no list of interfaces given in section '%s'" % (file, sec))
-                        return False
 
                     # get list of interfaces to use, and assign one to each node
                     netifs = node.lb_interfaces.split(",")
@@ -582,13 +580,11 @@ class Configuration:
             if success and output:
                 version = output[-1]
         else:
-            cmdout.error("cannot find Bro binary to determine version")
-            return None
+            raise ConfigurationError("cannot find Bro binary to determine version")
 
         m = re.search(".* version ([^ ]*).*$", version)
         if not m:
-            cmdout.error("cannot determine Bro version [%s]" % version.strip())
-            return None
+            raise ConfigurationError("cannot determine Bro version [%s]" % version.strip())
 
         version = m.group(1)
         # If bro is built with the "--enable-debug" configure option, then it
