@@ -1,8 +1,4 @@
 
-1.3-beta-2 | 2014-05-20 09:39:43 -0500
-
-  * Remove references to the now unused BROMAGIC (Daniel Thayer)
-
 1.3-beta | 2014-05-19 16:29:36 -0500
 
   * Improve documentation of PFRINGFirstAppInstance option (Daniel Thayer)
@@ -14,6 +10,8 @@
 
   * Rename the broctl option pfringdnafirstappinstance to
     pfringfirstappinstance. (Daniel Thayer)
+
+  * Remove references to the now unused BROMAGIC (Daniel Thayer)
 
 1.2-129 | 2014-05-01 20:58:28 -0700
 
