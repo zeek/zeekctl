@@ -143,7 +143,6 @@ class BroCtl(object):
         return self._failed
 
     def postcmd(self, stop, line):
-        self.config.writeState(self.ui)
         if self._locked:
             util.unlock(self.ui)
             self._locked = False
