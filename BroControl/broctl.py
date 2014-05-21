@@ -18,6 +18,8 @@ from BroControl import cron
 from BroControl import plugin
 from BroControl.config import Config
 
+class InvalidNode(Exception):
+    pass
 
 class TermUI:
     def __init__(self):
@@ -77,12 +79,11 @@ class BroCtl(object):
         for arg in args.split():
             h = self.config.nodes(arg)
             if not h and arg != "all":
-                util.output("unknown node '%s'" % arg)
-                return (False, [])
+                raise InvalidNode("unknown node '%s'" % arg)
 
             nodes += h
 
-        return (True, nodes)
+        return nodes
 
     # Turns node name arguments into a list of nodes.  The result is a subset of
     # a similar call to nodeArgs() but here only one node is chosen for each host.
@@ -96,15 +97,14 @@ class BroCtl(object):
         for arg in args.split():
             h = self.config.hosts(arg)
             if not h and arg != "all":
-                util.error("unknown node '%s'" % arg)
-                return (False, [])
+                raise InvalidNode("unknown node '%s'" % arg)
 
             for node in h:
                 if node.host not in hosts:
                     hosts[node.host] = 1
                     nodes.append(node)
 
-        return (True, nodes)
+        return nodes
 
     def output(self, text):
         self.ui.info(text)
@@ -203,9 +203,7 @@ class BroCtl(object):
         already running are left untouched.
         """
 
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)
@@ -221,9 +219,8 @@ class BroCtl(object):
         Stops the given nodes, or all nodes if none are specified. Nodes not
         running are left untouched.
         """
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
         results = self.controller.stop(nodes)
@@ -250,9 +247,7 @@ class BroCtl(object):
         start_.
         """
 
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
         args = " ".join([ str(n) for n in nodes ])
@@ -300,9 +295,7 @@ class BroCtl(object):
 
         Prints the current status of the given nodes."""
 
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("status", nodes)
         node_infos = self.controller.status(nodes)
@@ -318,20 +311,17 @@ class BroCtl(object):
                 cmdout.printResults()
                 sys.exit(1)
 
-            (success, nodes) = nodeArgs(args)
-            if success:
-                nodes = self.plugins.cmdPreWithNodes("top", nodes)
-                cmdSuccess, cmdOutput = control.top(nodes)
-                if not cmdSuccess:
-                    self.exit_code = 1
-                cmdout.append(cmdOutput)
-                self.plugins.cmdPostWithNodes("top", nodes)
-            else:
-                self.exit_code = 1
+            nodes = self.nodeArgs(args)
+
+            nodes = self.plugins.cmdPreWithNodes("top", nodes)
+            cmdSuccess, cmdOutput = control.top(nodes)
+            cmdout.append(cmdOutput)
+            self.plugins.cmdPostWithNodes("top", nodes)
 
             util.unlock(cmdout)
 
         cmdout.printResults()
+        return cmdSuccess
 
     def do_top(self, args):
         """- [<nodes>]
@@ -391,22 +381,20 @@ class BroCtl(object):
         check_ command)."""
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if not success:
-            self.exit_code = 1
-            return
+        nodes = self.nodeArgs(args)
 
         nodes = self.plugins.cmdPreWithNodes("diag", nodes)
 
+        success = True
+
         for h in nodes:
             cmdSuccess, cmdOutput = control.crashDiag(h)
-            if not cmdSuccess:
-                self.exit_code = 1
+            success = success and cmdSuccess
             cmdOutput.printResults()
 
         self.plugins.cmdPostWithNodes("diag", nodes)
 
-        return False
+        return success
 
     def do_attachgdb(self, args):
         """- [<nodes>]
@@ -415,16 +403,13 @@ class BroCtl(object):
         process on the given nodes. """
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("attachgdb", nodes)
-            cmdSuccess, cmdOutput = control.attachGdb(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("attachgdb", nodes)
-        else:
+        nodes = self.nodeArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("attachgdb", nodes)
+        cmdSuccess, cmdOutput = control.attachGdb(nodes)
+        if not cmdSuccess:
             self.exit_code = 1
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithNodes("attachgdb", nodes)
 
         return False
 
@@ -505,9 +490,7 @@ class BroCtl(object):
         ensures that new errors in a policy script will not affect currently
         running nodes, even when one or more of them needs to be restarted."""
 
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.checkConfigs(nodes)
@@ -534,9 +517,7 @@ class BroCtl(object):
 
         cleantmp = all
 
-        (success, nodes) = self.nodeArgs(node_list)
-        if not success:
-            return False
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("cleanup", nodes, cleantmp)
         cmdSuccess = self.controller.cleanup(nodes, cleantmp)
@@ -568,22 +549,17 @@ class BroCtl(object):
         except IndexError:
             pass
 
-        args = " ".join(args)
+        node_list = " ".join(args)
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
-            cmdSuccess, cmdOutput_cap, cmdOutput_cflow = control.capstats(nodes, interval)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput_cap.printResults()
-            cmdOutput_cflow.printResults()
-            self.plugins.cmdPostWithNodes("capstats", nodes, interval)
-        else:
-            self.exit_code = 1
+        nodes = self.nodeArgs(node_list)
+        nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
+        cmdSuccess, cmdOutput_cap, cmdOutput_cflow = control.capstats(nodes, interval)
+        cmdOutput_cap.printResults()
+        cmdOutput_cflow.printResults()
+        self.plugins.cmdPostWithNodes("capstats", nodes, interval)
 
-        return False
+        return cmdSuccess
 
     def do_update(self, args):
         """- [<nodes>]
@@ -603,15 +579,12 @@ class BroCtl(object):
         resend the old configuration."""
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("update", nodes)
-            results, cmdOutput = control.update(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithResults("update", results)
-        else:
-            self.exit_code = 1
+        nodes = self.nodeArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("update", nodes)
+        results, cmdOutput = control.update(nodes)
+        self.checkForFailure(results)
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithResults("update", results)
 
         return False
 
@@ -622,18 +595,13 @@ class BroCtl(object):
         paths relevant to the broctl installation."""
 
         self.lock()
-        (success, nodes) = nodeHostArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("df", nodes)
-            cmdSuccess, cmdOutput = control.df(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("df", nodes)
-        else:
-            self.exit_code = 1
+        nodes = self.nodeHostArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("df", nodes)
+        cmdSuccess, cmdOutput = control.df(nodes)
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithNodes("df", nodes)
 
-        return False
+        return cmdSuccess
 
     def do_print(self, args):
         """- <id> [<nodes>]
@@ -652,16 +620,13 @@ class BroCtl(object):
         try:
             id = args[0]
 
-            (success, nodes) = nodeArgs(" ".join(args[1:]))
-            if success:
-                nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
-                cmdSuccess, cmdOutput = control.printID(nodes, id)
-                if not cmdSuccess:
-                    self.exit_code = 1
-                cmdOutput.printResults()
-                self.plugins.cmdPostWithNodes("print", nodes, id)
-            else:
+            nodes = self.nodeArgs(" ".join(args[1:]))
+            nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
+            cmdSuccess, cmdOutput = control.printID(nodes, id)
+            if not cmdSuccess:
                 self.exit_code = 1
+            cmdOutput.printResults()
+            self.plugins.cmdPostWithNodes("print", nodes, id)
         except IndexError:
             self.syntax("no id given to print")
 
@@ -675,18 +640,13 @@ class BroCtl(object):
         nodes."""
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
-            cmdSuccess, cmdOutput = control.peerStatus(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("peerstatus", nodes)
-        else:
-            self.exit_code = 1
+        nodes = self.nodeArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
+        cmdSuccess, cmdOutput = control.peerStatus(nodes)
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithNodes("peerstatus", nodes)
 
-        return False
+        return cmdSuccess
 
     def do_netstats(self, args):
         """- [<nodes>]
@@ -701,18 +661,13 @@ class BroCtl(object):
                 args = "workers"
 
         self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
-            cmdSuccess, cmdOutput = control.netStats(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("netstats", nodes)
-        else:
-            self.exit_code = 1
+        nodes = self.nodeArgs(args)
+        nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
+        cmdSuccess, cmdOutput = control.netStats(nodes)
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithNodes("netstats", nodes)
 
-        return False
+        return cmdSuccess
 
     @expose
     def execute(self, cmd):
@@ -764,16 +719,13 @@ class BroCtl(object):
 
         self.lock()
 
-        (success, nodes) = nodeArgs(args)
+        nodes = self.nodeArgs(args)
 
-        if success:
-            nodes = self.plugins.cmdPreWithNodes("scripts", nodes, check)
-            results, cmdOutput = control.listScripts(nodes, check)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("scripts", nodes, check)
-        else:
-            self.exit_code = 1
+        nodes = self.plugins.cmdPreWithNodes("scripts", nodes, check)
+        results, cmdOutput = control.listScripts(nodes, check)
+        self.checkForFailure(results)
+        cmdOutput.printResults()
+        self.plugins.cmdPostWithNodes("scripts", nodes, check)
 
         return False
 
