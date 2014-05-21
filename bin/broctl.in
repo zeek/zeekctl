@@ -260,23 +260,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         misconfigurations (which are usually, but not always, caught by the
         check_ command)."""
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if not success:
-            self.exit_code = 1
-            return
-
-        nodes = plugin.Registry.cmdPreWithNodes("diag", nodes)
-
-        for h in nodes:
-            cmdSuccess, cmdOutput = control.crashDiag(h)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-
-        plugin.Registry.cmdPostWithNodes("diag", nodes)
-
-        return False
+        return self.broctl.diag(node_list=args)
 
     def do_attachgdb(self, args):
         """- [<nodes>]

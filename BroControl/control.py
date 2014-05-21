@@ -249,26 +249,6 @@ def top(nodes):
 
     return (cmdSuccess, cmdout)
 
-# Report diagostics for node (e.g., stderr output).
-def crashDiag(node):
-    cmdout = cmdoutput.CommandOutput()
-
-    cmdout.info("[%s]" % node.name)
-
-    if not execute.isdir(node, node.cwd(), cmdout):
-        cmdout.error("No work dir found\n")
-        return (False, cmdout)
-
-    (rc, output) = execute.runHelper(node, cmdout, "run-cmd",  [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
-    if not rc:
-        cmdout.error("cannot run crash-diag for %s" % node.name)
-        return (False, cmdout)
-
-    for line in output:
-        cmdout.info(line)
-
-    return (True, cmdout)
-
 
 # Attach gdb to the main Bro processes on the given nodes.
 def attachGdb(nodes):
@@ -1277,3 +1257,22 @@ class Controller:
                 cmdSuccess = False
 
         return cmdSuccess
+
+    # Report diagostics for node (e.g., stderr output).
+    def crashDiag(self, node):
+        self.ui.info("[%s]" % node.name)
+
+        if not execute.isdir(node, node.cwd(), self.ui):
+            self.ui.error("No work dir found\n")
+            return False
+
+        (rc, output) = execute.runHelper(node, self.ui, "run-cmd",  [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
+        if not rc:
+            self.ui.error("cannot run crash-diag for %s" % node.name)
+            return False
+
+        for line in output:
+            self.ui.info(line)
+
+        return True
+

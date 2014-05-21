@@ -372,7 +372,7 @@ class BroCtl(object):
 
         return False
 
-    def do_diag(self, args):
+    def diag(self, node_list):
         """- [<nodes>]
 
         If a node has terminated unexpectedly, this command prints a (somewhat
@@ -384,17 +384,15 @@ class BroCtl(object):
         misconfigurations (which are usually, but not always, caught by the
         check_ command)."""
 
-        self.lock()
-        nodes = self.nodeArgs(args)
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("diag", nodes)
 
         success = True
 
         for h in nodes:
-            cmdSuccess, cmdOutput = control.crashDiag(h)
+            cmdSuccess= self.controller.crashDiag(h)
             success = success and cmdSuccess
-            cmdOutput.printResults()
 
         self.plugins.cmdPostWithNodes("diag", nodes)
 
