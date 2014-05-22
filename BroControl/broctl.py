@@ -391,7 +391,7 @@ class BroCtl(object):
         success = True
 
         for h in nodes:
-            cmdSuccess= self.controller.crashDiag(h)
+            cmdSuccess = self.controller.crashDiag(h)
             success = success and cmdSuccess
 
         self.plugins.cmdPostWithNodes("diag", nodes)
@@ -527,7 +527,7 @@ class BroCtl(object):
 
         return cmdSuccess
 
-    def do_capstats(self, args):
+    def capstats(self, node_list, interval=10):
         """- [<nodes>] [<interval>]
 
         Determines the current load on the network interfaces monitored by
@@ -540,30 +540,14 @@ class BroCtl(object):
         installed as well, the ``capstats`` command can also query the device
         for port statistics. *TODO*: document how to set this up.)"""
 
-        interval = 10
-        args = args.split()
-
-        try:
-            interval = max(1, int(args[-1]))
-            args = args[0:-1]
-        except ValueError:
-            pass
-        except IndexError:
-            pass
-
-        node_list = " ".join(args)
-
-        self.lock()
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
-        cmdSuccess, cmdOutput_cap, cmdOutput_cflow = control.capstats(nodes, interval)
-        cmdOutput_cap.printResults()
-        cmdOutput_cflow.printResults()
+        cmdSuccess = self.controller.capstats(nodes, interval)
         self.plugins.cmdPostWithNodes("capstats", nodes, interval)
 
         return cmdSuccess
 
-    def do_update(self, args):
+    def update(self, node_list):
         """- [<nodes>]
 
         After a change to Bro policy scripts, this command updates the Bro
@@ -580,32 +564,28 @@ class BroCtl(object):
         check_), as otherwise ``update`` will not see the changes and it will
         resend the old configuration."""
 
-        self.lock()
-        nodes = self.nodeArgs(args)
+        nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("update", nodes)
-        results, cmdOutput = control.update(nodes)
-        self.checkForFailure(results)
-        cmdOutput.printResults()
+        results = self.controller.update(nodes)
+        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("update", results)
 
-        return False
+        return status
 
-    def do_df(self, args):
+    def df(self, node_list):
         """- [<nodes>]
 
         Reports the amount of disk space available on the nodes. Shows only
         paths relevant to the broctl installation."""
 
-        self.lock()
-        nodes = self.nodeHostArgs(args)
+        nodes = self.nodeHostArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("df", nodes)
-        cmdSuccess, cmdOutput = control.df(nodes)
-        cmdOutput.printResults()
+        cmdSuccess = self.controller.df(nodes)
         self.plugins.cmdPostWithNodes("df", nodes)
 
         return cmdSuccess
 
-    def do_print(self, args):
+    def printid(self, node_list, id):
         """- <id> [<nodes>]
 
         Reports the *current* live value of the given Bro script ID on all of
@@ -617,56 +597,42 @@ class BroCtl(object):
         ``print HTTP::mime_types_extensions`` to print the corresponding
         table from ``file-ident.bro``)."""
 
-        self.lock()
-        args = args.split()
-        try:
-            id = args[0]
+        nodes = self.nodeArgs(node_list)
+        nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
+        cmdSuccess = self.controller.printID(nodes, id)
+        self.plugins.cmdPostWithNodes("print", nodes, id)
 
-            nodes = self.nodeArgs(" ".join(args[1:]))
-            nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
-            cmdSuccess, cmdOutput = control.printID(nodes, id)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            self.plugins.cmdPostWithNodes("print", nodes, id)
-        except IndexError:
-            self.syntax("no id given to print")
+        return cmdSuccess
 
-        return False
-
-    def do_peerstatus(self, args):
+    def peerstatus(self, node_list):
         """- [<nodes>]
 
 		Primarily for debugging, ``peerstatus`` reports statistics about the
         network connections cluster nodes are using to communicate with other
         nodes."""
 
-        self.lock()
-        nodes = self.nodeArgs(args)
+        nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
-        cmdSuccess, cmdOutput = control.peerStatus(nodes)
-        cmdOutput.printResults()
+        cmdSuccess = self.controller.peerStatus(nodes)
         self.plugins.cmdPostWithNodes("peerstatus", nodes)
 
         return cmdSuccess
 
-    def do_netstats(self, args):
+    def netstats(self, node_list):
         """- [<nodes>]
 
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
-        if not args:
-            if config.Config.nodes("standalone"):
-                args = "standalone"
+        if not node_list:
+            if self.config.nodes("standalone"):
+                node_list = "standalone"
             else:
-                args = "workers"
+                node_list = "workers"
 
-        self.lock()
-        nodes = self.nodeArgs(args)
+        nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
-        cmdSuccess, cmdOutput = control.netStats(nodes)
-        cmdOutput.printResults()
+        cmdSuccess = self.controller.netStats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
 
         return cmdSuccess
@@ -685,7 +651,7 @@ class BroCtl(object):
 
         return cmdSuccess
 
-    def do_scripts(self, args):
+    def scripts(self, node_list, check=False):
         """- [-c] [<nodes>]
 
 		Primarily for debugging Bro configurations, the ``scripts``
@@ -696,42 +662,16 @@ class BroCtl(object):
         installed by install_. The latter option is useful to check a
         not yet installed configuration."""
 
-        check = False
-
-        args = args.split()
-
-        try:
-            while args[0].startswith("-"):
-
-                opt = args[0]
-
-                if opt == "-c":
-                    # Check non-installed policies.
-                    check = True
-                else:
-                    self.syntax("unknown option %s" % args[0])
-                    return
-
-                args = args[1:]
-
-        except IndexError:
-            pass
-
-        args = " ".join(args)
-
-        self.lock()
-
-        nodes = self.nodeArgs(args)
+        nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("scripts", nodes, check)
-        results, cmdOutput = control.listScripts(nodes, check)
-        self.checkForFailure(results)
-        cmdOutput.printResults()
+        results = self.controller.listScripts(nodes, check)
+        status = self.checkForFailure(results)
         self.plugins.cmdPostWithNodes("scripts", nodes, check)
 
-        return False
+        return status
 
-    def do_process(self, args):
+    def process(self, trace, options, scripts):
         """- <trace> [options] [-- <scripts>]
 
         Runs Bro offline on a given trace file using the same configuration as
@@ -748,56 +688,14 @@ class BroCtl(object):
         loaded into a single instance. While that doesn't fully reproduce the
         live setup, it is often sufficient for debugging analysis scripts.
         """
-        options = []
-        scripts = []
-        trace = None
-        in_scripts = False
         cmdSuccess = False
 
-        for arg in args.split():
-
-            if not trace:
-                trace = arg
-                continue
-
-            if arg == "--":
-                if in_scripts:
-                    self.syntax("cannot parse arguments")
-                    return
-
-                in_scripts = True
-                continue
-
-            if not in_scripts:
-                options += [arg]
-
-            else:
-                scripts += [arg]
-
-        if not trace:
-            self.syntax("no trace file given")
-            return
-
         if self.plugins.cmdPre("process", trace, options, scripts):
-            cmdSuccess, cmdOutput = control.processTrace(trace, options, scripts)
-            cmdOutput.printResults()
+            cmdSuccess = self.controller.processTrace(trace, options, scripts)
         self.plugins.cmdPost("process", trace, options, scripts, cmdSuccess)
 
-        if not cmdSuccess:
-            self.exit_code = 1
+        return cmdSuccess
 
-    def completedefault(self, text, line, begidx, endidx):
-        # Commands that take a "<nodes>" argument.
-        nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats", "print", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "scripts"]
-
-        args = line.split()
-
-        if not args or args[0] not in nodes_cmds:
-            return []
-
-        nodes = ["manager", "workers", "proxies", "all"] + [n.name for n in Config.nodes()]
-
-        return [n for n in nodes if n.startswith(text)]
 
     # Prints the command's docstring in a form suitable for direct inclusion
     # into the documentation.

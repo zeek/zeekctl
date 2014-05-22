@@ -273,422 +273,6 @@ def attachGdb(nodes):
 
     return (cmdSuccess, cmdout)
 
-# Gather capstats from interfaces.
-#
-# Returns a list of tuples of the form (node, error, vals) where 'error' is
-# None if we were able to get the data, or otherwise a string with an error
-# message; in case there's no error, 'vals' maps tags to their values.
-#
-# Tags are those as returned by capstats on the command-line.
-#
-# If there is more than one node, then the results will also contain
-# one "pseudo-node" of the name "$total" with the sum of all individual values.
-#
-# We do all the stuff in parallel across all nodes which is why this looks
-# a bit confusing ...
-def getCapstatsOutput(nodes, interval, cmdout):
-
-    results = []
-
-    hosts = {}
-    for node in nodes:
-        if not node.interface:
-            continue
-
-        try:
-            hosts[(node.addr, node.interface)] = node
-        except AttributeError:
-            continue
-
-    cmds = []
-
-    for (addr, interface) in hosts.keys():
-        node = hosts[addr, interface]
-
-        # If interface name contains semicolons (to aggregate traffic from
-        # multiple devices with PF_RING, the interface name can be in a
-        # semicolon-delimited format, such as "p2p1;p2p2"), then we must
-        # quote it to prevent shell from interpreting semicolon as command
-        # separator (another layer of quotes is needed because the eval
-        # command is used).
-        capstats = [config.Config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
-
-        cmds += [(node, "run-cmd", capstats)]
-
-    outputs = execute.runHelperParallel(cmds, cmdout)
-
-    totals = {}
-
-    for (node, success, output) in outputs:
-
-        if not success:
-            if output:
-                results += [(node, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
-            else:
-                results += [(node, "%s: cannot execute capstats" % node.name, {})]
-            continue
-
-        if not output:
-            results += [(node, "%s: no capstats output" % node.name, {})]
-            continue
-
-        fields = output[0].split()[1:]
-
-        if not fields:
-            results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
-            continue
-
-        vals = {}
-
-        try:
-            for field in fields:
-                (key, val) = field.split("=")
-                val = float(val)
-                vals[key] = val
-
-                if key in totals:
-                    totals[key] += val
-                else:
-                    totals[key] = val
-
-            results += [(node, None, vals)]
-
-        except ValueError:
-            results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
-
-    # Add pseudo-node for totals
-    if len(nodes) > 1:
-        results += [(node_mod.Node("$total"), None, totals)]
-
-    return results
-
-# Get current statistics from cFlow.
-#
-# Returns dict of the form port->(cum-pkts, cum-bytes).
-#
-# Returns None if we can't run the helper sucessfully.
-def getCFlowStatus(cmdout):
-    (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "cflow-stats"))
-    if not success or not output:
-        cmdout.error("failed to run cflow-stats")
-        return None
-
-    vals = {}
-
-    for line in output:
-        try:
-            (port, pps, bps, pkts, bytes) = line.split()
-            vals[port] = (float(pkts), float(bytes))
-        except ValueError:
-            # Probably an error message because we can't connect.
-            cmdout.error("failed to get cFlow statistics: %s" % line)
-            return None
-
-    return vals
-
-# Calculates the differences between to getCFlowStatus() calls.
-# Returns a list of tuples in the same form as getCapstatsOutput() does.
-def calculateCFlowRate(start, stop, interval):
-    diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
-
-    rates = []
-    for (port, pkts, bytes) in diffs:
-        vals = { "kpps": "%.1f" % (pkts / 1e3 / interval) }
-        if start[port][1] >= 0:
-            vals["mbps"] = "%.1f" % (bytes * 8 / 1e6 / interval)
-
-        rates += [(port, None, vals)]
-
-    return rates
-
-def capstats(nodes, interval):
-
-    def output(tag, data, cout):
-
-        def outputOne(tag, vals):
-            return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
-
-
-        cout.info("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
-
-        totals = None
-
-        for (port, error, vals) in sorted(data):
-
-            if error:
-                cout.error(error)
-                continue
-
-            if str(port) != "$total":
-                cout.info(outputOne(port, vals))
-            else:
-                totals = vals
-
-        if totals:
-            cout.info("")
-            cout.info(outputOne("Total", totals))
-            cout.info("")
-
-
-    cmdout_capstats = cmdoutput.CommandOutput()
-    cmdout_cflow = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    have_cflow = config.Config.cflowaddress and config.Config.cflowuser and config.Config.cflowpassword
-    have_capstats = config.Config.capstatspath
-
-    if not have_cflow and not have_capstats:
-        cmdout_capstats.error("capstats binary is not available")
-        return (False, cmdout_capstats, cmdout_cflow)
-
-    if have_cflow:
-        cflow_start = getCFlowStatus(cmdout_cflow)
-        if not cflow_start:
-            cmdSuccess = False
-
-    if have_capstats:
-        capstats = []
-        for (node, error, vals) in getCapstatsOutput(nodes, interval, cmdout_capstats):
-            if str(node) == "$total":
-                capstats += [(node, error, vals)]
-            else:
-                capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
-
-            if error:
-                cmdSuccess = False
-
-    else:
-        time.sleep(interval)
-
-    if have_cflow:
-        cflow_stop = getCFlowStatus(cmdout_cflow)
-        if not cflow_stop:
-            cmdSuccess = False
-
-    if have_capstats:
-        output("Interface", capstats, cmdout_capstats)
-
-    if have_cflow and cflow_start and cflow_stop:
-        diffs = calculateCFlowRate(cflow_start, cflow_stop, interval)
-        output("cFlow Port", diffs, cmdout_cflow)
-
-    return (cmdSuccess, cmdout_capstats, cmdout_cflow)
-
-# Update the configuration of a running instance on the fly.
-def update(nodes):
-    cmdout = cmdoutput.CommandOutput()
-
-    running = isRunning(nodes, cmdout)
-    zone = config.Config.zoneid
-    if not zone:
-        zone = "NOZONE"
-
-    cmds = []
-    for (node, isrunning) in running:
-        if isrunning:
-            env = _makeEnvParam(node)
-            env += " BRO_DNS_FAKE=1"
-            args = " ".join(_makeBroParams(node, False))
-            cmds += [(node.name, os.path.join(config.Config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.formatBroAddr(node.addr), zone, node.getPort(), args), env, None)]
-            cmdout.info("updating %s ..." % node.name)
-
-    results = execute.runLocalCmdsParallel(cmds)
-
-    for (tag, success, output) in results:
-        if not success:
-            cmdout.error("could not update %s: %s" % (tag, output))
-        else:
-            cmdout.info("%s: %s" % (tag, output[0]))
-
-    return ([(config.Config.nodes(tag=tag)[0], success) for (tag, success, output) in results], cmdout)
-
-# Gets disk space on all volumes relevant to broctl installation.
-# Returns a list of the form:  [ (host, diskinfo), ...]
-# where diskinfo is a list of the form [fs, total, used, avail, perc] or
-# ["FAIL", <error message>] if an error is encountered.
-def getDf(nodes, cmdout):
-    dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
-
-    df = {}
-    for node in nodes:
-        df["%s/%s" % (node.name, node.host)] = {}
-
-    for dir in dirs:
-        path = config.Config.config[dir]
-
-        cmds = []
-        for node in nodes:
-            if dir == "logdir" and node.type != "manager":
-                # Don't need this on the workers/proxies.
-                continue
-
-            cmds += [(node, "df", [path])]
-
-        results = execute.runHelperParallel(cmds, cmdout)
-
-        for (node, success, output) in results:
-            nodehost = "%s/%s" % (node.name, node.host)
-            if success:
-                if output:
-                    fields = output[0].split()
-
-                    # Ignore NFS mounted volumes.
-                    if fields[0].find(":") < 0:
-                        total = float(fields[1])
-                        used = float(fields[2])
-                        avail = float(fields[3])
-                        perc = used * 100.0 / (used + avail)
-                        df[nodehost][fields[0]] = [fields[0], total, used,
-                                                   avail, perc]
-                else:
-                    df[nodehost]["FAIL"] = ["FAIL", "no output from df helper"]
-            else:
-                if output:
-                    msg = output[0]
-                else:
-                    msg = "unknown failure"
-                df[nodehost]["FAIL"] = ["FAIL", msg]
-
-    result = []
-    for node in nodes:
-        nodehost = "%s/%s" % (node.name, node.host)
-        result.append((nodehost, df[nodehost].values()))
-
-    return result
-
-def df(nodes):
-    cmdout = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    cmdout.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
-
-    results = getDf(nodes, cmdout)
-
-    for (node, dfs) in results:
-        for df in dfs:
-            if df[0] == "FAIL":
-                cmdSuccess = False
-                cmdout.error("df helper failed on %s: %s" % (node, df[1]))
-                continue
-
-            (fs, total, used, avail, perc) = df
-
-            cmdout.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node,
-                fs, prettyPrintVal(total), prettyPrintVal(avail), perc))
-
-    return (cmdSuccess, cmdout)
-
-
-def printID(nodes, id):
-    cmdout = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    running = isRunning(nodes, cmdout)
-
-    events = []
-    for (node, isrunning) in running:
-        if isrunning:
-            events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
-
-    results = execute.sendEventsParallel(events)
-
-    for (node, success, args) in results:
-        if success:
-            cmdout.info("%12s   %s = %s" % (node, args[0], args[1]))
-        else:
-            cmdout.error("%12s   <error: %s>" % (node, args))
-            cmdSuccess = False
-
-    return (cmdSuccess, cmdout)
-
-
-def _queryNetStats(nodes, cmdout):
-    running = isRunning(nodes, cmdout)
-
-    events = []
-    for (node, isrunning) in running:
-        if isrunning:
-            events += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
-
-    return execute.sendEventsParallel(events)
-
-def peerStatus(nodes):
-    cmdout = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    for (node, success, args) in _queryPeerStatus(nodes, cmdout):
-        if success:
-            cmdout.info("%11s" % node)
-            cmdout.info(args[0])
-        else:
-            cmdout.error("%11s   <error: %s>" % (node, args))
-            cmdSuccess = False
-
-    return (cmdSuccess, cmdout)
-
-def netStats(nodes):
-    cmdout = cmdoutput.CommandOutput()
-    cmdSuccess = True
-
-    for (node, success, args) in _queryNetStats(nodes, cmdout):
-        if success:
-            cmdout.info("%11s: %s" % (node, args[0].strip()))
-        else:
-            cmdout.error("%11s: <error: %s>" % (node, args))
-            cmdSuccess = False
-
-    return (cmdSuccess, cmdout)
-
-def processTrace(trace, bro_options, bro_scripts):
-    cmdout = cmdoutput.CommandOutput()
-
-    if not os.path.isfile(trace):
-        cmdout.error("trace file not found: %s" % trace)
-        return (False, cmdout)
-
-    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
-        cmdout.error("broctl-config.sh not found (try 'broctl install')")
-        return (False, cmdout)
-
-    standalone = (config.Config.standalone == "1")
-    if standalone:
-        tag = "standalone"
-    else:
-        tag = "workers"
-
-    node = config.Config.nodes(tag=tag)[0]
-
-    cwd = os.path.join(config.Config.tmpdir, "testing")
-
-    if not execute.rmdir(config.Config.manager(), cwd, cmdout):
-        cmdout.error("cannot remove directory %s on manager" % cwd)
-        return (False, cmdout)
-
-    if not execute.mkdir(config.Config.manager(), cwd, cmdout):
-        cmdout.error("cannot create directory %s on manager" % cwd)
-        return (False, cmdout)
-
-    env = _makeEnvParam(node)
-
-    bro_args =  " ".join(bro_options + _makeBroParams(node, False))
-    bro_args += " broctl/process-trace"
-
-    if bro_scripts:
-        bro_args += " " + " ".join(bro_scripts)
-
-    cmd = os.path.join(config.Config.scriptsdir, "run-bro-on-trace") + " %s %s %s %s" % (0, cwd, trace, bro_args)
-
-    cmdout.info(cmd)
-
-    (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
-
-    for line in output:
-        cmdout.info(line)
-
-    cmdout.info("")
-    cmdout.info("### Bro output in %s" % cwd)
-
-    return (success, cmdout)
 
 class Controller:
     def __init__(self, config, ui):
@@ -1150,7 +734,7 @@ class Controller:
 
     # Prints the loaded_scripts.log for either the installed scripts
     # (if check argument is false), or the original scripts (if check arg is true)
-    def listScripts(nodes, check):
+    def listScripts(self, nodes, check):
         return self._doCheckConfig(nodes, not check, True)
 
 
@@ -1171,7 +755,7 @@ class Controller:
         for (node, cwd) in all:
             if os.path.isdir(cwd):
                 if not execute.rmdir(self.config.manager(), cwd, self.ui):
-                    cmdout.error("cannot remove directory %s on manager" % cwd)
+                    self.ui.error("cannot remove directory %s on manager" % cwd)
                     results += [(node, False)]
                     continue
 
@@ -1205,7 +789,7 @@ class Controller:
                 self.ui.info("%s scripts are ok." % node.name)
                 if list_scripts:
                     for line in output:
-                        cmdout.info("  %s" % line)
+                        self.ui.info("  %s" % line)
             else:
                 self.ui.error("%s scripts failed." % node.name)
                 for line in output:
@@ -1275,4 +859,404 @@ class Controller:
             self.ui.info(line)
 
         return True
+
+    def capstats(self, nodes, interval):
+
+        def output(tag, data):
+            def outputOne(tag, vals):
+                return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
+
+            self.ui.info("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
+
+            totals = None
+
+            for (port, error, vals) in sorted(data):
+
+                if error:
+                    self.ui.error(error)
+                    continue
+
+                if str(port) != "$total":
+                    self.ui.info(outputOne(port, vals))
+                else:
+                    totals = vals
+
+            if totals:
+                self.ui.info("")
+                self.ui.info(outputOne("Total", totals))
+                self.ui.info("")
+
+
+        cmdSuccess = True
+
+        have_cflow = self.config.cflowaddress and self.config.cflowuser and self.config.cflowpassword
+        have_capstats = self.config.capstatspath
+
+        if have_cflow:
+            cflow_start = self.getCFlowStatus()
+            if not cflow_start:
+                cmdSuccess = False
+
+        if have_capstats:
+            capstats = []
+            for (node, error, vals) in self.getCapstatsOutput(nodes, interval):
+                if str(node) == "$total":
+                    capstats += [(node, error, vals)]
+                else:
+                    capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
+
+                if error:
+                    cmdSuccess = False
+
+        else:
+            time.sleep(interval)
+
+        if have_cflow:
+            cflow_stop = self.getCFlowStatus()
+            if not cflow_stop:
+                cmdSuccess = False
+
+        if have_capstats:
+            output("Interface", capstats)
+
+        if have_cflow and cflow_start and cflow_stop:
+            diffs = self.calculateCFlowRate(cflow_start, cflow_stop, interval)
+            output("cFlow Port", diffs)
+
+        return cmdSuccess
+
+    # Gather capstats from interfaces.
+    #
+    # Returns a list of tuples of the form (node, error, vals) where 'error' is
+    # None if we were able to get the data, or otherwise a string with an error
+    # message; in case there's no error, 'vals' maps tags to their values.
+    #
+    # Tags are those as returned by capstats on the command-line.
+    #
+    # If there is more than one node, then the results will also contain
+    # one "pseudo-node" of the name "$total" with the sum of all individual values.
+    #
+    # We do all the stuff in parallel across all nodes which is why this looks
+    # a bit confusing ...
+    def getCapstatsOutput(self, nodes, interval):
+
+        results = []
+
+        hosts = {}
+        for node in nodes:
+            if not node.interface:
+                continue
+
+            try:
+                hosts[(node.addr, node.interface)] = node
+            except AttributeError:
+                continue
+
+        cmds = []
+
+        for (addr, interface) in hosts.keys():
+            node = hosts[addr, interface]
+
+            # If interface name contains semicolons (to aggregate traffic from
+            # multiple devices with PF_RING, the interface name can be in a
+            # semicolon-delimited format, such as "p2p1;p2p2"), then we must
+            # quote it to prevent shell from interpreting semicolon as command
+            # separator (another layer of quotes is needed because the eval
+            # command is used).
+            capstats = [self.config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
+
+            cmds += [(node, "run-cmd", capstats)]
+
+        outputs = execute.runHelperParallel(cmds, self.ui)
+
+        totals = {}
+
+        for (node, success, output) in outputs:
+
+            if not success:
+                if output:
+                    results += [(node, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
+                else:
+                    results += [(node, "%s: cannot execute capstats" % node.name, {})]
+                continue
+
+            if not output:
+                results += [(node, "%s: no capstats output" % node.name, {})]
+                continue
+
+            fields = output[0].split()[1:]
+
+            if not fields:
+                results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+                continue
+
+            vals = {}
+
+            try:
+                for field in fields:
+                    (key, val) = field.split("=")
+                    val = float(val)
+                    vals[key] = val
+
+                    if key in totals:
+                        totals[key] += val
+                    else:
+                        totals[key] = val
+
+                results += [(node, None, vals)]
+
+            except ValueError:
+                results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+
+        # Add pseudo-node for totals
+        if len(nodes) > 1:
+            results += [(node_mod.Node("$total"), None, totals)]
+
+        return results
+
+    # Get current statistics from cFlow.
+    #
+    # Returns dict of the form port->(cum-pkts, cum-bytes).
+    #
+    # Returns None if we can't run the helper sucessfully.
+    def getCFlowStatus(self):
+        (success, output) = execute.runLocalCmd(os.path.join(self.config.scriptsdir, "cflow-stats"))
+        if not success or not output:
+            self.ui.error("failed to run cflow-stats")
+            return None
+
+        vals = {}
+
+        for line in output:
+            try:
+                (port, pps, bps, pkts, bytes) = line.split()
+                vals[port] = (float(pkts), float(bytes))
+            except ValueError:
+                # Probably an error message because we can't connect.
+                self.ui.error("failed to get cFlow statistics: %s" % line)
+                return None
+
+        return vals
+
+    # Calculates the differences between to getCFlowStatus() calls.
+    # Returns a list of tuples in the same form as getCapstatsOutput() does.
+    def calculateCFlowRate(self, start, stop, interval):
+        diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
+
+        rates = []
+        for (port, pkts, bytes) in diffs:
+            vals = { "kpps": "%.1f" % (pkts / 1e3 / interval) }
+            if start[port][1] >= 0:
+                vals["mbps"] = "%.1f" % (bytes * 8 / 1e6 / interval)
+
+            rates += [(port, None, vals)]
+
+        return rates
+
+    # Update the configuration of a running instance on the fly.
+    def update(self, nodes):
+        running = self.isRunning(nodes)
+        zone = self.config.zoneid
+        if not zone:
+            zone = "NOZONE"
+
+        cmds = []
+        for (node, isrunning) in running:
+            if isrunning:
+                env = _makeEnvParam(node)
+                env += " BRO_DNS_FAKE=1"
+                args = " ".join(_makeBroParams(node, False))
+                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.formatBroAddr(node.addr), zone, node.getPort(), args), env, None)]
+                self.ui.info("updating %s ..." % node.name)
+
+        results = execute.runLocalCmdsParallel(cmds)
+
+        for (tag, success, output) in results:
+            if not success:
+                self.ui.error("could not update %s: %s" % (tag, output))
+            else:
+                self.ui.info("%s: %s" % (tag, output[0]))
+
+        return [(self.config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
+
+    # Gets disk space on all volumes relevant to broctl installation.
+    # Returns a list of the form:  [ (host, diskinfo), ...]
+    # where diskinfo is a list of the form [fs, total, used, avail, perc] or
+    # ["FAIL", <error message>] if an error is encountered.
+    def getDf(self, nodes):
+        dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
+
+        df = {}
+        for node in nodes:
+            df["%s/%s" % (node.name, node.host)] = {}
+
+        for dir in dirs:
+            path = self.config.config[dir]
+
+            cmds = []
+            for node in nodes:
+                if dir == "logdir" and node.type != "manager":
+                    # Don't need this on the workers/proxies.
+                    continue
+
+                cmds += [(node, "df", [path])]
+
+            results = execute.runHelperParallel(cmds, self.ui)
+
+            for (node, success, output) in results:
+                nodehost = "%s/%s" % (node.name, node.host)
+                if success:
+                    if output:
+                        fields = output[0].split()
+
+                        # Ignore NFS mounted volumes.
+                        if fields[0].find(":") < 0:
+                            total = float(fields[1])
+                            used = float(fields[2])
+                            avail = float(fields[3])
+                            perc = used * 100.0 / (used + avail)
+                            df[nodehost][fields[0]] = [fields[0], total, used,
+                                                       avail, perc]
+                    else:
+                        df[nodehost]["FAIL"] = ["FAIL", "no output from df helper"]
+                else:
+                    if output:
+                        msg = output[0]
+                    else:
+                        msg = "unknown failure"
+                    df[nodehost]["FAIL"] = ["FAIL", msg]
+
+        result = []
+        for node in nodes:
+            nodehost = "%s/%s" % (node.name, node.host)
+            result.append((nodehost, df[nodehost].values()))
+
+        return result
+
+    def df(self, nodes):
+        cmdSuccess = True
+
+        self.ui.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
+
+        results = self.getDf(nodes)
+
+        for (node, dfs) in results:
+            for df in dfs:
+                if df[0] == "FAIL":
+                    cmdSuccess = False
+                    self.ui.error("df helper failed on %s: %s" % (node, df[1]))
+                    continue
+
+                (fs, total, used, avail, perc) = df
+
+                self.ui.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node,
+                    fs, prettyPrintVal(total), prettyPrintVal(avail), perc))
+
+        return cmdSuccess
+
+    def printID(self, nodes, id):
+        cmdSuccess = True
+
+        running = self.isRunning(nodes)
+
+        events = []
+        for (node, isrunning) in running:
+            if isrunning:
+                events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
+
+        results = execute.sendEventsParallel(events)
+ 
+        for (node, success, args) in results:
+            if success:
+                self.ui.info("%12s   %s = %s" % (node, args[0], args[1]))
+            else:
+                self.ui.error("%12s   <error: %s>" % (node, args))
+                cmdSuccess = False
+
+        return cmdSuccess
+
+
+    def _queryNetStats(self, nodes):
+        running = self.isRunning(nodes)
+
+        events = []
+        for (node, isrunning) in running:
+            if isrunning:
+                events += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
+
+        return execute.sendEventsParallel(events)
+
+    def peerStatus(self, nodes):
+        cmdSuccess = True
+
+        for (node, success, args) in self._queryPeerStatus(nodes):
+            if success:
+                self.ui.info("%11s" % node)
+                self.ui.info(args[0])
+            else:
+                self.ui.error("%11s   <error: %s>" % (node, args))
+                cmdSuccess = False
+
+        return cmdSuccess
+
+    def netStats(self, nodes):
+        cmdSuccess = True
+
+        for (node, success, args) in self._queryNetStats(nodes):
+            if success:
+                self.ui.info("%11s: %s" % (node, args[0].strip()))
+            else:
+                self.ui.error("%11s: <error: %s>" % (node, args))
+                cmdSuccess = False
+
+        return cmdSuccess
+
+    def processTrace(self, trace, bro_options, bro_scripts):
+        if not os.path.isfile(trace):
+            self.ui.error("trace file not found: %s" % trace)
+            return False
+
+        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            return False
+
+        standalone = (self.config.standalone == "1")
+        if standalone:
+            tag = "standalone"
+        else:
+            tag = "workers"
+
+        node = self.config.nodes(tag=tag)[0]
+
+        cwd = os.path.join(self.config.tmpdir, "testing")
+
+        if not execute.rmdir(self.config.manager(), cwd, self.ui):
+            self.ui.error("cannot remove directory %s on manager" % cwd)
+            return False
+
+        if not execute.mkdir(self.config.manager(), cwd, self.ui):
+            self.ui.error("cannot create directory %s on manager" % cwd)
+            return False
+
+        env = _makeEnvParam(node)
+
+        bro_args =  " ".join(bro_options + _makeBroParams(node, False))
+        bro_args += " broctl/process-trace"
+
+        if bro_scripts:
+            bro_args += " " + " ".join(bro_scripts)
+
+        cmd = os.path.join(self.config.scriptsdir, "run-bro-on-trace") + " %s %s %s %s" % (0, cwd, trace, bro_args)
+
+        self.ui.info(cmd)
+
+        (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
+
+        for line in output:
+            self.ui.info(line)
+
+        self.ui.info("")
+        self.ui.info("### Bro output in %s" % cwd)
+
+        return success
 

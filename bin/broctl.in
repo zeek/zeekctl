@@ -409,20 +409,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         args = " ".join(args)
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("capstats", nodes, interval)
-            cmdSuccess, cmdOutput_cap, cmdOutput_cflow = control.capstats(nodes, interval)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput_cap.printResults()
-            cmdOutput_cflow.printResults()
-            plugin.Registry.cmdPostWithNodes("capstats", nodes, interval)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.capstats(node_list=args, interval=interval)
 
     def do_update(self, args):
         """- [<nodes>]
@@ -441,18 +428,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         check_), as otherwise ``update`` will not see the changes and it will
         resend the old configuration."""
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("update", nodes)
-            results, cmdOutput = control.update(nodes)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithResults("update", results)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.update(node_list=args)
 
     def do_df(self, args):
         """- [<nodes>]
@@ -460,19 +436,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         Reports the amount of disk space available on the nodes. Shows only
         paths relevant to the broctl installation."""
 
-        self.lock()
-        (success, nodes) = nodeHostArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("df", nodes)
-            cmdSuccess, cmdOutput = control.df(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("df", nodes)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.df(node_list=args)
 
     def do_print(self, args):
         """- <id> [<nodes>]
@@ -486,25 +450,14 @@ class BroCtlCmdLoop(cmd.Cmd):
         ``print HTTP::mime_types_extensions`` to print the corresponding
         table from ``file-ident.bro``)."""
 
-        self.lock()
         args = args.split()
         try:
             id = args[0]
-
-            (success, nodes) = nodeArgs(" ".join(args[1:]))
-            if success:
-                nodes = plugin.Registry.cmdPreWithNodes("print", nodes, id)
-                cmdSuccess, cmdOutput = control.printID(nodes, id)
-                if not cmdSuccess:
-                    self.exit_code = 1
-                cmdOutput.printResults()
-                plugin.Registry.cmdPostWithNodes("print", nodes, id)
-            else:
-                self.exit_code = 1
+            args = " ".join(args[1:])
         except IndexError:
             self.syntax("no id given to print")
 
-        return False
+        return self.broctl.printid(node_list=args, id=id)
 
     def do_peerstatus(self, args):
         """- [<nodes>]
@@ -513,19 +466,7 @@ class BroCtlCmdLoop(cmd.Cmd):
         network connections cluster nodes are using to communicate with other
         nodes."""
 
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("peerstatus", nodes)
-            cmdSuccess, cmdOutput = control.peerStatus(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("peerstatus", nodes)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.peerstatus(node_list=args)
 
     def do_netstats(self, args):
         """- [<nodes>]
@@ -533,25 +474,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
-        if not args:
-            if config.Config.nodes("standalone"):
-                args = "standalone"
-            else:
-                args = "workers"
-
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("netstats", nodes)
-            cmdSuccess, cmdOutput = control.netStats(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("netstats", nodes)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.netstats(node_list=args)
 
     def do_exec(self, args):
         """- <command line>
@@ -598,20 +521,7 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         args = " ".join(args)
 
-        self.lock()
-
-        (success, nodes) = nodeArgs(args)
-
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("scripts", nodes, check)
-            results, cmdOutput = control.listScripts(nodes, check)
-            self.checkForFailure(results)
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("scripts", nodes, check)
-        else:
-            self.exit_code = 1
-
-        return False
+        return self.broctl.scripts(node_list=args, check=check)
 
     def do_process(self, args):
         """- <trace> [options] [-- <scripts>]
@@ -660,13 +570,7 @@ class BroCtlCmdLoop(cmd.Cmd):
             self.syntax("no trace file given")
             return
 
-        if plugin.Registry.cmdPre("process", trace, options, scripts):
-            cmdSuccess, cmdOutput = control.processTrace(trace, options, scripts)
-            cmdOutput.printResults()
-        plugin.Registry.cmdPost("process", trace, options, scripts, cmdSuccess)
-
-        if not cmdSuccess:
-            self.exit_code = 1
+        return self.broctl.process(trace, options, scripts)
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands that take a "<nodes>" argument.
