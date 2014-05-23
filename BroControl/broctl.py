@@ -306,28 +306,7 @@ class BroCtl(object):
         self.plugins.cmdPostWithNodes("status", nodes)
         return node_infos
 
-    def _do_top_once(self, args):
-        cmdout = cmdoutput.CommandOutput()
-        lockstatus = util.lock(cmdout)
-        if lockstatus:
-            # Read state again (may have changed by cron in the meantime).
-            if not Config.readState(cmdout):
-                cmdout.printResults()
-                sys.exit(1)
-
-            nodes = self.nodeArgs(args)
-
-            nodes = self.plugins.cmdPreWithNodes("top", nodes)
-            cmdSuccess, cmdOutput = control.top(nodes)
-            cmdout.append(cmdOutput)
-            self.plugins.cmdPostWithNodes("top", nodes)
-
-            util.unlock(cmdout)
-
-        cmdout.printResults()
-        return cmdSuccess
-
-    def do_top(self, args):
+    def top(self, node_list):
         """- [<nodes>]
 
         For each of the nodes, prints the status of the two Bro
@@ -337,40 +316,13 @@ class BroCtl(object):
         until key ``q`` is pressed. If invoked non-interactively, the
         status is printed only once."""
 
-        self.lock()
+        nodes = self.nodeArgs(node_list)
 
-        if not Interactive:
-            self._do_top_once(args)
-            return
+        nodes = self.plugins.cmdPreWithNodes("top", nodes)
+        results = self.controller.top(nodes)
+        self.plugins.cmdPostWithNodes("top", nodes)
 
-        cmdout = cmdoutput.CommandOutput()
-        util.unlock(cmdout)
-        cmdout.printResults()
-
-        util.enterCurses()
-        util.clearScreen()
-
-        count = 0
-
-        while config.Config.sigint != "1" and util.getCh() != "q":
-            if count % 10 == 0:
-                util.bufferOutput()
-                self._do_top_once(args)
-                lines = util.getBufferedOutput()
-                util.clearScreen()
-                util.printLines(lines)
-            time.sleep(.1)
-            count += 1
-
-        util.leaveCurses()
-
-        lockstatus = util.lock(cmdout)
-        cmdout.printResults()
-
-        if not lockstatus:
-            sys.exit(1)
-
-        return False
+        return results
 
     def diag(self, node_list):
         """- [<nodes>]

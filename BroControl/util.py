@@ -267,7 +267,7 @@ def clearScreen():
 
 def printLines(lines):
     y = 0
-    for line in lines.split("\n"):
+    for line in lines:
         try:
             _Stdscr.insnstr(y, 0, line, len(line))
         except:
@@ -323,3 +323,12 @@ def scopeAddr(addr):
         return addr
     else:
         return addr + "%" + zoneid
+
+# Convert a number into a string with a unit (e.g., 1024 into "1K").
+def prettyPrintVal(val):
+    units = (("G", 1024*1024*1024), ("M", 1024*1024), ("K", 1024))
+    for (unit, factor) in units:
+        if val >= factor:
+            return "%3.0f%s" % (val / factor, unit)
+    return " %3.0f" % (val)
+

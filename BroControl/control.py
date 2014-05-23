@@ -12,13 +12,6 @@ import install
 import plugin
 import node as node_mod
 
-# Convert a number into a string with a unit (e.g., 1024 into "1M").
-def prettyPrintVal(val):
-    for (prefix, unit, factor) in (("", "G", 1024*1024*1024), ("", "M", 1024*1024), ("", "K", 1024)):
-        if val >= factor:
-            return "%s%3.0f%s" % (prefix, val / factor, unit)
-    return " %3.0f" % (val)
-
 # Checks multiple nodes in parallel and returns list of tuples (node, isrunning).
 # For a list of (node, bool), returns True if at least one boolean is False.
 def nodeFailed(nodes):
@@ -110,144 +103,6 @@ def _makeEnvParam(node):
         env += " " + vars
 
     return env
-
-# Returns a list of tuples of the form (node, error, vals) where 'error' is an
-# error message string, or None if there was no error.  'vals' is a list of
-# dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
-# "rss", "cpu", and "cmd".
-#
-# We do all the stuff in parallel across all nodes which is why this looks
-# a bit confusing ...
-def getTopOutput(nodes, cmdout):
-
-    results = []
-    cmds = []
-
-    running = isRunning(nodes, cmdout)
-
-    # Get all the PIDs first.
-
-    pids = {}
-    parents = {}
-
-    for (node, isrunning) in running:
-        if isrunning:
-            pid = node.getPID()
-            pids[node.name] = [pid]
-            parents[node.name] = str(pid)
-
-            cmds += [(node, "get-childs", [str(pid)])]
-        else:
-            results += [(node, "not running", [{}])]
-            continue
-
-    if not cmds:
-        return results
-
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-
-        if not success:
-            results += [(node, "cannot get child pids", [{}])]
-            continue
-
-        pids[node.name] += [int(line) for line in output]
-
-    cmds = []
-    hosts = {}
-
-    # Now run top once per host.
-    for node in nodes:   # Do the loop again to keep the order.
-        if node.name not in pids:
-            continue
-
-        if node.host in hosts:
-            continue
-
-        hosts[node.host] = 1
-
-        cmds += [(node, "top", [])]
-
-    if not cmds:
-        return results
-
-    res = {}
-    for (node, success, output) in execute.runHelperParallel(cmds, cmdout):
-        res[node.host] = (success, output)
-
-    # Gather results for all the nodes that are running
-    for node in nodes:
-        if node.name not in pids:
-            continue
-
-        success, output = res[node.host]
-
-        if not success or not output:
-            results += [(node, "cannot get top output", [{}])]
-            continue
-
-        procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
-
-        if not procs:
-            # It's possible that the process is no longer there.
-            results += [(node, "not running", [{}])]
-            continue
-
-        vals = []
-
-        try:
-            for p in procs:
-                d = {}
-                d["pid"] = int(p[0])
-                d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-                d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
-                d["rss"] = long(float(p[2]))
-                d["cpu"] = p[3]
-                d["cmd"] = " ".join(p[4:])
-                vals += [d]
-        except ValueError, err:
-            results += [(node, "unexpected top output: %s" % err, [{}])]
-            continue
-
-        results += [(node, None, vals)]
-
-    return results
-
-# Produce a top-like output for node's processes.
-def top(nodes):
-    cmdout = cmdoutput.CommandOutput()
-    typewidth = 7
-    hostwidth = 16
-    if config.Config.standalone == "1":
-        # In standalone mode, we need a wider "type" column.
-        typewidth = 10
-        hostwidth = 13
-
-    cmdout.info("%-12s %-*s %-*s %-7s %-7s %-6s %-5s %-4s %s" % ("Name", typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize", "Rss", "Cpu", "Cmd"))
-
-    cmdSuccess = True
-    for (node, error, vals) in getTopOutput(nodes, cmdout):
-
-        if not error:
-            for d in vals:
-                msg = [ "%-12s" % node.name ]
-                msg.append("%-*s" % (typewidth, node.type))
-                msg.append("%-*s" % (hostwidth, node.host))
-                msg.append("%-7s" % d["pid"])
-                msg.append("%-7s" % d["proc"])
-                msg.append("%-6s" % prettyPrintVal(d["vsize"]))
-                msg.append("%-5s" % prettyPrintVal(d["rss"]))
-                msg.append("%-4s" % ("%s%%" % d["cpu"]))
-                msg.append("%s" % d["cmd"])
-                cmdout.info(" ".join(msg))
-        else:
-            cmdSuccess = False
-            msg = [ "%-12s" % node.name ]
-            msg.append("%-*s" % (typewidth, node.type))
-            msg.append("%-*s" % (hostwidth, node.host))
-            msg.append("<%s>" % error)
-            cmdout.error(" ".join(msg), False)
-
-    return (cmdSuccess, cmdout)
 
 
 # Attach gdb to the main Bro processes on the given nodes.
@@ -1150,9 +1005,129 @@ class Controller:
                 (fs, total, used, avail, perc) = df
 
                 self.ui.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node,
-                    fs, prettyPrintVal(total), prettyPrintVal(avail), perc))
+                    fs, util.prettyPrintVal(total), util.prettyPrintVal(avail),
+                    perc))
 
         return cmdSuccess
+
+    # Returns a list of tuples of the form (node, error, vals) where 'error' is an
+    # error message string, or None if there was no error.  'vals' is a list of
+    # dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
+    # "rss", "cpu", and "cmd".
+    #
+    # We do all the stuff in parallel across all nodes which is why this looks
+    # a bit confusing ...
+    def getTopOutput(self, nodes):
+
+        results = []
+        cmds = []
+
+        running = self.isRunning(nodes)
+
+        # Get all the PIDs first.
+
+        pids = {}
+        parents = {}
+
+        for (node, isrunning) in running:
+            if isrunning:
+                pid = node.getPID()
+                pids[node.name] = [pid]
+                parents[node.name] = str(pid)
+
+                cmds += [(node, "get-childs", [str(pid)])]
+            else:
+                results += [(node, "not running", [{}])]
+                continue
+
+        if not cmds:
+            return results
+
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+
+            if not success:
+                results += [(node, "cannot get child pids", [{}])]
+                continue
+
+            pids[node.name] += [int(line) for line in output]
+
+        cmds = []
+        hosts = {}
+
+        # Now run top once per host.
+        for node in nodes:   # Do the loop again to keep the order.
+            if node.name not in pids:
+                continue
+
+            if node.host in hosts:
+                continue
+
+            hosts[node.host] = 1
+
+            cmds += [(node, "top", [])]
+
+        if not cmds:
+            return results
+
+        res = {}
+        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+            res[node.host] = (success, output)
+
+        # Gather results for all the nodes that are running
+        for node in nodes:
+            if node.name not in pids:
+                continue
+
+            success, output = res[node.host]
+
+            if not success or not output:
+                results += [(node, "cannot get top output", [{}])]
+                continue
+
+            procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
+
+            if not procs:
+                # It's possible that the process is no longer there.
+                results += [(node, "not running", [{}])]
+                continue
+
+            vals = []
+
+            try:
+                for p in procs:
+                    d = {}
+                    d["pid"] = int(p[0])
+                    d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                    d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
+                    d["rss"] = long(float(p[2]))
+                    d["cpu"] = p[3]
+                    d["cmd"] = " ".join(p[4:])
+                    vals += [d]
+            except ValueError, err:
+                results += [(node, "unexpected top output: %s" % err, [{}])]
+                continue
+
+            results += [(node, None, vals)]
+
+        return results
+
+    # Produce a top-like output for node's processes.
+    def top(self, nodes):
+        results = []
+        for (node, error, vals) in self.getTopOutput(nodes):
+            top_info = { "name" : node.name, "type" : node.type,
+                         "host" : node.host, "pid" : None, "proc" : None,
+                         "vsize" : None, "rss" : None, "cpu" : None,
+                         "cmd" : None, "error" : None }
+            if error:
+                top_info["error"] = error
+            else:
+                for d in vals:
+                    top_info.update(d)
+
+            results.append(top_info)
+
+        return results
 
     def printID(self, nodes, id):
         cmdSuccess = True

@@ -179,29 +179,37 @@ class BroCtlCmdLoop(cmd.Cmd):
         for node in node_info:
             self.output("%(name)-12s %(type)10s %(host)-16s %(status)-9s %(pid)-6s %(peers)-6s %(started)s" % node)
 
+
     def _do_top_once(self, args):
-        cmdout = cmdoutput.CommandOutput()
-        lockstatus = util.lock(cmdout)
-        if lockstatus:
-            # Read state again (may have changed by cron in the meantime).
-            if not Config.readState(cmdout):
-                cmdout.printResults()
-                sys.exit(1)
+        results = self.broctl.top(args)
 
-            (success, nodes) = nodeArgs(args)
-            if success:
-                nodes = plugin.Registry.cmdPreWithNodes("top", nodes)
-                cmdSuccess, cmdOutput = control.top(nodes)
-                if not cmdSuccess:
-                    self.exit_code = 1
-                cmdout.append(cmdOutput)
-                plugin.Registry.cmdPostWithNodes("top", nodes)
+        typewidth = 7
+        hostwidth = 16
+        if results and results[0]["type"] == "standalone":
+            # In standalone mode, we need a wider "type" column.
+            typewidth = 10
+            hostwidth = 13
+
+        lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-5s %-4s %s" % ("Name",
+                typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
+                "Rss", "Cpu", "Cmd")]
+        for top_info in results:
+            msg = [ "%-12s" % top_info["name"] ]
+            msg.append("%-*s" % (typewidth, top_info["type"]))
+            msg.append("%-*s" % (hostwidth, top_info["host"]))
+            if top_info["error"]:
+                msg.append("<%s>" % top_info["error"])
             else:
-                self.exit_code = 1
+                msg.append("%-7s" % top_info["pid"])
+                msg.append("%-7s" % top_info["proc"])
+                msg.append("%-6s" % util.prettyPrintVal(top_info["vsize"]))
+                msg.append("%-5s" % util.prettyPrintVal(top_info["rss"]))
+                msg.append("%-3s%%" % top_info["cpu"])
+                msg.append("%s" % top_info["cmd"])
+           
+            lines.append(" ".join(msg))
 
-            util.unlock(cmdout)
-
-        cmdout.printResults()
+        return lines
 
     def do_top(self, args):
         """- [<nodes>]
@@ -213,38 +221,26 @@ class BroCtlCmdLoop(cmd.Cmd):
         until key ``q`` is pressed. If invoked non-interactively, the
         status is printed only once."""
 
-        self.lock()
-
         if not Interactive:
-            self._do_top_once(args)
+            lines = self._do_top_once(args)
+            for line in lines:
+                self.output(line)
             return
-
-        cmdout = cmdoutput.CommandOutput()
-        util.unlock(cmdout)
-        cmdout.printResults()
 
         util.enterCurses()
         util.clearScreen()
 
         count = 0
 
-        while config.Config.sigint != "1" and util.getCh() != "q":
+        while util.getCh() != "q":
             if count % 10 == 0:
-                util.bufferOutput()
-                self._do_top_once(args)
-                lines = util.getBufferedOutput()
+                lines = self._do_top_once(args)
                 util.clearScreen()
                 util.printLines(lines)
             time.sleep(.1)
             count += 1
 
         util.leaveCurses()
-
-        lockstatus = util.lock(cmdout)
-        cmdout.printResults()
-
-        if not lockstatus:
-            sys.exit(1)
 
         return False
 
