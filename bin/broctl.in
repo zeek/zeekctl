@@ -12,6 +12,11 @@ import time
 import platform
 import atexit
 
+# Allow user to override default broctl install directory
+tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
+if tmpbrobase and os.path.isdir(tmpbrobase):
+    BroBase = tmpbrobase
+
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
 from BroControl.broctl import BroCtl
@@ -172,12 +177,23 @@ class BroCtlCmdLoop(cmd.Cmd):
 
         Prints the current status of the given nodes."""
 
+        results = self.broctl.status(node_list=args)
 
-        node_info = self.broctl.status(node_list=args)
-        header = dict((x,x.title()) for x in 'name type host status pid peers started'.split())
-        self.output("%(name)-12s %(type)10s %(host)-16s %(status)-9s %(pid)-6s %(peers)-6s %(started)s" % header)
-        for node in node_info:
-            self.output("%(name)-12s %(type)10s %(host)-16s %(status)-9s %(pid)-6s %(peers)-6s %(started)s" % node)
+        typewidth = 7
+        hostwidth = 16
+        if results and results[0]["type"] == "standalone":
+            # In standalone mode, we need a wider "type" column.
+            typewidth = 10
+            hostwidth = 13
+
+        header = dict((x, x.title()) for x in 'name type host status pid peers started'.split())
+        self.output("{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}".format(typewidth, hostwidth, **header))
+
+        for node_info in results:
+            if node_info["pid"]:
+                self.output("{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}".format(typewidth, hostwidth, **node_info))
+            else:
+                self.output("{name:<12} {type:<{0}} {host:<{1}} {status}".format(typewidth, hostwidth, **node_info))
 
 
     def _do_top_once(self, args):
