@@ -20,15 +20,15 @@ EOF
 broctl install
 
 # start all nodes
-broctl start 2> start.out
+broctl start > start.out 2>&1
 
 # verify that one node is still initializing
-broctl status 2> status1.out
+broctl status > status1.out 2>&1
 
 broctl stop
 
 # verify that all nodes are stopped
-broctl status 2> status2.out
+broctl status > status2.out 2>&1
 
 # broctl status returns non-zero if not all nodes are running
 exit 0

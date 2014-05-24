@@ -11,5 +11,5 @@ EOF
 
 broctl install
 
-broctl exec echo hello world 2> out
+broctl exec echo hello world > out 2>&1
 

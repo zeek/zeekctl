@@ -14,8 +14,8 @@ EOF
 broctl install
 
 # check usage on all nodes
-broctl df 2> all.out
+broctl df > all.out 2>&1
 
 # check usage on one node
-broctl df worker-1 2> onenode.out
+broctl df worker-1 > onenode.out 2>&1
 

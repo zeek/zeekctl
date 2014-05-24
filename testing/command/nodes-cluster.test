@@ -9,5 +9,5 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster_test
 EOF
 
-broctl nodes 2> out
+broctl nodes > out 2>&1
 

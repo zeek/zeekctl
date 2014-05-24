@@ -17,7 +17,7 @@ echo "timefmt=%Y-%m-%d" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 broctl install
 broctl start
 
-broctl status 2> out
+broctl status > out 2>&1
 
 broctl stop
 

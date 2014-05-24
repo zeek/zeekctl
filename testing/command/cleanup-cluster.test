@@ -24,8 +24,8 @@ touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 #########################
 # test the cleanup command (with and without a node argument)
-broctl cleanup 2> cleanup.out
-broctl cleanup worker-1 2> cleanup-onenode.out
+broctl cleanup > cleanup.out 2>&1
+broctl cleanup worker-1 > cleanup-onenode.out 2>&1
 
 # the node testfile should still exist
 test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
@@ -35,7 +35,7 @@ test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
 
 #########################
 # test "cleanup --all" (without a node argument)
-broctl cleanup --all 2> cleanup-all.out
+broctl cleanup --all > cleanup-all.out 2>&1
 
 # the node testfile should still exist
 test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
@@ -47,7 +47,7 @@ touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 #########################
 # test "cleanup --all" (with a node argument)
-broctl cleanup --all worker-1 2> cleanup-all-onenode.out
+broctl cleanup --all worker-1 > cleanup-all-onenode.out 2>&1
 
 # the node testfile should still exist
 test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1

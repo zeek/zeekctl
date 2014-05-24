@@ -10,5 +10,5 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__pfring
 EOF
 
-broctl nodes 2> out
+broctl nodes > out 2>&1
 

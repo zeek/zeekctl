@@ -27,13 +27,13 @@ broctl install
 broctl start
 
 # verify that all nodes started
-broctl status 2> status1.out
+broctl status > status1.out 2>&1
 
 # test the stop command
-broctl stop 2> stop.out
+broctl stop > stop.out 2>&1
 
 # verify that the crashed node is in the crashed state
-broctl status 2> status2.out
+broctl status > status2.out 2>&1
 
 # the stop command should not cleanup the crashed node directory
 while read line; do

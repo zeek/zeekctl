@@ -11,13 +11,13 @@
 broctl install
 
 # check the initial default state
-broctl cron ? 2> out
+broctl cron ? > out 2>&1
 
 # test that the state can be set to disabled
-broctl cron disable 2> disable.out
-broctl cron ? 2>> out
+broctl cron disable > disable.out 2>&1
+broctl cron ? >> out 2>&1
 
 # test that the state can be set to enabled
-broctl cron enable 2> enable.out
-broctl cron ? 2>> out
+broctl cron enable > enable.out 2>&1
+broctl cron ? >> out 2>&1
 

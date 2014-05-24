@@ -20,11 +20,11 @@ broctl install
 broctl start
 
 # get status of all nodes
-broctl status 2> all.out
+broctl status > all.out 2>&1
 test $? -eq 0 || ret=1
 
 # get status of one node
-broctl status manager 2> onenode.out
+broctl status manager > onenode.out 2>&1
 
 broctl stop worker-1
 
@@ -35,7 +35,7 @@ test $? -ne 0 || ret=1
 broctl stop
 
 # all nodes are stopped
-broctl status 2> stopped.out
+broctl status > stopped.out 2>&1
 test $? -ne 0 || ret=1
 
 exit $ret
