@@ -580,7 +580,6 @@ class Controller:
 
             result.append(node_info)
 
-        # Return status code of True only if all nodes are running
         return result
 
     # Check the configuration for nodes without installing first.
@@ -1121,11 +1120,13 @@ class Controller:
                          "cmd" : None, "error" : None }
             if error:
                 top_info["error"] = error
-            else:
-                for d in vals:
-                    top_info.update(d)
+                results.append(top_info)
+                continue
 
-            results.append(top_info)
+            for d in vals:
+                top_info2 = top_info.copy()
+                top_info2.update(d)
+                results.append(top_info2)
 
         return results
 

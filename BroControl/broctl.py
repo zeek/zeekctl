@@ -597,11 +597,12 @@ class BroCtl(object):
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
+        results = []
         if self.plugins.cmdPre("exec", cmd):
-            cmdSuccess = self.controller.executeCmd(self.config.hosts(), cmd)
+            results = self.controller.executeCmd(self.config.hosts(), cmd)
         self.plugins.cmdPost("exec", cmd)
 
-        return cmdSuccess
+        return results
 
     def scripts(self, node_list, check=False):
         """- [-c] [<nodes>]
