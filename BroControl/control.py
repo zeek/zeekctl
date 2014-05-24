@@ -865,7 +865,7 @@ class Controller:
 
         # Add pseudo-node for totals
         if len(nodes) > 1:
-            results += [(node_mod.Node("$total"), None, totals)]
+            results += [(node_mod.Node(self.config, "$total"), None, totals)]
 
         return results
 
