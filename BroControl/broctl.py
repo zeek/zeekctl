@@ -39,8 +39,12 @@ def expose(func):
     return func
 
 def lock_required(func):
-    func.lock_required = True
-    return func
+    def wrapper(self, *args, **kwargs):
+        self.lock()
+        func(self, *args, **kwargs)
+        self.unlock()
+    wrapper.lock_required = True
+    return wrapper
 
 class BroCtl(object):
     def __init__(self, basedir="/bro", ui=TermUI(), state=None):
@@ -123,13 +127,17 @@ class BroCtl(object):
     def lock(self):
         lockstatus = util.lock(self.ui)
         if not lockstatus:
-            sys.exit(1)
+            raise RuntimeError("Unable to get lock")
 
         self._locked = True
         statestatus = self.config.readState(self.ui)
         if not statestatus:
-            sys.exit(1)
-        self.config.config["sigint"] = "0"
+            raise RuntimeError("Unable to get state")
+
+    def unlock(self):
+        if self._locked:
+            util.unlock(self.ui)
+            self._locked = False
 
     def precmd(self, line):
         util.debug(1, line, prefix="command")
