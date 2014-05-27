@@ -41,8 +41,10 @@ def expose(func):
 def lock_required(func):
     def wrapper(self, *args, **kwargs):
         self.lock()
-        func(self, *args, **kwargs)
-        self.unlock()
+        try:
+            func(self, *args, **kwargs)
+        finally:
+            self.unlock()
     wrapper.lock_required = True
     return wrapper
 
