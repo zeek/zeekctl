@@ -863,8 +863,16 @@ def getCapstatsOutput(nodes, interval):
         if not node.interface:
             continue
 
+        netif = node.interface
+
+        # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
+        # is needed to prevent capstats from trying to use the same interface
+        # name as Bro.
+        if netif.startswith("dnacluster:") and netif.count("@") == 1:
+            netif = netif.split("@", 1)[0]
+
         try:
-            hosts[(node.addr, node.interface)] = node
+            hosts[(node.addr, netif)] = node
         except AttributeError:
             continue
 
