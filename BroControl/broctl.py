@@ -42,7 +42,7 @@ def lock_required(func):
     def wrapper(self, *args, **kwargs):
         self.lock()
         try:
-            func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
         finally:
             self.unlock()
     wrapper.lock_required = True
