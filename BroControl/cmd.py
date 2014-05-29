@@ -1,4 +1,5 @@
-class Cmd:
+import cmd
+class ExitValueCmd(cmd.Cmd):
     def cmdloop(self, intro=None):
         """Repeatedly issue a prompt, accept input, parse an initial prefix
         off the received input, and dispatch to action methods, passing them
@@ -20,8 +21,9 @@ class Cmd:
                 self.intro = intro
             if self.intro:
                 self.stdout.write(str(self.intro)+"\n")
-            stop = None
-            while not stop:
+            self._stopping = False
+            success = True
+            while not self._stopping:
                 if self.cmdqueue:
                     line = self.cmdqueue.pop(0)
                 else:
@@ -39,8 +41,12 @@ class Cmd:
                         else:
                             line = line.rstrip('\r\n')
                 line = self.precmd(line)
-                stop = self.onecmd(line)
-                stop = self.postcmd(stop, line)
+                try :
+                    success = self.onecmd(line)
+                except:
+                    success = False
+                    traceback.print_exc()
+                self.postcmd(False, line)
             self.postloop()
         finally:
             if self.use_rawinput and self.completekey:
@@ -49,3 +55,4 @@ class Cmd:
                     readline.set_completer(self.old_completer)
                 except ImportError:
                     pass
+        return success
