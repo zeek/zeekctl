@@ -89,19 +89,23 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         """Prints a list of all configured nodes."""
         if args:
             self.syntax(args)
-            return
+            return False
 
         for node in self.broctl.nodes():
             print node.describe()
+
+        return True
 
     def do_config(self, args):
         """Prints all configuration options with their current values."""
         if args:
             self.syntax(args)
-            return
+            return False
 
         for (key, val) in sorted(self.broctl.get_config()):
             self.output("%s = %s" % (key, val))
+
+        return True
 
     def do_install(self, args):
         """- [--local]
@@ -124,7 +128,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 local = True
             else:
                 self.syntax(args)
-                return
+                return False
 
         success = self.broctl.install(local)
         return success
@@ -482,7 +486,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             args = " ".join(args[1:])
         except IndexError:
             self.syntax("no id given to print")
-            return
+            return False
 
         success = self.broctl.printid(node_list=args, id=id)
         return success
