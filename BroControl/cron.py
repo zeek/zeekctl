@@ -15,7 +15,7 @@ import plugin
 def doCron(watch):
     cmdout = cmdoutput.CommandOutput()
 
-    if config.Config.cronenabled == "0":
+    if not config.Config.cronenabled:
         return cmdout
 
     if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
