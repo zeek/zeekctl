@@ -1,5 +1,3 @@
-warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.4707/spool/broctl.dat' (this is ok on first run)
-warning: cannot read '/home/repo/bro/aux/broctl/testing/../build/testing/test.4707/spool/broctl.dat' (this is ok on first run)
         manager - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=manager pin_cpus= test_mykey= type=manager zone_id=
         proxy-1 - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=proxy-1 pin_cpus= test_mykey= type=proxy zone_id=
      worker-1-1 - addr=127.0.0.1 aux_scripts= brobase= count=1 env_vars=SNF_FLAGS=0x101,SNF_NUM_RINGS=11 ether= host=localhost interface=eth0 lb_interfaces= lb_method=myricom lb_procs=11 name=worker-1-1 pin_cpus= test_mykey= type=worker zone_id=
