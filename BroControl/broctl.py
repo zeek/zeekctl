@@ -377,7 +377,7 @@ class BroCtl(object):
 
         return False
 
-    def do_cron(self, args):
+    def cron(self, watch=True):
         """- [enable|disable|?] | [--no-watch]
 
         This command has two modes of operation. Without arguments (or just
@@ -400,43 +400,34 @@ class BroCtl(object):
         interfere with that. ``cron ?`` can be used to query the current state.
         """
 
-        watch = True
-
-        if args == "--no-watch":
-            watch = False
-
-        elif args:
-            self.lock()
-
-            if args == "enable":
-                if self.plugins.cmdPre("cron", args, False):
-                    config.Config._setState("cronenabled", "1")
-                    util.output("cron enabled")
-                self.plugins.cmdPost("cron", args, False)
-
-            elif args == "disable":
-                if self.plugins.cmdPre("cron", args, False):
-                    config.Config._setState("cronenabled", "0")
-                    util.output("cron disabled")
-                self.plugins.cmdPost("cron", args, False)
-
-            elif args == "?":
-                if self.plugins.cmdPre("cron", args, False):
-                    util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
-                self.plugins.cmdPost("cron", args, False)
-
-            else:
-                util.error("invalid cron argument")
-                self.exit_code = 1
-
-            return
-
         if self.plugins.cmdPre("cron", "", watch):
             cmdOutput = cron.doCron(watch)
             cmdOutput.printResults()
         self.plugins.cmdPost("cron", "", watch)
 
-        return False
+        return True
+
+    def cronenabled(self):
+        if self.plugins.cmdPre("cron", "?", False):
+            if not self.config.hasAttr("cronenabled"):
+                self.config._setState("cronenabled", "1")
+            self.output("cron " + (self.config.cronenabled == "0" and "disabled" or "enabled"))
+        self.plugins.cmdPost("cron", "?", False)
+        return True
+
+    def setcronenabled(self, enable=True):
+        if enable:
+            if self.plugins.cmdPre("cron", "enable", False):
+                self.config._setState("cronenabled", "1")
+                self.output("cron enabled")
+            self.plugins.cmdPost("cron", "enable", False)
+        else:
+            if self.plugins.cmdPre("cron", "disable", False):
+                self.config._setState("cronenabled", "0")
+                self.output("cron disabled")
+            self.plugins.cmdPost("cron", "disable", False)
+
+        return True
 
     @expose
     @lock_required

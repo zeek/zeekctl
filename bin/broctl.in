@@ -336,37 +336,23 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         if args == "--no-watch":
             watch = False
-
         elif args:
-            self.lock()
-
             if args == "enable":
-                if plugin.Registry.cmdPre("cron", args, False):
-                    config.Config._setState("cronenabled", "1")
-                    util.output("cron enabled")
-                plugin.Registry.cmdPost("cron", args, False)
-
+                self.broctl.setcronenabled(True)
             elif args == "disable":
-                if plugin.Registry.cmdPre("cron", args, False):
-                    config.Config._setState("cronenabled", "0")
-                    util.output("cron disabled")
-                plugin.Registry.cmdPost("cron", args, False)
-
+                self.broctl.setcronenabled(False)
             elif args == "?":
-                if plugin.Registry.cmdPre("cron", args, False):
-                    util.output("cron " + (config.Config.cronenabled == "0"  and "disabled" or "enabled"))
-                plugin.Registry.cmdPost("cron", args, False)
-
+                self.broctl.cronenabled()
             else:
-                util.error("invalid cron argument")
-                self.exit_code = 1
+                self.error("invalid cron argument")
+                return False
 
             return True
 
-        if plugin.Registry.cmdPre("cron", "", watch):
-            cmdOutput = cron.doCron(watch)
-            cmdOutput.printResults()
-        plugin.Registry.cmdPost("cron", "", watch)
+        self.broctl.cron(watch)
+
+        return True
+
 
     def do_check(self, args):
         """- [<nodes>]
