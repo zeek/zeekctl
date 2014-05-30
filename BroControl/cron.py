@@ -109,7 +109,7 @@ def _logStats(interval):
         else:
             print >>out, t, node, "error", "error", error
 
-    for (node, error, vals) in capstats:
+    for (node, netif, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
                 print >>out, t, node, "interface", key, val
@@ -124,10 +124,10 @@ def _logStats(interval):
                         last = -1.0
 
                     if float(val) == 0.0 and last != 0.0:
-                        util.output("%s is not seeing any packets on interface %s" % (node.host, node.interface))
+                        util.output("%s is not seeing any packets on interface %s" % (node.host, netif))
 
                     if float(val) != 0.0 and last == 0.0:
-                        util.output("%s is seeing packets again on interface %s" % (node.host, node.interface))
+                        util.output("%s is seeing packets again on interface %s" % (node.host, netif))
 
                     config.Config._setState(tag, val)
 
