@@ -3,7 +3,6 @@
 # The BroControl interactive shell.
 
 BroBase = "@PREFIX@"
-Version = "@VERSION@"
 
 import os
 import sys
@@ -19,6 +18,7 @@ sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 from BroControl.broctl import BroCtl
 from BroControl import brocmd
 from BroControl import util
+from BroControl import version
 
 # Main command loop.
 class BroCtlCmdLoop(brocmd.ExitValueCmd):
@@ -693,7 +693,7 @@ BroControl Version %s
   stop [<nodes>]                   - Stop processing
   top [<nodes>]                    - Show Bro processes ala top
   update [<nodes>]                 - Update configuration of nodes on the fly
-  %s""" % (Version, plugin_help))
+  %s""" % (version.VERSION, plugin_help))
 
 loop = BroCtlCmdLoop(BroCtl)
 
@@ -711,6 +711,6 @@ if len(sys.argv) > 1:
     loop.postcmd(False, line)
 else:
     Interactive = True
-    success = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % Version)
+    success = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
 
 sys.exit(not success)

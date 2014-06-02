@@ -113,10 +113,15 @@ InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summar
 install(DIRECTORY BroControl
         DESTINATION lib/broctl
         PATTERN "options.py" EXCLUDE
+        PATTERN "version.py" EXCLUDE
         PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
+configure_file(BroControl/version.py
+               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py
+        DESTINATION lib/broctl/BroControl)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py
         DESTINATION lib/broctl/BroControl)
 install(DIRECTORY BroControl/plugins
         DESTINATION lib/broctl)
