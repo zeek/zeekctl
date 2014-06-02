@@ -7,7 +7,6 @@ import execute
 import util
 import cmdoutput
 import config
-import cron
 import install
 import plugin
 import node as node_mod
@@ -86,8 +85,6 @@ def _makeBroParams(node, live):
 
     if config.Config.broargs:
         args += [config.Config.broargs]
-
-#   args += ["-B comm,serial"]
 
     return args
 
@@ -243,7 +240,7 @@ class Controller:
                 running += [node]
 
         for node in running:
-            cron.logAction(node, "started")
+            self.logAction(node, "started")
             results += [(node, True)]
 
         return results
@@ -349,6 +346,11 @@ class Controller:
 
         return results
 
+    def logAction(self, node, action):
+        t = time.time()
+        out = open(self.config.statslog, "a")
+        print >>out, t, node, "action", action
+        out.close()
 
     # Do a "post-terminate crash" for the given nodes.
     def _makeCrashReports(self, nodes):
@@ -427,10 +429,6 @@ class Controller:
                 cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
 
             return execute.runHelperParallel(cmds, self.ui)
-            #events = []
-            #for node in nodes:
-            #    events += [(node, "Control::shutdown_request", [], "Control::shutdown_response")]
-            #return execute.sendEventsParallel(events)
 
         # Stop nodes.
         for (node, success, output) in stop(running, 15):
@@ -508,9 +506,9 @@ class Controller:
         for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
             if not success:
                 self.ui.error("cannot run post-terminate for %s" % node.name)
-                cron.logAction(node, "stopped (failed)")
+                self.logAction(node, "stopped (failed)")
             else:
-                cron.logAction(node, "stopped")
+                self.logAction(node, "stopped")
 
             node.clearPID()
             node.clearCrashed()

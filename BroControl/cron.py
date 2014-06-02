@@ -71,12 +71,6 @@ def doCron(watch):
 
     return cmdout
 
-def logAction(node, action):
-    t = time.time()
-    out = open(config.Config.statslog, "a")
-    print >>out, t, node, "action", action
-    out.close()
-
 def _logStats(interval, cmdout):
 
     nodes = config.Config.nodes()

@@ -8,8 +8,6 @@ Version = "@VERSION@"
 import os
 import sys
 import time
-import platform
-import atexit
 
 # Allow user to override default broctl install directory
 tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
@@ -49,6 +47,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         if not self.broctl.plugins.runCustomCommand(m[0], " ".join(m[1:]), self):
             self.error("unknown command '%s'" % m[0])
+
+        return True
 
     def emptyline(self):
         pass
