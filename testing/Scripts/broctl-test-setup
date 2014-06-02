@@ -123,6 +123,7 @@ function installbro() {
     mkdir "$newprefix"
     test $? -ne 0 && exit 1
     export BROCTL_INSTALL_PREFIX=$newprefix
+    export LD_LIBRARY_PATH=$newprefix/lib
 
     # Install bro
     (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
@@ -138,6 +139,7 @@ function installbro() {
         echo "# In order to run broctl in this directory, first type '. how_to_run_broctl'" >> $how2run
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
         echo "export BROCTL_INSTALL_PREFIX=$BROCTL_INSTALL_PREFIX" >> $how2run
+        echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib" >> $how2run
         echo "export BROMAGIC=$BROCTL_INSTALL_PREFIX/share/bro/magic" >> $how2run
     fi
 }
