@@ -2,11 +2,13 @@ from collections import defaultdict
 from threading import Thread, Lock
 from Queue import Queue
 from nanomsg import Socket, REQ, REP
+import os
 import time
 import random
 import traceback
 
 from BroControl import config
+from BroControl import version
 from BroControl.state import SqliteState as State
 from BroControl.broctl import BroCtl
 from BroControl import ser as json
@@ -62,7 +64,8 @@ class Daemon(Common):
 
         self.sock = Socket(REP)
         self.sock.bind('inproc://server')
-        self.sock.bind('ipc:///bro/socket')
+        sockfile = os.path.join(version.BROBASE, "socket")
+        self.sock.bind('ipc://%s' % sockfile)
 
         self.results = {}
         self.threads = {}

@@ -13,6 +13,7 @@ from BroControl import install
 from BroControl import control
 from BroControl import cron
 from BroControl import plugin
+from BroControl import version
 from BroControl.config import Config
 
 class InvalidNode(Exception):
@@ -46,7 +47,7 @@ def lock_required(func):
     return wrapper
 
 class BroCtl(object):
-    def __init__(self, basedir="/bro", ui=TermUI(), state=None):
+    def __init__(self, basedir=version.BROBASE, ui=TermUI(), state=None):
         self.ui = ui
         self.BroBase = basedir
 

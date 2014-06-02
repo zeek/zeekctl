@@ -1,5 +1,7 @@
+from BroControl import version
 from BroControl.broctld import Client
 from BroControl.ser import dumps
+import os
 import bottle
 import json
 
@@ -50,7 +52,8 @@ def cmd(cmd):
     return {"id": i} 
 
 def main():
-    app.daemon = Client('ipc:///bro/socket')
+    sockfile = os.path.join(version.BROBASE, "socket")
+    app.daemon = Client('ipc://%s' % sockfile)
     bottle.run(app, host='localhost', port=8082)
 
 if __name__ == "__main__":
