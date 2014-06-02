@@ -4,10 +4,7 @@
 
 import os
 import sys
-import cmd
 import time
-import platform
-import atexit
 
 from BroControl import util
 from BroControl import config
@@ -53,8 +50,6 @@ class BroCtl(object):
         self.ui = ui
         self.BroBase = basedir
 
-
-        self._locked = False
         self._failed = False
 
         self.config = config.Configuration(self.BroBase, self.ui, state)
@@ -131,21 +126,12 @@ class BroCtl(object):
         if not lockstatus:
             raise RuntimeError("Unable to get lock")
 
-        self._locked = True
         statestatus = self.config.readState(self.ui)
         if not statestatus:
             raise RuntimeError("Unable to get state")
 
     def unlock(self):
-        if self._locked:
-            util.unlock(self.ui)
-            self._locked = False
-
-    def precmd(self, line):
-        util.debug(1, line, prefix="command")
-        self._locked = False
-        self._failed = False
-        return line
+        util.unlock(self.ui)
 
     def checkForFailure(self, results):
         if control.nodeFailed(results):
@@ -156,15 +142,6 @@ class BroCtl(object):
 
     def failed(self):
         return self._failed
-
-    def postcmd(self, stop, line):
-        if self._locked:
-            util.unlock(self.ui)
-            self._locked = False
-
-        execute.clearDeadHostConnections()
-        util.debug(1, "done", prefix="command")
-        return stop
 
     @expose
     def nodes(self):
@@ -268,36 +245,27 @@ class BroCtl(object):
 
         self.output("stopping ...")
         success = self.stop(node_list)
-        self.postcmd(False, node_list) # Need to call manually.
-
         if not success:
             return False
 
         if clean:
             self.output("cleaning up ...")
             success = self.cleanup(node_list)
-            self.postcmd(False, node_list)
-
             if not success:
                 return False
 
             self.output("checking configurations...")
             success = self.check(node_list)
-            self.postcmd(False, node_list)
-
             if not success:
                 return False
 
-            util.output("installing ...")
+            self.output("installing ...")
             success = self.install()
-            self.postcmd(False, node_list)
-
             if not success:
                 return False
 
         self.output("starting ...")
         success = self.start(node_list)
-        self.postcmd(False, node_list)
 
         self.plugins.cmdPostWithNodes("restart", nodes)
         return success
