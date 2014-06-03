@@ -49,17 +49,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def emptyline(self):
         pass
 
-    def checkForFailure(self, results):
-        if control.nodeFailed(results):
-            self._failed = True
-            self.exit_code = 1
-
-    def failed(self):
-        return self._failed
-
     def precmd(self, line):
         util.debug(1, line, prefix="command")
-        self._failed = False
         return line
 
     def postcmd(self, stop, line):
