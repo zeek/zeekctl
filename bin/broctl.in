@@ -38,10 +38,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         self.exit_code = 1
     warn = error
 
-    def syntax(self, args):
-        self.output("Syntax error: %s" % args)
-        self.exit_code = 1
-
     def default(self, line):
         m = line.split()
 
@@ -88,8 +84,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_nodes(self, args):
         """Prints a list of all configured nodes."""
         if args:
-            self.syntax(args)
-            return False
+            raise SyntaxError("nodes does not take any arguments")
 
         for node in self.broctl.nodes():
             print node.describe()
@@ -99,8 +94,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_config(self, args):
         """Prints all configuration options with their current values."""
         if args:
-            self.syntax(args)
-            return False
+            raise SyntaxError("config does not take any arguments")
 
         for (key, val) in sorted(self.broctl.get_config()):
             self.output("%s = %s" % (key, val))
@@ -127,8 +121,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if arg == "--local":
                 local = True
             else:
-                self.syntax(args)
-                return False
+                raise SyntaxError("Invalid argument: %s" % arg)
 
         success = self.broctl.install(local)
         return success
@@ -471,8 +464,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             id = args[0]
             args = " ".join(args[1:])
         except IndexError:
-            self.syntax("no id given to print")
-            return False
+            raise SyntaxError("no id given to print")
 
         success = self.broctl.printid(node_list=args, id=id)
         return success
@@ -536,8 +528,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                     # Check non-installed policies.
                     check = True
                 else:
-                    self.syntax("unknown option %s" % args[0])
-                    return False
+                    raise SyntaxError("Unknown option: %s" % opt)
 
                 args = args[1:]
 
@@ -579,8 +570,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             if arg == "--":
                 if in_scripts:
-                    self.syntax("cannot parse arguments")
-                    return False
+                    raise SyntaxError("cannot parse arguments")
 
                 in_scripts = True
                 continue
@@ -592,8 +582,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 scripts += [arg]
 
         if not trace:
-            self.syntax("no trace file given")
-            return False
+            raise SyntaxError("no trace file given")
 
         success = self.broctl.process(trace, options, scripts)
         return success
