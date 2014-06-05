@@ -153,12 +153,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         start_.
         """
         clean = False
-        try:
-            if args.startswith("--clean"):
-                args = args[7:]
-                clean = True
-        except IndexError:
-            pass
+        if args.startswith("--clean"):
+            args = args[7:]
+            clean = True
 
         success = self.broctl.restart(node_list=args, clean=clean)
         return success
@@ -370,12 +367,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         again."""
 
         cleantmp = False
-        try:
-            if args.startswith("--all"):
-                args = args[5:]
-                cleantmp = True
-        except IndexError:
-            pass
+        if args.startswith("--all"):
+            args = args[5:]
+            cleantmp = True
 
         success = self.broctl.cleanup(node_list=args, all=cleantmp)
         return success
@@ -396,13 +390,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         interval = 10
         args = args.split()
 
-        try:
-            interval = max(1, int(args[-1]))
-            args = args[0:-1]
-        except ValueError:
-            pass
-        except IndexError:
-            pass
+        if args:
+            try:
+                interval = max(1, int(args[-1]))
+                args = args[0:-1]
+            except ValueError:
+                pass
 
         args = " ".join(args)
 

@@ -51,8 +51,6 @@ class BroCtl(object):
         self.ui = ui
         self.BroBase = basedir
 
-        self._failed = False
-
         self.config = config.Configuration(self.BroBase, self.ui, state)
         self.setup()
         self.controller = control.Controller(self.config, self.ui)
@@ -136,13 +134,8 @@ class BroCtl(object):
 
     def checkForFailure(self, results):
         if control.nodeFailed(results):
-            self._failed = True
-            self.exit_code = 1
             return False
         return True
-
-    def failed(self):
-        return self._failed
 
     @expose
     def nodes(self):
@@ -255,7 +248,7 @@ class BroCtl(object):
             if not success:
                 return False
 
-            self.output("checking configurations...")
+            self.output("checking configurations ...")
             success = self.check(node_list)
             if not success:
                 return False
@@ -660,46 +653,3 @@ class BroCtl(object):
             print ".. _%s:\n\n*%s*%s\n    %s" % (cmd, cmd, args, output)
             print
 
-    def do_help(self, args):
-        """Prints a brief summary of all commands understood by the shell."""
-
-        plugin_help = ""
-
-        for (cmd, args, descr) in self.plugins.allCustomCommands():
-            if not plugin_help:
-                plugin_help += "\nCommands provided by plugins:\n\n"
-
-            if args:
-                cmd = "%s %s" % (cmd, args)
-
-            plugin_help += "  %-32s - %s\n" % (cmd, descr)
-
-        self.output(
-"""
-BroControl Version %s
-
-  capstats [<nodes>] [<secs>]      - Report interface statistics with capstats
-  check [<nodes>]                  - Check configuration before installing it
-  cleanup [--all] [<nodes>]        - Delete working dirs (flush state) on nodes
-  config                           - Print broctl configuration
-  cron [--no-watch]                - Perform jobs intended to run from cron
-  cron enable|disable|?            - Enable/disable \"cron\" jobs
-  df [<nodes>]                     - Print nodes' current disk usage
-  diag [<nodes>]                   - Output diagnostics for nodes
-  exec <shell cmd>                 - Execute shell command on all hosts
-  exit                             - Exit shell
-  install                          - Update broctl installation/configuration
-  netstats [<nodes>]               - Print nodes' current packet counters
-  nodes                            - Print node configuration
-  peerstatus [<nodes>]             - Print status of nodes' remote connections
-  print <id> [<nodes>]             - Print values of script variable at nodes
-  process <trace> [<op>] [-- <sc>] - Run Bro (with options and scripts) on trace
-  quit                             - Exit shell
-  restart [--clean] [<nodes>]      - Stop and then restart processing
-  scripts [-c] [<nodes>]           - List the Bro scripts the nodes will load
-  start [<nodes>]                  - Start processing
-  status [<nodes>]                 - Summarize node status
-  stop [<nodes>]                   - Stop processing
-  top [<nodes>]                    - Show Bro processes ala top
-  update [<nodes>]                 - Update configuration of nodes on the fly
-  %s""" % (Version, plugin_help))

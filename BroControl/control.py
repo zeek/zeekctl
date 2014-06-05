@@ -520,6 +520,7 @@ class Controller:
     def status(self, nodes):
         result = []
 
+        self.ui.info("Getting process status ...")
         all = self.isRunning(nodes)
         running = []
 
@@ -531,7 +532,6 @@ class Controller:
                 cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
                 cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
 
-        self.ui.info("Getting bro process status..")
         startups = execute.runHelperParallel(cmds1, self.ui)
         statuses = execute.runHelperParallel(cmds2, self.ui)
 
@@ -540,7 +540,7 @@ class Controller:
 
         peers = {}
         nodes = [n for n in running if statuses[n.name] == "running"]
-        self.ui.info("Getting bro peer status..")
+        self.ui.info("Getting peer status ...")
         for (node, success, args) in self._queryPeerStatus(nodes):
             if success:
                 peers[node.name] = []
@@ -550,8 +550,6 @@ class Controller:
                         (key, val) = keyval
                         if key == "peer" and val != "":
                             peers[node.name] += [val]
-            else:
-                peers[node.name] = None
 
         for (node, isrunning) in all:
             node_info = {
@@ -571,8 +569,10 @@ class Controller:
             if isrunning:
                 node_info["pid"] = node.getPID()
 
-                if node.name in peers and peers[node.name] != None:
+                if node.name in peers:
                     node_info["peers"] = len(peers[node.name])
+                else:
+                    node_info["peers"] = "???"
 
                 node_info["started"] = startups[node.name]
 
