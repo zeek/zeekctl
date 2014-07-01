@@ -1,5 +1,6 @@
 # Functions to control the nodes' operations.
 
+from collections import namedtuple
 import os
 import time
 
@@ -933,9 +934,10 @@ class Controller:
 
     # Gets disk space on all volumes relevant to broctl installation.
     # Returns a list of the form:  [ (host, diskinfo), ...]
-    # where diskinfo is a list of the form [fs, total, used, avail, perc] or
+    # where diskinfo is a list of the form DiskInfo named tuple objects (fs, total, used, avail, percent) or
     # ["FAIL", <error message>] if an error is encountered.
-    def getDf(self, nodes):
+    def df(self, nodes):
+        DiskInfo = namedtuple("DiskInfo", ("fs", "total", "used", "available", "percent"))
         dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
 
         df = {}
@@ -958,19 +960,22 @@ class Controller:
             for (node, success, output) in results:
                 nodehost = "%s/%s" % (node.name, node.host)
                 if success:
-                    if output:
-                        fields = output[0].split()
-
-                        # Ignore NFS mounted volumes.
-                        if fields[0].find(":") < 0:
-                            total = float(fields[1])
-                            used = float(fields[2])
-                            avail = float(fields[3])
-                            perc = used * 100.0 / (used + avail)
-                            df[nodehost][fields[0]] = [fields[0], total, used,
-                                                       avail, perc]
-                    else:
+                    if not output:
                         df[nodehost]["FAIL"] = ["FAIL", "no output from df helper"]
+                        continue
+
+                    fields = output[0].split()
+
+                    fs = fields[0]
+                    # Ignore NFS mounted volumes.
+                    if ":" in fs:
+                        continue
+
+                    total = float(fields[1])
+                    used = float(fields[2])
+                    avail = float(fields[3])
+                    perc = used * 100.0 / (used + avail)
+                    df[nodehost][fs] = DiskInfo(fs, total, used, avail, perc)
                 else:
                     if output:
                         msg = output[0]
@@ -984,28 +989,6 @@ class Controller:
             result.append((nodehost, df[nodehost].values()))
 
         return result
-
-    def df(self, nodes):
-        cmdSuccess = True
-
-        self.ui.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
-
-        results = self.getDf(nodes)
-
-        for (node, dfs) in results:
-            for df in dfs:
-                if df[0] == "FAIL":
-                    cmdSuccess = False
-                    self.ui.error("df helper failed on %s: %s" % (node, df[1]))
-                    continue
-
-                (fs, total, used, avail, perc) = df
-
-                self.ui.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node,
-                    fs, util.prettyPrintVal(total), util.prettyPrintVal(avail),
-                    perc))
-
-        return cmdSuccess
 
     # Returns a list of tuples of the form (node, error, vals) where 'error' is an
     # error message string, or None if there was no error.  'vals' is a list of

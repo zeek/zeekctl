@@ -487,7 +487,7 @@ class BroCtl(object):
 
         return status
 
-    def df(self, node_list):
+    def df(self, node_list=None):
         """- [<nodes>]
 
         Reports the amount of disk space available on the nodes. Shows only
@@ -495,10 +495,10 @@ class BroCtl(object):
 
         nodes = self.nodeHostArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("df", nodes)
-        cmdSuccess = self.controller.df(nodes)
+        results = self.controller.df(nodes)
         self.plugins.cmdPostWithNodes("df", nodes)
 
-        return cmdSuccess
+        return results
 
     def printid(self, node_list, id):
         """- <id> [<nodes>]

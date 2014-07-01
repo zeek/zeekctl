@@ -428,7 +428,22 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         Reports the amount of disk space available on the nodes. Shows only
         paths relevant to the broctl installation."""
 
-        success = self.broctl.df(node_list=args)
+        success = True
+
+        results = self.broctl.df(node_list=args)
+
+        self.output("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
+        for (node, dfs) in results:
+            for df in dfs:
+                if df[0] == "FAIL":
+                    success = False
+                    self.error("df helper failed on %s: %s" % (node, df[1]))
+                    continue
+
+                self.output("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (node,
+                    df.fs, util.prettyPrintVal(df.total), util.prettyPrintVal(df.available),
+                    df.percent))
+
         return success
 
     def do_print(self, args):
