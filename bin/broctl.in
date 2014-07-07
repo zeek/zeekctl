@@ -497,7 +497,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         success = True
         for node, nodesuccess, output in self.broctl.execute(cmd=args):
             out = output and "\n> ".join(output) or ""
-            self.output("[%s] %s\n> %s" % (node.name, (nodesuccess and " " or "error"), out))
+            self.output("[%s/%s] %s\n> %s" % (node.name, node.host, (nodesuccess and " " or "error"), out))
             if not nodesuccess:
                 success = False
 
