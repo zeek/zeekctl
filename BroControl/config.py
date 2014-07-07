@@ -402,7 +402,7 @@ class Configuration:
 
                 for num in xrange(2, numprocs + 1):
                     newnode = copy.deepcopy(node)
-                    newnode.config = self
+                    newnode._config = self
                     # only the node name, count, and pin_cpus need to be changed
                     newname = "%s-%d" % (sec, num)
                     newnode.name = newname

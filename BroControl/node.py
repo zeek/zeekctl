@@ -92,7 +92,7 @@ class Node:
     def __init__(self, config, name):
         """Instantiates a new node of the given name."""
         self.name = name
-        self.config = config
+        self._config = config
 
         for key in Node._keys:
             self.__dict__[key] = ""
@@ -124,7 +124,9 @@ class Node:
 
             return v
 
-        return ("%15s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys())])
+        # Do not output attributes starting with underscore, because they are
+        # for internal use and don't provide useful information to the user.
+        return ("%15s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys()) if not k.startswith("_")])
 
     def to_dict(self):
         d = dict(self.items())
@@ -135,50 +137,50 @@ class Node:
     @doc.api
     def cwd(self):
         """Returns a string with the node's working directory."""
-        return os.path.join(self.config.spooldir, self.name)
+        return os.path.join(self._config.spooldir, self.name)
 
     # Stores the nodes process ID.
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
         key = "%s-pid" % self.name
-        self.config._setState(key, pid)
+        self._config._setState(key, pid)
 
     @doc.api
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
         t = "%s-pid" % self.name.lower()
-        return self.config._getState(t)
+        return self._config._getState(t)
 
     def clearPID(self):
         """Clears the stored process ID for the node's Bro process, indicating
         that it is no longer running."""
         key = "%s-pid" % self.name
-        self.config._setState(key, None)
+        self._config._setState(key, None)
 
     def setCrashed(self):
         """Marks node's Bro process as having terminated unexpectedly."""
         key = "%s-crashed" % self.name
-        self.config._setState(key, True)
+        self._config._setState(key, True)
 
     # Unsets the flag for unexpected termination.
     def clearCrashed(self):
         """Clears the mark for the node's Bro process having terminated
         unexpectedly."""
         key = "%s-crashed" % self.name
-        self.config._setState(key, False)
+        self._config._setState(key, False)
 
     # Returns true if node has terminated unexpectedly.
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
         t = "%s-crashed" % self.name.lower()
-        return self.config._getState(t)
+        return self._config._getState(t)
 
     # Set the Bro port this node is using.
     def setPort(self, port):
         t = "%s-port" % self.name
-        self.config._setState(t, port)
+        self._config._setState(t, port)
 
     # Get the Bro port this node is using.
     @doc.api
@@ -188,7 +190,7 @@ class Node:
         has been set yet.
         """
         t = "%s-port" % self.name.lower()
-        return self.config._getState(t) or -1
+        return self._config._getState(t) or -1
 
     @staticmethod
     def addKey(kw):
