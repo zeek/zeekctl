@@ -312,15 +312,14 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("diag", nodes)
 
-        success = True
-
+        results = []
         for h in nodes:
-            cmdSuccess = self.controller.crashDiag(h)
-            success = success and cmdSuccess
+            success, output = self.controller.crashDiag(h)
+            results.append((h.name, success, output))
 
         self.plugins.cmdPostWithNodes("diag", nodes)
 
-        return success
+        return results
 
     def do_attachgdb(self, args):
         """- [<nodes>]

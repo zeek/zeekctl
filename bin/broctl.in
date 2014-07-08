@@ -269,7 +269,15 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         misconfigurations (which are usually, but not always, caught by the
         check_ command)."""
 
-        success = self.broctl.diag(node_list=args)
+        success = True
+
+        for (node, nodesuccess, output) in self.broctl.diag(node_list=args):
+            if not nodesuccess:
+                success = False
+            self.output("[%s]" % node)
+            for line in output:
+                self.output(line)
+
         return success
 
     def do_attachgdb(self, args):

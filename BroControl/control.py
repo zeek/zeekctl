@@ -697,21 +697,21 @@ class Controller:
 
     # Report diagostics for node (e.g., stderr output).
     def crashDiag(self, node):
-        self.ui.info("[%s]" % node.name)
+        results = []
 
         if not execute.isdir(node, node.cwd(), self.ui):
-            self.ui.error("No work dir found\n")
-            return False
+            results.append("No work dir found")
+            return (False, results)
 
         (rc, output) = execute.runHelper(node, self.ui, "run-cmd",  [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
         if not rc:
-            self.ui.error("cannot run crash-diag for %s" % node.name)
-            return False
+            results.append("cannot run crash-diag for %s" % node.name)
+            return (False, results)
 
-        for line in output:
-            self.ui.info(line)
+        if output:
+            results += output
 
-        return True
+        return (True, results)
 
     def capstats(self, nodes, interval):
         cmdSuccess = True
