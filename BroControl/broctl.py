@@ -457,10 +457,10 @@ class BroCtl(object):
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
-        cmdSuccess = self.controller.capstats(nodes, interval)
+        results = self.controller.capstats(nodes, interval)
         self.plugins.cmdPostWithNodes("capstats", nodes, interval)
 
-        return cmdSuccess
+        return results
 
     def update(self, node_list):
         """- [<nodes>]

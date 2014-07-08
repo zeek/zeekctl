@@ -399,8 +399,39 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         args = " ".join(args)
 
-        success = self.broctl.capstats(node_list=args, interval=interval)
-        return success
+        def outputcapstats(tag, data):
+            def outputOne(tag, vals):
+                return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
+
+            self.output("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
+
+            totals = None
+
+            for (port, error, vals) in sorted(data):
+
+                if error:
+                    self.error(error)
+                    continue
+
+                if str(port) != "$total":
+                    self.output(outputOne(port, vals))
+                else:
+                    totals = vals
+
+            if totals:
+                self.output("")
+                self.output(outputOne("Total", totals))
+                self.output("")
+
+        results = self.broctl.capstats(node_list=args, interval=interval)
+
+        if results["capstats"]:
+            outputcapstats("Interface", results["capstats"])
+
+        if results["cflow"]:
+            outputcapstats("cFlow Port", results["cflow"])
+
+        return results["success"]
 
     def do_update(self, args):
         """- [<nodes>]

@@ -714,32 +714,6 @@ class Controller:
         return True
 
     def capstats(self, nodes, interval):
-
-        def output(tag, data):
-            def outputOne(tag, vals):
-                return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
-
-            self.ui.info("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
-
-            totals = None
-
-            for (port, error, vals) in sorted(data):
-
-                if error:
-                    self.ui.error(error)
-                    continue
-
-                if str(port) != "$total":
-                    self.ui.info(outputOne(port, vals))
-                else:
-                    totals = vals
-
-            if totals:
-                self.ui.info("")
-                self.ui.info(outputOne("Total", totals))
-                self.ui.info("")
-
-
         cmdSuccess = True
 
         have_cflow = self.config.cflowaddress and self.config.cflowuser and self.config.cflowpassword
@@ -750,13 +724,13 @@ class Controller:
             if not cflow_start:
                 cmdSuccess = False
 
+        cs_results = []
         if have_capstats:
-            capstats = []
             for (node, error, vals) in self.getCapstatsOutput(nodes, interval):
                 if str(node) == "$total":
-                    capstats += [(node, error, vals)]
+                    cs_results += [(node, error, vals)]
                 else:
-                    capstats += [("%s/%s" % (node.host, node.interface), error, vals)]
+                    cs_results += [("%s/%s" % (node.host, node.interface), error, vals)]
 
                 if error:
                     cmdSuccess = False
@@ -769,14 +743,12 @@ class Controller:
             if not cflow_stop:
                 cmdSuccess = False
 
-        if have_capstats:
-            output("Interface", capstats)
-
+        diffs = []
         if have_cflow and cflow_start and cflow_stop:
             diffs = self.calculateCFlowRate(cflow_start, cflow_stop, interval)
-            output("cFlow Port", diffs)
 
-        return cmdSuccess
+        results = { "capstats" : cs_results, "cflow" : diffs, "success" : cmdSuccess }
+        return results
 
     # Gather capstats from interfaces.
     #
@@ -891,14 +863,14 @@ class Controller:
 
         return vals
 
-    # Calculates the differences between to getCFlowStatus() calls.
+    # Calculates the differences between two getCFlowStatus() calls.
     # Returns a list of tuples in the same form as getCapstatsOutput() does.
     def calculateCFlowRate(self, start, stop, interval):
         diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
 
         rates = []
         for (port, pkts, bytes) in diffs:
-            vals = { "kpps": "%.1f" % (pkts / 1e3 / interval) }
+            vals = { "kpps" : "%.1f" % (pkts / 1e3 / interval) }
             if start[port][1] >= 0:
                 vals["mbps"] = "%.1f" % (bytes * 8 / 1e6 / interval)
 
