@@ -496,7 +496,17 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         except IndexError:
             raise SyntaxError("no id given to print")
 
-        success = self.broctl.printid(node_list=args, id=id)
+        success = True
+        
+        results = self.broctl.printid(node_list=args, id=id)
+
+        for (node, nodesuccess, args) in results:
+            if nodesuccess:
+                self.output("%12s   %s = %s" % (node, args[0], args[1]))
+            else:
+                self.error("%12s   <error: %s>" % (node, args))
+                success = False
+
         return success
 
     def do_peerstatus(self, args):
@@ -506,7 +516,17 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         network connections cluster nodes are using to communicate with other
         nodes."""
 
-        success = self.broctl.peerstatus(node_list=args)
+        success = True
+
+        results = self.broctl.peerstatus(node_list=args)
+
+        for (node, nodesuccess, msg) in results:
+            if nodesuccess:
+                self.output("%11s\n%s" % (node, msg))
+            else:
+                self.error("%11s   <error: %s>" % (node, msg))
+                success = False
+
         return success
 
     def do_netstats(self, args):
@@ -515,7 +535,17 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
-        success = self.broctl.netstats(node_list=args)
+        success = True
+
+        results = self.broctl.netstats(node_list=args)
+
+        for (node, nodesuccess, msg) in results:
+            if nodesuccess:
+                self.output("%11s: %s" % (node, msg))
+            else:
+                self.error("%11s: <error: %s>" % (node, msg))
+                success = False
+
         return success
 
     def do_exec(self, args):

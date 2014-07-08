@@ -514,10 +514,10 @@ class BroCtl(object):
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
-        cmdSuccess = self.controller.printID(nodes, id)
+        results = self.controller.printID(nodes, id)
         self.plugins.cmdPostWithNodes("print", nodes, id)
 
-        return cmdSuccess
+        return results
 
     def peerstatus(self, node_list):
         """- [<nodes>]
@@ -528,10 +528,10 @@ class BroCtl(object):
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
-        cmdSuccess = self.controller.peerStatus(nodes)
+        results = self.controller.peerStatus(nodes)
         self.plugins.cmdPostWithNodes("peerstatus", nodes)
 
-        return cmdSuccess
+        return results
 
     def netstats(self, node_list):
         """- [<nodes>]
@@ -547,10 +547,10 @@ class BroCtl(object):
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
-        cmdSuccess = self.controller.netStats(nodes)
+        results = self.controller.netStats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
 
-        return cmdSuccess
+        return results
 
     @expose
     def execute(self, cmd):

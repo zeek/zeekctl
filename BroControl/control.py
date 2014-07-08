@@ -1084,8 +1084,6 @@ class Controller:
         return results
 
     def printID(self, nodes, id):
-        cmdSuccess = True
-
         running = self.isRunning(nodes)
 
         events = []
@@ -1093,16 +1091,13 @@ class Controller:
             if isrunning:
                 events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
-        results = execute.sendEventsParallel(events)
- 
-        for (node, success, args) in results:
-            if success:
-                self.ui.info("%12s   %s = %s" % (node, args[0], args[1]))
-            else:
-                self.ui.error("%12s   <error: %s>" % (node, args))
-                cmdSuccess = False
+        eventsresults = execute.sendEventsParallel(events)
 
-        return cmdSuccess
+        results = [] 
+        for (node, success, args) in eventsresults:
+                results.append((node.name, success, args))
+
+        return results
 
 
     def _queryNetStats(self, nodes):
@@ -1116,29 +1111,24 @@ class Controller:
         return execute.sendEventsParallel(events)
 
     def peerStatus(self, nodes):
-        cmdSuccess = True
-
+        results = []
         for (node, success, args) in self._queryPeerStatus(nodes):
             if success:
-                self.ui.info("%11s" % node)
-                self.ui.info(args[0])
+                results.append((node.name, success, args[0]))
             else:
-                self.ui.error("%11s   <error: %s>" % (node, args))
-                cmdSuccess = False
+                results.append((node.name, success, args))
 
-        return cmdSuccess
+        return results
 
     def netStats(self, nodes):
-        cmdSuccess = True
-
+        results = []
         for (node, success, args) in self._queryNetStats(nodes):
             if success:
-                self.ui.info("%11s: %s" % (node, args[0].strip()))
+                results.append((node.name, success, args[0].strip()))
             else:
-                self.ui.error("%11s: <error: %s>" % (node, args))
-                cmdSuccess = False
+                results.append((node.name, success, args))
 
-        return cmdSuccess
+        return results
 
     def processTrace(self, trace, bro_options, bro_scripts):
         if not os.path.isfile(trace):
