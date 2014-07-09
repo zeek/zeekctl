@@ -410,10 +410,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.checkConfigs(nodes)
-        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("check", results)
 
-        return status
+        return results
 
     @expose
     @lock_required
@@ -581,10 +580,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("scripts", nodes, check)
         results = self.controller.listScripts(nodes, check)
-        status = self.checkForFailure(results)
         self.plugins.cmdPostWithNodes("scripts", nodes, check)
 
-        return status
+        return results
 
     def process(self, trace, options, scripts):
         """- <trace> [options] [-- <scripts>]

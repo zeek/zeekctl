@@ -357,7 +357,18 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         ensures that new errors in a policy script will not affect currently
         running nodes, even when one or more of them needs to be restarted."""
 
-        success = self.broctl.check(node_list=args)
+        success = True
+
+        results = self.broctl.check(node_list=args)
+        for (node, nodesuccess, output) in results:
+            if nodesuccess:
+                self.output("%s scripts are ok." % node)
+            else:
+                success = False
+                self.error("%s scripts failed." % node)
+                for line in output:
+                    self.error("   %s" % line)
+
         return success
 
     def do_cleanup(self, args):
@@ -605,7 +616,20 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         args = " ".join(args)
 
-        success = self.broctl.scripts(node_list=args, check=check)
+        success = True
+
+        results = self.broctl.scripts(node_list=args, check=check)
+        for (node, nodesuccess, output) in results:
+            if nodesuccess:
+                self.output("%s scripts are ok." % node)
+                for line in output:
+                    self.output("  %s" % line)
+            else:
+                success = False
+                self.error("%s scripts failed." % node)
+                for line in output:
+                    self.error("   %s" % line)
+
         return success
 
     def do_process(self, args):

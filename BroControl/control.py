@@ -599,22 +599,19 @@ class Controller:
         all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            self.ui.error("broctl-config.sh not found (try 'broctl install')")
             # Return a failure for one node to indicate that the command failed
-            results += [(all[0][0], False)]
+            results.append((all[0][0].name, False, ["broctl-config.sh not found (try 'broctl install')"]))
             return results
 
         nodes = []
         for (node, cwd) in all:
             if os.path.isdir(cwd):
                 if not execute.rmdir(self.config.manager(), cwd, self.ui):
-                    self.ui.error("cannot remove directory %s on manager" % cwd)
-                    results += [(node, False)]
+                    results.append((node.name, False, ["cannot remove directory %s on manager" % cwd]))
                     continue
 
             if not execute.mkdir(self.config.manager(), cwd, self.ui):
-                self.ui.error("cannot create directory %s on manager" % cwd)
-                results += [(node, False)]
+                results.append((node.name, False, ["cannot create directory %s on manager" % cwd]))
                 continue
 
             nodes += [(node, cwd)]
@@ -637,17 +634,7 @@ class Controller:
             cmds += [((node, cwd), cmd, env, None)]
 
         for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
-            results += [(node, success)]
-            if success:
-                self.ui.info("%s scripts are ok." % node.name)
-                if list_scripts:
-                    for line in output:
-                        self.ui.info("  %s" % line)
-            else:
-                self.ui.error("%s scripts failed." % node.name)
-                for line in output:
-                    self.ui.error("   %s" % line)
-
+            results.append((node.name, success, output))
             execute.rmdir(manager, cwd, self.ui)
 
         return results
