@@ -215,7 +215,7 @@ class BroCtl(object):
 
     @expose
     @lock_required
-    def restart(self, node_list=None, clean=False):
+    def restart(self, clean=False, node_list=None):
         """- [--clean] [<nodes>]
 
         Restarts the given nodes, or all nodes if none are specified. The
@@ -278,7 +278,7 @@ class BroCtl(object):
         self.plugins.cmdPostWithNodes("status", nodes)
         return node_infos
 
-    def top(self, node_list):
+    def top(self, node_list=None):
         """- [<nodes>]
 
         For each of the nodes, prints the status of the two Bro
@@ -296,7 +296,7 @@ class BroCtl(object):
 
         return results
 
-    def diag(self, node_list):
+    def diag(self, node_list=None):
         """- [<nodes>]
 
         If a node has terminated unexpectedly, this command prints a (somewhat
@@ -416,7 +416,7 @@ class BroCtl(object):
 
     @expose
     @lock_required
-    def cleanup(self, node_list=None, all=False):
+    def cleanup(self, all=False, node_list=None):
         """- [--all] [<nodes>]
 
         Clears the nodes' spool directories (if they are not running
@@ -440,7 +440,7 @@ class BroCtl(object):
 
         return cmdSuccess
 
-    def capstats(self, node_list, interval=10):
+    def capstats(self, interval=10, node_list=None):
         """- [<nodes>] [<interval>]
 
         Determines the current load on the network interfaces monitored by
@@ -460,7 +460,7 @@ class BroCtl(object):
 
         return results
 
-    def update(self, node_list):
+    def update(self, node_list=None):
         """- [<nodes>]
 
         After a change to Bro policy scripts, this command updates the Bro
@@ -498,7 +498,7 @@ class BroCtl(object):
 
         return results
 
-    def printid(self, node_list, id):
+    def printid(self, id, node_list=None):
         """- <id> [<nodes>]
 
         Reports the *current* live value of the given Bro script ID on all of
@@ -517,7 +517,7 @@ class BroCtl(object):
 
         return results
 
-    def peerstatus(self, node_list):
+    def peerstatus(self, node_list=None):
         """- [<nodes>]
 
 		Primarily for debugging, ``peerstatus`` reports statistics about the
@@ -531,7 +531,7 @@ class BroCtl(object):
 
         return results
 
-    def netstats(self, node_list):
+    def netstats(self, node_list=None):
         """- [<nodes>]
 
 		Queries each of the nodes for their current counts of captured and
@@ -565,7 +565,7 @@ class BroCtl(object):
 
         return results
 
-    def scripts(self, node_list, check=False):
+    def scripts(self, check=False, node_list=None):
         """- [-c] [<nodes>]
 
 		Primarily for debugging Bro configurations, the ``scripts``

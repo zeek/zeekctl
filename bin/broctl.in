@@ -157,7 +157,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             args = args[7:]
             clean = True
 
-        success = self.broctl.restart(node_list=args, clean=clean)
+        success = self.broctl.restart(clean=clean, node_list=args)
         return success
 
     def do_status(self, args):
@@ -390,7 +390,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             args = args[5:]
             cleantmp = True
 
-        success = self.broctl.cleanup(node_list=args, all=cleantmp)
+        success = self.broctl.cleanup(all=cleantmp, node_list=args)
         return success
 
     def do_capstats(self, args):
@@ -442,7 +442,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.output(outputOne("Total", totals))
                 self.output("")
 
-        results = self.broctl.capstats(node_list=args, interval=interval)
+        results = self.broctl.capstats(interval=interval, node_list=args)
 
         if results["capstats"]:
             outputcapstats("Interface", results["capstats"])
@@ -517,7 +517,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         success = True
         
-        results = self.broctl.printid(node_list=args, id=id)
+        results = self.broctl.printid(id=id, node_list=args)
 
         for (node, nodesuccess, args) in results:
             if nodesuccess:
@@ -618,7 +618,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         success = True
 
-        results = self.broctl.scripts(node_list=args, check=check)
+        results = self.broctl.scripts(check=check, node_list=args)
         for (node, nodesuccess, output) in results:
             if nodesuccess:
                 self.output("%s scripts are ok." % node)
