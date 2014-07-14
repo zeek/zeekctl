@@ -79,6 +79,13 @@ def debug(msglevel, msg, prefix="main"):
     print >>DebugOut, time.strftime(config.Config.timefmt, time.localtime(time.time())), msg
     DebugOut.flush()
 
+# For a list of (node, bool), returns True if at least one boolean is False.
+def nodeFailed(nodes):
+    for (node, success) in nodes:
+        if not success:
+            return True
+    return False
+
 def sendMail(subject, body):
     if not config.Config.sendmail:
         return True

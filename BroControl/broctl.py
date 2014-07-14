@@ -133,9 +133,7 @@ class BroCtl(object):
         util.unlock(self.ui)
 
     def checkForFailure(self, results):
-        if control.nodeFailed(results):
-            return False
-        return True
+        return not util.nodeFailed(results)
 
     @expose
     def nodes(self):
@@ -435,10 +433,10 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("cleanup", nodes, cleantmp)
-        cmdSuccess = self.controller.cleanup(nodes, cleantmp)
+        results = self.controller.cleanup(nodes, cleantmp)
         self.plugins.cmdPostWithNodes("cleanup", nodes, cleantmp)
 
-        return cmdSuccess
+        return results
 
     def capstats(self, interval=10, node_list=None):
         """- [<nodes>] [<interval>]
@@ -601,13 +599,12 @@ class BroCtl(object):
         loaded into a single instance. While that doesn't fully reproduce the
         live setup, it is often sufficient for debugging analysis scripts.
         """
-        cmdSuccess = False
 
         if self.plugins.cmdPre("process", trace, options, scripts):
-            cmdSuccess = self.controller.processTrace(trace, options, scripts)
-        self.plugins.cmdPost("process", trace, options, scripts, cmdSuccess)
+            results = self.controller.processTrace(trace, options, scripts)
+        self.plugins.cmdPost("process", trace, options, scripts, results["success"])
 
-        return cmdSuccess
+        return results
 
 
     # Prints the command's docstring in a form suitable for direct inclusion

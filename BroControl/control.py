@@ -12,13 +12,6 @@ import install
 import plugin
 import node as node_mod
 
-# Checks multiple nodes in parallel and returns list of tuples (node, isrunning).
-# For a list of (node, bool), returns True if at least one boolean is False.
-def nodeFailed(nodes):
-    for (node, success) in nodes:
-        if not success:
-            return True
-    return False
 
 # Waits for the nodes' Bro processes to reach the given status.
 # Build the Bro parameters for the given node. Include
@@ -149,12 +142,12 @@ class Controller:
 
         results1 = self._startNodes(manager)
 
-        if nodeFailed(results1):
+        if util.nodeFailed(results1):
             return results1 + [(n, False) for n in (proxies + workers)]
 
         results2 = self._startNodes(proxies)
 
-        if nodeFailed(results2):
+        if util.nodeFailed(results2):
             return results1 + results2 + [(n, False) for n in workers]
 
         results3 = self._startNodes(workers)
@@ -392,12 +385,12 @@ class Controller:
 
         results1 = self._stopNodes(workers)
 
-        if nodeFailed(results1):
+        if util.nodeFailed(results1):
             return results1 + [(n, False) for n in (proxies + manager)]
 
         results2 = self._stopNodes(proxies)
 
-        if nodeFailed(results2):
+        if util.nodeFailed(results2):
             return results1 + results2 + [(n, False) for n in manager]
 
         results3 = self._stopNodes(manager)
@@ -656,31 +649,47 @@ class Controller:
     # If cleantmp is true, also wipes ${tmpdir}; this is done
     # even when the node is still running.
     def cleanup(self, nodes, cleantmp=False):
-        cmdSuccess = True
+        def addfailed(orig, res):
+            for (n, status) in res:
+                if not status:
+                    orig.add(n.name)
 
-        self.ui.info("cleaning up nodes ...")
+            return orig
+                            
+
+        results = {}
+        cleanresults = [(node.name, True) for node in nodes]
+        failed = set()
+
         result = self.isRunning(nodes)
         running =    [node for (node, on) in result if on]
         notrunning = [node for (node, on) in result if not on]
 
+        results["skipped"] = [node.name for node in running]
+
         results1 = execute.rmdirs([(n, n.cwd()) for n in notrunning], self.ui)
         results2 = execute.mkdirs([(n, n.cwd()) for n in notrunning], self.ui)
-        if nodeFailed(results1) or nodeFailed(results2):
-            cmdSuccess = False
+        failed = addfailed(failed, results1)
+        failed = addfailed(failed, results2)
 
         for node in notrunning:
             node.clearCrashed()
 
-        for node in running:
-            self.ui.info("   %s is still running, not cleaning work directory" % node.name)
-
         if cleantmp:
             results3 = execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
             results4 = execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
-            if nodeFailed(results3) or nodeFailed(results4):
-                cmdSuccess = False
+            failed = addfailed(failed, results3)
+            failed = addfailed(failed, results4)
 
-        return cmdSuccess
+        # set failed status for any nodes that failed
+        for i in range(len(cleanresults)):
+            nn = cleanresults[i][0]
+            if nn in failed:
+                cleanresults[i] = (nn, False)
+
+        results["clean"] = cleanresults                
+
+        return results
 
     # Report diagostics for node (e.g., stderr output).
     def crashDiag(self, node):
@@ -1118,13 +1127,18 @@ class Controller:
         return results
 
     def processTrace(self, trace, bro_options, bro_scripts):
+        results = {}
+        results["success"] = False
+        results["output"] = []
+        results["cwd"] = ""
+
         if not os.path.isfile(trace):
-            self.ui.error("trace file not found: %s" % trace)
-            return False
+            results["output"] = ["trace file not found: %s" % trace]
+            return results
 
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            self.ui.error("broctl-config.sh not found (try 'broctl install')")
-            return False
+            results["output"] = ["broctl-config.sh not found (try 'broctl install')"]
+            return results
 
         standalone = (self.config.standalone == "1")
         if standalone:
@@ -1137,12 +1151,12 @@ class Controller:
         cwd = os.path.join(self.config.tmpdir, "testing")
 
         if not execute.rmdir(self.config.manager(), cwd, self.ui):
-            self.ui.error("cannot remove directory %s on manager" % cwd)
-            return False
+            results["output"] = ["cannot remove directory %s on manager" % cwd]
+            return results
 
         if not execute.mkdir(self.config.manager(), cwd, self.ui):
-            self.ui.error("cannot create directory %s on manager" % cwd)
-            return False
+            results["output"] = ["cannot create directory %s on manager" % cwd]
+            return results
 
         env = _makeEnvParam(node)
 
@@ -1158,11 +1172,9 @@ class Controller:
 
         (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
 
-        for line in output:
-            self.ui.info(line)
+        results["success"] = success
+        results["output"] = output
+        results["cwd"] = cwd
 
-        self.ui.info("")
-        self.ui.info("### Bro output in %s" % cwd)
-
-        return success
+        return results
 

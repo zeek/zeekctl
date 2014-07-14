@@ -390,7 +390,14 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             args = args[5:]
             cleantmp = True
 
-        success = self.broctl.cleanup(all=cleantmp, node_list=args)
+        self.output("cleaning up nodes ...")
+
+        results = self.broctl.cleanup(all=cleantmp, node_list=args)
+
+        for node in results["skipped"]:
+            self.output("   %s is still running, not cleaning work directory" % node)
+
+        success = not util.nodeFailed(results["clean"])
         return success
 
     def do_capstats(self, args):
@@ -676,8 +683,14 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not trace:
             raise SyntaxError("no trace file given")
 
-        success = self.broctl.process(trace, options, scripts)
-        return success
+        results = self.broctl.process(trace, options, scripts)
+
+        for line in results["output"]:
+            self.output(line)
+
+        self.output("\n### Bro output in %s" % results["cwd"])
+
+        return results["success"]
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands that take a "<nodes>" argument.
