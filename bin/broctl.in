@@ -124,7 +124,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         already running are left untouched.
         """
 
-        success = self.broctl.start(node_list=args)
+        results = self.broctl.start(node_list=args)
+
+        success = not util.nodeFailed(results)
         return success
 
     def do_stop(self, args):
@@ -133,7 +135,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         Stops the given nodes, or all nodes if none are specified. Nodes not
         running are left untouched.
         """
-        success = self.broctl.stop(node_list=args)
+        results = self.broctl.stop(node_list=args)
+
+        success = not util.nodeFailed(results)
         return success
 
     def do_restart(self, args):
@@ -476,7 +480,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         check_), as otherwise ``update`` will not see the changes and it will
         resend the old configuration."""
 
-        success = self.broctl.update(node_list=args)
+        results = self.broctl.update(node_list=args)
+
+        success = not util.nodeFailed(results)
         return success
 
     def do_df(self, args):

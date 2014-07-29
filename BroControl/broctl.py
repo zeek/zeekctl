@@ -190,9 +190,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)
-        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("start", results)
-        return status
+
+        return [(nn.name, st) for (nn, st) in results]
 
     @expose
     @lock_required
@@ -207,9 +207,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
         results = self.controller.stop(nodes)
-        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("stop", results)
-        return status
+
+        return [(nn.name, st) for (nn, st) in results]
 
     @expose
     @lock_required
@@ -478,10 +478,9 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("update", nodes)
         results = self.controller.update(nodes)
-        status = self.checkForFailure(results)
         self.plugins.cmdPostWithResults("update", results)
 
-        return status
+        return [(nn.name, st) for (nn, st) in results]
 
     def df(self, node_list=None):
         """- [<nodes>]
