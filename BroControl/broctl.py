@@ -367,12 +367,13 @@ class BroCtl(object):
         return True
 
     def cronenabled(self):
+        results = False
         if self.plugins.cmdPre("cron", "?", False):
             if not self.config.hasAttr("cronenabled"):
                 self.config._setState("cronenabled", True)
-            self.output("cron " + (self.config.cronenabled and "enabled" or "disabled"))
+            results = self.config.cronenabled
         self.plugins.cmdPost("cron", "?", False)
-        return True
+        return results
 
     def setcronenabled(self, enable=True):
         if enable:

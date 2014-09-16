@@ -335,7 +335,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             elif args == "disable":
                 self.broctl.setcronenabled(False)
             elif args == "?":
-                self.broctl.cronenabled()
+                results = self.broctl.cronenabled()
+                self.output("cron " + (results and "enabled" or "disabled"))
             else:
                 self.error("invalid cron argument")
                 return False
