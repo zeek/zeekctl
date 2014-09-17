@@ -409,7 +409,7 @@ def _getConnection(host, cmdout):
 
     try:
         p = popen(cmdline)
-    except OSError, e:
+    except OSError as e:
         cmdout.error("cannot login to %s: %s" % (host.host, e))
         return None
 
@@ -514,7 +514,7 @@ def _sendEventInit(node, event, args, result_event):
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False
         bc.connect()
-    except IOError, e:
+    except IOError as e:
         util.debug(1, "broccoli: cannot connect", prefix=node.name)
         return (False, str(e))
 

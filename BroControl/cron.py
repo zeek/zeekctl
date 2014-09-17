@@ -210,7 +210,7 @@ def _updateHTTPStats(cmdout):
     if not os.path.exists(config.Config.statsdir):
         try:
             os.makedirs(config.Config.statsdir)
-        except OSError, err:
+        except OSError as err:
             cmdout.error("failure creating directory: %s" % err)
             return
 
@@ -219,7 +219,7 @@ def _updateHTTPStats(cmdout):
     metadat = os.path.join(config.Config.statsdir, "meta.dat")
     try:
         meta = open(metadat, "w")
-    except IOError, err:
+    except IOError as err:
         cmdout.error("failure creating file: %s" % err)
         return
 
@@ -245,7 +245,7 @@ def _updateHTTPStats(cmdout):
     if not os.path.isdir(wwwdir):
         try:
             os.makedirs(wwwdir)
-        except OSError, err:
+        except OSError as err:
             cmdout.error("failed to create directory: %s" % err)
             return
 
@@ -253,7 +253,7 @@ def _updateHTTPStats(cmdout):
     dst = os.path.join(config.Config.statsdir, os.path.basename(config.Config.statslog))
     try:
         fdst = open(dst, "a")
-    except IOError, err:
+    except IOError as err:
         cmdout.error("failed to append to file: %s" % err)
         return
 

@@ -1051,7 +1051,7 @@ class Controller:
                     d["cpu"] = p[3]
                     d["cmd"] = " ".join(p[4:])
                     vals += [d]
-            except ValueError, err:
+            except ValueError as err:
                 results += [(node, "unexpected top output: %s" % err, [{}])]
                 continue
 

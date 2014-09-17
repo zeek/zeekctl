@@ -60,10 +60,10 @@ def generateDynamicVariableScript(cmdout):
             # attempt to update the symlink
             try:
                 util.force_symlink(cfg_path, symlink)
-            except OSError, e:
+            except OSError as e:
                 cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
                 return False
-    except OSError, e:
+    except OSError as e:
         cmdout.error("failed to resolve symlink '%s': %s" % (symlink, e.strerror))
         return False
 
@@ -114,7 +114,7 @@ def install(local_only, cmdout):
     current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
     try:
         util.force_symlink(manager.cwd(), current)
-    except (IOError, OSError), e:
+    except (IOError, OSError) as e:
         cmdSuccess = False
         cmdout.error("failed to update current log symlink")
         return cmdSuccess

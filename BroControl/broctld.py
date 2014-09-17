@@ -185,7 +185,7 @@ class Daemon(Common):
         try :
             try :
                 res = func(*args)
-            except Exception, e:
+            except Exception as e:
                 res = traceback.format_exc()
             respond(res)
         finally:

@@ -200,7 +200,7 @@ class PluginRegistry:
 
         try:
             module = __import__(os.path.basename(path))
-        except Exception, e:
+        except Exception as e:
             cmdout.error("cannot import plugin %s: %s" % (path, e))
             return False
 
@@ -220,7 +220,7 @@ class PluginRegistry:
 
                 try:
                     p = cls()
-                except Exception, e:
+                except Exception as e:
                     cmdout.error("plugin class %s __init__ failed: %s" % (cls.__name__, str(e)))
                     break
 

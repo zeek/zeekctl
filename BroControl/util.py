@@ -71,7 +71,7 @@ def debug(msglevel, msg, prefix="main"):
 
             try:
                 DebugOut = open(fn, "a")
-            except IOError, e:
+            except IOError as e:
                 # Can't use error() here as that would recurse.
                 print >>sys.stderr, "Error: can't open %s: %s" % (fn, e.strerror)
                 return
@@ -144,12 +144,12 @@ def _aquireLock(cmdout):
             if _breakLock(cmdout):
                 return _aquireLock(cmdout)
 
-        except OSError, e:
+        except OSError as e:
             # File is already locked.
             if _breakLock(cmdout):
                 return _aquireLock(cmdout)
 
-        except IOError, e:
+        except IOError as e:
             cmdout.error("cannot acquire lock: %s" % e)
             return False
 
@@ -166,7 +166,7 @@ def _aquireLock(cmdout):
 def _releaseLock(cmdout):
     try:
         os.unlink(config.Config.lockfile)
-    except OSError, e:
+    except OSError as e:
         cmdout.error("cannot remove lock file: %s" % e)
 
 def lock(cmdout):
@@ -290,7 +290,7 @@ def printLines(lines):
 def force_symlink(src, dst):
     try:
         os.symlink(src, dst)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST:
             os.remove(dst)
             os.symlink(src, dst)

@@ -133,7 +133,7 @@ try:
 
     processNode(stats, wwwdir, "manager", False)
     processNode(stats, wwwdir, "cflow", False)
-except IOError, err:
+except IOError as err:
     print "Error: %s" % err
     sys.exit(1)
 

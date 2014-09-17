@@ -97,7 +97,7 @@ class Configuration:
         if varlist:
             try:
                 global_env_vars = self._getEnvVarDict(varlist)
-            except ValueError, err:
+            except ValueError as err:
                 raise ConfigurationError("env_vars option in broctl.cfg: %s" % err)
 
             for node in self.nodes("all"):
@@ -333,7 +333,7 @@ class Configuration:
             # Convert env_vars from a string to a dictionary.
             try:
                 node.env_vars = self._getEnvVarDict(node.env_vars)
-            except ValueError, err:
+            except ValueError as err:
                 raise ConfigurationError("%s: section %s: %s" % (file, sec, err))
 
             try:
@@ -346,7 +346,7 @@ class Configuration:
                 node.addr = addr_str.split('%')[0]
             except AttributeError:
                 raise ConfigurationError("%s: no host given in section '%s'" % (file, sec))
-            except socket.gaierror, e:
+            except socket.gaierror as e:
                 raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
 
             # Each node gets a number unique across its type.
