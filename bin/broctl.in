@@ -2,16 +2,22 @@
 #
 # The BroControl interactive shell.
 
-BroBase = "@PREFIX@"
-
 import os
 import sys
 import time
+
+BroBase = "@PREFIX@"
 
 # Allow user to override default broctl install directory
 tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
 if tmpbrobase and os.path.isdir(tmpbrobase):
     BroBase = tmpbrobase
+
+# Hidden command to print the documentation.
+broctlprintdoc = False
+if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
+    broctlprintdoc = True
+    sys.path = [BroBase] + sys.path
 
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
@@ -78,7 +84,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             raise SyntaxError("nodes does not take any arguments")
 
         for node in self.broctl.nodes():
-            print node.describe()
+            self.output(node.describe())
 
         return True
 
@@ -712,46 +718,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         return [n for n in nodes if n.startswith(text)]
 
-    # Prints the command's docstring in a form suitable for direct inclusion
-    # into the documentation.
-    def printReference(self):
-        print ".. Automatically generated. Do not edit."
-        print
-
-        cmds = []
-
-        for i in self.__class__.__dict__:
-            doc = self.__class__.__dict__[i].__doc__
-            if i.startswith("do_") and doc:
-                cmds += [(i[3:], doc)]
-
-        cmds.sort()
-
-        for (cmd, doc) in cmds:
-            if doc.startswith("- "):
-                # First line are arguments.
-                doc = doc.split("\n")
-                args = doc[0][2:]
-                doc = "\n".join(doc[1:])
-            else:
-                args = ""
-
-            if args:
-                args = (" *%s*" % args)
-            else:
-                args = ""
-
-            output = ""
-            for line in doc.split("\n"):
-                line = line.strip()
-                output += "    " + line + "\n"
-
-            output = output.strip()
-
-            print
-            print ".. _%s:\n\n*%s*%s\n    %s" % (cmd, cmd, args, output)
-            print
-
     def do_help(self, args):
         """Prints a brief summary of all commands understood by the shell."""
 
@@ -796,13 +762,13 @@ BroControl Version %s
   update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (version.VERSION, plugin_help))
 
-loop = BroCtlCmdLoop(BroCtl)
-
-# Hidden command to print the command documentation.
-if len(sys.argv) == 2 and sys.argv[1] == "--print-doc":
-    loop.printReference()
+# Hidden command to print the documentation.
+if broctlprintdoc:
+    from BroControl import printdoc
+    printdoc.printBroctlDocs(sys.argv[2], BroCtlCmdLoop)
     sys.exit(0)
 
+loop = BroCtlCmdLoop(BroCtl)
 
 if len(sys.argv) > 1:
     Interactive = False

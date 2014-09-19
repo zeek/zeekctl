@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # The BroControl interactive shell.
 
 import os
@@ -605,45 +603,4 @@ class BroCtl(object):
         self.plugins.cmdPost("process", trace, options, scripts, results["success"])
 
         return results
-
-
-    # Prints the command's docstring in a form suitable for direct inclusion
-    # into the documentation.
-    def printReference(self):
-        print ".. Automatically generated. Do not edit."
-        print
-
-        cmds = []
-
-        for i in self.__class__.__dict__:
-            doc = self.__class__.__dict__[i].__doc__
-            if i.startswith("do_") and doc:
-                cmds += [(i[3:], doc)]
-
-        cmds.sort()
-
-        for (cmd, doc) in cmds:
-            if doc.startswith("- "):
-                # First line are arguments.
-                doc = doc.split("\n")
-                args = doc[0][2:]
-                doc = "\n".join(doc[1:])
-            else:
-                args = ""
-
-            if args:
-                args = (" *%s*" % args)
-            else:
-                args = ""
-
-            output = ""
-            for line in doc.split("\n"):
-                line = line.strip()
-                output += "    " + line + "\n"
-
-            output = output.strip()
-
-            print
-            print ".. _%s:\n\n*%s*%s\n    %s" % (cmd, cmd, args, output)
-            print
 

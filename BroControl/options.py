@@ -1,6 +1,5 @@
 # Configuration options. 
 #
-# If started directly, will print option reference documentation.
 
 import sys
 
@@ -208,6 +207,8 @@ options = [
 ]
 
 def printOptions(cat):
+    out = ""
+    err = ""
 
     for opt in sorted(options, key=lambda o: o.name):
 
@@ -217,7 +218,7 @@ def printOptions(cat):
         default = ""
 
         if not opt.type:
-            print >>sys.stderr, "no type given for", opt.name
+            err += "no type given for %s\n" % opt.name
 
         if opt.default and opt.type == "string":
             opt.default = '"%s"' % opt.default
@@ -231,21 +232,7 @@ def printOptions(cat):
         default = default.replace("{", "\\{")
         description = opt.description.replace("{", "\\{")
 
-        print ".. _%s:\n\n*%s* (%s%s)\n    %s\n" % (opt.name, opt.name, opt.type, default, description)
+        out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
+    return (out, err)
 
-if __name__ == '__main__':
-
-    print ".. Automatically generated. Do not edit."
-    print
-    print "User Options"
-    print "~~~~~~~~~~~~"
-
-    printOptions(Option.USER)
-
-    print
-    print "Internal Options"
-    print "~~~~~~~~~~~~~~~~"
-    print
-
-    printOptions(Option.AUTOMATIC)
