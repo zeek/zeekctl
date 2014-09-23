@@ -11,11 +11,8 @@ import sys
 import subprocess
 import signal
 import select
-import time
 
 TIMEOUT=120
-
-import socket
 
 def w(s):
     sys.stdout.write(s + "\n")
@@ -35,7 +32,6 @@ signal.alarm(TIMEOUT)
 for line in iter(sys.stdin.readline, "done\n"):
     commands.append(json.loads(line))
 procs = exec_commands(commands)
-
 
 cmd_mapping = {}
 fd_mapping = {}
@@ -146,32 +142,6 @@ class SSHMaster:
         self.need_connect = True
     __del__ = close
 
-class MultiMaster:
-    def __init__(self):
-        self.masters = {}
-
-    def connect(self, host):
-        conn = SSHMaster(host)
-        self.masters[host] = conn
-
-    def close(self):
-        for conn in self.masters.values():
-            conn.close()
-    __del__ = close
-
-    def exec_commands(self, cmds):
-        hosts = collections.defaultdict(list)
-        for host, cmd in cmds:
-            if host not in self.masters:
-                self.connect(host)
-            hosts[host].append(cmd)
-
-        for host, cmds in hosts.items():
-            self.masters[host].send_commands(cmds)
-
-        for host in hosts:
-            for res in self.masters[host].collect_results():
-                yield host, res
 
 from threading import Thread
 from Queue import Queue, Empty
