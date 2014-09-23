@@ -1,3 +1,4 @@
+from __future__ import print_function
 from BroControl.state import SqliteState
 
 def test_state_basic():
@@ -37,7 +38,7 @@ def test_state_items():
     s.set("b", "two")
 
     d = dict(s.items())
-    print d
+    print(d)
 
     assert d["a"] == 1
     assert d["b"] == "two"

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import errno
 import sys
@@ -73,10 +74,11 @@ def debug(msglevel, msg, prefix="main"):
                 DebugOut = open(fn, "a")
             except IOError as e:
                 # Can't use error() here as that would recurse.
-                print >>sys.stderr, "Error: can't open %s: %s" % (fn, e.strerror)
+                print("Error: can't open %s: %s" % (fn, e.strerror), file=sys.stderr)
                 return
 
-    print >>DebugOut, time.strftime(config.Config.timefmt, time.localtime(time.time())), msg
+    ts = time.strftime(config.Config.timefmt, time.localtime(time.time()))
+    DebugOut.write("%s %s\n" % (ts, msg))
     DebugOut.flush()
 
 # For a list of (node, bool), returns True if at least one boolean is False.
@@ -130,7 +132,7 @@ def _aquireLock(cmdout):
         try:
             # This should be NFS-safe.
             f = open(tmpfile, "w")
-            print >>f, pid
+            f.write("%s\n" % pid)
             f.close()
 
             n = os.stat(tmpfile)[3]

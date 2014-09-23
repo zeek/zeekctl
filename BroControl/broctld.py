@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import defaultdict
 from threading import Thread, Lock
 from Queue import Queue
@@ -31,11 +32,11 @@ class TermUI:
         pass
 
     def output(self, msg):
-        print msg
+        print(msg)
     warn = info = output
 
     def error(self, msg):
-        print "ERROR", msg
+        print("ERROR", msg)
 
 class Logs:
     def __init__(self):
@@ -82,7 +83,7 @@ class Daemon(Common):
 
     def recv(self):
         msg = self.sock.recv()
-        #print "Received", self.load(msg)
+        #print("Received", self.load(msg))
         return self.load(msg)
 
     def send(self, *args):
@@ -105,18 +106,18 @@ class Daemon(Common):
             time.sleep(10)
 
     def handle_result(self, id, result):
-        print "Got result id=%r result=%r" % (id, result)
+        print("Got result id=%r result=%r" % (id, result))
         self.results[id] = result
         self.send("ok")
 
     def handle_setstate(self, key, value):
-        print "Set state key=%r value=%r" % (key, value)
+        print("Set state key=%r value=%r" % (key, value))
         self.state.set(key, value)
         self.send("ok")
 
     def handle_getstate(self, key):
         value = self.state.get(key)
-        print "Get state key=%r value=%r" % (key, value)
+        print("Get state key=%r value=%r" % (key, value))
         self.send(value)
 
     def handle_getstateitems(self):
@@ -124,12 +125,12 @@ class Daemon(Common):
         self.send(value)
 
     def handle_out(self, id, txt):
-        print "Got %s id=%r result=%r" % ('out', id, txt)
+        print("Got %s id=%r result=%r" % ('out', id, txt))
         self.logs.append(id, 'out', txt)
         self.send("ok")
 
     def handle_err(self, id, txt):
-        print "Got %s id=%r result=%r" % ('err', id, txt)
+        print("Got %s id=%r result=%r" % ('err', id, txt))
         self.logs.append(id, 'err', txt)
         self.send("ok")
 
@@ -138,12 +139,12 @@ class Daemon(Common):
         if result:
             del self.results[id]
             del self.threads[id]
-        print "sending result=%r for id=%r" % (result, id)
+        print("sending result=%r for id=%r" % (result, id))
         self.send(result)
 
     def handle_getlog(self, id, since):
         result = self.logs.get(id, since)
-        print "sending log=%r for id=%r" % (result, id)
+        print("sending log=%r for id=%r" % (result, id))
         self.send(result)
 
     def _run(self):
@@ -157,7 +158,7 @@ class Daemon(Common):
             t_id, t = self.spawn_worker(cmd, args)
             self.send(t_id)
             self.threads[t_id] = t
-            print "started thread for id=%r func=%r args=%r" % (t_id, func, args)
+            print("started thread for id=%r func=%r args=%r" % (t_id, func, args))
 
     def spawn_worker(self, cmd, args):
         t_id = self.id_gen()
@@ -208,7 +209,7 @@ class Client(Common):
 
     def sync_call(self, func, *args):
         id = self.call(func, *args)
-        print "got id", id
+        print("got id", id)
         while True:
             res = self.getresult(id)
             if res:

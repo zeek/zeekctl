@@ -3,8 +3,10 @@
 # stats-to-csv <stats.log> <meta.dat> <wwwdir>
 #
 # Reads information from stats directory and outputs csv files <wwwdir>/<node>.<type>.csv.
-# If any of these files already exists, we append (without writing the header line again).
+# If any of these files already exists, we append (without writing the header
+# line again).
 
+from __future__ import print_function
 import os.path
 import os
 import sys
@@ -25,7 +27,7 @@ def readNodes(meta):
 
 def processNode(stats, wwwdir, node, iface):
 
-    print node, "..."
+    print(node, "...")
 
     def openFile(tag, columns):
 
@@ -35,7 +37,7 @@ def processNode(stats, wwwdir, node, iface):
             return open(name, "a")
         else:
             f = open(name, "w")
-            print >>f, "time," + ",".join(columns)
+            f.write("time,%s\n" % ",".join(columns))
 
         return f
 
@@ -49,19 +51,19 @@ def processNode(stats, wwwdir, node, iface):
 
         try:
             val = int(entry["parent-cpu"]) + int(entry["child-cpu"])
-            print >>cpu, "%s,%s" % (t, val)
+            cpu.write("%s,%s\n" % (t, val))
         except KeyError:
             pass
 
         try:
             val = int(entry["parent-vsize"]) + int(entry["child-vsize"])
-            print >>mem, "%s,%s" % (t, val)
+            mem.write("%s,%s\n" % (t, val))
         except KeyError:
             pass
 
         if iface:
             try:
-                print >>iface_mbps, "%s,%s" % (t, entry["interface-mbps"])
+                iface_mbps.write("%s,%s\n" % (t, entry["interface-mbps"]))
             except KeyError:
                 pass
 
@@ -70,13 +72,13 @@ def processNode(stats, wwwdir, node, iface):
                 ud = float(entry["interface-u"])
                 ic = float(entry["interface-i"])
                 ot = float(entry["interface-o"])
-                print >>iface_pkts, "%s,%s,%s,%s,%s" % (t, tc, ud, ic, ot)
+                iface_pkts.write("%s,%s,%s,%s,%s\n" % (t, tc, ud, ic, ot))
 
             except KeyError:
                 pass
 
         if "in-mbps" in entry:
-            print >>cflow, "%s,%s" % (t, entry["in-mbps"])
+            cflow.write("%s,%s\n" % (t, entry["in-mbps"]))
 
     entry = {}
     first = -1
@@ -110,7 +112,7 @@ def processNode(stats, wwwdir, node, iface):
     cflow.close()
 
 if len(sys.argv) != 4:
-    print "usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0]
+    print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
     sys.exit(1)
 
 stats = sys.argv[1]
@@ -134,6 +136,6 @@ try:
     processNode(stats, wwwdir, "manager", False)
     processNode(stats, wwwdir, "cflow", False)
 except IOError as err:
-    print "Error: %s" % err
+    print("Error: %s" % err)
     sys.exit(1)
 

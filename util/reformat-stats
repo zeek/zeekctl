@@ -6,6 +6,7 @@
 #
 # Existing data in dst-dir will be deleted.
 
+from __future__ import print_function
 import sys
 import math
 import os
@@ -34,7 +35,7 @@ def makeOutput(file, tag):
                 (time, host, t, key)  = f
                 val = "-"
             except ValueError:
-                print >>sys.stderr, "cannot parse '%s'" % line
+                print("cannot parse '%s'" % line, file=sys.stderr)
                 continue
 
         if t != tag:
@@ -62,10 +63,10 @@ def makeOutput(file, tag):
 
     keys = keys.keys()
 
-    print >>out, "%10s %10s" % ("time", "node"),
+    out.write("%10s %10s" % ("time", "node"))
     for k in keys:
-        print >>out, "%10s" % k,
-    print >>out
+        out.write(" %10s" % k)
+    out.write("\n")
 
     for t in intervals:
 
@@ -78,15 +79,15 @@ def makeOutput(file, tag):
 
             vals = itv[idx]
 
-            print >>out, "%10.0f %10s" % (t, idx),
+            out.write("%10.0f %10s" % (t, idx))
 
             for k in keys:
                 if k in vals:
-                    print >>out, "%10s" % vals[k],
+                    out.write(" %10s" % vals[k])
                 else:
-                    print >>out, "%10s" % "-",
+                    out.write(" %10s" % "-")
 
-            print >>out
+            out.write("\n")
 
     out.close()
 
@@ -96,14 +97,14 @@ def makeOutput(file, tag):
         filterOutput(tag, host)
 
     hostlist = open("%s/%s.hosts.dat" % (Dest, tag), "w")
-    print >>hostlist, "name";
+    hostlist.write("name\n")
     for host in hosts:
-        print >>hostlist, host;
+        hostlist.write("%s\n" % host)
 
 
 if len(sys.argv) != 3:
-    print "Usage: reformat-stats <stats.log> <dst-dir>"
-    print "Existing data in <dst-dir> will be deleted!"
+    print("Usage: reformat-stats <stats.log> <dst-dir>")
+    print("Existing data in <dst-dir> will be deleted!")
     sys.exit(1)
 
 Dest = sys.argv[2]
@@ -113,14 +114,4 @@ os.mkdir(Dest)
 
 for tag in ["parent", "child", "interface"]:
     makeOutput(sys.argv[1], tag)
-
-
-
-
-
-
-
-
-
-
 

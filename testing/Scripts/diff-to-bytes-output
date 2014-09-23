@@ -4,6 +4,7 @@
 # exponential format, because some versions of awk output large integers in
 # that format.
 
+from __future__ import print_function
 import sys
 
 for line in sys.stdin:
@@ -19,4 +20,4 @@ for line in sys.stdin:
         else:
             outstr += "%s " % field
 
-    print outstr[:-1]
+    print(outstr[:-1])

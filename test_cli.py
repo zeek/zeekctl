@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 import requests
 import time
@@ -13,11 +14,11 @@ def log(id, last):
         return last
 
     for rec in res['log']:
-        print ' '.join(rec)
+        print(' '.join(rec))
     return last+len(res['log'])
 
 def wait(id):
-    print "Waiting for job %d to finish" % id
+    print("Waiting for job %d to finish" % id)
     last = 0
     while True:
         res = requests.get("http://localhost:8082/result/%d" % id).json()
@@ -42,6 +43,6 @@ def call(action):
 
 if __name__ == "__main__":
     if sys.argv[1] == 'bg':
-        print call(sys.argv[2])
+        print(call(sys.argv[2]))
     else:
         run(sys.argv[1])

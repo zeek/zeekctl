@@ -343,7 +343,7 @@ class Controller:
     def logAction(self, node, action):
         t = time.time()
         out = open(self.config.statslog, "a")
-        print >>out, t, node, "action", action
+        out.write("%s %s action %s\n" % (t, node, action))
         out.close()
 
     # Do a "post-terminate crash" for the given nodes.

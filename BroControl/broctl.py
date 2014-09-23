@@ -1,5 +1,6 @@
 # The BroControl interactive shell.
 
+from __future__ import print_function
 import os
 import sys
 import time
@@ -22,12 +23,12 @@ class TermUI:
         pass
 
     def output(self, txt):
-        print txt
+        print(txt)
     info = output
     debug = output
 
     def error(self, txt):
-        print >>sys.stderr, txt
+        print(txt, file=sys.stderr)
     warn = error
 
 def expose(func):

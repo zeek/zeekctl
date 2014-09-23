@@ -21,7 +21,7 @@ class ExitValueCmd(cmd.Cmd):
             if intro is not None:
                 self.intro = intro
             if self.intro:
-                self.stdout.write(str(self.intro)+"\n")
+                self.stdout.write("%s\n" % self.intro)
             self._stopping = False
             success = True
             while not self._stopping:

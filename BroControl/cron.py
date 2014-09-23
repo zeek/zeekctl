@@ -106,14 +106,14 @@ def _logStats(interval, cmdout):
                 type = proc["proc"]
                 for (val, key) in proc.items():
                     if val != "proc":
-                        print >>out, t, node, type, val, key
+                        out.write("%s %s %s %s %s\n" % (t, node, type, val, key))
         else:
-            print >>out, t, node, "error", "error", error
+            out.write("%s %s error error %s\n" % (t, node, error))
 
     for (node, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
-                print >>out, t, node, "interface", key, val
+                out.write("%s %s interface %s %s\n" % (t, node, key, val))
 
                 if key == "pkts" and str(node) != "$total":
                     # Report if we don't see packets on an interface.
@@ -133,12 +133,12 @@ def _logStats(interval, cmdout):
                     config.Config._setState(tag, val)
 
         else:
-            print >>out, t, node, "error", "error", error
+            out.write("%s %s error error %s\n" % (t, node, error))
 
     for (port, error, vals) in cflow_rates:
         if not error:
             for (key, val) in vals.items():
-                print >>out, t, "cflow", port.lower(), key, val
+                out.write("%s cflow %s %s %s\n" % (t, port.lower(), key, val))
 
     out.close()
 
@@ -224,20 +224,20 @@ def _updateHTTPStats(cmdout):
         return
 
     for node in config.Config.hosts():
-        print >>meta, "node", node, node.type, node.host
+        meta.write("node %s %s %s\n" % (node, node.type, node.host))
 
-    print >>meta, "time", time.asctime()
-    print >>meta, "version", config.Config.version
-
-    try:
-        print >>meta, "os", execute.runLocalCmd("uname -a")[1][0]
-    except IndexError:
-        print >>meta, "os <error>"
+    meta.write("time %s\n" % time.asctime())
+    meta.write("version %s\n" % config.Config.version)
 
     try:
-        print >>meta, "host", execute.runLocalCmd("hostname")[1][0]
+        meta.write("os %s\n" % execute.runLocalCmd("uname -a")[1][0])
     except IndexError:
-        print >>meta, "host <error>"
+        meta.write("os <error>\n")
+
+    try:
+        meta.write("host %s\n" % execute.runLocalCmd("hostname")[1][0])
+    except IndexError:
+        meta.write("host <error>\n")
 
     meta.close()
 

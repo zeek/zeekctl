@@ -430,7 +430,7 @@ def _runHelperInit(host, cmdout, cmd, args, fullcmd, env):
         cmdline = fullcmd
 
     util.debug(1, cmdline, prefix=host.host)
-    print >>stdin, cmdline
+    stdin.write("%s\n" % cmdline)
     stdin.flush()
 
     return host
