@@ -1,3 +1,4 @@
+from __future__ import print_function
 import collections
 import json
 import subprocess
@@ -15,18 +16,20 @@ import select
 TIMEOUT=120
 
 def w(s):
-    sys.stdout.write(s + "\n")
+    sys.stdout.write(json.dumps(s) + "\n")
     sys.stdout.flush()
+
 def exec_commands(cmds):
     procs = []
     for i, cmd in enumerate(cmds):
-        try :
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             procs.append((i, proc))
-        except Exception, e:
-            print json.dumps((i, (1, '', str(e))))
+        except Exception as e:
+            w( (i, (1, '', str(e))) )
     return procs
-w(json.dumps("ready"))
+
+w("ready")
 commands = []
 signal.alarm(TIMEOUT)
 for line in iter(sys.stdin.readline, "done\n"):
@@ -48,12 +51,12 @@ while allfds:
     r, _, _ = select.select(allfds, [], [])
     for fd in r:
         output = os.read(fd.fileno(), 1024)
-        if output != "":
+        if output:
             fd_mapping[fd].append(output)
             continue
 
         cmd = cmd_mapping[fd]
-        cmd["waiting"] -=1
+        cmd["waiting"] -= 1
         if cmd["waiting"] != 0:
             continue
 
@@ -61,11 +64,11 @@ while allfds:
         res = proc.wait()
         out = "".join(cmd["stdout"])
         err = "".join(cmd["stderr"])
-        w(json.dumps((cmd["idx"], (res, out, err))))
+        w( (cmd["idx"], (res, out, err)) )
         allfds.remove(proc.stdout)
         allfds.remove(proc.stderr)
 
-w(json.dumps("done"))
+w("done")
 """.encode("zlib").encode("base64").replace("\n", "")
 
 CmdResult = collections.namedtuple("CmdResult", "status stdout stderr")
@@ -101,7 +104,7 @@ class SSHMaster:
 
     def send_commands(self, cmds, timeout=10):
         self.connect()
-        run_mux =  """python -c 'exec("%s".decode("base64").decode("zlib"))'\n""" % muxer
+        run_mux = """python -c 'exec("%s".decode("base64").decode("zlib"))'\n""" % muxer
         self.master.stdin.write(run_mux)
         self.master.stdin.flush()
         self.readline_with_timeout(timeout)
@@ -165,10 +168,10 @@ class HostHandler(Thread):
         self.master = SSHMaster(self.host)
 
     def ping(self):
-        try :
+        try:
             return self.master.ping()
-        except Exception, e:
-            print "Error in ping for %s" % self.host
+        except Exception as e:
+            print("Error in ping for %s" % self.host)
             return False
 
     def connect_and_ping(self):
@@ -182,7 +185,7 @@ class HostHandler(Thread):
                 return
 
     def iteration(self):
-        try :
+        try:
             item, rq = self.q.get(timeout=30)
         except Empty:
             self.connect_and_ping()
@@ -197,10 +200,10 @@ class HostHandler(Thread):
             rq.put(resp)
             return
 
-        try :
+        try:
             resp = self.master.exec_commands(item)
-        except Exception, e:
-            print "Exception in iteration for %s" % self.host
+        except Exception as e:
+            print("Exception in iteration for %s" % self.host)
             self.alive = False
             time.sleep(2)
             resp = [e] * len(item)
@@ -268,3 +271,4 @@ class MultiMasterManager:
         self.masters = {}
 
     __del__ = shutdown_all
+
