@@ -24,6 +24,7 @@ sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 from BroControl.broctl import BroCtl
 from BroControl import brocmd
 from BroControl import util
+from BroControl import utilcurses
 from BroControl import version
 
 # Main command loop.
@@ -250,20 +251,20 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             return success
 
-        util.enterCurses()
-        util.clearScreen()
+        utilcurses.enterCurses()
+        utilcurses.clearScreen()
 
         count = 0
 
-        while util.getCh() != "q":
+        while utilcurses.getCh() != "q":
             if count % 10 == 0:
                 success, lines = self._do_top_once(args)
-                util.clearScreen()
-                util.printLines(lines)
+                utilcurses.clearScreen()
+                utilcurses.printLines(lines)
             time.sleep(.1)
             count += 1
 
-        util.leaveCurses()
+        utilcurses.leaveCurses()
 
         return success
 

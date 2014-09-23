@@ -16,7 +16,8 @@ import config
 # all nodes.
 # If 'mirror' is true, the path is fully mirrored recursively, otherwise the
 # directory is just created.
-Syncs = [
+def get_syncs():
+    syncs = [
     ("${brobase}", False),
     ("${brobase}/share", True),
     ("${cfgdir}", True),
@@ -32,12 +33,17 @@ Syncs = [
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
 
+    return syncs
+
 # In NFS-mode, only these will be synced.
-NFSSyncs = [
+def get_nfssyncs():
+    nfssyncs = [
     ("${policydirsiteinstall}", True),
     ("${policydirsiteinstallauto}", True),
     ("${broctlconfigdir}/broctl-config.sh", True)
     ]
+
+    return nfssyncs
 
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
@@ -145,7 +151,8 @@ def install(local_only, cmdout):
     if config.Config.havenfs != "1":
         # Non-NFS, need to explicitly synchronize.
         dirs = []
-        for dir in [config.Config.subst(dir) for (dir, mirror) in Syncs if not mirror]:
+        syncs = get_syncs()
+        for dir in [config.Config.subst(dir) for (dir, mirror) in syncs if not mirror]:
             dirs += [(n, dir) for n in nodes]
 
         for (node, success) in execute.mkdirs(dirs, cmdout):
@@ -153,7 +160,7 @@ def install(local_only, cmdout):
                 cmdout.error("cannot create directory %s on %s" % (dir, node.name))
                 cmdSuccess = False
 
-        paths = [config.Config.subst(dir) for (dir, mirror) in Syncs if mirror]
+        paths = [config.Config.subst(dir) for (dir, mirror) in syncs if mirror]
         if not execute.sync(nodes, paths, cmdout):
             cmdSuccess = False
 
@@ -163,10 +170,11 @@ def install(local_only, cmdout):
         paths += [config.Config.tmpdir]
 
         dirs = []
+        syncs = get_nfssyncs()
         for dir in paths:
             dirs += [(n, dir) for n in nodes]
 
-        for dir in [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if not mirror]:
+        for dir in [config.Config.subst(dir) for (dir, mirror) in syncs if not mirror]:
             dirs += [(n, dir) for n in nodes]
 
         # We need this only on the manager.
@@ -177,7 +185,7 @@ def install(local_only, cmdout):
                 cmdout.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
                 cmdSuccess = False
 
-        paths = [config.Config.subst(dir) for (dir, mirror) in NFSSyncs if mirror]
+        paths = [config.Config.subst(dir) for (dir, mirror) in syncs if mirror]
         if not execute.sync(nodes, paths, cmdout):
             cmdSuccess = False
 
