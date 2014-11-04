@@ -22,13 +22,14 @@ class PluginRegistry:
         if dir not in self._dirs:
             self._dirs += [dir]
 
-    def loadPlugins(self, cmdout):
+    def loadPlugins(self, cmdout, executor):
         """Loads all plugins found in any of the added directories."""
         if not self._loadPlugins(cmdout):
             return False
 
         # Init options.
         for plugin in self._plugins:
+            plugin.executor = executor
             plugin._registerOptions()
 
         return True

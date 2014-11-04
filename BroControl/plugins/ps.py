@@ -5,7 +5,6 @@
 # processes get a "(+)".
 
 import BroControl.plugin
-import BroControl.cmdoutput
 
 class PsBro(BroControl.plugin.Plugin):
     def __init__(self):
@@ -71,7 +70,7 @@ class PsBro(BroControl.plugin.Plugin):
 
         first_node = True
 
-        for (n, success, output) in self.executeParallel(cmds, cmdout):
+        for (n, success, output) in self.executeParallel(cmds):
             # Remove stderr output (if any)
             while output and not output[0].startswith("USER"):
                 output = output[1:]

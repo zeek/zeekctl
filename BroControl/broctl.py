@@ -50,9 +50,11 @@ class BroCtl(object):
         self.ui = ui
         self.BroBase = basedir
 
-        self.config = config.Configuration(self.BroBase, self.ui, state)
+        self.localaddrs = execute.get_local_addrs(self.ui)
+        self.executor = execute.Executor(self.ui, self.localaddrs)
+        self.config = config.Configuration(self.BroBase, self.ui, self.localaddrs, state)
         self.setup()
-        self.controller = control.Controller(self.config, self.ui)
+        self.controller = control.Controller(self.config, self.ui, self.localaddrs, self.executor)
 
     def setup(self):
 
@@ -60,8 +62,8 @@ class BroCtl(object):
             if dir:
                 plugin.Registry.addDir(dir)
 
-        plugin.Registry.loadPlugins(self.ui)
-        self.config.initPostPlugins(self.ui)
+        plugin.Registry.loadPlugins(self.ui, self.executor)
+        self.config.initPostPlugins()
         plugin.Registry.initPlugins()
         util.enableSignals()
         os.chdir(self.config.brobase)
@@ -124,7 +126,7 @@ class BroCtl(object):
         if not lockstatus:
             raise RuntimeError("Unable to get lock")
 
-        statestatus = self.config.readState(self.ui)
+        statestatus = self.config.readState()
         if not statestatus:
             raise RuntimeError("Unable to get state")
 
@@ -171,7 +173,7 @@ class BroCtl(object):
         with check_."""
 
         if self.plugins.cmdPre("install"):
-            cmdSuccess = install.install(local, self.ui)
+            cmdSuccess = self.controller.install(local)
 
         self.plugins.cmdPost("install")
         return cmdSuccess

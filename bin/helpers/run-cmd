@@ -3,5 +3,4 @@
 #  run-cmd <cmd> 
 
 eval $@ 2>&1
-echo $?
-echo ~~~
+

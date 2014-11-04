@@ -4,6 +4,7 @@
 # Also test that the keeplogs option prevents matching expired logs from being
 # removed.
 #
+# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 
 . broctl-test-setup

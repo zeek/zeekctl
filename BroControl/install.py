@@ -1,12 +1,9 @@
 # Functions to install files on all nodes. 
 
 import os
-import glob
 import re
 
 import util
-import cmdoutput
-import execute
 import config
 
 # In all paths given in this file, ${<option>} will replaced with the value of
@@ -75,127 +72,6 @@ def generateDynamicVariableScript(cmdout):
 
     return True
 
-# Performs the complete broctl installation process.
-#
-# If local_only is True, nothing is propagated to other nodes.
-def install(local_only, cmdout):
-    cmdSuccess = True
-
-    if not config.Config.determineBroVersion(cmdout):
-        cmdSuccess = False
-        return cmdSuccess
-
-    manager = config.Config.manager()
-
-    # Delete previously installed policy files to not mix things up.
-    policies = [config.Config.policydirsiteinstall, config.Config.policydirsiteinstallauto]
-
-    for p in policies:
-        if os.path.isdir(p):
-            cmdout.info("removing old policies in %s ..." % p)
-            if not execute.rmdir(manager, p, cmdout):
-                cmdSuccess = False
-
-    cmdout.info("creating policy directories ...")
-    for p in policies:
-        if not execute.mkdir(manager, p, cmdout):
-            cmdSuccess = False
-
-    # Install local site policy.
-
-    if config.Config.sitepolicypath:
-        cmdout.info("installing site policies ...")
-        dst = config.Config.policydirsiteinstall
-        for dir in config.Config.sitepolicypath.split(":"):
-            dir = config.Config.subst(dir)
-            for file in glob.glob(os.path.join(dir, "*")):
-                if not execute.install(manager, file, dst, cmdout):
-                    cmdSuccess = False
-
-    makeLayout(config.Config.policydirsiteinstallauto, cmdout)
-    if not makeLocalNetworks(config.Config.policydirsiteinstallauto, cmdout):
-        cmdSuccess = False
-    makeConfig(config.Config.policydirsiteinstallauto, cmdout)
-
-    current = config.Config.subst(os.path.join(config.Config.logdir, "current"))
-    try:
-        util.force_symlink(manager.cwd(), current)
-    except (IOError, OSError) as e:
-        cmdSuccess = False
-        cmdout.error("failed to update current log symlink")
-        return cmdSuccess
-
-    if not generateDynamicVariableScript(cmdout):
-        cmdSuccess = False
-        return cmdSuccess
-
-    if local_only:
-        return cmdSuccess
-
-    # Sync to clients.
-    cmdout.info("updating nodes ...")
-
-    nodes = []
-
-    # Make sure we install each remote host only once.
-    for n in config.Config.hosts():
-        if execute.isLocal(n, cmdout):
-            continue
-
-        if not execute.isAlive(n.addr, cmdout):
-            cmdSuccess = False
-            continue
-
-        nodes += [n]
-
-    if config.Config.havenfs != "1":
-        # Non-NFS, need to explicitly synchronize.
-        dirs = []
-        syncs = get_syncs()
-        for dir in [config.Config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-            dirs += [(n, dir) for n in nodes]
-
-        for (node, success) in execute.mkdirs(dirs, cmdout):
-            if not success:
-                cmdout.error("cannot create directory %s on %s" % (dir, node.name))
-                cmdSuccess = False
-
-        paths = [config.Config.subst(dir) for (dir, mirror) in syncs if mirror]
-        if not execute.sync(nodes, paths, cmdout):
-            cmdSuccess = False
-
-    else:
-        # NFS. We only need to take care of the spool/log directories.
-        paths = [config.Config.spooldir]
-        paths += [config.Config.tmpdir]
-
-        dirs = []
-        syncs = get_nfssyncs()
-        for dir in paths:
-            dirs += [(n, dir) for n in nodes]
-
-        for dir in [config.Config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-            dirs += [(n, dir) for n in nodes]
-
-        # We need this only on the manager.
-        dirs += [(manager, config.Config.logdir)]
-
-        for (node, success) in execute.mkdirs(dirs, cmdout):
-            if not success:
-                cmdout.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
-                cmdSuccess = False
-
-        paths = [config.Config.subst(dir) for (dir, mirror) in syncs if mirror]
-        if not execute.sync(nodes, paths, cmdout):
-            cmdSuccess = False
-
-    # Save current node configuration state.
-    config.Config.updateNodeCfgHash()
-
-    # Save current configuration state.
-    config.Config.updateBroctlCfgHash()
-
-    return cmdSuccess
 
 # Create Bro-side broctl configuration broctl-layout.bro.
 def makeLayout(path, cmdout, silent=False):

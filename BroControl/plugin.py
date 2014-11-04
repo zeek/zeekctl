@@ -6,7 +6,6 @@ import pluginreg
 import config
 import util
 import doc
-import execute
 
 Registry = pluginreg.PluginRegistry()
 
@@ -163,7 +162,7 @@ class Plugin(object):
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
         stdout/stderr output (or None if we couldn't connect to the host)."""
-        result = execute.executeCmdsParallel([(node, cmd)])[0]
+        result = self.executor.runShellCmdsParallel([(node, cmd)])[0]
         return (result[1], result[2])
 
     @doc.api
@@ -192,7 +191,7 @@ class Plugin(object):
         return result
 
     @doc.api
-    def executeParallel(self, cmds, cmdout):
+    def executeParallel(self, cmds):
         """Executes a set of commands in parallel on multiple hosts. ``cmds``
         is a list of tuples ``(node, cmd)``, in which the *node* is a `Node`_
         instance and *cmd* is a string with the command to execute for it. The
@@ -200,7 +199,7 @@ class Plugin(object):
         ``success`` is True if the command ran successfully and ``output`` is
         the combined stdout/stderr output (or None if we couldn't connect to
         the host) for the corresponding ``node``."""
-        return execute.executeCmdsParallel(cmds, cmdout)
+        return self.executor.runShellCmdsParallel(cmds)
 
     ### Methods that must be overridden by plugins.
 

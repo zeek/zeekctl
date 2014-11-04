@@ -1,12 +1,12 @@
 # Functions to control the nodes' operations.
 
 from collections import namedtuple
+import glob
 import os
 import time
 
 import execute
 import util
-import cmdoutput
 import config
 import install
 import plugin
@@ -21,31 +21,28 @@ def _makeBroParams(node, live):
 
     if live and node.interface:
         try:
-            # If interface name contains semicolons (to aggregate traffic from
-            # multiple devices with PF_RING, the interface name can be in a
-            # semicolon-delimited format, such as "p2p1;p2p2"), then we must
-            # quote it to prevent shell from interpreting semicolon as command
-            # separator.
-            args += ["-i \"%s\"" % node.interface]
+            # Interface name needs quotes so that shell doesn't interpret any
+            # potential metacharacters in the name.
+            args += ["-i", "'%s'" % node.interface]
         except AttributeError:
             pass
 
         if config.Config.savetraces == "1":
-            args += ["-w trace.pcap"]
+            args += ["-w", "trace.pcap"]
 
-    args += ["-U .status"]
-    args += ["-p broctl"]
+    args += ["-U", ".status"]
+    args += ["-p", "broctl"]
 
     if live:
-        args += ["-p broctl-live"]
+        args += ["-p", "broctl-live"]
 
     if node.type == "standalone":
-        args += ["-p standalone"]
+        args += ["-p", "standalone"]
 
     for p in config.Config.prefixes.split(":"):
-        args += ["-p %s" % p]
+        args += ["-p", "%s" % p]
 
-    args += ["-p %s" % node.name]
+    args += ["-p", "%s" % node.name]
 
     # The order of loaded scripts is as follows:
     # 1) local.bro gives a common set of loaded scripts for all nodes.
@@ -74,56 +71,36 @@ def _makeBroParams(node, live):
             args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
 
-    if "aux_scripts" in node.__dict__:
+    if getattr(node, "aux_scripts", None):
         args += [node.aux_scripts]
 
     if config.Config.broargs:
+        # Some args in broargs might contain spaces, so we cannot split it.
         args += [config.Config.broargs]
 
     return args
 
 # Build the environment variable for the given node.
-def _makeEnvParam(node):
-    env = ""
+def _makeEnvParam(node, returnlist=False):
+    envs = []
     if node.type != "standalone":
-        env += "CLUSTER_NODE=%s" % node.name
+        envs.append("CLUSTER_NODE=%s" % node.name)
 
-    vars = " ".join(["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())])
+    envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
 
-    if vars:
-        env += " " + vars
+    if returnlist:
+        l1 = [("-v", i) for i in envs]
+        return [j for i in l1 for j in i]
 
-    return env
-
-
-# Attach gdb to the main Bro processes on the given nodes.
-def attachGdb(nodes):
-    cmdout = cmdoutput.CommandOutput()
-    running = isRunning(nodes, cmdout)
-
-    cmds = []
-    cmdSuccess = True
-    for (node, isrunning) in running:
-        if isrunning:
-            cmds += [(node, "gdb-attach", ["gdb-%s" % node.name, config.Config.bro, str(node.getPID())])]
-        else:
-            cmdSuccess = False
-
-    results = execute.runHelperParallel(cmds, cmdout)
-    for (node, success, output) in results:
-        if success:
-            cmdout.info("gdb attached on %s" % node.name)
-        else:
-            cmdout.error("cannot attach gdb on %s: %s" % node.name, output)
-            cmdSuccess = False
-
-    return (cmdSuccess, cmdout)
+    return " ".join(envs)
 
 
 class Controller:
-    def __init__(self, config, ui):
+    def __init__(self, config, ui, localaddrs, executor):
         self.config = config
         self.ui = ui
+        self.localaddrs = localaddrs
+        self.executor = executor
 
     def start(self, nodes):
         manager = []
@@ -180,7 +157,7 @@ class Controller:
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
         nodes = []
-        for (node, success) in execute.mkdirs(dirs, self.ui):
+        for (node, success) in self.executor.mkdirs(dirs):
             if success:
                 nodes += [node]
             else:
@@ -189,19 +166,21 @@ class Controller:
 
         # Start Bro process.
         cmds = []
-        envs = []
         for node in nodes:
+            envs = []
             pin_cpu = node.pin_cpus
 
             # If this node isn't using CPU pinning, then use a placeholder value
             if pin_cpu == "":
                 pin_cpu = -1
 
-            cmds += [(node, "start", [node.cwd(), str(pin_cpu)] + _makeBroParams(node, True))]
-            envs += [_makeEnvParam(node)]
+            envs = _makeEnvParam(node, True)
+            cmds += [(node, "start", envs + [node.cwd(), str(pin_cpu)] + _makeBroParams(node, True))]
 
         nodes = []
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui, envs=envs):
+        # Note: the shell is used to interpret the command because broargs
+        # might contain quoted arguments.
+        for (node, success, output) in self.executor.runHelperParallel(cmds, shell=True):
             if success:
                 nodes += [node]
                 node.setPID(int(output[0]))
@@ -252,7 +231,7 @@ class Controller:
 
             cmds += [(node, "check-pid", [str(pid)])]
 
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+        for (node, success, output) in self.executor.runHelperParallel(cmds):
 
             # If we cannot connect to the host at all, we filter it out because
             # the process might actually still be running but we can't tell.
@@ -298,7 +277,7 @@ class Controller:
             for node in todo.values():
                 cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
 
-            for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+            for (node, success, output) in self.executor.runHelperParallel(cmds):
                 if success:
                     try:
                         (stat, loc) = output[0].split()
@@ -354,9 +333,9 @@ class Controller:
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
         cmds = []
         for node in nodes:
-            cmds += [(node, "run-cmd",  [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(),  "crash"])]
+            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), "crash"])]
 
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+        for (node, success, output) in self.executor.runHelperParallel(cmds):
             if not success:
                 self.ui.error("cannot run post-terminate for %s" % node.name)
             else:
@@ -422,7 +401,7 @@ class Controller:
             for node in nodes:
                 cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
 
-            return execute.runHelperParallel(cmds, self.ui)
+            return self.executor.runHelperParallel(cmds)
 
         # Stop nodes.
         for (node, success, output) in stop(running, 15):
@@ -495,9 +474,9 @@ class Controller:
             if node in kill:
                 crashflag = "killed"
 
-            cmds += [(node, "run-cmd",  [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
+            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
 
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+        for (node, success, output) in self.executor.runHelperParallel(cmds):
             if not success:
                 self.ui.error("cannot run post-terminate for %s" % node.name)
                 self.logAction(node, "stopped (failed)")
@@ -526,8 +505,8 @@ class Controller:
                 cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
                 cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
 
-        startups = execute.runHelperParallel(cmds1, self.ui)
-        statuses = execute.runHelperParallel(cmds2, self.ui)
+        startups = self.executor.runHelperParallel(cmds1)
+        statuses = self.executor.runHelperParallel(cmds2)
 
         startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
         statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
@@ -599,11 +578,11 @@ class Controller:
         nodes = []
         for (node, cwd) in all:
             if os.path.isdir(cwd):
-                if not execute.rmdir(self.config.manager(), cwd, self.ui):
+                if not self.executor.rmdir(self.config.manager(), cwd):
                     results.append((node.name, False, ["cannot remove directory %s on manager" % cwd]))
                     continue
 
-            if not execute.mkdir(self.config.manager(), cwd, self.ui):
+            if not self.executor.mkdir(self.config.manager(), cwd):
                 results.append((node.name, False, ["cannot create directory %s on manager" % cwd]))
                 continue
 
@@ -628,7 +607,7 @@ class Controller:
 
         for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
             results.append((node.name, success, output))
-            execute.rmdir(manager, cwd, self.ui)
+            self.executor.rmdir(manager, cwd)
 
         return results
 
@@ -643,7 +622,7 @@ class Controller:
         return execute.sendEventsParallel(events)
 
     def executeCmd(self, nodes, cmd):
-        return execute.executeCmdsParallel([(n, cmd) for n in nodes], self.ui)
+        return self.executor.runShellCmdsParallel([(n, cmd) for n in nodes])
 
     # Clean up the working directory for nodes (flushes state).
     # If cleantmp is true, also wipes ${tmpdir}; this is done
@@ -667,8 +646,8 @@ class Controller:
 
         results["skipped"] = [node.name for node in running]
 
-        results1 = execute.rmdirs([(n, n.cwd()) for n in notrunning], self.ui)
-        results2 = execute.mkdirs([(n, n.cwd()) for n in notrunning], self.ui)
+        results1 = self.executor.rmdirs([(n, n.cwd()) for n in notrunning])
+        results2 = self.executor.mkdirs([(n, n.cwd()) for n in notrunning])
         failed = addfailed(failed, results1)
         failed = addfailed(failed, results2)
 
@@ -676,8 +655,8 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
-            results3 = execute.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
-            results4 = execute.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning], self.ui)
+            results3 = self.executor.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning])
+            results4 = self.executor.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning])
             failed = addfailed(failed, results3)
             failed = addfailed(failed, results4)
 
@@ -695,11 +674,11 @@ class Controller:
     def crashDiag(self, node):
         results = []
 
-        if not execute.isdir(node, node.cwd(), self.ui):
+        if not self.executor.isdir(node, node.cwd()):
             results.append("No work dir found")
             return (False, results)
 
-        (rc, output) = execute.runHelper(node, self.ui, "run-cmd",  [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
+        (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
         if not rc:
             results.append("cannot run crash-diag for %s" % node.name)
             return (False, results)
@@ -778,17 +757,14 @@ class Controller:
         for (addr, interface) in hosts.keys():
             node = hosts[addr, interface]
 
-            # If interface name contains semicolons (to aggregate traffic from
-            # multiple devices with PF_RING, the interface name can be in a
-            # semicolon-delimited format, such as "p2p1;p2p2"), then we must
-            # quote it to prevent shell from interpreting semicolon as command
-            # separator (another layer of quotes is needed because the eval
-            # command is used).
-            capstats = [self.config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'\"%s\"'" % interface]
+            # Interface name needs to be quoted because the eval command
+            # is used (this prevents any metacharacters in name from being
+            # interpreted by the shell).
+            capstats = [self.config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'%s'" % interface]
 
             cmds += [(node, "run-cmd", capstats)]
 
-        outputs = execute.runHelperParallel(cmds, self.ui)
+        outputs = self.executor.runHelperParallel(cmds)
 
         totals = {}
 
@@ -923,7 +899,7 @@ class Controller:
 
                 cmds += [(node, "df", [path])]
 
-            results = execute.runHelperParallel(cmds, self.ui)
+            results = self.executor.runHelperParallel(cmds)
 
             for (node, success, output) in results:
                 nodehost = "%s/%s" % (node.name, node.host)
@@ -991,7 +967,7 @@ class Controller:
         if not cmds:
             return results
 
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+        for (node, success, output) in self.executor.runHelperParallel(cmds):
 
             if not success:
                 results += [(node, "cannot get child pids", [{}])]
@@ -1018,7 +994,7 @@ class Controller:
             return results
 
         res = {}
-        for (node, success, output) in execute.runHelperParallel(cmds, self.ui):
+        for (node, success, output) in self.executor.runHelperParallel(cmds):
             res[node.host] = (success, output)
 
         # Gather results for all the nodes that are running
@@ -1150,11 +1126,11 @@ class Controller:
 
         cwd = os.path.join(self.config.tmpdir, "testing")
 
-        if not execute.rmdir(self.config.manager(), cwd, self.ui):
+        if not self.executor.rmdir(self.config.manager(), cwd):
             results["output"] = ["cannot remove directory %s on manager" % cwd]
             return results
 
-        if not execute.mkdir(self.config.manager(), cwd, self.ui):
+        if not self.executor.mkdir(self.config.manager(), cwd):
             results["output"] = ["cannot create directory %s on manager" % cwd]
             return results
 
@@ -1177,4 +1153,123 @@ class Controller:
         results["cwd"] = cwd
 
         return results
+
+    def install(self, local_only):
+        cmdSuccess = True
+
+        if not self.config.determineBroVersion():
+            cmdSuccess = False
+            return cmdSuccess
+
+        manager = self.config.manager()
+
+        # Delete previously installed policy files to not mix things up.
+        policies = [self.config.policydirsiteinstall, self.config.policydirsiteinstallauto]
+
+        for p in policies:
+            if os.path.isdir(p):
+                self.ui.info("removing old policies in %s ..." % p)
+                if not self.executor.rmdir(manager, p):
+                    cmdSuccess = False
+
+        self.ui.info("creating policy directories ...")
+        for p in policies:
+            if not self.executor.mkdir(manager, p):
+                cmdSuccess = False
+
+        # Install local site policy.
+
+        if self.config.sitepolicypath:
+            self.ui.info("installing site policies ...")
+            dst = self.config.policydirsiteinstall
+            for dir in self.config.sitepolicypath.split(":"):
+                dir = self.config.subst(dir)
+                for file in glob.glob(os.path.join(dir, "*")):
+                    if not execute.install(file, dst, self.ui):
+                        cmdSuccess = False
+
+        install.makeLayout(self.config.policydirsiteinstallauto, self.ui)
+        if not install.makeLocalNetworks(self.config.policydirsiteinstallauto, self.ui):
+            cmdSuccess = False
+        install.makeConfig(self.config.policydirsiteinstallauto, self.ui)
+
+        current = self.config.subst(os.path.join(self.config.logdir, "current"))
+        try:
+            util.force_symlink(manager.cwd(), current)
+        except (IOError, OSError) as e:
+            cmdSuccess = False
+            self.ui.error("failed to update current log symlink")
+            return cmdSuccess
+
+        if not install.generateDynamicVariableScript(self.ui):
+            cmdSuccess = False
+            return cmdSuccess
+
+        if local_only:
+            return cmdSuccess
+
+        # Sync to clients.
+        self.ui.info("updating nodes ...")
+
+        # Make sure we install each remote host only once.
+        nodes = self.config.hosts(nolocal=True)
+
+        if self.config.havenfs != "1":
+            # Non-NFS, need to explicitly synchronize.
+            dirs = []
+            syncs = install.get_syncs()
+            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
+                dirs += [(n, dir) for n in nodes]
+
+            for (node, success) in self.executor.mkdirs(dirs):
+                if not success:
+                    self.ui.error("cannot create directory %s on %s" % (dir, node.name))
+                    cmdSuccess = False
+
+            # An error at this point means the entire install failed.
+            if not cmdSuccess:
+                return cmdSuccess
+
+            paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
+            if not execute.sync(nodes, paths, self.ui):
+                cmdSuccess = False
+                return cmdSuccess
+
+        else:
+            # NFS. We only need to take care of the spool/log directories.
+            paths = [self.config.spooldir]
+            paths += [self.config.tmpdir]
+
+            dirs = []
+            syncs = install.get_nfssyncs()
+            for dir in paths:
+                dirs += [(n, dir) for n in nodes]
+
+            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
+                dirs += [(n, dir) for n in nodes]
+
+            # We need this only on the manager.
+            dirs += [(manager, self.config.logdir)]
+
+            for (node, success) in self.executor.mkdirs(dirs):
+                if not success:
+                    self.ui.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
+                    cmdSuccess = False
+
+            # An error at this point means the entire install failed.
+            if not cmdSuccess:
+                return cmdSuccess
+
+            paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
+            if not execute.sync(nodes, paths, self.ui):
+                cmdSuccess = False
+                return cmdSuccess
+
+        # Save current node configuration state.
+        self.config.updateNodeCfgHash()
+
+        # Save current configuration state.
+        self.config.updateBroctlCfgHash()
+
+        return cmdSuccess
 

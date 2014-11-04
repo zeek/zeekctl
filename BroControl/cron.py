@@ -5,7 +5,6 @@ import time
 import shutil
 
 import util
-import cmdoutput
 import config
 import execute
 import control
@@ -13,8 +12,6 @@ import plugin
 
 # Triggers all activity which is to be done regularly via cron.
 def doCron(watch):
-    cmdout = cmdoutput.CommandOutput()
-
     if not config.Config.cronenabled:
         return cmdout
 
@@ -188,12 +185,10 @@ def _expireLogs(cmdout):
 
 def _checkHosts(cmdout):
 
-    for node in config.Config.hosts():
-        if execute.isLocal(node, cmdout):
-            continue
-
+    for node in config.Config.hosts(nolocal=True):
         tag = "alive-%s" % node.host.lower()
-        alive = execute.isAlive(node.addr, cmdout) and "1" or "0"
+        # TODO: fix
+        #alive = execute.isAlive(node.addr, cmdout) and "1" or "0"
 
         if tag in config.Config.state:
             previous = config.Config.state[tag]

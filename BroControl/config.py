@@ -29,9 +29,11 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, cmdout, state=None):
+    def __init__(self, basedir, ui, localaddrs=[], state=None):
         config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
+        self.ui = ui
+        self.localaddrs = localaddrs
         global Config
         Config = self
 
@@ -39,7 +41,7 @@ class Configuration:
         self.state = {}
 
         # Read broctl.cfg.
-        self.config = self._readConfig(config_file, cmdout)
+        self.config = self._readConfig(config_file)
         if self.config is None:
             raise RuntimeError
 
@@ -83,13 +85,13 @@ class Configuration:
         else:
             self._setOption("time", "")
 
-    def initPostPlugins(self, cmdout):
+    def initPostPlugins(self):
         plugin.Registry.addNodeKeys()
 
         # Read node.cfg and broctl.dat.
-        if not self._readNodes(cmdout):
+        if not self._readNodes():
             return False
-        if not self.readState(cmdout):
+        if not self.readState():
             return False
 
         # If "env_vars" was specified in broctl.cfg, then apply to all nodes.
@@ -207,11 +209,15 @@ class Configuration:
 
     # Returns a list of nodes which is a subset of the result a similar call to
     # nodes() would yield but within which each host appears only once.
-    def hosts(self, tag = None):
+    # If "nolocal" parameter is True, then exclude the local host from results.
+    def hosts(self, tag = None, nolocal=False):
         hosts = {}
         nodelist = []
         for node in self.nodes(tag):
-            if node.host not in hosts:
+            if node.host in hosts:
+                continue
+
+            if (not nolocal) or (nolocal and node.addr not in self.localaddrs):
                 hosts[node.host] = 1
                 nodelist.append(node)
 
@@ -283,7 +289,7 @@ class Configuration:
         return env_vars
 
     # Parse node.cfg.
-    def _readNodes(self, cmdout):
+    def _readNodes(self):
         self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
         if not config.read(self.nodecfg):
@@ -306,7 +312,7 @@ class Configuration:
                 key = key.replace(".", "_")
 
                 if key not in node_mod.Node._keys:
-                    cmdout.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
+                    self.ui.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
                     continue
 
                 if key == "type":
@@ -441,7 +447,7 @@ class Configuration:
                 raise ConfigurationError("no type given for node %s" % n.name)
 
             if n.type == "manager":
-                if not execute.isLocal(n, cmdout):
+                if n.addr not in self.localaddrs:
                     raise ConfigurationError("script must be run on manager node")
 
                 if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
@@ -458,7 +464,7 @@ class Configuration:
 
 
     # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
-    def _readConfig(self, file, cmdout, allowstate = False):
+    def _readConfig(self, file, allowstate = False):
         config = {}
         for line in open(file):
 
@@ -497,7 +503,7 @@ class Configuration:
         return self.state_store.get(key)
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
-    def readState(self, cmdout):
+    def readState(self):
         self.state = dict(self.state_store.items())
         if self.state is None:
             return False
@@ -509,8 +515,8 @@ class Configuration:
         pass
 
     # Record the Bro version.
-    def determineBroVersion(self, cmdout):
-        version = self._getBroVersion(cmdout)
+    def determineBroVersion(self):
+        version = self._getBroVersion()
         if not version:
             return False
 
@@ -520,17 +526,17 @@ class Configuration:
 
 
     # Warn user to run broctl install if any config changes are detected.
-    def warnBroctlInstall(self, cmdout):
+    def warnBroctlInstall(self):
         # Check if Bro version is different from previously-installed version.
         if "broversion" in self.state:
             oldversion = self.state["broversion"]
 
-            version = self._getBroVersion(cmdout)
+            version = self._getBroVersion()
             if not version:
                 return False
 
             if version != oldversion:
-                cmdout.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
+                self.ui.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
                 return True
 
         # Check if node config has changed since last install.
@@ -538,14 +544,14 @@ class Configuration:
             nodehash = self.getNodeCfgHash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                cmdout.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                self.ui.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
                 return True
 
         # Check if any config values have changed since last install.
         if "hash-broctlcfg" in self.state:
             cfghash = self.getBroctlCfgHash()
             if cfghash != self.state["hash-broctlcfg"]:
-                cmdout.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                self.ui.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
                 return True
 
         return True
@@ -573,10 +579,10 @@ class Configuration:
         self._setState("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version numbers.
-    def _getBroVersion(self, cmdout):
+    def _getBroVersion(self):
         version = ""
         bro = self.subst("${bindir}/bro")
-        if execute.exists(None, bro, cmdout):
+        if os.path.lexists(bro):
             (success, output) = execute.runLocalCmd("%s -v" % bro)
             if success and output:
                 version = output[-1]

@@ -7,10 +7,10 @@ import socket
 import shutil
 import time
 import subprocess
+import ssh_runner
 
 import config
 import util
-import cmdoutput
 
 haveBroccoli = True
 
@@ -18,8 +18,6 @@ try:
     import broccoli
 except ImportError:
     haveBroccoli = False
-
-LocalAddrs = None
 
 # Wrapper around subprocess.Popen()
 def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
@@ -40,128 +38,31 @@ def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
 
     return proc
 
-# Returns true if given node corresponds to the host we're running on.
-def isLocal(node, cmdout):
-    global LocalAddrs
-    if not LocalAddrs:
-        (success, output) = runLocalCmd(os.path.join(config.Config.scriptsdir, "local-interfaces"))
-        if not success:
-            cmdout.error("cannot get list of local IP addresses")
-
-            try:
-                LocalAddrs = ["127.0.0.1", "::1"]
-                addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
-                for ai in addrinfo:
-                    LocalAddrs.append(ai[4][0])
-            except:
-                LocalAddrs = ["127.0.0.1", "::1"]
-        else:
-            LocalAddrs = [line.strip() for line in output]
-
-        util.debug(1, "Local IPs: %s" % ",".join(LocalAddrs))
-
-    return not node or node.host == "localhost" or node.addr in LocalAddrs
-
-# Takes list of (node, dir) pairs and ensures the directories exist on the
-# nodes' host.
-# Returns list of (node, sucess) pairs.
-def mkdirs(dirs, cmdout):
-
-    results = []
-    cmds = []
-    fullcmds = []
-
-    for (node, dir) in dirs:
-        # We make local directories directly.
-        if isLocal(node, cmdout):
-            if not exists(node, dir, cmdout):
-                util.debug(1, "mkdir -p %s" % dir, prefix="local")
-                os.makedirs(dir)
-
-            results += [(node, True)]
-
-        else:
-            cmds += [(node, [], [])]
-            # Need to be careful here as our helper scripts may not be installed yet.
-            fullcmds += [("test -d %s || mkdir -p %s 2>/dev/null; echo $?; echo ~~~" % (dir, dir))]
-
-    for (node, success, output) in runHelperParallel(cmds, cmdout, fullcmds=fullcmds):
-        results += [(node, success)]
-
-    return results
-
-# Takes list of (node, dir) pairs and ensures the directories exist on the
-# nodes' host.
-# Returns list of (node, sucess) pairs.
-def mkdir(node, dir, cmdout):
-    return mkdirs([(node, dir)], cmdout)[0][1]
-
-def rmdirs(dirs, cmdout):
-    results = []
-    cmds = []
-
-    for (node, dir) in dirs:
-        # We remove local directories directly.
-        if isLocal(node, cmdout):
-            (success, output) = runLocalCmd("rm -rf %s" % dir)
-            results += [(node, success)]
-        else:
-            cmds += [(node, "rmdir", [dir])]
-
-    for (node, success, output) in runHelperParallel(cmds, cmdout):
-        results += [(node, success)]
-
-    return results
-
-# Removes the directory on the host if it's there.
-def rmdir(node, dir, cmdout):
-    return rmdirs([(node, dir)], cmdout)[0][1]
-
-# Returns true if the path exists on the host.
-def exists(host, path, cmdout):
-    if isLocal(host, cmdout):
-        return os.path.lexists(path)
-    else:
-        (success, output) = runHelper(host, cmdout, "exists", [path])
-        return success
-
-# Returns true if the path exists and refers to a directory on the host.
-def isdir(host, path, cmdout):
-    if isLocal(host, cmdout):
-        return os.path.isdir(path)
-    else:
-        (success, output) = runHelper(host, cmdout, "is-dir", [path])
-        return success
 
 # Copies src to dst, preserving permission bits, but does not clobber existing
 # files/directories.
 # Works for files and directories (recursive).
-def install(host, src, dstdir, cmdout):
-    if isLocal(host, cmdout):
-        if not exists(host, src, cmdout):
-            cmdout.error("file does not exist: %s" % src)
-            return False
-
-        dst = os.path.join(dstdir, os.path.basename(src))
-        if exists(host, dst, cmdout):
-            # Do not clobber existing files/dirs (this is not an error)
-            return True
-
-        util.debug(1, "cp %s %s" % (src, dstdir))
-
-        try:
-            if os.path.isfile(src):
-                shutil.copy2(src, dstdir)
-            elif os.path.isdir(src):
-                shutil.copytree(src, dst)
-        except OSError:
-            # Python 2.6 has a bug where this may fail on NFS. So we just
-            # ignore errors.
-            pass
-
-    else:
-        cmdout.error("install() not yet supported for remote hosts")
+def install(src, dstdir, cmdout):
+    if not os.path.lexists(src):
+        cmdout.error("file does not exist: %s" % src)
         return False
+
+    dst = os.path.join(dstdir, os.path.basename(src))
+    if os.path.lexists(dst):
+        # Do not clobber existing files/dirs (this is not an error)
+        return True
+
+    util.debug(1, "cp %s %s" % (src, dstdir))
+
+    try:
+        if os.path.isfile(src):
+            shutil.copy2(src, dstdir)
+        elif os.path.isdir(src):
+            shutil.copytree(src, dst)
+    except OSError:
+        # Python 2.6 has a bug where this may fail on NFS. So we just
+        # ignore errors.
+        pass
 
     return True
 
@@ -182,25 +83,6 @@ def sync(nodes, paths, cmdout):
             result = False
 
     return result
-
-# Keep track of hosts that are not alive.
-_deadHosts = {}
-
-# Return true if the given host is alive (i.e., we can establish
-# an ssh session), and false otherwise.
-def isAlive(host, cmdout):
-
-    if host in _deadHosts:
-        return False
-
-    (success, output) = runLocalCmd("ssh -o ConnectTimeout=30 %s true" % util.scopeAddr(host))
-
-    if not success:
-        _deadHosts[host] = True
-        if config.Config.cron == "0":
-            cmdout.error("host %s is not alive" % host)
-
-    return success
 
 
 # Runs command locally and returns tuple (success, output)
@@ -257,108 +139,6 @@ def _runLocalCmdWait(proc, input):
     return (rc == 0, output)
 
 
-# Runs arbitrary commands in parallel on nodes. Input is list of (node, cmd).
-def executeCmdsParallel(cmds, cmdout):
-    helpers = []
-
-    for (node, cmd) in cmds:
-        for special in "|'\"":
-            cmd = cmd.replace(special, "\\" + special)
-
-        helpers += [(node, "run-cmd", [cmd])]
-
-    return runHelperParallel(helpers, cmdout)
-
-# Runs a helper script from bin/helpers, according to the helper
-# protocol.
-# If fullcmd is given, this is the exact & complete command line (incl. paths).
-# Otherwise, cmd is just the helper's name (wo/ path) and args are the
-# arguments. Env is an optional enviroment variable of the form
-# "key=val". Return value as for runLocalCmd().
-# 'output' is None (vs. []) if we couldn't connect to host.
-def runHelper(host, cmdout, cmd=None, args=None, fullcmd=None, env = ""):
-    util.disableSignals()
-    try:
-        status = _runHelperInit(host, cmdout, cmd, args, fullcmd, env)
-        if not status:
-            return (False, None)
-
-        status = _runHelperWait(status, cmdout)
-        if not status:
-            return (False, None)
-
-        return status
-
-    finally:
-        util.enableSignals()
-
-# Same as above but runs commands on a set of hosts in parallel.
-# Cmds is a list of (node, cmd, args) tuples.
-# Fullcmds, if given, is a parallel list of full command lines.
-# Envs, if given, is a parallel list of env variables.
-# Returns a list of (node, success, output) tuples.
-# 'output' is None (vs. []) if we couldn't connect to host.
-def runHelperParallel(cmds, cmdout, fullcmds = None, envs = None):
-
-    util.disableSignals()
-
-    try:
-        results = []
-        running = []
-
-        for (node, cmd, args) in cmds:
-
-            if fullcmds:
-                fullcmd = fullcmds[0]
-                fullcmds = fullcmds[1:]
-            else:
-                fullcmd = ""
-
-            if envs:
-                env = envs[0]
-                envs = envs[1:]
-            else:
-                env = ""
-
-            status = _runHelperInit(node, cmdout, cmd, args, fullcmd, env)
-            if status:
-                running += [node]
-            else:
-                results += [(node, False, None)]
-
-        for node in running:
-            status =  _runHelperWait(node, cmdout)
-            if status:
-                (success, output) = status
-                results += [(node, success, output)]
-            else:
-                results += [(node, False, None)]
-
-        return results
-
-    finally:
-        util.enableSignals()
-
-# Helpers for running helpers.
-#
-# We keep the SSH sessions open across calls to runHelper.
-Connections = {}
-WhoAmI = None
-
-
-# Remove connections that are closed, and clear the list of dead hosts.
-def clearDeadHostConnections():
-    global Connections
-    global _deadHosts
-
-    to_remove = [ nn for nn in Connections if Connections[nn].poll() != None ]
-
-    for nn in to_remove:
-        del Connections[nn]
-
-    _deadHosts = {}
-
-
 # FIXME: This is an ugly hack. The __del__ method produces
 # strange unhandled exceptions in the child at termination
 # of the main process. Not sure if disabling the cleanup
@@ -368,100 +148,6 @@ def _emptyDel(self):
     pass
 subprocess.Popen.__del__ = _emptyDel
 
-def _getConnection(host, cmdout):
-
-    global WhoAmI
-    if not WhoAmI:
-        (success, output) = runLocalCmd("whoami")
-        if not success:
-            cmdout.error("can't run 'whoami'")
-            return None
-        WhoAmI = output[0]
-
-    if not host:
-        host = config.Config.manager()
-
-    if host.name in Connections:
-        p = Connections[host.name]
-        if p.poll() != None:
-            # Terminated.
-            global _deadHosts
-            if host.host not in _deadHosts:
-                _deadHosts[host.host] = True
-                cmdout.error("connection to %s broke" % host.host)
-            return None
-
-        return (p.stdin, p.stdout)
-
-    if isLocal(host, cmdout):
-        cmdline = "sh"
-    else:
-        # Check whether host is alive.
-        if not isAlive(host.host, cmdout):
-            return None
-
-        # ServerAliveInterval and ServerAliveCountMax prevents broctl from
-        # hanging if a remote host is disconnected from network while an ssh
-        # session is open.
-        cmdline = "ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -l %s %s sh" % (WhoAmI, util.scopeAddr(host.host))
-
-    util.debug(1, cmdline, prefix="local")
-
-    try:
-        p = popen(cmdline)
-    except OSError as e:
-        cmdout.error("cannot login to %s: %s" % (host.host, e))
-        return None
-
-    Connections[host.name] = p
-    return (p.stdin, p.stdout)
-
-def _runHelperInit(host, cmdout, cmd, args, fullcmd, env):
-
-    c = _getConnection(host, cmdout)
-    if not c:
-        return None
-
-    (stdin, stdout) = c
-
-    if not fullcmd:
-        cmdline = "%s %s %s" % (env, os.path.join(config.Config.helperdir, cmd), " ".join(args))
-    else:
-        cmdline = fullcmd
-
-    util.debug(1, cmdline, prefix=host.host)
-    stdin.write("%s\n" % cmdline)
-    stdin.flush()
-
-    return host
-
-def _runHelperWait(host, cmdout):
-    output = []
-    while True:
-
-        c = _getConnection(host, cmdout)
-        if not c:
-            return None
-
-        (stdin, stdout) = c
-
-        line = stdout.readline().strip()
-        if line == "~~~":
-            break
-        output += [line]
-
-    try:
-        rc = int(output[-1])
-    except ValueError:
-        cmdout.error("cannot parse exit code from helper on %s: %s" % (host.host, output[-1]))
-        rc = 1
-
-    util.debug(1, "exit code %d" % rc, prefix=host.host)
-
-    for line in output:
-        util.debug(2, "           > %s" % line, prefix=host.host)
-
-    return (rc == 0, output[:-1])
 
 # Broccoli communication with running nodes.
 
@@ -556,4 +242,191 @@ def _event_callback(bc):
         bc.got_result = True
         bc.result_args = args
     return save_results
+
+
+def get_local_addrs(cmdout):
+    try:
+        proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out, err = proc.communicate()
+        cmdfail = proc.returncode != 0
+    except OSError:
+        cmdfail = True
+
+    if cmdfail:
+        cmdout.output("cannot get list of local IP addresses")
+
+        try:
+            localaddrs = ["127.0.0.1", "::1"]
+            addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
+            for ai in addrinfo:
+                localaddrs.append(ai[4][0])
+        except:
+            localaddrs = ["127.0.0.1", "::1"]
+    else:
+        localaddrs = []
+        for line in out.splitlines():
+            fields = line.split()
+            if "inet" in fields or "inet6" in fields:
+                addrfield = False
+                for field in fields:
+                    if field == "inet" or field == "inet6":
+                        addrfield = True
+                    elif addrfield and field != "addr:":
+                        locaddr = field
+                        # remove "addr:" prefix (if any)
+                        if field.startswith("addr:"):
+                            locaddr = field[5:]
+                        # remove everything after "/" or "%" (if any)
+                        locaddr = locaddr.split("/")[0]
+                        locaddr = locaddr.split("%")[0]
+                        localaddrs.append(locaddr)
+                        break
+
+    return localaddrs
+
+
+class Executor:
+    def __init__(self, ui, localaddrs):
+        self.sshrunner = ssh_runner.MultiMasterManager(ui, localaddrs)
+
+    # Run commands in parallel on one or more hosts.
+    #
+    # cmds:  a list of the form: [ (node, cmd, args), ... ]
+    #   where "cmd" is a string, "args" is a list of strings.
+    # shell:  if true, then the "cmd" (and "args") will be interpreted by a
+    #   shell.
+    # helper:  if true, then the "cmd" will be modified to specify the full
+    #   path to the broctl helper script.
+    #
+    # Returns a list of results: [(node, success, output), ...]
+    #   where "success" is a boolean (true if command's exit status is zero),
+    #   and "output" is a list of strings (stdout followed by stderr).
+    def runCmdsParallel(self, cmds, shell=False, helper=False):
+        results = []
+
+        if not cmds:
+            return results
+
+        dd = {}
+        for nodecmd in cmds:
+            host = nodecmd[0].host
+            if host not in dd:
+                dd[host] = []
+            dd[host].append(nodecmd)
+
+        sshcmds = []
+        for key in dd:
+            for nodecmd in dd[key]:
+                sshhost = nodecmd[0].host
+                if helper:
+                    sshcmdargs = [os.path.join(config.Config.helperdir, nodecmd[1])]
+                else:
+                    sshcmdargs = [nodecmd[1]]
+
+                if shell:
+                    sshcmdargs = [sshcmdargs[0] + " " + " ".join(nodecmd[2])]
+                else:
+                    sshcmdargs += nodecmd[2]
+
+                sshcmds.append((sshhost, sshcmdargs))
+                util.debug(1, " ".join(sshcmdargs), prefix=sshhost)
+
+        for host, result in self.sshrunner.exec_multihost_commands(sshcmds, shell):
+            bronode = dd[host][0][0]
+            if type(result) != Exception:
+                res = result[0]
+                out = result[1].splitlines()
+                err = result[2].splitlines()
+                results.append( (bronode, res == 0, out + err) )
+                util.debug(1, "exit code %d" % res, prefix=bronode.host)
+            else:
+                results.append( (bronode, False, [str(result)]) )
+            del dd[host][0]
+
+        return results
+
+    # Run shell commands in parallel on one or more hosts.
+    # cmdlines:  a list of the form [ (node, cmdline), ... ]
+    #   where "cmdline" is a string to be interpreted by the shell
+    #
+    # Return value is same as runCmdsParallel.
+    def runShellCmdsParallel(self, cmdlines):
+        cmds = [ (node, cmdline, []) for node, cmdline in cmdlines ]
+
+        return self.runCmdsParallel(cmds, shell=True)
+
+    # A convenience function that calls runCmdsParallel.
+    def runHelperParallel(self, cmds, shell=False):
+        return self.runCmdsParallel(cmds, shell, True)
+
+    # A convenience function that calls runHelperParallel for one command on
+    # one node.
+    #
+    # Returns a tuple of the form: (success, output)
+    #   where "success" is a boolean (true if command's exit status was zero),
+    #   and "output" is a list of strings (stdout followed by stderr).
+    def runHelper(self, node, cmd, args):
+        cmds = [(node, cmd, args)]
+        results = self.runHelperParallel(cmds)
+        return (results[0][1], results[0][2])
+
+    # A convenience function that calls runCmdsParallel.
+    # dirs:  a list of the form [ (node, dir), ... ]
+    #
+    # Returns a list of the form: [ (node, success), ... ]
+    #   where "success" is a boolean (true if specified directory was created
+    #   or already exists).
+    def mkdirs(self, dirs):
+        results = []
+        cmds = []
+
+        for (node, dir) in dirs:
+            cmds += [(node, "mkdir", ["-p", dir])]
+
+        for (node, success, output) in self.runCmdsParallel(cmds):
+            results += [(node, success)]
+
+        return results
+
+    # A convenience function that calls mkdirs for one directory on one node.
+    # Returns a boolean (true if specified directory was created or already
+    # exists).
+    def mkdir(self, node, dir):
+        return self.mkdirs([(node, dir)])[0][1]
+
+    # A convenience function that calls runCmdsParallel to remove directories
+    # on one or more hosts.
+    # dirs:  a list of the form [ (node, dir), ... ]
+    #
+    # Returns a list of the form: [ (node, success), ... ]
+    #   where "success" is a boolean (true if specified directory was removed
+    #   or does not exist).
+    def rmdirs(self, dirs):
+        results = []
+        cmds = []
+
+        for (node, dir) in dirs:
+            cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
+
+        for (node, success, output) in self.runCmdsParallel(cmds, shell=True):
+            results += [(node, success)]
+
+        return results
+
+    # A convenience function that calls rmdirs for one directory on one node.
+    # Returns a boolean (true if specified directory was removed or does not
+    # exist).
+    def rmdir(self, node, dir):
+        return self.rmdirs([(node, dir)])[0][1]
+
+    # A convenience function that calls runCmdsParallel to check if a directory
+    # on a node exists.
+    #
+    # Returns a boolean (true if specified path exists and is a directory).
+    def isdir(self, node, path):
+        cmds = [(node, "test", ["-d", "%s" % path])]
+
+        results = self.runCmdsParallel(cmds)
+
+        return results[0][1]
 

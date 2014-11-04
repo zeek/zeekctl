@@ -29,14 +29,11 @@ if [ "${os}" == "freebsd" ]; then
 fi
 
 if [ -z "$cmd" ]; then
-    echo 1
-    echo ~~~
-    exit
+    exit 1
 fi
 
 unset LINES
 unset COLUMNS
 
 eval $cmd | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f ${helperdir}/to-bytes.awk
-echo $?
-echo ~~~
+

@@ -1,3 +1,3 @@
-/home/repo/bro/aux/broctl/testing/../build/testing/test.8513/share/broctl/scripts/run-bro-on-trace 0 /home/repo/bro/aux/broctl/testing/../build/testing/test.8513/spool/tmp/testing /home/repo/bro/aux/broctl/testing/Traces/dns-session.trace -U .status -p broctl -p standalone -p local -p bro local.bro broctl broctl/standalone broctl/auto  broctl/process-trace
+/home/repo/bro/aux/broctl/testing/../build/testing/test.8513/share/broctl/scripts/run-bro-on-trace 0 /home/repo/bro/aux/broctl/testing/../build/testing/test.8513/spool/tmp/testing /home/repo/bro/aux/broctl/testing/Traces/dns-session.trace -U .status -p broctl -p standalone -p local -p bro local.bro broctl broctl/standalone broctl/auto broctl/process-trace
 
 ### Bro output in /home/repo/bro/aux/broctl/testing/../build/testing/test.8513/spool/tmp/testing

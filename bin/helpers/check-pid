@@ -4,11 +4,3 @@
 
 ps -p $1 -o args | grep -q bro
 
-if [ $? = 0 ]; then
-   echo 0
-else
-   echo 1
-fi
-
-echo ~~~
-

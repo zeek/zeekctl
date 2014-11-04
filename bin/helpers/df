@@ -7,11 +7,8 @@
 . `dirname $0`/../broctl-config.sh
 if [ $? -ne 0 ]; then
     echo "broctl-config.sh not found (try 'broctl install')"
-    echo 1
-    echo ~~~
-    exit
+    exit 1
 fi
 
 df -kP $1 | awk '{print $1, $2, $3, $4}' | tail -1 | awk -v def_factor=1024 -f ${helperdir}/to-bytes.awk
-echo $?
-echo ~~~
+

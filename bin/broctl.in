@@ -61,7 +61,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         return line
 
     def postcmd(self, stop, line):
-        #execute.clearDeadHostConnections()
         util.debug(1, "done", prefix="command")
         return stop
 

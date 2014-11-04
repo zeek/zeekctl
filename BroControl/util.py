@@ -7,7 +7,6 @@ import signal
 import StringIO
 
 import config
-import cmdoutput
 import execute
 
 def fmttime(t):
@@ -100,7 +99,7 @@ def _breakLock(cmdout):
     try:
         # Check whether lock is stale.
         pid = open(config.Config.lockfile, "r").readline().strip()
-        (success, output) = execute.runHelper(config.Config.manager(), cmdout, "check-pid", args=[pid])
+        (success, output) = execute.runLocalCmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
         if success:
             # Process still exissts.
             return False

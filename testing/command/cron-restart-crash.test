@@ -1,6 +1,7 @@
 # Test that the cron command restarts a crashed node and sends a crash report,
 # unless the "--no-watch" option is specified.
 #
+# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out

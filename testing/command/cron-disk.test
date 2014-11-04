@@ -2,6 +2,7 @@
 # space only when the amount of free disk space crosses the threshold
 # specified by the mindiskspace broctl option.
 #
+# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 
 . broctl-test-setup

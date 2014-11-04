@@ -1,8 +1,16 @@
 #! /usr/bin/env bash
 #
-#  start <cwd> <pin_cpu> <Bro args>
+#  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <Bro args>
 
 . `dirname $0`/../broctl-config.sh
+
+while getopts 'v:' flag; do
+    case "${flag}" in
+        v) eval export "${OPTARG}" ;;
+    esac
+done
+
+shift $((OPTIND-1))
 
 cd $1 2>/dev/null
 shift
@@ -10,9 +18,7 @@ shift
 rm -f .pid
 
 if [ ! -x ${scriptsdir}/run-bro ]; then
-    echo 1
-    echo ~~~
-    exit
+    exit 1
 fi
 
 nohup ${scriptsdir}/run-bro "$@" >stdout.log 2>stderr.log &
@@ -26,6 +32,5 @@ pid=`cat .pid`
 [ "$pid" = "-1" ] && ret=1
 
 echo $pid
-echo $ret
-echo ~~~
+exit $ret
 
