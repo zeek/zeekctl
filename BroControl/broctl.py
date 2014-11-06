@@ -133,9 +133,6 @@ class BroCtl(object):
     def unlock(self):
         util.unlock(self.ui)
 
-    def checkForFailure(self, results):
-        return not util.nodeFailed(results)
-
     @expose
     def nodes(self):
         """Prints a list of all configured nodes."""
@@ -237,18 +234,19 @@ class BroCtl(object):
         args = " ".join([ str(n) for n in nodes ])
 
         self.output("stopping ...")
-        success = self.stop(node_list)
+        success = not util.nodeFailed(self.stop(node_list))
         if not success:
             return False
 
         if clean:
             self.output("cleaning up ...")
-            success = self.cleanup(node_list)
+            cleanresults = self.cleanup(node_list)
+            success = not util.nodeFailed(cleanresults["clean"])
             if not success:
                 return False
 
             self.output("checking configurations ...")
-            success = self.check(node_list)
+            success = not util.nodeFailed(self.check(node_list))
             if not success:
                 return False
 
@@ -258,7 +256,7 @@ class BroCtl(object):
                 return False
 
         self.output("starting ...")
-        success = self.start(node_list)
+        success = not util.nodeFailed(self.start(node_list))
 
         self.plugins.cmdPostWithNodes("restart", nodes)
         return success

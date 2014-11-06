@@ -78,10 +78,11 @@ def debug(msglevel, msg, prefix="main"):
     DebugOut.write("%s %s\n" % (ts, msg))
     DebugOut.flush()
 
-# For a list of (node, bool), returns True if at least one boolean is False.
+# For a list of tuples, where second element in tuple is a bool, return True
+# if at least one boolean is False.
 def nodeFailed(nodes):
-    for (node, success) in nodes:
-        if not success:
+    for nodetuple in nodes:
+        if not nodetuple[1]:
             return True
     return False
 
