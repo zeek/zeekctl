@@ -107,7 +107,7 @@ def _logStats(interval, cmdout):
         else:
             out.write("%s %s error error %s\n" % (t, node, error))
 
-    for (node, error, vals) in capstats:
+    for (node, netif, error, vals) in capstats:
         if not error:
             for (key, val) in vals.items():
                 out.write("%s %s interface %s %s\n" % (t, node, key, val))
@@ -122,10 +122,10 @@ def _logStats(interval, cmdout):
                         last = -1.0
 
                     if float(val) == 0.0 and last != 0.0:
-                        cmdout.info("%s is not seeing any packets on interface %s" % (node.host, node.interface))
+                        cmdout.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
                     if float(val) != 0.0 and last == 0.0:
-                        cmdout.info("%s is seeing packets again on interface %s" % (node.host, node.interface))
+                        cmdout.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
                     config.Config._setState(tag, val)
 

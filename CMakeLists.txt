@@ -134,44 +134,29 @@ install(DIRECTORY scripts/
         FILES_MATCHING
         PATTERN "*.bro")
 
-# These are needed for the default broctl.cfg file but they may be changed
-# below for packaging reasons.
-set(SPOOL ${PREFIX}/spool)
-set(LOGS ${PREFIX}/logs)
+if ( BRO_LOCAL_STATE_DIR )
+    set(VAR ${BRO_LOCAL_STATE_DIR})
+else ()
+    set(VAR ${PREFIX})
+endif ()
 
-# Check the install prefixes to determine if we're creating a package
-# Packaging for Apple-based systems does not need special logic
-# because many probably find it more convenient for uninstalling
-# when everything resides under a common prefix (since there's no
-# native package management system)
-if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
-                   ${CMAKE_INSTALL_PREFIX} STREQUAL /opt/bro))
+if ( BRO_SPOOL_DIR )
+    set(SPOOL ${BRO_SPOOL_DIR})
+else ()
+    set(SPOOL ${VAR}/spool)
+endif ()
 
-    # If the install prefix of /usr was given, change the install location
-    # of the config file to be /etc instead of /usr/etc and the location of
-    # runtime files to be in the appropriate directories under /var.
-    # The runtime directories will be world-writable, so the packaging
-    # post install script will make sure to set the sticky bit to prevent
-    # unprivileged users from removing/renaming files.
-    if (${CMAKE_INSTALL_PREFIX} STREQUAL /usr)
-        # Don't make any assumption for config file install dir.  The default
-        # of /usr/etc/ is usually wrong, but it's always explicitly configurable
-        # with --conf-files-dir.
-        set(VAR /var)
-        # TODO: Consult FHS to see if these are appropriate. Also,
-        #       packaging should do something more to protect the
-        #       runtime directories, perhaps require group permissions?
-        set(SPOOL ${VAR}/spool/bro)
-        set(LOGS ${VAR}/log/bro)
-    else ()
-        # FHS says config files go in /etc/opt/bro, but until there's
-        # a compelling reason to do that, they'll be kept along with
-        # everything else under the installation prefix
-        set(VAR /var/opt/bro)
-        set(SPOOL ${VAR}/spool)
-        set(LOGS ${VAR}/logs)
-    endif ()
+if ( BRO_LOG_DIR )
+    set(LOGS ${BRO_LOG_DIR})
+else ()
+    set(LOGS ${VAR}/logs)
+endif ()
 
+if ( BINARY_PACKAGING_MODE AND NOT APPLE )
+    # Packaging for Apple-based systems does not need special logic
+    # because many probably find it more convenient for uninstalling
+    # when everything resides under a common prefix (since there's no
+    # native package management system)
     set(perms OWNER_READ OWNER_WRITE OWNER_EXECUTE
               GROUP_READ GROUP_WRITE GROUP_EXECUTE
               WORLD_READ WORLD_WRITE WORLD_EXECUTE)
@@ -185,15 +170,14 @@ if (NOT APPLE AND (${CMAKE_INSTALL_PREFIX} STREQUAL /usr OR
     set(EMPTY_WORLD_DIRS
         "${EMPTY_WORLD_DIRS} ${SPOOL} ${SPOOL}/tmp ${LOGS}"
         CACHE STRING "" FORCE)
-    InstallSymlink(${SPOOL}/broctl-config.sh
-                   ${PREFIX}/share/broctl/scripts/broctl-config.sh)
 else ()
-    install(DIRECTORY DESTINATION spool)
-    install(DIRECTORY DESTINATION spool/tmp)
-    install(DIRECTORY DESTINATION logs)
-    InstallSymlink(${PREFIX}/spool/broctl-config.sh
-                   ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+    install(DIRECTORY DESTINATION ${SPOOL})
+    install(DIRECTORY DESTINATION ${SPOOL}/tmp)
+    install(DIRECTORY DESTINATION ${LOGS})
 endif ()
+
+InstallSymlink(${SPOOL}/broctl-config.sh
+               ${PREFIX}/share/broctl/scripts/broctl-config.sh)
 
 # A couple of configuration options that are needed are placed in here.
 configure_file(etc/broctl.cfg.in

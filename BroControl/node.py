@@ -12,9 +12,9 @@ class Node:
     a cluster setup, there is exactly one of type ``manager``, one or
     more of type ``proxy``, and zero or more of type ``worker``.
 
-    In addition to the methods described above, a ``Node`` object has a number
-    of keys with values that are set via ``node.cfg`` and can be accessed
-    directly via corresponding Python attributes (e.g., ``node.name``):
+    A ``Node`` object has a number of keys with values that are set
+    via the ``node.cfg`` file and can be accessed directly (from a plugin)
+    via corresponding Python attributes (e.g., ``node.name``):
 
         ``name`` (string)
             The name of the node, which corresponds to the ``[<name>]``
@@ -79,6 +79,9 @@ class Node:
     will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
     ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
     ``node.cfg``).
+
+    Finally, a Node object has the following methods that can be called
+    from a plugin:
     """
 
     # Valid keys in nodes file. The values will be stored in attributes of the

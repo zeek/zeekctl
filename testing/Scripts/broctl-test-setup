@@ -129,7 +129,6 @@ function installbro() {
     (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
     test $? -ne 0 && exit 1
 
-    export BROMAGIC=$BROCTL_INSTALL_PREFIX/share/bro/magic
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
@@ -140,7 +139,6 @@ function installbro() {
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
         echo "export BROCTL_INSTALL_PREFIX=$BROCTL_INSTALL_PREFIX" >> $how2run
         echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib" >> $how2run
-        echo "export BROMAGIC=$BROCTL_INSTALL_PREFIX/share/bro/magic" >> $how2run
     fi
 }
 

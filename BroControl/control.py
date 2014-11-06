@@ -701,11 +701,11 @@ class Controller:
 
         cs_results = []
         if have_capstats:
-            for (node, error, vals) in self.getCapstatsOutput(nodes, interval):
+            for (node, netif, error, vals) in self.getCapstatsOutput(nodes, interval):
                 if str(node) == "$total":
                     cs_results += [(node, error, vals)]
                 else:
-                    cs_results += [("%s/%s" % (node.host, node.interface), error, vals)]
+                    cs_results += [("%s/%s" % (node.host, netif), error, vals)]
 
                 if error:
                     cmdSuccess = False
@@ -727,8 +727,9 @@ class Controller:
 
     # Gather capstats from interfaces.
     #
-    # Returns a list of tuples of the form (node, error, vals) where 'error' is
-    # None if we were able to get the data, or otherwise a string with an error
+    # Returns a list of tuples of the form (node, netif, error, vals) where 'netif'
+    # is the network interface name used by capstats on the 'node', and 'error'
+    # is None if we were able to get the data, or otherwise a string with an error
     # message; in case there's no error, 'vals' maps tags to their values.
     #
     # Tags are those as returned by capstats on the command-line.
@@ -747,8 +748,10 @@ class Controller:
             if not node.interface:
                 continue
 
+            netif = self.getCapstatsInterface(node)
+
             try:
-                hosts[(node.addr, node.interface)] = node
+                hosts[(node.addr, netif)] = node
             except AttributeError:
                 continue
 
@@ -769,22 +772,23 @@ class Controller:
         totals = {}
 
         for (node, success, output) in outputs:
+            netif = self.getCapstatsInterface(node) 
 
             if not success:
                 if output:
-                    results += [(node, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
+                    results += [(node, netif, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
                 else:
-                    results += [(node, "%s: cannot execute capstats" % node.name, {})]
+                    results += [(node, netif, "%s: cannot execute capstats" % node.name, {})]
                 continue
 
             if not output:
-                results += [(node, "%s: no capstats output" % node.name, {})]
+                results += [(node, netif, "%s: no capstats output" % node.name, {})]
                 continue
 
             fields = output[0].split()[1:]
 
             if not fields:
-                results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+                results += [(node, netif, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
                 continue
 
             vals = {}
@@ -800,16 +804,29 @@ class Controller:
                     else:
                         totals[key] = val
 
-                results += [(node, None, vals)]
+                results += [(node, netif, None, vals)]
 
             except ValueError:
-                results += [(node, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+                results += [(node, netif, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
 
         # Add pseudo-node for totals
         if len(nodes) > 1:
-            results += [(node_mod.Node(self.config, "$total"), None, totals)]
+            results += [(node_mod.Node(self.config, "$total"), None, None, totals)]
 
         return results
+
+
+    def getCapstatsInterface(self, node):
+        netif = node.interface
+
+        # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
+        # is needed to prevent capstats from trying to use the same interface
+        # name as Bro.
+        if netif.startswith("dnacluster:") and netif.count("@") == 1:
+            netif = netif.split("@", 1)[0]
+
+        return netif
+
 
     # Get current statistics from cFlow.
     #
