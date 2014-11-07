@@ -54,7 +54,7 @@ class BroCtl(object):
         self.executor = execute.Executor(self.ui, self.localaddrs)
         self.config = config.Configuration(self.BroBase, self.ui, self.localaddrs, state)
         self.setup()
-        self.controller = control.Controller(self.config, self.ui, self.localaddrs, self.executor)
+        self.controller = control.Controller(self.config, self.ui, self.executor)
 
     def setup(self):
 

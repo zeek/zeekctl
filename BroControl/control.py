@@ -96,10 +96,9 @@ def _makeEnvParam(node, returnlist=False):
 
 
 class Controller:
-    def __init__(self, config, ui, localaddrs, executor):
+    def __init__(self, config, ui, executor):
         self.config = config
         self.ui = ui
-        self.localaddrs = localaddrs
         self.executor = executor
 
     def start(self, nodes):
