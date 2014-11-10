@@ -4,9 +4,10 @@
 import sys
 import os
 
-import util
-import config
-import node
+from BroControl import util
+from BroControl import config
+from BroControl import node
+from BroControl import plugin
 
 # Note, when changing this, also adapt doc string for Plugin.__init__.
 _CurrentAPIVersion = 1
@@ -160,6 +161,7 @@ class PluginRegistry:
     def addNodeKeys(self):
         """Adds all plugins' node keys to the list of supported keys in
         ``Node``."""
+
         for p in self._plugins:
             for key in p.nodeKeys():
                 key = "%s_%s" % (p.prefix(), key)
@@ -253,7 +255,4 @@ class PluginRegistry:
             cmdout.warn("No plugin found in %s" % module.__file__)
 
         return True
-
-
-import plugin
 

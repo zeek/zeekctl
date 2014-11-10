@@ -6,14 +6,11 @@ import re
 import copy
 import ConfigParser
 
-import execute
-import node as node_mod
-import options
-import plugin
-import util
-
+from BroControl import node as node_mod
+from BroControl import options
 from .state import SqliteState
 from .version import VERSION
+
 
 # Class storing the broctl configuration.
 #
@@ -30,6 +27,8 @@ class ConfigurationError(Exception):
 
 class Configuration:
     def __init__(self, basedir, ui, localaddrs=[], state=None):
+        from BroControl import execute
+
         config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
         self.ui = ui
@@ -86,8 +85,6 @@ class Configuration:
             self._setOption("time", "")
 
     def initPostPlugins(self):
-        plugin.Registry.addNodeKeys()
-
         # Read node.cfg and broctl.dat.
         if not self._readNodes():
             return False
@@ -580,6 +577,8 @@ class Configuration:
 
     # Runs Bro to get its version numbers.
     def _getBroVersion(self):
+        from BroControl import execute
+
         version = ""
         bro = self.subst("${bindir}/bro")
         if os.path.lexists(bro):

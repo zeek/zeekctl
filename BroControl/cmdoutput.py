@@ -1,6 +1,6 @@
 # Class to handle storing and printing output from broctl commands.
 
-import util
+from BroControl import util
 
 class CommandOutput:
     def __init__(self):

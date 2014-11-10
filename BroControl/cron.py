@@ -4,11 +4,10 @@ import os
 import time
 import shutil
 
-import util
-import config
-import execute
-import control
-import plugin
+from BroControl import util
+from BroControl import config
+from BroControl import execute
+from BroControl import control
 
 # Triggers all activity which is to be done regularly via cron.
 def doCron(watch):
@@ -57,9 +56,10 @@ def doCron(watch):
     # Mail potential output.
     cmdout.printResults()
     output = util.getBufferedOutput()
-    if output:
-        if not util.sendMail("cron: " + output.split("\n")[0], output):
-            cmdout.error("cannot send mail")
+    # TODO: fix
+    #if output:
+    #    if not util.sendMail("cron: " + output.split("\n")[0], output):
+    #        cmdout.error("cannot send mail")
 
     util.unlock(cmdout)
 
@@ -184,7 +184,6 @@ def _expireLogs(cmdout):
         cmdout.error(output)
 
 def _checkHosts(cmdout):
-
     for node in config.Config.hosts(nolocal=True):
         tag = "alive-%s" % node.host.lower()
         # TODO: fix
@@ -194,7 +193,8 @@ def _checkHosts(cmdout):
             previous = config.Config.state[tag]
 
             if alive != previous:
-                plugin.Registry.hostStatusChanged(node.host, alive == "1")
+                # TODO: fix
+                #plugin.Registry.hostStatusChanged(node.host, alive == "1")
                 cmdout.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
         config.Config._setState(tag, alive)

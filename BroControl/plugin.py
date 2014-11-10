@@ -2,12 +2,9 @@
 # BroControl Plugin API.
 #
 
-import pluginreg
-import config
-import util
-import doc
-
-Registry = pluginreg.PluginRegistry()
+from BroControl import config
+from BroControl import util
+from BroControl import doc
 
 class Plugin(object):
     """The class ``Plugin`` is the base class for all BroControl plugins.

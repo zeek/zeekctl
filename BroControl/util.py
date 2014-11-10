@@ -6,8 +6,7 @@ import time
 import signal
 import StringIO
 
-import config
-import execute
+from BroControl import config
 
 def fmttime(t):
     return time.strftime(config.Config.timefmt, time.localtime(float(t)))
@@ -86,17 +85,12 @@ def nodeFailed(nodes):
             return True
     return False
 
-def sendMail(subject, body):
-    if not config.Config.sendmail:
-        return True
-
-    cmd = "%s '%s'" % (os.path.join(config.Config.scriptsdir, "send-mail"), subject)
-    (success, output) = execute.runLocalCmd(cmd, "", body)
-    return success
 
 lockCount = 0
 
 def _breakLock(cmdout):
+    from BroControl import execute
+
     try:
         # Check whether lock is stale.
         pid = open(config.Config.lockfile, "r").readline().strip()

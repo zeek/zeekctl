@@ -8,12 +8,10 @@ import time
 from BroControl import util
 from BroControl import config
 from BroControl import execute
-from BroControl import install
 from BroControl import control
 from BroControl import cron
-from BroControl import plugin
 from BroControl import version
-from BroControl.config import Config
+from BroControl import pluginreg
 
 class InvalidNode(Exception):
     pass
@@ -51,24 +49,23 @@ class BroCtl(object):
         self.BroBase = basedir
 
         self.localaddrs = execute.get_local_addrs(self.ui)
-        self.executor = execute.Executor(self.ui, self.localaddrs)
         self.config = config.Configuration(self.BroBase, self.ui, self.localaddrs, state)
+        self.executor = execute.Executor(self.ui, self.localaddrs, self.config.helperdir)
+        self.plugins = pluginreg.PluginRegistry()
         self.setup()
-        self.controller = control.Controller(self.config, self.ui, self.executor)
+        self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
 
     def setup(self):
-
         for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
             if dir:
-                plugin.Registry.addDir(dir)
+                self.plugins.addDir(dir)
 
-        plugin.Registry.loadPlugins(self.ui, self.executor)
+        self.plugins.loadPlugins(self.ui, self.executor)
+        self.plugins.addNodeKeys()
         self.config.initPostPlugins()
-        plugin.Registry.initPlugins()
+        self.plugins.initPlugins()
         util.enableSignals()
         os.chdir(self.config.brobase)
-
-        self.plugins = plugin.Registry
 
     # Turns nodes arguments into a list of node names.
     def nodeArgs(self, args=None):
@@ -317,23 +314,6 @@ class BroCtl(object):
         self.plugins.cmdPostWithNodes("diag", nodes)
 
         return results
-
-    def do_attachgdb(self, args):
-        """- [<nodes>]
-
-        Primarily for debugging, the command attaches a *gdb* to the main Bro
-        process on the given nodes. """
-
-        self.lock()
-        nodes = self.nodeArgs(args)
-        nodes = self.plugins.cmdPreWithNodes("attachgdb", nodes)
-        cmdSuccess, cmdOutput = control.attachGdb(nodes)
-        if not cmdSuccess:
-            self.exit_code = 1
-        cmdOutput.printResults()
-        self.plugins.cmdPostWithNodes("attachgdb", nodes)
-
-        return False
 
     def cron(self, watch=True):
         """- [enable|disable|?] | [--no-watch]

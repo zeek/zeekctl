@@ -5,12 +5,12 @@ import glob
 import os
 import time
 
-import execute
-import util
-import config
-import install
-import plugin
-import node as node_mod
+from BroControl import execute
+from BroControl import events
+from BroControl import util
+from BroControl import config
+from BroControl import install
+from BroControl import node as node_mod
 
 
 # Waits for the nodes' Bro processes to reach the given status.
@@ -96,10 +96,11 @@ def _makeEnvParam(node, returnlist=False):
 
 
 class Controller:
-    def __init__(self, config, ui, executor):
+    def __init__(self, config, ui, executor, pluginregistry):
         self.config = config
         self.ui = ui
         self.executor = executor
+        self.pluginregistry = pluginregistry
 
     def start(self, nodes):
         manager = []
@@ -327,7 +328,7 @@ class Controller:
     # Do a "post-terminate crash" for the given nodes.
     def _makeCrashReports(self, nodes):
         for n in nodes:
-            plugin.Registry.broProcessDied(n)
+            self.pluginregistry.broProcessDied(n)
 
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
         cmds = []
@@ -338,10 +339,18 @@ class Controller:
             if not success:
                 self.ui.error("cannot run post-terminate for %s" % node.name)
             else:
-                if not util.sendMail("Crash report from %s" % node.name, msg + "\n".join(output)):
+                if not self.sendMail("Crash report from %s" % node.name, msg + "\n".join(output)):
                     self.ui.error("cannot send mail")
 
             node.clearCrashed()
+
+    def sendMail(self, subject, body):
+        if not self.config.sendmail:
+            return True
+
+        cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
+        (success, output) = execute.runLocalCmd(cmd, "", body)
+        return success
 
     # Stop Bro processes on nodes.
     def stop(self, nodes):
@@ -613,12 +622,12 @@ class Controller:
     def _queryPeerStatus(self, nodes):
         running = self.isRunning(nodes)
 
-        events = []
+        eventlist = []
         for (node, isrunning) in running:
             if isrunning:
-                events += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
+                eventlist += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
 
-        return execute.sendEventsParallel(events)
+        return events.sendEventsParallel(eventlist)
 
     def executeCmd(self, nodes, cmd):
         return self.executor.runShellCmdsParallel([(n, cmd) for n in nodes])
@@ -739,7 +748,6 @@ class Controller:
     # We do all the stuff in parallel across all nodes which is why this looks
     # a bit confusing ...
     def getCapstatsOutput(self, nodes, interval):
-
         results = []
 
         hosts = {}
@@ -1074,12 +1082,12 @@ class Controller:
     def printID(self, nodes, id):
         running = self.isRunning(nodes)
 
-        events = []
+        eventlist = []
         for (node, isrunning) in running:
             if isrunning:
-                events += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
+                eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
-        eventsresults = execute.sendEventsParallel(events)
+        eventsresults = events.sendEventsParallel(eventlist)
 
         results = [] 
         for (node, success, args) in eventsresults:
@@ -1091,12 +1099,12 @@ class Controller:
     def _queryNetStats(self, nodes):
         running = self.isRunning(nodes)
 
-        events = []
+        eventlist = []
         for (node, isrunning) in running:
             if isrunning:
-                events += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
+                eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
-        return execute.sendEventsParallel(events)
+        return events.sendEventsParallel(eventlist)
 
     def peerStatus(self, nodes):
         results = []

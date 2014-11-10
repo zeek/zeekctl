@@ -2,22 +2,13 @@
 # If the host is local, it's done direcly; if it's remote we log in via SSH.
 
 import os
-import sys
 import socket
 import shutil
-import time
 import subprocess
-import ssh_runner
 
-import config
-import util
+from BroControl import ssh_runner
+from BroControl import util
 
-haveBroccoli = True
-
-try:
-    import broccoli
-except ImportError:
-    haveBroccoli = False
 
 # Wrapper around subprocess.Popen()
 def popen(cmdline, stderr_to_stdout=False, donotcaptureoutput=False):
@@ -149,101 +140,6 @@ def _emptyDel(self):
 subprocess.Popen.__del__ = _emptyDel
 
 
-# Broccoli communication with running nodes.
-
-# Sends event to a set of nodes in parallel.
-#
-# events is a list of tuples of the form (node, event, args, result_event).
-#   node:    the destination node.
-#   event:   the name of the event to send (node that receiver must subscribe
-#            to it as well).
-#   args:    a list of event args; each arg must be a data type understood by
-#            the Broccoli module.
-#   result_event: name of a event the node sends back. None if no event is
-#                 sent back.
-#
-# Returns a list of tuples (node, success, results_args).
-#   If success is True, result_args is a list of arguments as shipped with the
-#   result event, or [] if no result_event was specified.
-#   If success is False, results_args is a string with an error message.
-
-def sendEventsParallel(events):
-
-    results = []
-    sent = []
-
-    for (node, event, args, result_event) in events:
-
-        if not haveBroccoli:
-            results += [(node, False, "no Python bindings for Broccoli installed")]
-            continue
-
-        (success, bc) = _sendEventInit(node, event, args, result_event)
-        if success and result_event:
-            sent += [(node, result_event, bc)]
-        else:
-            results += [(node, success, bc)]
-
-    for (node, result_event, bc) in sent:
-        (success, result_args) = _sendEventWait(node, result_event, bc)
-        results += [(node, success, result_args)]
-
-    return results
-
-def _sendEventInit(node, event, args, result_event):
-
-    host = util.scopeAddr(node.addr)
-
-    try:
-        bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
-                           flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
-        bc.subscribe(result_event, _event_callback(bc))
-        bc.got_result = False
-        bc.connect()
-    except IOError as e:
-        util.debug(1, "broccoli: cannot connect", prefix=node.name)
-        return (False, str(e))
-
-    util.debug(1, "broccoli: %s(%s)" % (event, ", ".join(args)), prefix=node.name)
-    bc.send(event, *args)
-    return (True, bc)
-
-def _sendEventWait(node, result_event, bc):
-    # Wait until we have sent the event out.
-    cnt = 0
-    while bc.processInput():
-        time.sleep(1)
-
-        cnt += 1
-        if cnt > int(config.Config.commtimeout):
-            util.debug(1, "broccoli: timeout during send", prefix=node.name)
-            return (False, "time-out")
-
-    if not result_event:
-        return (True, [])
-
-    # Wait for reply event.
-    cnt = 0
-    bc.processInput()
-    while not bc.got_result:
-        time.sleep(1)
-        bc.processInput()
-
-        cnt += 1
-        if cnt > int(config.Config.commtimeout):
-            util.debug(1, "broccoli: timeout during receive", prefix=node.name)
-            return (False, "time-out")
-
-    util.debug(1, "broccoli: %s(%s)" % (result_event, ", ".join(bc.result_args)), prefix=node.name)
-    return (True, bc.result_args)
-
-def _event_callback(bc):
-    def save_results(*args):
-        bc.got_result = True
-        bc.result_args = args
-    return save_results
-
-
 def get_local_addrs(cmdout):
     try:
         proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -286,8 +182,9 @@ def get_local_addrs(cmdout):
 
 
 class Executor:
-    def __init__(self, ui, localaddrs):
+    def __init__(self, ui, localaddrs, helperdir):
         self.sshrunner = ssh_runner.MultiMasterManager(ui, localaddrs)
+        self.helperdir = helperdir
 
     # Run commands in parallel on one or more hosts.
     #
@@ -319,7 +216,7 @@ class Executor:
             for nodecmd in dd[key]:
                 sshhost = nodecmd[0].host
                 if helper:
-                    sshcmdargs = [os.path.join(config.Config.helperdir, nodecmd[1])]
+                    sshcmdargs = [os.path.join(self.helperdir, nodecmd[1])]
                 else:
                     sshcmdargs = [nodecmd[1]]
 

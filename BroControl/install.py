@@ -3,8 +3,8 @@
 import os
 import re
 
-import util
-import config
+from BroControl import util
+from BroControl import config
 
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.

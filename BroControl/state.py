@@ -1,5 +1,6 @@
 import json
 import sqlite3
+
 class SqliteState:
     def __init__(self, path):
         self.path = path
