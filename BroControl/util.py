@@ -26,8 +26,6 @@ def getBufferedOutput():
 
 def output(msg = "", nl = True, prefix="output"):
 
-    debug(1, msg, prefix=prefix)
-
     if Buffer:
         out = Buffer
     else:
@@ -43,39 +41,6 @@ def error(msg, prefix=None):
 def warn(msg, prefix=None):
     output("warning: %s" % msg)
 
-DebugOut = None
-
-def debug(msglevel, msg, prefix="main"):
-    global DebugOut
-
-    msg = "%-10s %s" % ("[%s]" % prefix, str(msg).strip())
-
-    try:
-        level = int(config.Config.debug)
-    except Exception:
-        level = 0
-
-    if level < msglevel:
-        return
-
-    if not DebugOut:
-        try:
-            DebugOut = open(config.Config.debuglog, "a")
-        except IOError:
-            # During the initial install, tmpdir hasn't been setup yet. So we
-            # fall back to current dir.
-            fn = os.path.join(os.getcwd(), "debug.log")
-
-            try:
-                DebugOut = open(fn, "a")
-            except IOError as e:
-                # Can't use error() here as that would recurse.
-                print("Error: can't open %s: %s" % (fn, e.strerror), file=sys.stderr)
-                return
-
-    ts = time.strftime(config.Config.timefmt, time.localtime(time.time()))
-    DebugOut.write("%s %s\n" % (ts, msg))
-    DebugOut.flush()
 
 # For a list of tuples, where second element in tuple is a bool, return True
 # if at least one boolean is False.

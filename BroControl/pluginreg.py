@@ -3,8 +3,8 @@
 
 import sys
 import os
+import logging
 
-from BroControl import util
 from BroControl import config
 from BroControl import node
 from BroControl import plugin
@@ -229,7 +229,7 @@ class PluginRegistry:
 
                 # verify that the plugin overrides all required methods
                 try:
-                    util.debug(1, "Loaded plugin %s from %s (version %d, prefix %s)"
+                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)"
                                % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
                 except NotImplementedError:
                     cmdout.error("plugin at %s does not override required methods" % path)

@@ -64,7 +64,8 @@ def doCron(watch):
     util.unlock(cmdout)
 
     config.Config.config["cron"] = "0"
-    util.debug(1, "cron done")
+    # TODO: fix
+    #util.debug(1, "cron done")
 
     return cmdout
 

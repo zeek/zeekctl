@@ -1,4 +1,5 @@
 import time
+import logging
 
 from BroControl import config
 from BroControl import util
@@ -63,10 +64,10 @@ def _sendEventInit(node, event, args, result_event):
         bc.got_result = False
         bc.connect()
     except IOError as e:
-        util.debug(1, "broccoli: cannot connect", prefix=node.name)
+        logging.debug("broccoli: cannot connect to node %s" % node.name)
         return (False, str(e))
 
-    util.debug(1, "broccoli: %s(%s)" % (event, ", ".join(args)), prefix=node.name)
+    logging.debug("broccoli: %s(%s) to node %s" % (event, ", ".join(args), node.name))
     bc.send(event, *args)
     return (True, bc)
 
@@ -78,7 +79,7 @@ def _sendEventWait(node, result_event, bc):
 
         cnt += 1
         if cnt > int(config.Config.commtimeout):
-            util.debug(1, "broccoli: timeout during send", prefix=node.name)
+            logging.debug("broccoli: timeout during send to node %s" % node.name)
             return (False, "time-out")
 
     if not result_event:
@@ -93,10 +94,10 @@ def _sendEventWait(node, result_event, bc):
 
         cnt += 1
         if cnt > int(config.Config.commtimeout):
-            util.debug(1, "broccoli: timeout during receive", prefix=node.name)
+            logging.debug("broccoli: timeout during receive from node %s" % node.name)
             return (False, "time-out")
 
-    util.debug(1, "broccoli: %s(%s)" % (result_event, ", ".join(bc.result_args)), prefix=node.name)
+    logging.debug("broccoli: %s(%s) from node %s" % (result_event, ", ".join(bc.result_args), node.name))
     return (True, bc.result_args)
 
 def _event_callback(bc):

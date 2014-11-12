@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+import logging
 
 BroBase = "@PREFIX@"
 
@@ -38,6 +39,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def output(self, text):
         self.stdout.write(text)
         self.stdout.write("\n")
+        logging.info(text)
+
     info = output
 
     def error(self, str):
@@ -57,11 +60,11 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         pass
 
     def precmd(self, line):
-        util.debug(1, line, prefix="command")
+        logging.debug(line)
         return line
 
     def postcmd(self, stop, line):
-        util.debug(1, "done", prefix="command")
+        logging.debug("done")
         return stop
 
     def do_EOF(self, args):

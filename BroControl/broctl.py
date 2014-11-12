@@ -4,6 +4,7 @@ from __future__ import print_function
 import os
 import sys
 import time
+import logging
 
 from BroControl import util
 from BroControl import config
@@ -50,6 +51,12 @@ class BroCtl(object):
 
         self.localaddrs = execute.get_local_addrs(self.ui)
         self.config = config.Configuration(self.BroBase, self.ui, self.localaddrs, state)
+
+        if self.config.debug != "0":
+            # clear the log handlers (set by previous calls to logging.*)
+            logging.getLogger().handlers = []
+            logging.basicConfig(filename=self.config.debuglog, format="%(asctime)s [%(module)s] %(message)s", datefmt=self.config.timefmt, level=logging.DEBUG)
+
         self.executor = execute.Executor(self.ui, self.localaddrs, self.config.helperdir)
         self.plugins = pluginreg.PluginRegistry()
         self.setup()

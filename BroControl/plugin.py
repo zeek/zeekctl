@@ -2,6 +2,8 @@
 # BroControl Plugin API.
 #
 
+import logging
+
 from BroControl import config
 from BroControl import util
 from BroControl import doc
@@ -146,7 +148,7 @@ class Plugin(object):
     @doc.api
     def debug(self, msg):
         """Logs a debug message in BroControl's debug log if enabled."""
-        util.debug(1, msg, prefix="plugin:%s" % self.prefix())
+        logging.debug("%s: %s" % (self.prefix(), msg))
 
     @doc.api
     def error(self, msg):

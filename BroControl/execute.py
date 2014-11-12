@@ -5,6 +5,7 @@ import os
 import socket
 import shutil
 import subprocess
+import logging
 
 from BroControl import ssh_runner
 from BroControl import util
@@ -43,7 +44,7 @@ def install(src, dstdir, cmdout):
         # Do not clobber existing files/dirs (this is not an error)
         return True
 
-    util.debug(1, "cp %s %s" % (src, dstdir))
+    logging.debug("cp %s %s" % (src, dstdir))
 
     try:
         if os.path.isfile(src):
@@ -103,11 +104,12 @@ def runLocalCmdsParallel(cmds):
 
 def _runLocalCmdInit(id, cmd, env, donotcaptureoutput=False):
 
-    if not env:
-        env = ""
+    if env:
+        cmdline = env + " " + cmd
+    else:
+        cmdline = cmd
 
-    cmdline = env + " " + cmd
-    util.debug(1, cmdline, prefix="local")
+    logging.debug(cmdline)
 
     proc = popen(cmdline, stderr_to_stdout=True, donotcaptureoutput=donotcaptureoutput)
 
@@ -122,10 +124,10 @@ def _runLocalCmdWait(proc, input):
     if out:
         output = out.splitlines()
 
-    util.debug(1, rc, prefix="local")
-
     for line in output:
-        util.debug(2, "           > %s" % line, prefix="local")
+        logging.debug("    > %s" % line)
+
+    logging.debug("exit status: %d" % rc)
 
     return (rc == 0, output)
 
@@ -226,7 +228,7 @@ class Executor:
                     sshcmdargs += nodecmd[2]
 
                 sshcmds.append((sshhost, sshcmdargs))
-                util.debug(1, " ".join(sshcmdargs), prefix=sshhost)
+                logging.debug(sshhost + ": " + " ".join(sshcmdargs))
 
         for host, result in self.sshrunner.exec_multihost_commands(sshcmds, shell):
             bronode = dd[host][0][0]
@@ -235,7 +237,7 @@ class Executor:
                 out = result[1].splitlines()
                 err = result[2].splitlines()
                 results.append( (bronode, res == 0, out + err) )
-                util.debug(1, "exit code %d" % res, prefix=bronode.host)
+                logging.debug("%s: exit code %d" % (bronode.host, res))
             else:
                 results.append( (bronode, False, [str(result)]) )
             del dd[host][0]
