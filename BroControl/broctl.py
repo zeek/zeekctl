@@ -80,10 +80,8 @@ class BroCtl(object):
             args = "all"
 
         nodes = []
-        if isinstance(args, basestring):
-            args = args.split()
 
-        for arg in args:
+        for arg in args.split():
             h = self.config.nodes(arg)
             if not h and arg != "all":
                 raise InvalidNode("unknown node '%s'" % arg)
@@ -101,10 +99,7 @@ class BroCtl(object):
         hosts = {}
         nodes = []
 
-        if isinstance(args, basestring):
-            args = args.split()
-
-        for arg in args:
+        for arg in args.split():
             h = self.config.hosts(arg)
             if not h and arg != "all":
                 raise InvalidNode("unknown node '%s'" % arg)

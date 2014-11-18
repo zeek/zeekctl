@@ -4,7 +4,7 @@
 
 import os
 
-import doc
+from BroControl import doc
 
 class Node:
     """Class representing one node of the BroControl maintained setup. In

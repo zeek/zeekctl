@@ -712,7 +712,7 @@ class Controller:
         if have_capstats:
             for (node, netif, error, vals) in self.getCapstatsOutput(nodes, interval):
                 if str(node) == "$total":
-                    cs_results += [(node, error, vals)]
+                    cs_results += [(str(node), error, vals)]
                 else:
                     cs_results += [("%s/%s" % (node.host, netif), error, vals)]
 
@@ -1047,8 +1047,8 @@ class Controller:
                     d = {}
                     d["pid"] = int(p[0])
                     d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-                    d["vsize"] = long(float(p[1])) #May be something like 2.17684e+9
-                    d["rss"] = long(float(p[2]))
+                    d["vsize"] = float(p[1]) #May be something like 2.17684e+9
+                    d["rss"] = float(p[2])
                     d["cpu"] = p[3]
                     d["cmd"] = " ".join(p[4:])
                     vals += [d]
