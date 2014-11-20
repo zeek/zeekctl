@@ -2,7 +2,6 @@ from __future__ import print_function
 from collections import defaultdict
 from threading import Thread, Lock
 from Queue import Queue
-from nanomsg import Socket, REQ, REP
 import os
 import time
 import random
@@ -10,22 +9,12 @@ import traceback
 
 from BroControl import config
 from BroControl import version
-from BroControl.state import SqliteState as State
 from BroControl.broctl import BroCtl
 from BroControl import ser as json
 
-class StateClientWrapper:
-    def __init__(self, client):
-        self.cl = client
+from BroControl import web
 
-    def set(self, key, value):
-        return self.cl.setstate(key, value)
-
-    def get(self, key):
-        return self.cl.getstate(key)
-
-    def items(self):
-        return self.cl.getstateitems()
+STOP_RUNNING = object()
 
 class TermUI:
     def __init__(self):
@@ -55,157 +44,145 @@ class Common:
     def load(self, msg):
         return json.loads(msg)
 
-class Daemon(Common):
-    change_funcs = set()
-    bg_tasks = []
-    def __init__(self, state, logs, worker_class):
-        self.state = state
-        self.logs = logs
-        self.worker_class = worker_class
+class BroCtrldWorker(Thread, Common):
+    def __init__(self, command_queue):
+        self.q = Queue()
+        Thread.__init__(self)
+        self.daemon = True
+        self.command_queue = command_queue
+        self._id = None
 
-        self.sock = Socket(REP)
-        self.sock.bind('inproc://server')
-        sockfile = os.path.join(version.BROBASE, "socket")
-        self.sock.bind('ipc://%s' % sockfile)
+    def send(self, id, cmd, *args):
+        self.q.put((id, cmd, args))
+
+    def run(self):
+        #FIXME: deepcopy breaks here if i set ui=self
+        self.broctl = BroCtl(ui=TermUI())
+        self.broctl.ui = self
+        self.broctl.controller.ui = self
+        self.broctl.executor.ui = self
+        while True:
+            if self.iteration():
+                return
+
+    def noop(self, *args, **kwargs):
+        return True
+
+    def iteration(self):
+        id, cmd, args = self.q.get()
+        self._id = id
+
+        if cmd is STOP_RUNNING:
+            return True
+
+        func = getattr(self.broctl, cmd, self.noop)
+
+        def respond(r):
+            self.call("result", id, r)
+
+        if not hasattr(func, 'api_exposed'):
+            return respond("invalid function")
+
+        try :
+            res = func(*args)
+        except Exception as e:
+            res = traceback.format_exc()
+        respond(res)
+
+    def call(self, func, *args):
+        self.command_queue.put((None, func, args))
+
+    def info(self, msg):
+        return self.call("info", self._id, msg)
+
+    def error(self, msg):
+        return self.call("err", self._id, msg)
+    warn = error
+
+class BroCtld(Thread, Common):
+    def __init__(self, command_queue, logs):
+        Thread.__init__(self)
+        self.daemon = True
+        self.logs = logs
+        self.command_queue = command_queue
+        self.worker = BroCtrldWorker(self.command_queue)
 
         self.results = {}
-        self.threads = {}
         self.running = True
-
-        self.change_lock = Lock()
 
         self.id_gen = iter(range(10000000)).next
 
         self.init()
 
     def init(self):
-        pass
+        self.worker.start()
 
     def recv(self):
-        msg = self.sock.recv()
-        #print("Received", self.load(msg))
-        return self.load(msg)
-
-    def send(self, *args):
-        msg = self.dump(*args)
-        return self.sock.send(msg)
+        msg = self.command_queue.get()
+        print("Received", msg)
+        return msg
 
     def run(self):
-        t = Thread(target=self._bg)
-        t.start()
         return self._run()
-
-    def _bg(self):
-        sock = Socket(REQ)
-        sock.connect('inproc://server')
-        while self.running:
-            for func in self.bg_tasks:
-                msg = self.dump((func, []))
-                sock.send(msg)
-                self.load(sock.recv())
-            time.sleep(10)
 
     def handle_result(self, id, result):
         print("Got result id=%r result=%r" % (id, result))
         self.results[id] = result
-        self.send("ok")
-
-    def handle_setstate(self, key, value):
-        print("Set state key=%r value=%r" % (key, value))
-        self.state.set(key, value)
-        self.send("ok")
-
-    def handle_getstate(self, key):
-        value = self.state.get(key)
-        print("Get state key=%r value=%r" % (key, value))
-        self.send(value)
-
-    def handle_getstateitems(self):
-        value = self.state.items()
-        self.send(value)
+        return "ok"
 
     def handle_out(self, id, txt):
         print("Got %s id=%r result=%r" % ('out', id, txt))
         self.logs.append(id, 'out', txt)
-        self.send("ok")
+        return "ok"
+
+    def handle_info(self, id, txt):
+        print("Got %s id=%r result=%r" % ('info', id, txt))
+        self.logs.append(id, 'info', txt)
+        return "ok"
 
     def handle_err(self, id, txt):
         print("Got %s id=%r result=%r" % ('err', id, txt))
         self.logs.append(id, 'err', txt)
-        self.send("ok")
+        return "ok"
 
     def handle_getresult(self, id):
         result = self.results.get(id)
         if result:
             del self.results[id]
-            del self.threads[id]
         print("sending result=%r for id=%r" % (result, id))
-        self.send(result)
+        return result
 
     def handle_getlog(self, id, since):
         result = self.logs.get(id, since)
         print("sending log=%r for id=%r" % (result, id))
-        self.send(result)
+        return result
 
     def _run(self):
         while self.running:
-            (cmd, args) = self.recv()
+            (rq, cmd, args) = self.recv()
             func = getattr(self, 'handle_' + cmd, None)
             if func:
-                func(*args)
-                continue
-
-            t_id, t = self.spawn_worker(cmd, args)
-            self.send(t_id)
-            self.threads[t_id] = t
-            print("started thread for id=%r func=%r args=%r" % (t_id, func, args))
-
-    def spawn_worker(self, cmd, args):
-        t_id = self.id_gen()
-        target = lambda: self.wrap(t_id, cmd, args)
-        t = Thread(target=target)
-        t.start()
-        return t_id, t
-
-    def noop(self, *args, **kwargs):
-        return True
-
-    def wrap(self, id, cmd, args):
-        w = self.worker_class(id)
-        func = getattr(w, cmd, self.noop)
-
-        def respond(r):
-            w.cl.call("result", id, r)
-            w.cl.close()
-
-        if not hasattr(func, 'api_exposed'):
-            return respond("invalid function")
-
-        if hasattr(func, 'lock_required'):
-            self.change_lock.acquire()
-        try :
-            try :
                 res = func(*args)
-            except Exception as e:
-                res = traceback.format_exc()
-            respond(res)
-        finally:
-            if hasattr(func, 'lock_required'):
-                self.change_lock.release()
+                if rq:
+                    rq.put(res)
+            else:
+                t_id = self.send_to_worker(cmd, *args)
+                rq.put(t_id)
+
+    def send_to_worker(self, cmd, *args):
+        t_id = self.id_gen()
+        self.worker.send(t_id, cmd, *args)
+        print("started id=%r cmd=%r args=%r" % (t_id, cmd, args))
+        return t_id
 
 class Client(Common):
-    def __init__(self, uri='inproc://server', id=None):
-        self.sock = Socket(REQ)
-        self.sock.connect(uri)
-        self.id=id
-
-    def close(self):
-        self.sock.close()
+    def __init__(self, command_queue):
+        self.command_queue = command_queue
 
     def call(self, func, *args):
-        msg = self.dump((func, args))
-        self.sock.send(msg)
-        return self.load(self.sock.recv())
+        rq = Queue()
+        self.command_queue.put((rq, func, args))
+        return rq.get()
 
     def sync_call(self, func, *args):
         id = self.call(func, *args)
@@ -222,45 +199,24 @@ class Client(Common):
     def getresult(self, id):
         return self.call("getresult", id)
 
-    def getstate(self, key):
-        return self.call("getstate", key)
-
-    def setstate(self, key, value):
-        return self.call("setstate", key, value)
-
-    def getstateitems(self):
-        return self.call("getstateitems")
-
     def getlog(self, id, since=0):
         return self.call("getlog", id, since)
 
-    def info(self, msg):
-        return self.call("out", self.id, msg)
-
-    def error(self, msg):
-        return self.call("err", self.id, msg)
-    warn = error
-
-class Broctld(Daemon):
-    pass
-    #bg_tasks =['refresh', 'cron']
-    #change_funcs = 'start stop exec cron'.split()
-
-NODES = ['node-%d' %x for x in range(48)]
-
-def broctl_worker_factory(id):
-    cl = Client(id=id)
-    state = StateClientWrapper(cl)
-    worker = BroCtl(state=state, ui=cl)
-    worker.cl = cl
-    return worker
-
-def main(basedir):
-    #import os
-    #state = State(os.path.join(basedir,"spool/broctl.dat"))
-    cfg = config.Configuration(basedir, TermUI())
-    state = State(cfg.statefile)
+def main(basedir='/bro'):
     logs = Logs()
 
-    d = Broctld(state, logs, broctl_worker_factory)
-    d.run()
+    command_queue = Queue()
+    d = BroCtld(command_queue, logs)
+
+    d.start()
+
+    c = Client(command_queue)
+
+    ww = Thread(target=web.run_app, args=[c])
+    ww.start()
+    print("I Got:", c.sync_call('status'))
+    for x in range(20):
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()

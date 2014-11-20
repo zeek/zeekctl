@@ -1,5 +1,4 @@
 from BroControl import version
-from BroControl.broctld import Client
 from BroControl.ser import dumps
 import os
 import bottle
@@ -27,6 +26,7 @@ def restart():
 @app.route('/nodes')
 def nodes():
     s = app.daemon.sync_call("nodes")
+    print "\n\n\nReturning", s, "\n\n"
     return {"result": s}
 
 @app.route('/exec/:cmd')
@@ -51,9 +51,8 @@ def cmd(cmd):
     i = app.daemon.call(cmd)
     return {"id": i} 
 
-def main():
-    sockfile = os.path.join(version.BROBASE, "socket")
-    app.daemon = Client('ipc://%s' % sockfile)
+def run_app(client):
+    app.daemon = client
     bottle.run(app, host='localhost', port=8082)
 
 if __name__ == "__main__":
