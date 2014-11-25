@@ -3,6 +3,7 @@
 #
 
 import os
+import copy
 
 from BroControl import doc
 
@@ -102,6 +103,20 @@ class Node:
 
     def __str__(self):
         return self.name
+
+    def copy(self):
+        n = Node(self._config, self.name)
+
+        for key in self.__dict__:
+            if key.startswith("_"):
+                # This is to avoid copying _config, which causes problems.
+                setattr(n, key, getattr(self, key))
+            else:
+                # Must make a copy of some config items (e.g. env_vars) so that
+                # changes to the value only affect one node.
+                setattr(n, key, copy.copy(getattr(self, key)))
+
+        return n
 
     def items(self):
         """Returns a list of (key, value) tuples, sorted by key, of a node."""

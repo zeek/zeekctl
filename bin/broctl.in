@@ -96,7 +96,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if args:
             raise SyntaxError("config does not take any arguments")
 
-        for (key, val) in sorted(self.broctl.get_config()):
+        for (key, val) in self.broctl.get_config():
             self.output("%s = %s" % (key, val))
 
         return True

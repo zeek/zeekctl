@@ -145,7 +145,7 @@ class BroCtl(object):
     def get_config(self):
         """Prints all configuration options with their current values."""
 
-        config = {}
+        config = []
         if self.plugins.cmdPre("config"):
             config = self.config.options()
 

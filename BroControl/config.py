@@ -3,7 +3,6 @@
 import os
 import socket
 import re
-import copy
 import ConfigParser
 
 from BroControl import node as node_mod
@@ -136,13 +135,15 @@ class Configuration:
             return True
         return False
 
-    # Returns a list of all broctl.cfg entries.
+    # Returns a sorted list of all broctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
     def options(self, dynamic=True):
+        optlist = self.config.items()
         if dynamic:
-            return self.config.items() + self.state.items()
-        else:
-            return self.config.items()
+            optlist += self.state.items()
+
+        optlist.sort()
+        return optlist
 
     # Returns a list of Nodes (the list will be empty if no matching nodes
     # are found).  The returned list is sorted by node type, and by node name
@@ -404,8 +405,7 @@ class Configuration:
                 node.name = "%s-1" % sec
 
                 for num in xrange(2, numprocs + 1):
-                    newnode = copy.deepcopy(node)
-                    newnode._config = self
+                    newnode = node.copy()
                     # only the node name, count, and pin_cpus need to be changed
                     newname = "%s-%d" % (sec, num)
                     newnode.name = newname
