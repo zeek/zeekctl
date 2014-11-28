@@ -10,7 +10,6 @@ from BroControl import util
 from BroControl import config
 from BroControl import execute
 from BroControl import control
-from BroControl import cron
 from BroControl import version
 from BroControl import pluginreg
 
@@ -341,8 +340,7 @@ class BroCtl(object):
         """
 
         if self.plugins.cmdPre("cron", "", watch):
-            cmdOutput = cron.doCron(watch)
-            cmdOutput.printResults()
+            self.controller.doCron(watch)
         self.plugins.cmdPost("cron", "", watch)
 
         return True

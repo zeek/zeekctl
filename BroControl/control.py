@@ -11,6 +11,7 @@ from BroControl import events
 from BroControl import util
 from BroControl import config
 from BroControl import install
+from BroControl import cron
 from BroControl import node as node_mod
 
 
@@ -664,8 +665,8 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
-            results3 = self.executor.rmdirs([(n, config.Config.tmpdir) for n in running + notrunning])
-            results4 = self.executor.mkdirs([(n, config.Config.tmpdir) for n in running + notrunning])
+            results3 = self.executor.rmdirs([(n, self.config.tmpdir) for n in running + notrunning])
+            results4 = self.executor.mkdirs([(n, self.config.tmpdir) for n in running + notrunning])
             failed = addfailed(failed, results3)
             failed = addfailed(failed, results4)
 
@@ -687,7 +688,7 @@ class Controller:
             results.append("No work dir found")
             return (False, results)
 
-        (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(config.Config.scriptsdir, "crash-diag"), node.cwd()])
+        (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(self.config.scriptsdir, "crash-diag"), node.cwd()])
         if not rc:
             results.append("cannot run crash-diag for %s" % node.name)
             return (False, results)
@@ -1047,8 +1048,8 @@ class Controller:
                     d = {}
                     d["pid"] = int(p[0])
                     d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
-                    d["vsize"] = float(p[1]) #May be something like 2.17684e+9
-                    d["rss"] = float(p[2])
+                    d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
+                    d["rss"] = int(float(p[2]))
                     d["cpu"] = p[3]
                     d["cmd"] = " ".join(p[4:])
                     vals += [d]
@@ -1297,4 +1298,57 @@ class Controller:
         self.config.updateBroctlCfgHash()
 
         return cmdSuccess
+
+
+    # Triggers all activity which is to be done regularly via cron.
+    def doCron(self, watch):
+        if not self.config.hasAttr("cronenabled"):
+            self.config._setState("cronenabled", True)
+        if not self.config.cronenabled:
+            return
+
+        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            return
+
+        # Flag to indicate that we're running from cron.
+        self.config.config["cron"] = "1"
+
+        cronui = cron.CronUI()
+        tasks = cron.CronTasks(cronui, self.config, self)
+
+        cronui.bufferOutput()
+
+        if watch:
+            # Check whether nodes are still running and restart if necessary.
+            for (node, isrunning) in self.isRunning(self.config.nodes()):
+                if not isrunning and node.hasCrashed():
+                    results = self.start([node])
+
+        # Check for dead hosts.
+        tasks.checkHosts()
+
+        # Generate statistics.
+        tasks.logStats(5)
+
+        # Check available disk space.
+        tasks.checkDiskSpace()
+
+        # Expire old log files.
+        tasks.expireLogs()
+
+        # Update the HTTP stats directory.
+        tasks.updateHTTPStats()
+
+        # Run external command if we have one.
+        tasks.runCronCmd()
+
+        # Mail potential output.
+        output = cronui.getBufferedOutput()
+        if output:
+            if not self.sendMail("cron: " + output.splitlines()[0], output):
+                self.ui.error("cannot send mail")
+
+        self.config.config["cron"] = "0"
+        logging.debug("cron done")
 

@@ -2,7 +2,6 @@
 # file by default.  Also test that broctl cron expires entries in the stats.log
 # file when the statslogexpireinterval option is set to a non-zero value.
 #
-# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 
 . broctl-test-setup

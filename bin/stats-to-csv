@@ -2,12 +2,12 @@
 #
 # stats-to-csv <stats.log> <meta.dat> <wwwdir>
 #
-# Reads information from stats directory and outputs csv files <wwwdir>/<node>.<type>.csv.
+# Reads information from stats log and outputs csv files
+# <wwwdir>/<node>.<type>.csv.
 # If any of these files already exists, we append (without writing the header
 # line again).
 
 from __future__ import print_function
-import os.path
 import os
 import sys
 
@@ -15,15 +15,16 @@ Workers = set()
 Proxies = set()
 
 def readNodes(meta):
-    for line in open(meta):
-        m = line.split()
+    with open(meta, "r") as f:
+        for line in f:
+            m = line.split()
 
-        if m[0] == "node":
-            if m[2] == "worker":
-                Workers.add(m[1])
+            if m[0] == "node":
+                if m[2] == "worker":
+                    Workers.add(m[1])
 
-            if m[2] == "proxy":
-                Workers.add(m[1])
+                if m[2] == "proxy":
+                    Workers.add(m[1])
 
 def processNode(stats, wwwdir, node, iface):
 
@@ -34,7 +35,7 @@ def processNode(stats, wwwdir, node, iface):
         name = os.path.join(wwwdir, "%s.%s.csv" % (node, tag))
 
         if os.path.exists(name):
-            return open(name, "a")
+            f = open(name, "a")
         else:
             f = open(name, "w")
             f.write("time,%s\n" % ",".join(columns))
@@ -48,6 +49,8 @@ def processNode(stats, wwwdir, node, iface):
     cflow = openFile("in", ["MBits/sec"])
 
     def printEntry(t, entry):
+        if len(entry) == 0:
+            return
 
         try:
             val = int(entry["parent-cpu"]) + int(entry["child-cpu"])
@@ -83,24 +86,23 @@ def processNode(stats, wwwdir, node, iface):
     entry = {}
     first = -1
 
-    for line in open(stats):
-        m = line.split()
+    with open(stats, "r") as ff:
+        for line in ff:
+            m = line.split()
 
-        if m[1] != node:
-            continue
+            if m[1] != node:
+                continue
 
-        t = m[0]
+            t = float(m[0])
 
-        if t != first and first >= 0:
-            printEntry(t, entry)
-            entry = {}
+            if t != first and first >= 0:
+                printEntry(t, entry)
+                entry = {}
 
-        first = t
+            first = t
 
-        try:
-            entry["%s-%s" % (m[2], m[3])] = m[4]
-        except IndexError:
-            pass
+            if len(m) > 4:
+                entry["%s-%s" % (m[2], m[3])] = m[4]
 
     if first >= 0:
         printEntry(t, entry)

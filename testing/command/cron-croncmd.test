@@ -1,7 +1,6 @@
 # Test that the broctl cron command runs a command specified by the
 # croncmd broctl option.
 #
-# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 
 . broctl-test-setup

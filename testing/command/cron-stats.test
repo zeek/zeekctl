@@ -2,7 +2,6 @@
 # nodes in a cluster to the stats.log file, and moves the file to a different
 # directory.
 #
-# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-stats btest-diff stats.out
 

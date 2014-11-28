@@ -1,7 +1,6 @@
 # Test that the broctl cron command creates the meta.dat file, and some *.csv
 # files.
 #
-# @TEST-IGNORE
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-meta btest-diff meta.out
 
