@@ -26,7 +26,7 @@ def readNodes(meta):
                 if m[2] == "proxy":
                     Workers.add(m[1])
 
-def processNode(stats, wwwdir, node, iface):
+def processNode(stats, wwwdir, node, iface, use_cflow=False):
 
     print(node, "...")
 
@@ -42,14 +42,23 @@ def processNode(stats, wwwdir, node, iface):
 
         return f
 
-    iface_mbps = openFile("mbps", ["MBits/sec"])
-    iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
-    cpu = openFile("cpu", ["CPU"])
-    mem = openFile("mem", ["Memory"])
-    cflow = openFile("in", ["MBits/sec"])
+    if use_cflow:
+        cflow = openFile("in", ["MBits/sec"])
+    else:
+        cpu = openFile("cpu", ["CPU"])
+        mem = openFile("mem", ["Memory"])
+        if iface:
+            iface_mbps = openFile("mbps", ["MBits/sec"])
+            iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
 
     def printEntry(t, entry):
         if len(entry) == 0:
+            return
+
+        if use_cflow:
+            e = entry.get("in-mbps")
+            if e:
+                cflow.write("%s,%s\n" % (t, e))
             return
 
         try:
@@ -65,23 +74,19 @@ def processNode(stats, wwwdir, node, iface):
             pass
 
         if iface:
-            try:
-                iface_mbps.write("%s,%s\n" % (t, entry["interface-mbps"]))
-            except KeyError:
-                pass
+            e = entry.get("interface-mbps")
+            if e:
+                iface_mbps.write("%s,%s\n" % (t, e))
 
             try:
-                tc = float(entry["interface-t"])
-                ud = float(entry["interface-u"])
-                ic = float(entry["interface-i"])
-                ot = float(entry["interface-o"])
+                tc = entry["interface-t"]
+                ud = entry["interface-u"]
+                ic = entry["interface-i"]
+                ot = entry["interface-o"]
                 iface_pkts.write("%s,%s,%s,%s,%s\n" % (t, tc, ud, ic, ot))
 
             except KeyError:
                 pass
-
-        if "in-mbps" in entry:
-            cflow.write("%s,%s\n" % (t, entry["in-mbps"]))
 
     entry = {}
     first = -1
@@ -107,11 +112,14 @@ def processNode(stats, wwwdir, node, iface):
     if first >= 0:
         printEntry(t, entry)
 
-    iface_mbps.close()
-    iface_pkts.close()
-    cpu.close()
-    mem.close()
-    cflow.close()
+    if use_cflow:
+        cflow.close()
+    else:
+        cpu.close()
+        mem.close()
+        if iface:
+            iface_mbps.close()
+            iface_pkts.close()
 
 if len(sys.argv) != 4:
     print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
@@ -136,7 +144,7 @@ try:
         processNode(stats, wwwdir, p, False)
 
     processNode(stats, wwwdir, "manager", False)
-    processNode(stats, wwwdir, "cflow", False)
+    processNode(stats, wwwdir, "cflow", False, use_cflow=True)
 except IOError as err:
     print("Error: %s" % err)
     sys.exit(1)
