@@ -1,4 +1,8 @@
 
+1.3-9 | 2014-12-01 12:03:53 -0600
+
+  * Remove execute permission on scripts not needing it. (Raúl Benencia)
+
 1.3-8 | 2014-10-31 09:17:27 -0500
 
   * BIT-1166: Add configure options to fine tune local state dirs.
