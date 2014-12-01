@@ -110,6 +110,8 @@ class Controller:
         workers = []
 
         for n in nodes:
+            n.setExpectRunning(True)
+
             if n.type == "worker":
                 workers += [n]
             elif n.type == "proxy":
@@ -361,6 +363,8 @@ class Controller:
         workers = []
 
         for n in nodes:
+            n.setExpectRunning(False)
+
             if n.type == "worker":
                 workers += [n]
             elif n.type == "proxy":
@@ -1320,10 +1324,22 @@ class Controller:
         cronui.bufferOutput()
 
         if watch:
-            # Check whether nodes are still running and restart if necessary.
+            # Check if node state matches expected state, and start/stop if
+            # necessary.
+            startlist = []
+            stoplist = []
             for (node, isrunning) in self.isRunning(self.config.nodes()):
-                if not isrunning and node.hasCrashed():
-                    results = self.start([node])
+                expectrunning = node.getExpectRunning()
+
+                if not isrunning and expectrunning:
+                    startlist.append(node)
+                elif isrunning and not expectrunning:
+                    stoplist.append(node)
+
+            if startlist:
+                results = self.start(startlist)
+            if stoplist:
+                results = self.stop(stoplist)
 
         # Check for dead hosts.
         tasks.checkHosts()

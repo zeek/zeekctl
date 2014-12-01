@@ -195,6 +195,17 @@ class Node:
         t = "%s-crashed" % self.name.lower()
         return self._config._getState(t)
 
+    def getExpectRunning(self):
+        key = "%s-expect-running" % self.name.lower()
+        val = self._config._getState(key)
+        if val is None:
+            val = False
+        return val
+
+    def setExpectRunning(self, val):
+        key = "%s-expect-running" % self.name.lower()
+        self._config._setState(key, val)
+
     # Set the Bro port this node is using.
     def setPort(self, port):
         t = "%s-port" % self.name
