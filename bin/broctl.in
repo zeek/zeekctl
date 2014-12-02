@@ -43,10 +43,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
     info = output
 
+    def warn(self, str):
+        self.output("warning: %s" % str)
+
     def error(self, str):
         self.output("Error: %s" % str)
         self.exit_code = 1
-    warn = error
 
     def default(self, line):
         m = line.split()

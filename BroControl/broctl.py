@@ -72,6 +72,7 @@ class BroCtl(object):
         self.plugins.initPlugins()
         util.enableSignals()
         os.chdir(self.config.brobase)
+        self.config.warnBroctlInstall()
 
     # Turns nodes arguments into a list of node names.
     def nodeArgs(self, args=None):

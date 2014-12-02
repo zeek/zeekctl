@@ -567,7 +567,7 @@ class Configuration:
     def getNodeCfgHash(self):
         nn = []
         for n in self.nodes():
-            nn.append(tuple(n.items()))
+            nn.append(tuple([(key,val) for key,val in n.items() if not key.startswith("_")]))
         return str(hash(tuple(nn)))
 
     # Update the stored hash value of the current broctl node config.
