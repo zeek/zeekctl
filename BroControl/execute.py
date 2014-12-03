@@ -192,14 +192,17 @@ class Executor:
     #
     # cmds:  a list of the form: [ (node, cmd, args), ... ]
     #   where "cmd" is a string, "args" is a list of strings.
-    # shell:  if true, then the "cmd" (and "args") will be interpreted by a
+    # shell:  if True, then the "cmd" (and "args") will be interpreted by a
     #   shell.
-    # helper:  if true, then the "cmd" will be modified to specify the full
+    # helper:  if True, then the "cmd" will be modified to specify the full
     #   path to the broctl helper script.
     #
     # Returns a list of results: [(node, success, output), ...]
-    #   where "success" is a boolean (true if command's exit status is zero),
-    #   and "output" is a list of strings (stdout followed by stderr).
+    #   where "success" is a boolean (True if command's exit status was zero),
+    #   and "output" is a list of strings (stdout followed by stderr) or None
+    #   if no result was received (this could occur upon failure to communicate
+    #   with remote host, or if the command being executed did not finish
+    #   before the timeout).
     def runCmdsParallel(self, cmds, shell=False, helper=False):
         results = []
 
@@ -239,7 +242,7 @@ class Executor:
                 results.append( (bronode, res == 0, out + err) )
                 logging.debug("%s: exit code %d" % (bronode.host, res))
             else:
-                results.append( (bronode, False, [str(result)]) )
+                results.append( (bronode, False, None) )
             del dd[host][0]
 
         return results
@@ -263,7 +266,10 @@ class Executor:
     #
     # Returns a tuple of the form: (success, output)
     #   where "success" is a boolean (true if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr).
+    #   and "output" is a list of strings (stdout followed by stderr) or None
+    #   if no result was received (this could occur upon failure to communicate
+    #   with remote host, or if the command being executed did not finish
+    #   before the timeout).
     def runHelper(self, node, cmd, args):
         cmds = [(node, cmd, args)]
         results = self.runHelperParallel(cmds)

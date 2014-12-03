@@ -256,7 +256,7 @@ class MultiMasterManager:
             return rq.get(timeout=timeout)
         except Empty:
             self.shutdown(host)
-            return ["Timeout"] #FIXME: needs to be the right length
+            return [Exception("Timeout")] #FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]
