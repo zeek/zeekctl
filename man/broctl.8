@@ -5,107 +5,106 @@
 \- interactive shell for managing Bro installations
 .SH SYNOPSIS
 .B broctl
-<command>
+[\fIcommand\fR]
 
 .SH DESCRIPTION
 .B broctl
-is an interactive interface for managing a Bro installation which allows
-you to, e.g., start/stop the monitoring or update its configuration.
+is an interactive interface for managing either a standalone or a Bro cluster
+installation.  If a \fBbroctl\fR command is specified directly on the
+command-line, then \fBbroctl\fR performs the action associated with
+that command immediately (instead of running the interactive interface).
 
 Before actually running
 .B broctl
-you first need to edit the
-.B broctl.cfg
-,
-.B node.cfg
-, and
-.B networks.cfg
-files. In the
-.B broctl.cfg
-file, you should review the
-.B broctl
-options and make sure the options are set correctly for your
-environment. Next, edit the
-.B node.cfg
-file and specify the nodes that you will be running. Finally, edit the
-.B networks.cfg
-file and list each network (see the examples in the file for the format to
-use) that is considered local to the monitored environment.
+you first need to edit the \fBbroctl.cfg\fR, \fBnode.cfg\fR, and
+\fBnetworks.cfg\fR files. In the \fBbroctl.cfg\fR file, you should
+review the \fBbroctl\fR options and make sure the options are set
+correctly for your environment. Next, edit the \fBnode.cfg\fR
+file and specify the nodes that you will be running. Finally, edit
+the \fBnetworks.cfg\fR file and list each network that is considered
+local to the monitored environment (see the examples
+in the file for the format to use).
+
+When running \fBbroctl\fR for the first time, you must run the \fBbroctl\fR
+\fBinstall\fR command before running any other commands in order to apply the
+configuration settings.  You must also run \fBbroctl install\fR each time
+you change the configuration or upgrade Bro (in addition, some
+configuration changes require a restart of all running Bro instances).
 .SH OPTIONS
 .TP
-.B capstats [<nodes>] [<secs>]
+\fBcapstats\fR [<nodes>] [<secs>]
 Report interface statistics with capstats
 .TP
-.B check [<nodes>]
+\fBcheck\fR [<nodes>]
 Check configuration before installing it
 .TP
-.B cleanup [\-\-all] [<nodes>]
+\fBcleanup\fR [\-\-all] [<nodes>]
 Delete working dirs (flush state) on nodes
 .TP
-.B config
+\fBconfig\fR
 Print broctl configuration
 .TP
-.B cron [\-\-no\-watch]
+\fBcron\fR [\-\-no\-watch]
 Perform jobs intended to run from cron
 .TP
-.B cron enable|disable|?
+\fBcron\fR enable|disable|?
 Enable/disable "cron" jobs
 .TP
-.B df [<nodes>]
+\fBdf\fR [<nodes>]
 Print nodes' current disk usage
 .TP
-.B diag [<nodes>]
+\fBdiag\fR [<nodes>]
 Output diagnostics for nodes
 .TP
-.B exec <shell cmd>
+\fBexec\fR <shell cmd>
 Execute shell command on all hosts
 .TP
-.B install
+\fBexit\fR
+Exit from the interactive interface
+.TP
+\fBinstall\fR
 Update broctl installation/configuration
 .TP
-.B netstats [<nodes>]
+\fBnetstats\fR [<nodes>]
 Print nodes' current packet counters
 .TP
-.B nodes
+\fBnodes\fR
 Print node configuration
 .TP
-.B peerstatus [<nodes>]
+\fBpeerstatus\fR [<nodes>]
 Print status of nodes' remote connections
 .TP
-.B print <id> [<nodes>]
+\fBprint\fR <id> [<nodes>]
 Print values of script variable at nodes
 .TP
-.B process <trace> [<op>] [\-\- <sc>]
+\fBprocess\fR <trace> [<op>] [\-\- <sc>]
 Run Bro (with options and scripts) on trace
 .TP
-.B restart [\-\-clean] [<nodes>]
+\fBrestart\fR [\-\-clean] [<nodes>]
 Stop and then restart processing
 .TP
-.B scripts [\-c] [<nodes>]
+\fBscripts\fR [\-c] [<nodes>]
 List the Bro scripts the nodes will load
 .TP
-.B start [<nodes>]
+\fBstart\fR [<nodes>]
 Start processing
 .TP
-.B status [<nodes>]
+\fBstatus\fR [<nodes>]
 Summarize node status
 .TP
-.B stop [<nodes>]
+\fBstop\fR [<nodes>]
 Stop processing
 .TP
-.B top [<nodes>]
+\fBtop\fR [<nodes>]
 Show Bro processes ala top
 .TP
-.B update [<nodes>]
+\fBupdate\fR [<nodes>]
 Update configuration of nodes on the fly
 .PP
 Commands provided by plugins:
 .TP
-.B ps.bro [<nodes>]
+\fBps.bro\fR [<nodes>]
 Show Bro processes on nodes' systems
 .SH AUTHOR
 .B broctl
 was written by The Bro Project <info@bro.org>.
-.PP
-This manual page was written by Raúl Benencia <rul@kalgan.cc> for the
-Debian project (but may be used by others).
