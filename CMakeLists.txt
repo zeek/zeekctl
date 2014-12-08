@@ -137,6 +137,12 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/helpers/to-bytes.awk
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/set-bro-path
         DESTINATION share/broctl/scripts)
 
+if ( NOT BRO_MAN_INSTALL_PATH )
+    set(BRO_MAN_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/man)
+endif ()
+
+install(FILES man/broctl.8 DESTINATION ${BRO_MAN_INSTALL_PATH}/man8)
+
 install(DIRECTORY scripts/
         DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
