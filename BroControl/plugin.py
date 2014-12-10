@@ -5,7 +5,6 @@
 import logging
 
 from BroControl import config
-from BroControl import util
 from BroControl import doc
 
 class Plugin(object):
@@ -143,7 +142,7 @@ class Plugin(object):
     @doc.api
     def message(self, msg):
         """Reports a message to the user."""
-        util.output(msg, prefix="plugin:%s" % self.prefix())
+        print "%s" % msg
 
     @doc.api
     def debug(self, msg):
@@ -153,7 +152,7 @@ class Plugin(object):
     @doc.api
     def error(self, msg):
         """Reports an error to the user."""
-        util.error(msg, prefix="plugin:%s" % self.prefix())
+        print "error: %s" % msg
 
     @doc.api
     def execute(self, node, cmd):
@@ -651,27 +650,6 @@ class Plugin(object):
     def cmd_diag_post(self, nodes):
         """Called just after the ``diag`` command has finished. Arguments are
         as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_attachgdb_pre(self, nodes):
-        """Called just before the ``attachgdb`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_attachgdb_post(self, nodes):
-        """Called just after the ``attachgdb`` command has finished. Arguments
-        are as with the ``pre`` method.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

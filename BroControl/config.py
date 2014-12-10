@@ -119,7 +119,6 @@ class Configuration:
     # Provides access to the configuration options via the dereference operator.
     # Lookups the attribute in broctl.cfg first, then in the dynamic variables
     # from broctl.dat.
-    # Defaults to empty string for unknown options.
     def __getattr__(self, attr):
         if attr in self.config:
             return self.config[attr]

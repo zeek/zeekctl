@@ -21,7 +21,7 @@ def api(*deco_args):
 def printIndented(str, level):
     out = ""
     if not isinstance(str, list):
-        str = str.split("\n")
+        str = str.splitlines()
 
     for line in str:
         out += "%s %s\n" % ("    " * level, line)

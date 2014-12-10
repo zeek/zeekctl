@@ -295,24 +295,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         return success
 
-    def do_attachgdb(self, args):
-        """- [<nodes>]
-
-        Primarily for debugging, the command attaches a *gdb* to the main Bro
-        process on the given nodes. """
-
-        self.lock()
-        (success, nodes) = nodeArgs(args)
-        if success:
-            nodes = plugin.Registry.cmdPreWithNodes("attachgdb", nodes)
-            cmdSuccess, cmdOutput = control.attachGdb(nodes)
-            if not cmdSuccess:
-                self.exit_code = 1
-            cmdOutput.printResults()
-            plugin.Registry.cmdPostWithNodes("attachgdb", nodes)
-        else:
-            self.exit_code = 1
-
     def do_cron(self, args):
         """- [enable|disable|?] | [--no-watch]
 
@@ -712,7 +694,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands that take a "<nodes>" argument.
-        nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats", "print", "restart", "start", "status", "stop", "top", "update", "attachgdb", "peerstatus", "scripts"]
+        nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats", "print", "restart", "start", "status", "stop", "top", "update", "peerstatus", "scripts"]
 
         args = line.split()
 

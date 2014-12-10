@@ -21,7 +21,7 @@ def printCommands(cls):
     for (cmd, doc) in cmds:
         if doc.startswith("- "):
             # First line are arguments.
-            doc = doc.split("\n")
+            doc = doc.splitlines()
             args = doc[0][2:]
             doc = "\n".join(doc[1:])
         else:
@@ -33,7 +33,7 @@ def printCommands(cls):
             args = ""
 
         output = ""
-        for line in doc.split("\n"):
+        for line in doc.splitlines():
             line = line.strip()
             output += "    " + line + "\n"
 

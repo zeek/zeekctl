@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import errno
 import sys
@@ -9,15 +8,6 @@ from BroControl import config
 
 def fmttime(t):
     return time.strftime(config.Config.timefmt, time.localtime(float(t)))
-
-def output(msg = "", nl = True, prefix="output"):
-    nlstr = ""
-    if nl:
-        nlstr = "\n"
-    sys.stderr.write(msg + nlstr)
-
-def error(msg, prefix=None):
-    output("error: %s" % msg, prefix=prefix)
 
 # For a list of tuples, where second element in tuple is a bool, return True
 # if at least one boolean is False.

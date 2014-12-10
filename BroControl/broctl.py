@@ -17,9 +17,6 @@ class InvalidNode(Exception):
     pass
 
 class TermUI:
-    def __init__(self):
-        pass
-
     def output(self, txt):
         print(txt)
     info = output
