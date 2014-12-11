@@ -37,6 +37,7 @@ class Configuration:
 
         self.config = {}
         self.state = {}
+        self.nodelist = {}
 
         # Read broctl.cfg.
         self.config = self._readConfig(config_file)
@@ -84,10 +85,11 @@ class Configuration:
             self._setOption("time", "")
 
     def initPostPlugins(self):
-        # Read node.cfg and broctl.dat.
-        if not self._readNodes():
-            return False
-        if not self.readState():
+        self.readState()
+
+        # Read node.cfg
+        self.nodelist = self._readNodes()
+        if not self.nodelist:
             return False
 
         # If "env_vars" was specified in broctl.cfg, then apply to all nodes.
@@ -287,7 +289,6 @@ class Configuration:
 
     # Parse node.cfg.
     def _readNodes(self):
-        self.nodelist = {}
         config = ConfigParser.SafeConfigParser()
         if not config.read(self.nodecfg):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
@@ -298,11 +299,12 @@ class Configuration:
         standalone = False
 
         file = self.nodecfg
+        nodestore = {}
 
         counts = {}
         for sec in config.sections():
             node = node_mod.Node(self, sec)
-            self.nodelist[sec] = node
+            nodestore[sec] = node
 
             for (key, val) in config.items(sec):
 
@@ -353,7 +355,7 @@ class Configuration:
                 raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
 
             # Each node gets a number unique across its type.
-            type = self.nodelist[sec].type
+            type = nodestore[sec].type
             try:
                 counts[type] += 1
             except KeyError:
@@ -408,7 +410,7 @@ class Configuration:
                     # only the node name, count, and pin_cpus need to be changed
                     newname = "%s-%d" % (sec, num)
                     newnode.name = newname
-                    self.nodelist[newname] = newnode
+                    nodestore[newname] = newnode
                     counts[type] += 1
                     newnode.count = counts[type]
                     if pin_cpus:
@@ -417,7 +419,7 @@ class Configuration:
                     if newnode.lb_method == "interfaces":
                         newnode.interface = netifs.pop().strip()
 
-        if self.nodelist:
+        if nodestore:
 
             if not standalone:
                 if not manager:
@@ -427,12 +429,12 @@ class Configuration:
                     raise ConfigurationError("%s: no proxy defined" % file)
 
             else:
-                if len(self.nodelist) > 1:
+                if len(nodestore) > 1:
                     raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
 
         manageronlocalhost = False
 
-        for n in self.nodelist.values():
+        for n in nodestore.values():
             if not n.name:
                 raise ConfigurationError("node configured without a name")
 
@@ -451,16 +453,16 @@ class Configuration:
 
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
-            for n in self.nodelist.values():
+            for n in nodestore.values():
                 if n.type != "manager" and n.type != "standalone":
                     if n.addr != "127.0.0.1" and n.addr != "::1":
                         raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
-        return True
+        return nodestore
 
 
-    # Parses broctl.cfg or broctl.dat and returns a dictionary of all entries.
-    def _readConfig(self, file, allowstate = False):
+    # Parses broctl.cfg and returns a dictionary of all entries.
+    def _readConfig(self, file):
         config = {}
         for line in open(file):
 
@@ -474,13 +476,9 @@ class Configuration:
 
             (key, val) = args
             key = key.strip().lower()
-            val = val.strip()
-
-            if not allowstate and ".state." in key:
-                raise ConfigurationError("state variable '%s' not allowed in file: %s" % (key, file))
 
             # if the key already exists, just overwrite with new value
-            config[key] = val
+            config[key] = val.strip()
 
         return config
 
@@ -496,28 +494,21 @@ class Configuration:
         self.state_store.set(key, val)
 
     def _getState(self, key):
-        return self.state_store.get(key)
+        return self.state[key]
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self):
         self.state = dict(self.state_store.items())
-        if self.state is None:
-            return False
-
-        return True
-
-    # Append the given dynamic state variable to {$spooldir}/broctl.dat .
-    def appendStateVal(self, key):
-        pass
 
     # Record the Bro version.
-    def determineBroVersion(self):
-        version = self._getBroVersion()
-        if not version:
+    def recordBroVersion(self):
+        try:
+            version = self._getBroVersion()
+        except ConfigurationError:
             return False
 
-        self.state["broversion"] = version
-        self.state["bro"] = self.subst("${bindir}/bro")
+        self._setState("broversion", version)
+        self._setState("bro", self.subst("${bindir}/bro"))
         return True
 
 
@@ -528,12 +519,10 @@ class Configuration:
             oldversion = self.state["broversion"]
 
             version = self._getBroVersion()
-            if not version:
-                return False
 
             if version != oldversion:
                 self.ui.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
-                return True
+                return
 
         # Check if node config has changed since last install.
         if "hash-nodecfg" in self.state:
@@ -541,16 +530,14 @@ class Configuration:
 
             if nodehash != self.state["hash-nodecfg"]:
                 self.ui.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
-                return True
+                return
 
         # Check if any config values have changed since last install.
         if "hash-broctlcfg" in self.state:
             cfghash = self.getBroctlCfgHash()
             if cfghash != self.state["hash-broctlcfg"]:
                 self.ui.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
-                return True
-
-        return True
+                return
 
 
     # Return a hash value (as a string) of the current broctl configuration.
@@ -574,7 +561,7 @@ class Configuration:
         nodehash = self.getNodeCfgHash()
         self._setState("hash-nodecfg", nodehash)
 
-    # Runs Bro to get its version numbers.
+    # Runs Bro to get its version number.
     def _getBroVersion(self):
         from BroControl import execute
 

@@ -1187,7 +1187,7 @@ class Controller:
     def install(self, local_only):
         cmdSuccess = True
 
-        if not self.config.determineBroVersion():
+        if not self.config.recordBroVersion():
             cmdSuccess = False
             return cmdSuccess
 

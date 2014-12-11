@@ -122,9 +122,7 @@ class BroCtl(object):
         if not lockstatus:
             raise RuntimeError("Unable to get lock")
 
-        statestatus = self.config.readState()
-        if not statestatus:
-            raise RuntimeError("Unable to get state")
+        self.config.readState()
 
     def unlock(self):
         util.unlock(self.ui)
