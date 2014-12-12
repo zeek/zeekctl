@@ -490,11 +490,13 @@ class Configuration:
 
     # Set a dynamic state variable.
     def _setState(self, key, val):
+        key = key.lower()
         self.state[key] = val
         self.state_store.set(key, val)
 
+    # Returns value of state variable, or None if it's not defined.
     def _getState(self, key):
-        return self.state[key]
+        return self.state.get(key)
 
     # Read dynamic state variables from {$spooldir}/broctl.dat .
     def readState(self):
