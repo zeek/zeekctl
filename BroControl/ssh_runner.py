@@ -5,6 +5,12 @@ import select
 import textwrap
 import time
 import os
+from threading import Thread
+
+from BroControl import py3bro
+Queue = py3bro.Queue
+Empty = py3bro.Empty
+
 
 def get_muxer(shell):
     muxer = r"""
@@ -159,9 +165,6 @@ class SSHMaster:
         self.need_connect = True
     __del__ = close
 
-
-from threading import Thread
-from Queue import Queue, Empty
 
 STOP_RUNNING = object()
 

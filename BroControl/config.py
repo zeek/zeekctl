@@ -3,8 +3,8 @@
 import os
 import socket
 import re
-import ConfigParser
 
+from BroControl import py3bro
 from BroControl import node as node_mod
 from BroControl import options
 from .state import SqliteState
@@ -139,9 +139,9 @@ class Configuration:
     # Returns a sorted list of all broctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
     def options(self, dynamic=True):
-        optlist = self.config.items()
+        optlist = list(self.config.items())
         if dynamic:
-            optlist += self.state.items()
+            optlist += list(self.state.items())
 
         optlist.sort()
         return optlist
@@ -249,7 +249,7 @@ class Configuration:
         if not str:
             return []
 
-        cpulist = map(int, str.split(","))
+        cpulist = [ int(x) for x in str.split(",") ]
         # Minimum allowed CPU number is zero.
         if min(cpulist) < 0:
             raise ValueError
@@ -257,7 +257,7 @@ class Configuration:
         # Make sure list is at least as long as number of worker processes.
         cpulen = len(cpulist)
         if numprocs > cpulen:
-            cpulist = [ cpulist[i % cpulen] for i in xrange(numprocs) ]
+            cpulist = [ cpulist[i % cpulen] for i in range(numprocs) ]
 
         return cpulist
 
@@ -289,7 +289,7 @@ class Configuration:
 
     # Parse node.cfg.
     def _readNodes(self):
-        config = ConfigParser.SafeConfigParser()
+        config = py3bro.configparser.SafeConfigParser()
         if not config.read(self.nodecfg):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
@@ -405,7 +405,7 @@ class Configuration:
                 # node names will have a numerical suffix
                 node.name = "%s-1" % sec
 
-                for num in xrange(2, numprocs + 1):
+                for num in range(2, numprocs + 1):
                     newnode = node.copy()
                     # only the node name, count, and pin_cpus need to be changed
                     newname = "%s-%d" % (sec, num)

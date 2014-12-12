@@ -3,9 +3,9 @@ from __future__ import print_function
 import os
 import time
 import shutil
-import StringIO
 
 from BroControl import execute
+from BroControl import py3bro
 
 class CronUI:
     def __init__(self):
@@ -23,7 +23,7 @@ class CronUI:
     warn = output
 
     def bufferOutput(self):
-        self.buffer = StringIO.StringIO()
+        self.buffer = py3bro.io.StringIO()
 
     def getBufferedOutput(self):
         buf = self.buffer.getvalue()

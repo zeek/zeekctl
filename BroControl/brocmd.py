@@ -1,6 +1,8 @@
 import traceback
 import cmd
 
+from BroControl import py3bro
+
 class ExitValueCmd(cmd.Cmd):
     def cmdloop(self, intro=None):
         """Repeatedly issue a prompt, accept input, parse an initial prefix
@@ -31,7 +33,7 @@ class ExitValueCmd(cmd.Cmd):
                 else:
                     if self.use_rawinput:
                         try:
-                            line = raw_input(self.prompt)
+                            line = py3bro.input(self.prompt)
                         except EOFError:
                             line = 'EOF'
                     else:
