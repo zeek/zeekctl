@@ -13,6 +13,7 @@ from BroControl import config
 from BroControl import install
 from BroControl import cron
 from BroControl import node as node_mod
+from BroControl import cmdresult
 
 
 # Waits for the nodes' Bro processes to reach the given status.
@@ -105,6 +106,7 @@ class Controller:
         self.pluginregistry = pluginregistry
 
     def start(self, nodes):
+        results = cmdresult.CmdResult()
         manager = []
         proxies = []
         workers = []
@@ -121,25 +123,27 @@ class Controller:
 
         # Start nodes. Do it in the order manager, proxies, workers.
 
-        results1 = self._startNodes(manager)
+        self._startNodes(manager, results)
 
-        if util.nodeFailed(results1):
-            return results1 + [(n, False) for n in (proxies + workers)]
+        if results.failed():
+            for n in (proxies + workers):
+                results.set_node_fail(n)
+            return results
 
-        results2 = self._startNodes(proxies)
+        self._startNodes(proxies, results)
 
-        if util.nodeFailed(results2):
-            return results1 + results2 + [(n, False) for n in workers]
+        if results.failed():
+            for n in workers:
+                results.set_node_fail(n)
+            return results
 
-        results3 = self._startNodes(workers)
+        self._startNodes(workers, results)
 
-        return results1 + results2 + results3
+        return results
 
 
     # Starts the given nodes.
-    def _startNodes(self, nodes):
-        results = []
-
+    def _startNodes(self, nodes, results):
         filtered = []
         # Ignore nodes which are still running.
         for (node, isrunning) in self.isRunning(nodes):
@@ -166,7 +170,7 @@ class Controller:
                 nodes += [node]
             else:
                 self.ui.error("cannot create working directory for %s" % node.name)
-                results += [(node, False)]
+                results.set_node_fail(node)
 
         # Start Bro process.
         cmds = []
@@ -190,7 +194,7 @@ class Controller:
                 node.setPID(int(output[0]))
             else:
                 self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
-                results += [(node, False)]
+                results.set_node_fail(node)
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -211,14 +215,14 @@ class Controller:
             if success:
                 self.ui.error("%s terminated immediately after starting; check output with \"diag\"" % node.name)
                 node.clearPID()
-                results += [(node, False)]
+                results.set_node_fail(node)
             else:
                 self.ui.info("(%s still initializing)" % node.name)
                 running += [node]
 
         for node in running:
             self.logAction(node, "started")
-            results += [(node, True)]
+            results.set_node_success(node)
 
         return results
 
@@ -358,6 +362,7 @@ class Controller:
 
     # Stop Bro processes on nodes.
     def stop(self, nodes):
+        results = cmdresult.CmdResult()
         manager = []
         proxies = []
         workers = []
@@ -376,23 +381,26 @@ class Controller:
         # Stop nodes. Do it in the order workers, proxies, manager
         # (the reverse of "start").
 
-        results1 = self._stopNodes(workers)
+        self._stopNodes(workers, results)
 
-        if util.nodeFailed(results1):
-            return results1 + [(n, False) for n in (proxies + manager)]
+        if results.failed():
+            for n in (proxies + manager):
+                results.set_node_fail(n)
+            return results
 
-        results2 = self._stopNodes(proxies)
+        self._stopNodes(proxies, results)
 
-        if util.nodeFailed(results2):
-            return results1 + results2 + [(n, False) for n in manager]
+        if results.failed():
+            for n in manager:
+                results.set_node_fail(n)
+            return results
 
-        results3 = self._stopNodes(manager)
+        self._stopNodes(manager, results)
 
-        return results1 + results2 + results3
+        return results
 
-    def _stopNodes(self, nodes):
+    def _stopNodes(self, nodes, results):
 
-        results = []
         running = []
 
         # Check for crashed nodes.
@@ -401,7 +409,7 @@ class Controller:
                 running += [node]
                 self.ui.info("stopping %s ..." % node.name)
             else:
-                results += [(node, True)]
+                results.set_node_success(node)
 
                 if node.hasCrashed():
                     self.ui.info("%s not running (was crashed)" % node.name)
@@ -463,7 +471,7 @@ class Controller:
                     # Alright, it's gone.
                     del todo[node.name]
                     terminated += [node]
-                    results += [(node, True)]
+                    results.set_node_success(node)
 
             if not todo:
                 # All done.
@@ -477,7 +485,8 @@ class Controller:
             time.sleep(1)
             timeout -= 1
 
-        results += [(node, False) for node in todo]
+        for node in todo:
+            results.set_node_fail(node)
 
         # Do post-terminate cleanup for those which terminated gracefully.
         cleanup = [node for node in terminated if not node.hasCrashed()]
@@ -505,7 +514,7 @@ class Controller:
 
     # Output status summary for nodes.
     def status(self, nodes):
-        result = []
+        results = cmdresult.CmdResult()
 
         self.ui.info("Getting process status ...")
         all = self.isRunning(nodes)
@@ -540,18 +549,18 @@ class Controller:
 
         for (node, isrunning) in all:
             node_info = {
-                'name': node.name,
-                'type': node.type,
-                'host': node.host,
+                "name": node.name,
+                "type": node.type,
+                "host": node.host,
                 "status": "stopped",
                 "pid": None,
                 "peers": None,
                 "started": None,
             }
             if isrunning:
-                node_info['status'] = statuses[node.name]
+                node_info["status"] = statuses[node.name]
             elif node.hasCrashed():
-                node_info['status'] = "crashed"
+                node_info["status"] = "crashed"
 
             if isrunning:
                 node_info["pid"] = node.getPID()
@@ -563,9 +572,9 @@ class Controller:
 
                 node_info["started"] = startups[node.name]
 
-            result.append(node_info)
+            results.set_node_data(node, True, node_info)
 
-        return result
+        return results
 
     # Check the configuration for nodes without installing first.
     def checkConfigs(self, nodes):
@@ -578,27 +587,29 @@ class Controller:
 
 
     def _doCheckConfig(self, nodes, installed, list_scripts):
-        results = []
+        results = cmdresult.CmdResult()
 
         manager = self.config.manager()
 
         all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            # Return a failure for one node to indicate that the command failed
-            results.append((all[0][0].name, False, ["broctl-config.sh not found (try 'broctl install')"]))
+            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            results.set_cmd_fail()
             return results
 
         nodes = []
         for (node, cwd) in all:
             if os.path.isdir(cwd):
                 if not self.executor.rmdir(self.config.manager(), cwd):
-                    results.append((node.name, False, ["cannot remove directory %s on manager" % cwd]))
-                    continue
+                    self.ui.error("cannot remove directory %s on manager" % cwd)
+                    results.set_cmd_fail()
+                    return results
 
             if not self.executor.mkdir(self.config.manager(), cwd):
-                results.append((node.name, False, ["cannot create directory %s on manager" % cwd]))
-                continue
+                self.ui.error("cannot create directory %s on manager" % cwd)
+                results.set_cmd_fail()
+                return results
 
             nodes += [(node, cwd)]
 
@@ -620,7 +631,7 @@ class Controller:
             cmds += [((node, cwd), cmd, env, None)]
 
         for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
-            results.append((node.name, success, output))
+            results.set_node_output(node, success, output)
             self.executor.rmdir(manager, cwd)
 
         return results
@@ -636,7 +647,12 @@ class Controller:
         return events.sendEventsParallel(eventlist)
 
     def executeCmd(self, nodes, cmd):
-        return self.executor.runShellCmdsParallel([(n, cmd) for n in nodes])
+        results = cmdresult.CmdResult()
+
+        for node, success, out in self.executor.runShellCmdsParallel([(n, cmd) for n in nodes]):
+            results.set_node_output(node, success, out)
+
+        return results
 
     # Clean up the working directory for nodes (flushes state).
     # If cleantmp is true, also wipes ${tmpdir}; this is done
@@ -648,20 +664,20 @@ class Controller:
                     orig.add(n.name)
 
             return orig
-                            
 
-        results = {}
-        cleanresults = [(node.name, True) for node in nodes]
-        failed = set()
+
+        results = cmdresult.CmdResult()
 
         result = self.isRunning(nodes)
-        running =    [node for (node, on) in result if on]
+        running    = [node for (node, on) in result if on]
         notrunning = [node for (node, on) in result if not on]
 
-        results["skipped"] = [node.name for node in running]
+        for node in running:
+            self.ui.info("   %s is still running, not cleaning work directory" % node)
 
         results1 = self.executor.rmdirs([(n, n.cwd()) for n in notrunning])
         results2 = self.executor.mkdirs([(n, n.cwd()) for n in notrunning])
+        failed = set()
         failed = addfailed(failed, results1)
         failed = addfailed(failed, results2)
 
@@ -674,85 +690,56 @@ class Controller:
             failed = addfailed(failed, results3)
             failed = addfailed(failed, results4)
 
-        # set failed status for any nodes that failed
-        for i in range(len(cleanresults)):
-            nn = cleanresults[i][0]
-            if nn in failed:
-                cleanresults[i] = (nn, False)
-
-        results["clean"] = cleanresults                
+        for node in nodes:
+            if node.name in failed:
+                results.set_node_fail(node)
+            else:
+                results.set_node_success(node)
 
         return results
 
-    # Report diagostics for node (e.g., stderr output).
-    def crashDiag(self, node):
-        results = []
+    # Report diagostics for nodes (e.g., stderr output).
+    def crashDiag(self, nodes):
+        results = cmdresult.CmdResult()
 
-        if not self.executor.isdir(node, node.cwd()):
-            results.append("No work dir found")
-            return (False, results)
+        for node in nodes:
+            if not self.executor.isdir(node, node.cwd()):
+                results.set_node_output(node, False, "No work dir found")
+                continue
 
-        (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(self.config.scriptsdir, "crash-diag"), node.cwd()])
-        if not rc:
-            results.append("cannot run crash-diag for %s" % node.name)
-            return (False, results)
+            (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(self.config.scriptsdir, "crash-diag"), node.cwd()])
+            if not rc:
+                results.set_node_output(node, False, "cannot run crash-diag for %s" % node.name)
+                continue
 
-        if output:
-            results += output
+            results.set_node_output(node, True, output)
 
-        return (True, results)
+        return results
 
     def capstats(self, nodes, interval):
-        cmdSuccess = True
+        results = cmdresult.CmdResult()
 
-        have_cflow = self.config.cflowaddress and self.config.cflowuser and self.config.cflowpassword
-        have_capstats = self.config.capstatspath
+        if self.config.capstatspath:
+            for (node, netif, success, vals) in self.getCapstatsOutput(nodes, interval):
+                if not success:
+                    vals = { "output": vals }
+                results.set_node_data(node, success, vals)
 
-        if have_cflow:
-            cflow_start = self.getCFlowStatus()
-            if not cflow_start:
-                cmdSuccess = False
-
-        cs_results = []
-        if have_capstats:
-            for (node, netif, error, vals) in self.getCapstatsOutput(nodes, interval):
-                if str(node) == "$total":
-                    cs_results += [(str(node), error, vals)]
-                else:
-                    cs_results += [("%s/%s" % (node.host, netif), error, vals)]
-
-                if error:
-                    cmdSuccess = False
-
-        else:
-            time.sleep(interval)
-
-        if have_cflow:
-            cflow_stop = self.getCFlowStatus()
-            if not cflow_stop:
-                cmdSuccess = False
-
-        diffs = []
-        if have_cflow and cflow_start and cflow_stop:
-            diffs = self.calculateCFlowRate(cflow_start, cflow_stop, interval)
-
-        results = { "capstats" : cs_results, "cflow" : diffs, "success" : cmdSuccess }
         return results
 
     # Gather capstats from interfaces.
     #
-    # Returns a list of tuples of the form (node, netif, error, vals) where 'netif'
-    # is the network interface name used by capstats on the 'node', and 'error'
-    # is None if we were able to get the data, or otherwise a string with an error
-    # message; in case there's no error, 'vals' maps tags to their values.
+    # Returns a list of tuples of the form (node, netif, success, vals)
+    # where 'netif' is the network interface name used by capstats on
+    # the 'node', and 'success' is a boolean indicating whether or not
+    # we were able to get the data; in case there's no error, 'vals' maps
+    # tags to their values (otherwise, 'vals' is an error message).
     #
     # Tags are those as returned by capstats on the command-line.
     #
     # If there is more than one node, then the results will also contain
-    # one "pseudo-node" of the name "$total" with the sum of all individual values.
-    #
-    # We do all the stuff in parallel across all nodes which is why this looks
-    # a bit confusing ...
+    # one "pseudo-node" of the name "$total" with the sum of all individual
+    # values.
     def getCapstatsOutput(self, nodes, interval):
         results = []
 
@@ -789,19 +776,19 @@ class Controller:
 
             if not success:
                 if output:
-                    results += [(node, netif, "%s: capstats failed (%s)" % (node.name, output[0]), {})]
+                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, output[0]))]
                 else:
-                    results += [(node, netif, "%s: cannot execute capstats" % node.name, {})]
+                    results += [(node, netif, False, "%s: cannot execute capstats" % node.name)]
                 continue
 
             if not output:
-                results += [(node, netif, "%s: no capstats output" % node.name, {})]
+                results += [(node, netif, False, "%s: no capstats output" % node.name)]
                 continue
 
             fields = output[0].split()[1:]
 
             if not fields:
-                results += [(node, netif, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
                 continue
 
             vals = {}
@@ -817,14 +804,14 @@ class Controller:
                     else:
                         totals[key] = val
 
-                results += [(node, netif, None, vals)]
+                results += [(node, netif, True, vals)]
 
             except ValueError:
-                results += [(node, netif, "%s: unexpected capstats output: %s" % (node.name, output[0]), {})]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
 
         # Add pseudo-node for totals
         if len(nodes) > 1:
-            results += [(node_mod.Node(self.config, "$total"), None, None, totals)]
+            results += [(node_mod.Node(self.config, "$total"), None, True, totals)]
 
         return results
 
@@ -882,6 +869,8 @@ class Controller:
 
     # Update the configuration of a running instance on the fly.
     def update(self, nodes):
+        results = cmdresult.CmdResult()
+
         running = self.isRunning(nodes)
         zone = self.config.zoneid
         if not zone:
@@ -896,27 +885,32 @@ class Controller:
                 cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.formatBroAddr(node.addr), zone, node.getPort(), args), env, None)]
                 self.ui.info("updating %s ..." % node.name)
 
-        results = execute.runLocalCmdsParallel(cmds)
+        res = execute.runLocalCmdsParallel(cmds)
 
-        for (tag, success, output) in results:
+        for (tag, success, output) in res:
+            node = self.config.nodes(tag=tag)[0]
             if not success:
                 self.ui.error("could not update %s: %s" % (tag, output))
+                results.set_node_fail(node)
             else:
                 self.ui.info("%s: %s" % (tag, output[0]))
+                results.set_node_success(node)
 
-        return [(self.config.nodes(tag=tag)[0], success) for (tag, success, output) in results]
+        return results
 
     # Gets disk space on all volumes relevant to broctl installation.
     # Returns a list of the form:  [ (host, diskinfo), ...]
     # where diskinfo is a list of the form DiskInfo named tuple objects (fs, total, used, avail, percent) or
     # ["FAIL", <error message>] if an error is encountered.
     def df(self, nodes):
+        results = cmdresult.CmdResult()
+
         DiskInfo = namedtuple("DiskInfo", ("fs", "total", "used", "available", "percent"))
         dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir", "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
 
         df = {}
         for node in nodes:
-            df["%s/%s" % (node.name, node.host)] = {}
+            df[node.name] = {}
 
         for dir in dirs:
             path = self.config.config[dir]
@@ -929,13 +923,12 @@ class Controller:
 
                 cmds += [(node, "df", [path])]
 
-            results = self.executor.runHelperParallel(cmds)
+            res = self.executor.runHelperParallel(cmds)
 
-            for (node, success, output) in results:
-                nodehost = "%s/%s" % (node.name, node.host)
+            for (node, success, output) in res:
                 if success:
                     if not output:
-                        df[nodehost]["FAIL"] = ["FAIL", "no output from df helper"]
+                        df[node.name]["FAIL"] = "no output from df helper"
                         continue
 
                     fields = output[0].split()
@@ -949,28 +942,24 @@ class Controller:
                     used = float(fields[2])
                     avail = float(fields[3])
                     perc = used * 100.0 / (used + avail)
-                    df[nodehost][fs] = DiskInfo(fs, total, used, avail, perc)
+                    df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
                 else:
                     if output:
                         msg = output[0]
                     else:
                         msg = "unknown failure"
-                    df[nodehost]["FAIL"] = ["FAIL", msg]
+                    df[node.name]["FAIL"] = msg
 
-        result = []
         for node in nodes:
-            nodehost = "%s/%s" % (node.name, node.host)
-            result.append((nodehost, df[nodehost].values()))
+            success = "FAIL" not in df[node.name]
+            results.set_node_data(node, success, df[node.name])
 
-        return result
+        return results
 
-    # Returns a list of tuples of the form (node, error, vals) where 'error' is an
-    # error message string, or None if there was no error.  'vals' is a list of
-    # dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
+    # Returns a list of tuples of the form (node, error, vals) where 'error' is
+    # an error message string, or None if there was no error.  'vals' is a list
+    # of dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
     # "rss", "cpu", and "cmd".
-    #
-    # We do all the stuff in parallel across all nodes which is why this looks
-    # a bit confusing ...
     def getTopOutput(self, nodes):
 
         results = []
@@ -1067,7 +1056,8 @@ class Controller:
 
     # Produce a top-like output for node's processes.
     def top(self, nodes):
-        results = []
+        results = cmdresult.CmdResult()
+
         for (node, error, vals) in self.getTopOutput(nodes):
             top_info = { "name" : node.name, "type" : node.type,
                          "host" : node.host, "pid" : None, "proc" : None,
@@ -1075,13 +1065,16 @@ class Controller:
                          "cmd" : None, "error" : None }
             if error:
                 top_info["error"] = error
-                results.append(top_info)
+                results.set_node_data(node, False, { "procs": [top_info] })
                 continue
 
+            proclist = []
             for d in vals:
                 top_info2 = top_info.copy()
                 top_info2.update(d)
-                results.append(top_info2)
+                proclist.append(top_info2)
+
+            results.set_node_data(node, True, { "procs": proclist })
 
         return results
 
@@ -1093,11 +1086,9 @@ class Controller:
             if isrunning:
                 eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
-        eventsresults = events.sendEventsParallel(eventlist)
-
-        results = [] 
-        for (node, success, args) in eventsresults:
-                results.append((node.name, success, args))
+        results = cmdresult.CmdResult()
+        for (node, success, args) in events.sendEventsParallel(eventlist):
+            results.set_node_output(node, success, args)
 
         return results
 
@@ -1113,37 +1104,38 @@ class Controller:
         return events.sendEventsParallel(eventlist)
 
     def peerStatus(self, nodes):
-        results = []
+        results = cmdresult.CmdResult()
         for (node, success, args) in self._queryPeerStatus(nodes):
             if success:
-                results.append((node.name, success, args[0]))
+                out = args[0]
             else:
-                results.append((node.name, success, args))
+                out = args
+            results.set_node_output(node, success, out)
 
         return results
 
     def netStats(self, nodes):
-        results = []
+        results = cmdresult.CmdResult()
         for (node, success, args) in self._queryNetStats(nodes):
             if success:
-                results.append((node.name, success, args[0].strip()))
+                out = args[0].strip()
             else:
-                results.append((node.name, success, args))
+                out = args
+            results.set_node_output(node, success, out)
 
         return results
 
     def processTrace(self, trace, bro_options, bro_scripts):
-        results = {}
-        results["success"] = False
-        results["output"] = []
-        results["cwd"] = ""
+        results = cmdresult.CmdResult()
 
         if not os.path.isfile(trace):
-            results["output"] = ["trace file not found: %s" % trace]
+            self.ui.error("trace file not found: %s" % trace)
+            results.set_cmd_fail()
             return results
 
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            results["output"] = ["broctl-config.sh not found (try 'broctl install')"]
+            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            results.set_cmd_fail()
             return results
 
         standalone = (self.config.standalone == "1")
@@ -1157,11 +1149,13 @@ class Controller:
         cwd = os.path.join(self.config.tmpdir, "testing")
 
         if not self.executor.rmdir(self.config.manager(), cwd):
-            results["output"] = ["cannot remove directory %s on manager" % cwd]
+            self.ui.error("cannot remove directory %s on manager" % cwd)
+            results.set_cmd_fail()
             return results
 
         if not self.executor.mkdir(self.config.manager(), cwd):
-            results["output"] = ["cannot create directory %s on manager" % cwd]
+            self.ui.error("cannot create directory %s on manager" % cwd)
+            results.set_cmd_fail()
             return results
 
         env = _makeEnvParam(node)
@@ -1178,18 +1172,22 @@ class Controller:
 
         (success, output) = execute.runLocalCmd(cmd, env, donotcaptureoutput=True)
 
-        results["success"] = success
-        results["output"] = output
-        results["cwd"] = cwd
+        if not success:
+            results.set_cmd_fail()
+
+        for line in output:
+            self.ui.info(line)
+
+        self.ui.info("\n### Bro output in %s" % cwd)
 
         return results
 
     def install(self, local_only):
-        cmdSuccess = True
+        results = cmdresult.CmdResult()
 
         if not self.config.recordBroVersion():
-            cmdSuccess = False
-            return cmdSuccess
+            results.set_cmd_fail()
+            return results
 
         manager = self.config.manager()
 
@@ -1200,12 +1198,12 @@ class Controller:
             if os.path.isdir(p):
                 self.ui.info("removing old policies in %s ..." % p)
                 if not self.executor.rmdir(manager, p):
-                    cmdSuccess = False
+                    results.set_cmd_fail()
 
         self.ui.info("creating policy directories ...")
         for p in policies:
             if not self.executor.mkdir(manager, p):
-                cmdSuccess = False
+                results.set_cmd_fail()
 
         # Install local site policy.
 
@@ -1216,27 +1214,27 @@ class Controller:
                 dir = self.config.subst(dir)
                 for file in glob.glob(os.path.join(dir, "*")):
                     if not execute.install(file, dst, self.ui):
-                        cmdSuccess = False
+                        results.set_cmd_fail()
 
         install.makeLayout(self.config.policydirsiteinstallauto, self.ui)
         if not install.makeLocalNetworks(self.config.policydirsiteinstallauto, self.ui):
-            cmdSuccess = False
+            results.set_cmd_fail()
         install.makeConfig(self.config.policydirsiteinstallauto, self.ui)
 
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
         try:
             util.force_symlink(manager.cwd(), current)
         except (IOError, OSError) as e:
-            cmdSuccess = False
+            results.set_cmd_fail()
             self.ui.error("failed to update current log symlink")
-            return cmdSuccess
+            return results
 
         if not install.generateDynamicVariableScript(self.ui):
-            cmdSuccess = False
-            return cmdSuccess
+            results.set_cmd_fail()
+            return results
 
         if local_only:
-            return cmdSuccess
+            return results
 
         # Sync to clients.
         self.ui.info("updating nodes ...")
@@ -1254,16 +1252,16 @@ class Controller:
             for (node, success) in self.executor.mkdirs(dirs):
                 if not success:
                     self.ui.error("cannot create directory %s on %s" % (dir, node.name))
-                    cmdSuccess = False
+                    results.set_cmd_fail()
 
             # An error at this point means the entire install failed.
-            if not cmdSuccess:
-                return cmdSuccess
+            if results.failed():
+                return results
 
             paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
             if not execute.sync(nodes, paths, self.ui):
-                cmdSuccess = False
-                return cmdSuccess
+                results.set_cmd_fail()
+                return results
 
         else:
             # NFS. We only need to take care of the spool/log directories.
@@ -1284,16 +1282,16 @@ class Controller:
             for (node, success) in self.executor.mkdirs(dirs):
                 if not success:
                     self.ui.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
-                    cmdSuccess = False
+                    results.set_cmd_fail()
 
             # An error at this point means the entire install failed.
-            if not cmdSuccess:
-                return cmdSuccess
+            if results.failed():
+                return results
 
             paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
             if not execute.sync(nodes, paths, self.ui):
-                cmdSuccess = False
-                return cmdSuccess
+                results.set_cmd_fail()
+                return results
 
         # Save current node configuration state.
         self.config.updateNodeCfgHash()
@@ -1301,7 +1299,7 @@ class Controller:
         # Save current configuration state.
         self.config.updateBroctlCfgHash()
 
-        return cmdSuccess
+        return results
 
 
     # Triggers all activity which is to be done regularly via cron.

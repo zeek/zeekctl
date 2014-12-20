@@ -132,7 +132,7 @@ class BroCtl(object):
         """Prints a list of all configured nodes."""
         nodes = []
         if self.plugins.cmdPre("nodes"):
-            nodes = self.config.nodes()
+            nodes = [ n.describe() for n in self.config.nodes() ]
         self.plugins.cmdPost("nodes")
         return nodes
 
@@ -143,7 +143,6 @@ class BroCtl(object):
         config = []
         if self.plugins.cmdPre("config"):
             config = self.config.options()
-
         self.plugins.cmdPost("config")
         return config
 
@@ -163,11 +162,12 @@ class BroCtl(object):
         ``install``, it is recommended to verify the configuration
         with check_."""
 
+        results = None
         if self.plugins.cmdPre("install"):
-            cmdSuccess = self.controller.install(local)
+            results = self.controller.install(local)
 
         self.plugins.cmdPost("install")
-        return cmdSuccess
+        return results
 
     @expose
     @lock_required
@@ -182,9 +182,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)
-        self.plugins.cmdPostWithResults("start", results)
+        self.plugins.cmdPostWithResults("start", results.get_node_results())
 
-        return [(nn.name, st) for (nn, st) in results]
+        return results
 
     @expose
     @lock_required
@@ -199,9 +199,9 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
         results = self.controller.stop(nodes)
-        self.plugins.cmdPostWithResults("stop", results)
+        self.plugins.cmdPostWithResults("stop", results.get_node_results())
 
-        return [(nn.name, st) for (nn, st) in results]
+        return results
 
     @expose
     @lock_required
@@ -228,32 +228,31 @@ class BroCtl(object):
         args = " ".join([ str(n) for n in nodes ])
 
         self.output("stopping ...")
-        success = not util.nodeFailed(self.stop(node_list))
-        if not success:
-            return False
+        results = self.stop(node_list)
+        if results.failed():
+            return results
 
         if clean:
             self.output("cleaning up ...")
-            cleanresults = self.cleanup(node_list)
-            success = not util.nodeFailed(cleanresults["clean"])
-            if not success:
-                return False
+            results = self.cleanup(node_list)
+            if results.failed():
+                return results
 
             self.output("checking configurations ...")
-            success = not util.nodeFailed(self.check(node_list))
-            if not success:
-                return False
+            results = self.check(node_list)
+            if results.failed():
+                return results
 
             self.output("installing ...")
-            success = self.install()
-            if not success:
-                return False
+            results = self.install()
+            if results.failed():
+                return results
 
         self.output("starting ...")
-        success = not util.nodeFailed(self.start(node_list))
+        results = self.start(node_list)
 
         self.plugins.cmdPostWithNodes("restart", nodes)
-        return success
+        return results
 
     @expose
     @lock_required
@@ -265,9 +264,9 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("status", nodes)
-        node_infos = self.controller.status(nodes)
+        results = self.controller.status(nodes)
         self.plugins.cmdPostWithNodes("status", nodes)
-        return node_infos
+        return results
 
     def top(self, node_list=None):
         """- [<nodes>]
@@ -302,12 +301,7 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("diag", nodes)
-
-        results = []
-        for h in nodes:
-            success, output = self.controller.crashDiag(h)
-            results.append((h.name, success, output))
-
+        results = self.controller.crashDiag(nodes)
         self.plugins.cmdPostWithNodes("diag", nodes)
 
         return results
@@ -384,7 +378,7 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.checkConfigs(nodes)
-        self.plugins.cmdPostWithResults("check", results)
+        self.plugins.cmdPostWithResults("check", results.get_node_results())
 
         return results
 
@@ -421,11 +415,7 @@ class BroCtl(object):
         each of the given worker nodes. The load is measured over the
         specified interval (in seconds), or by default over 10 seconds. This
         command uses the :doc:`capstats<../../components/capstats/README>`
-        tool, which is installed along with ``broctl``.
-
-        (Note: When using a CFlow and the CFlow command line utility is
-        installed as well, the ``capstats`` command can also query the device
-        for port statistics. *TODO*: document how to set this up.)"""
+        tool, which is installed along with ``broctl``."""
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("capstats", nodes, interval)
@@ -454,9 +444,9 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("update", nodes)
         results = self.controller.update(nodes)
-        self.plugins.cmdPostWithResults("update", results)
+        self.plugins.cmdPostWithResults("update", results.get_node_results())
 
-        return [(nn.name, st) for (nn, st) in results]
+        return results
 
     def df(self, node_list=None):
         """- [<nodes>]
@@ -531,7 +521,7 @@ class BroCtl(object):
         run at least one Bro instance. This is handy to quickly perform an
         action across all systems."""
 
-        results = []
+        results = None
         if self.plugins.cmdPre("exec", cmd):
             results = self.controller.executeCmd(self.config.hosts(), cmd)
         self.plugins.cmdPost("exec", cmd)
@@ -575,9 +565,10 @@ class BroCtl(object):
         live setup, it is often sufficient for debugging analysis scripts.
         """
 
+        results = None
         if self.plugins.cmdPre("process", trace, options, scripts):
             results = self.controller.processTrace(trace, options, scripts)
-        self.plugins.cmdPost("process", trace, options, scripts, results["success"])
+        self.plugins.cmdPost("process", trace, options, scripts, results.succeeded())
 
         return results
 

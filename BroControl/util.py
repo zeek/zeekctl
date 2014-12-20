@@ -9,15 +9,6 @@ from BroControl import config
 def fmttime(t):
     return time.strftime(config.Config.timefmt, time.localtime(float(t)))
 
-# For a list of tuples, where second element in tuple is a bool, return True
-# if at least one boolean is False.
-def nodeFailed(nodes):
-    for nodetuple in nodes:
-        if not nodetuple[1]:
-            return True
-    return False
-
-
 lockCount = 0
 
 def _breakLock(cmdout):
