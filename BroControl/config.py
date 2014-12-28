@@ -532,6 +532,7 @@ class Configuration:
 
             if nodehash != self.state["hash-nodecfg"]:
                 self.ui.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                self.warn_dangling_bro()
                 return
 
         # Check if any config values have changed since last install.
@@ -541,6 +542,23 @@ class Configuration:
                 self.ui.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
                 return
 
+
+    # Warn if there might be any dangling Bro nodes (i.e., nodes that are
+    # no longer part of the current node configuration, but that are still
+    # running).
+    def warn_dangling_bro(self):
+        nodes = [ n.name for n in self.nodes() ]
+
+        for key in self.state.keys():
+            # Check if a PID is defined for a Bro node
+            if key.endswith("-pid") and self._getState(key):
+                nn = key[:-4]
+                # Check if node name is in list of all known nodes
+                if nn not in nodes:
+                    hostkey = key.replace("-pid", "-host")
+                    h = self._getState(hostkey)
+                    if h:
+                        self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nn, h, self._getState(key)))
 
     # Return a hash value (as a string) of the current broctl configuration.
     def getBroctlCfgHash(self):
