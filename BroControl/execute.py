@@ -142,8 +142,11 @@ def _emptyDel(self):
 subprocess.Popen.__del__ = _emptyDel
 
 
+# Returns a list of the IP addresses associated with local interfaces.
+# For IPv6 addresses, zone_id and prefix length are removed if present.
 def get_local_addrs(cmdout):
     try:
+        # On Linux, ifconfig is often not in the user's standard PATH.
         proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out, err = proc.communicate()
         cmdfail = proc.returncode != 0

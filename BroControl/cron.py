@@ -14,7 +14,7 @@ class CronUI:
 
     def output(self, txt):
         if self.buffer:
-            self.buffer.write(txt)
+            self.buffer.write("%s\n" % txt)
         else:
             print(txt)
     info = output
@@ -95,7 +95,7 @@ class CronTasks:
             return
 
         results = self.controller.df(self.config.hosts())
-        for (node, _, dfs) in results.get_node_results():
+        for (node, _, dfs) in results.get_node_data():
             host = node.host
 
             for key, df in dfs.items():
@@ -128,8 +128,9 @@ class CronTasks:
         (success, output) = execute.runLocalCmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
         if not success:
-            self.ui.error("expire-logs failed\n\n")
-            self.ui.error(output)
+            self.ui.error("expire-logs failed\n")
+            for line in output:
+                self.ui.error(line)
 
     def checkHosts(self):
         for node in self.config.hosts(nolocal=True):

@@ -183,7 +183,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         typewidth = 7
         hostwidth = 16
-        data = results.get_node_results()
+        data = results.get_node_data()
         if data[0][2]["type"] == "standalone":
             # In standalone mode, we need a wider "type" column.
             typewidth = 10
@@ -192,7 +192,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         header = dict((x, x.title()) for x in 'name type host status pid peers started'.split())
         self.output("{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}".format(typewidth, hostwidth, **header))
 
-        for data in results.get_node_results():
+        for data in results.get_node_data():
             node_info = data[2]
             if node_info["pid"]:
                 self.output("{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}".format(typewidth, hostwidth, **node_info))
@@ -210,7 +210,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         typewidth = 7
         hostwidth = 16
-        data = results.get_node_results()
+        data = results.get_node_data()
         proclist = data[0][2]["procs"]
         if proclist[0]["type"] == "standalone":
             # In standalone mode, we need a wider "type" column.
@@ -220,7 +220,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-4s %-5s %s" % ("Name",
                 typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
                 "Rss", "Cpu", "Cmd")]
-        for data in results.get_node_results():
+        for data in results.get_node_data():
             proclist = data[2]["procs"]
             for top_info in proclist:
                 msg = [ "%-12s" % top_info["name"] ]
@@ -288,7 +288,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.diag(node_list=args)
 
-        for (node, success, output) in results.get_node_results():
+        for (node, success, output) in results.get_node_output():
             self.output("[%s]" % node)
             for line in output:
                 self.output(line)
@@ -357,7 +357,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.check(node_list=args)
 
-        for (node, success, output) in results.get_node_results():
+        for (node, success, output) in results.get_node_output():
             if success:
                 self.output("%s scripts are ok." % node)
             else:
@@ -440,7 +440,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.capstats(interval=interval, node_list=args)
 
-        outputcapstats("Interface", results.get_node_results())
+        outputcapstats("Interface", results.get_node_data())
 
         return results.succeeded()
 
@@ -474,7 +474,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.df(node_list=args)
 
         self.output("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
-        for (node, success, dfs) in results.get_node_results():
+        for (node, success, dfs) in results.get_node_data():
             for key, df in dfs.items():
                 if key == "FAIL":
                     self.error("df helper failed on %s: %s" % (node, df))
@@ -507,7 +507,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.printid(id=id, node_list=args)
 
-        for (node, success, args) in results.get_node_results():
+        for (node, success, args) in results.get_node_output():
             if success:
                 self.output("%12s   %s = %s" % (node, args[0], args[1]))
             else:
@@ -524,7 +524,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.peerstatus(node_list=args)
 
-        for (node, success, msg) in results.get_node_results():
+        for (node, success, msg) in results.get_node_output():
             if success:
                 self.output("%11s\n%s" % (node, msg))
             else:
@@ -540,7 +540,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.netstats(node_list=args)
 
-        for (node, success, msg) in results.get_node_results():
+        for (node, success, msg) in results.get_node_output():
             if success:
                 self.output("%11s: %s" % (node, msg))
             else:
@@ -557,7 +557,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.execute(cmd=args)
 
-        for node, success, output in results.get_node_results():
+        for node, success, output in results.get_node_output():
             out = output and "\n> ".join(output) or ""
             self.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
 
@@ -598,7 +598,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.scripts(check=check, node_list=args)
 
-        for (node, success, output) in results.get_node_results():
+        for (node, success, output) in results.get_node_output():
             if success:
                 self.output("%s scripts are ok." % node)
                 for line in output:

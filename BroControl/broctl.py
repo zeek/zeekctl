@@ -182,7 +182,7 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)
-        self.plugins.cmdPostWithResults("start", results.get_node_results())
+        self.plugins.cmdPostWithResults("start", results.get_node_data())
 
         return results
 
@@ -199,7 +199,7 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("stop", nodes)
         results = self.controller.stop(nodes)
-        self.plugins.cmdPostWithResults("stop", results.get_node_results())
+        self.plugins.cmdPostWithResults("stop", results.get_node_data())
 
         return results
 
@@ -378,7 +378,7 @@ class BroCtl(object):
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.checkConfigs(nodes)
-        self.plugins.cmdPostWithResults("check", results.get_node_results())
+        self.plugins.cmdPostWithResults("check", results.get_node_data())
 
         return results
 
@@ -444,7 +444,7 @@ class BroCtl(object):
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("update", nodes)
         results = self.controller.update(nodes)
-        self.plugins.cmdPostWithResults("update", results.get_node_results())
+        self.plugins.cmdPostWithResults("update", results.get_node_data())
 
         return results
 

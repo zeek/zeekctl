@@ -195,6 +195,9 @@ class Controller:
             else:
                 self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
                 results.set_node_fail(node)
+                if output:
+                    for line in output:
+                        self.ui.error("%s" % line)
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -698,18 +701,21 @@ class Controller:
 
         return results
 
-    # Report diagostics for nodes (e.g., stderr output).
+    # Report diagnostics for nodes (e.g., stderr output).
     def crashDiag(self, nodes):
         results = cmdresult.CmdResult()
 
         for node in nodes:
             if not self.executor.isdir(node, node.cwd()):
-                results.set_node_output(node, False, "No work dir found")
+                results.set_node_output(node, False, ["No work dir found"])
                 continue
 
             (rc, output) = self.executor.runHelper(node, "run-cmd", [os.path.join(self.config.scriptsdir, "crash-diag"), node.cwd()])
             if not rc:
-                results.set_node_output(node, False, "cannot run crash-diag for %s" % node.name)
+                errmsgs = ["error running crash-diag for %s" % node.name]
+                if output:
+                    errmsgs += output
+                results.set_node_output(node, False, errmsgs)
                 continue
 
             results.set_node_output(node, True, output)
@@ -890,7 +896,7 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.error("could not update %s: %s" % (tag, output))
+                self.ui.error("could not update %s: %s" % (tag, output[0]))
                 results.set_node_fail(node)
             else:
                 self.ui.info("%s: %s" % (tag, output[0]))
