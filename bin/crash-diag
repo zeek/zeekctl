@@ -1,26 +1,42 @@
 #! /usr/bin/env bash
 #
-# crash-diag <cwd>
+# crash-diag <dir>
+#
+# <dir> is the node's working directory.
 
 . `dirname $0`/broctl-config.sh
 
+if [ $# -ne 1 ]; then
+    echo "crash-diag: wrong number of arguments"
+    exit 1
+fi
+
 (
 
-cd $1
+cd "$1"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 echo
-echo Bro `${bro} -v 2>&1 | awk '{print $3}'`
+
+if [ -f "${bro}" ];then
+    bro_version=`"${bro}" -v 2>&1 | awk '{print $3}'`
+else
+    bro_version="(file not found: ${bro})"
+fi
+
+echo Bro $bro_version
 uname -sr
 echo
 
-core=`ls -t *core* 2>&1`
-
 if which gdb >/dev/null 2>&1; then
+    core=`ls -t *core* 2> /dev/null`
     echo "thread apply all bt" >.gdb_cmds
     for c in $core; do
-        if [ -e $c ]; then
+        if [ -f $c ]; then
             echo $c
-            gdb --batch -x .gdb_cmds ${bro} $c 2>/dev/null
+            gdb --batch -x .gdb_cmds "${bro}" $c 2>/dev/null
         fi
     done
     rm -f .gdb_cmds
@@ -28,87 +44,37 @@ else
     echo "No gdb installed."
 fi
 
-echo
+# Usage:
+#   show_log <filename> <num>
+# Output the last <num> lines of <filename>.  If <num> is -1, then output the
+# entire file.
+function show_log() {
+    filename=$1
+    num=$2
 
-if [ -e reporter.log ]; then
-   echo ==== reporter.log
-   tail -10 reporter.log
-else
-   echo ==== No reporter.log
-fi
+    echo
 
-echo
+    if [ -f $filename ]; then
+       echo ==== $filename
+       if [ $num -ge 0 ]; then
+           tail -$num $filename
+       else
+           cat $filename
+       fi
+    else
+       echo ==== No $filename
+    fi
+}
 
-if [ -e stderr.log ]; then
-   echo ==== stderr.log
-   tail -10 stderr.log
-else
-   echo ==== No stderr.log
-fi
-
-echo
-
-if [ -e stdout.log ]; then
-   echo ==== stdout.log
-   tail -10 stdout.log
-else
-   echo ==== No stdout.log
-fi
-
-echo
-
-if [ -e .cmdline ]; then
-   echo ==== .cmdline
-   tail -30 .cmdline
-else
-   echo ==== No .cmdline
-fi
-
-echo
-
-if [ -e .env_vars ]; then
-   echo ==== .env_vars
-   tail -30 .env_vars
-else
-   echo ==== No .env_vars
-fi
-
-echo
-
-if [ -e .status ]; then
-   echo ==== .status
-   tail -10 .status
-else
-   echo ==== No .status
-fi
-
-echo
-
-if [ -e prof.log ]; then
-   echo ==== prof.log
-   tail -10 prof.log
-else
-   echo ==== No prof.log
-fi
-
-echo
-
-if [ -e packet_filter.log ]; then
-   echo ==== packet_filter.log
-   tail -30 packet_filter.log
-else
-   echo ==== No packet_filter.log
-fi
-
-echo
-
-if [ -e loaded_scripts.log ]; then
-   echo ==== loaded_scripts.log
-   cat loaded_scripts.log
-else
-   echo ==== No loaded_scripts.log
-fi
-
+show_log reporter.log 10
+show_log stderr.log 10
+show_log stdout.log 10
+show_log .cmdline 30
+show_log .env_vars 30
+show_log .status 10
+show_log prof.log 10
+show_log packet_filter.log 30
+show_log loaded_scripts.log -1
 
 ) >.crash-diag.log
 
