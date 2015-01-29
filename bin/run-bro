@@ -2,7 +2,29 @@
 #
 # Wrapper script around the actual Bro invocation. 
 #
-# run-bro <pin_cpu> <Bro args>
+# run-bro <pin_cpu> <bro_args>
+#
+# pin_cpu:  the CPU number to use, or -1 to not use CPU pinning.
+# bro_args:  Bro cmd-line arguments.
+
+child=""
+
+function sig_handler
+{
+    if [ -n "$child" ]; then
+        kill -15 $child 2>/dev/null
+        echo KILLED 1>&2
+    fi
+
+    if [ ! -e .pid ]; then
+        # Write -1 so that the "start" helper script knows an error occurred.
+        echo -1 >.pid
+    fi
+}
+
+# Make sure that a ".pid" file exists when this script terminates so that
+# the "start" helper script doesn't hang.
+trap sig_handler 0
 
 . `dirname $0`/broctl-config.sh
 
@@ -12,27 +34,15 @@ shift
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 use_installed_policies=1
-source ${scriptsdir}/set-bro-path
-
-if test `uname` == "FreeBSD" && uname -r | grep -q "^[456]"; then
-   export MALLOC_OPTIONS="HR" # Helps performance on FreeBSD < 7
+source "${scriptsdir}"/set-bro-path
+if [ $? -ne 0 ]; then
+    exit 1
 fi
 
-child=""
-
-trap sig_handler 0
-
-function sig_handler
-{
-    if [ "$child" != "" ]; then
-        kill -15 $child 2>/dev/null
-        echo KILLED 1>&2
-    fi;
-
-    if [ ! -e .pid ]; then
-       echo -1 >.pid
-    fi
-}
+if [ ! -f "${bro}" ]; then
+    echo "run-bro: file not found: ${bro}" >&2
+    exit 1
+fi
 
 LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
@@ -46,6 +56,7 @@ ulimit -m -d -v -c
 echo "PATH=${PATH}" >.env_vars
 echo "BROPATH=${BROPATH}" >>.env_vars
 echo "CLUSTER_NODE=${CLUSTER_NODE}" >>.env_vars
+
 echo $@ >.cmdline
 
 date +%s >.startup
@@ -53,30 +64,32 @@ date >>.startup
 date +%y-%m-%d_%H.%M.%S >>.startup # Bro default format when rotating files. 
 
 mybro=${bro}
-if [ "${havenfs}" -ne 0 ]; then
-    mybro=${tmpexecdir}/`basename ${bro}`
-    rm -f $mybro
-    cp -p ${bro} $mybro
+if [ "${havenfs}" = "1" ]; then
+    if [ ! -d "${tmpexecdir}" ]; then
+        echo "run-bro: directory not found: ${tmpexecdir}" >&2
+        exit 1
+    fi
+    mybro=${tmpexecdir}/`basename "${bro}"`
+    rm -f "$mybro"
+    cp -p "${bro}" "$mybro"
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
 fi
-
-sleep 1
 
 if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
     # Test if the specified pin_command works, and if not, then output a more
     # useful error message (but let the pin_command output its own error
     # message just in case there's some other reason for the failure).
-    true
-    if [ $? -eq 0 ]; then
-        ${pin_command} $pin_cpu true
-        if [ $? -ne 0 ]; then
-            echo "Error: possibly invalid CPU number $pin_cpu given for pin_cpus option" >&2
-            exit
-        fi
+    ${pin_command} $pin_cpu true
+    if [ $? -ne 0 ]; then
+        echo "run-bro: possibly invalid CPU number $pin_cpu given for pin_cpus option" >&2
+        exit 1
     fi
 
-    nohup ${pin_command} $pin_cpu $mybro "$@" &
+    nohup ${pin_command} $pin_cpu "$mybro" "$@" &
 else
-    nohup $mybro "$@" &
+    nohup "$mybro" "$@" &
 fi
 
 child=$!

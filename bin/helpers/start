@@ -1,36 +1,52 @@
 #! /usr/bin/env bash
 #
-#  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <Bro args>
+#  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <bro_args>
+#
+# -v var=value...:  environment variables to set.
+# cwd:  the node's working directory.
+# pin_cpu:  the CPU number to use, or -1 to not use CPU pinning.
+# bro_args:  Bro cmd-line arguments.
 
 . `dirname $0`/../broctl-config.sh
 
 while getopts 'v:' flag; do
-    case "${flag}" in
-        v) eval export "${OPTARG}" ;;
+    case "$flag" in
+        v) eval export "$OPTARG" ;;
     esac
 done
 
 shift $((OPTIND-1))
 
-cd $1 2>/dev/null
+if [ $# -lt 3 ]; then
+    echo "start: missing cmd-line options" >&2
+    exit 1
+fi
+
+cd "$1"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 shift
 
 rm -f .pid
 
-if [ ! -x ${scriptsdir}/run-bro ]; then
+if [ ! -f "${scriptsdir}"/run-bro ]; then
+    echo "start: file not found: ${scriptsdir}/run-bro" >&2
     exit 1
 fi
 
-nohup ${scriptsdir}/run-bro "$@" >stdout.log 2>stderr.log &
+nohup "${scriptsdir}"/run-bro "$@" >stdout.log 2>stderr.log &
 
 while [ ! -s .pid ]; do
-   sleep 1
+    sleep 1
 done
 
-ret=0
 pid=`cat .pid`
-[ "$pid" = "-1" ] && ret=1
+
+# The "run-bro" script uses a value of -1 to indicate an error occurred.
+if [ "$pid" = "-1" ]; then
+    exit 1
+fi
 
 echo $pid
-exit $ret
 
