@@ -1,18 +1,24 @@
 #! /usr/bin/env bash
 #
-# Returns a path for archived log files. This script is called
+# Returns a path where a log file will be archived. This script is called
 # once for each log file being archived. Usage is:
 #
-# make-archive-name <basename> <writer> <timestamp-when-opened> [<timestamp-when-closed>]
+# make-archive-name <origname> <writer> <timestamp-when-opened> [<timestamp-when-closed>]
 #
-#   basename: The base filename of the log file being archived (e.g., conn.log).
+# Example:
+# make-archive-name conn.log ascii 2015-01-20-15-48-23 2015-01-20-16-00-00
+#
+# Example output:
+# 2015-01-20/conn.15:48:23-16:00:00.log
+#
+#   origname: The original name of the log file being archived (e.g. conn.log).
 #   writer:   The name of the log writer type that produced the file.
 #   timestamp-when-opened: The timestamp when the log file being archived was
 #                          created.
 #   timestamp-when-closed: The timestamp when the log file being archived was
-#                          finished.  Optional.  If not given, the name is used
-#                          to create a link to the current live version of the
-#                          file.
+#                          finished.  Optional.  If not given, the path is used
+#                          by another script to create a link to the current
+#                          live version of the file.
 #
 # The writer is derived from the WRITER_* constants and lower-cased; e.g.,
 # "ascii" for Log::WRITER_ASCII.
@@ -21,7 +27,7 @@
 # e.g., "2010-03-30-13-12-04"
 #
 # The script must return the path under which the file should be
-# archived.  If it's a relative path, it will be interpreted as
+# archived.  A relative path will be interpreted as
 # relative to BroControl's standard log directory.
 #
 # Note that even if the logs will later be compressed, this script should
@@ -38,7 +44,7 @@ day=`echo $opened  | awk -F - '{printf "%s-%s-%s", $1, $2, $3}'`
 from=`echo $opened | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 to=`echo $closed | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 
-if [ "$closed" != "" ]; then
+if [ -n "$closed" ]; then
    echo $day/$name.$from-$to.$ext
 else
    echo $day/$name.$from-current.$ext

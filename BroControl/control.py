@@ -350,18 +350,19 @@ class Controller:
             if not success:
                 self.ui.error("cannot run post-terminate for %s" % node.name)
             else:
-                if not self.sendMail("Crash report from %s" % node.name, msg + "\n".join(output)):
-                    self.ui.error("cannot send mail")
+                msuccess, moutput = self.sendMail("Crash report from %s" % node.name, msg + "\n".join(output))
+                if not msuccess:
+                    self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
 
             node.clearCrashed()
 
     def sendMail(self, subject, body):
         if not self.config.sendmail:
-            return True
+            return True, ""
 
         cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
         (success, output) = execute.runLocalCmd(cmd, "", body)
-        return success
+        return success, output
 
     # Stop Bro processes on nodes.
     def stop(self, nodes):
@@ -1366,8 +1367,9 @@ class Controller:
         # Mail potential output.
         output = cronui.getBufferedOutput()
         if output:
-            if not self.sendMail("cron: " + output.splitlines()[0], output):
-                self.ui.error("cannot send mail")
+            success, out = self.sendMail("cron: " + output.splitlines()[0], output)
+            if not success:
+                self.ui.error("error occurred while trying to send mail: %s" % out[0])
 
         self.config.config["cron"] = "0"
         logging.debug("cron done")

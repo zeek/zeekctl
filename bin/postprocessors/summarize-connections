@@ -1,12 +1,20 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to summarize connection summaries.
+# Bro postprocessor script to create connection summary log file.
 #
 # Needs trace-summary script.
 #
-# summarize-conns <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+# summarize-connections <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+#
+# For an explanation of the command-line options, see the "archive-log" script.
+#
+# Example:
+# summarize-connections conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
 
-. `dirname $0`/../broctl-config.sh
+if [ $# -ne 6 ]; then
+    echo "summarize-connections: wrong usage"
+    exit 1
+fi
 
 input=$1
 base=$2
@@ -17,46 +25,59 @@ writer=$6
 
 # Only process ASCII conn.log.
 if [ "$base" != "conn" -o "$writer" != "ascii" ]; then
-   exit 0
+    exit 0
 fi
 
-summary_options="-c -r"
-
-# If we're a cluster installation, we assume we have lots of traffic and activate sampling.
-if [ "${standalone}" = "0" ]; then
-   summary_options="$summary_options -S 0.01"
+. `dirname $0`/../broctl-config.sh
+if [ $? -ne 0 ]; then
+    exit 1
 fi
 
-if [ -e ${localnetscfg} ]; then
-   summary_options="$summary_options -l ${localnetscfg}"
+# If the tracesummary broctl config option is not defined, then exit (this is
+# not an error).
+if [ -z "${tracesummary}" ]; then
+    exit 0
 fi
-
-output=conn-summary.${open}.log
-output_basename=conn-summary
 
 # GNU's time can do memory as well.
 export TIME="%E real, %U user, %S sys, %KK total memory"
 
-if [ "${tracesummary}" != "" ]; then
-   LIMIT=${memlimit:1572864}
-   ulimit -m $LIMIT
-   ulimit -v $LIMIT
+# trace-summary needs to import SubnetTree
+export PYTHONPATH=${libdirinternal}:$PYTHONPATH
 
-   export PYTHONPATH=${libdirinternal}:$PYTHONPATH
-   nice ${time} ${tracesummary} $summary_options $input 2>&1 | grep -v "exceeds bandwidth" >$output
+# If ${memlimit} is not set, then use 1.5GB.
+LIMIT=${memlimit:-1572864}
+ulimit -m $LIMIT
+ulimit -v $LIMIT
 
-   if [ "${mailconnectionsummary}" = "1" ]; then
-      # Build subject
-      start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
-      end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
-      subject="Connection summary from $start-$end"
+summary_options="-c -r"
 
-      ${scriptsdir}/send-mail "$subject" <$output
-   fi
-
-   ${scriptsdir}/archive-log $output $output_basename $open $close $terminating "ascii"
+# If we're a cluster installation, we assume we have lots of traffic and
+# activate sampling.
+if [ "${standalone}" = "0" ]; then
+    summary_options="$summary_options -S 0.01"
 fi
 
+if [ -f "${localnetscfg}" ]; then
+    summary_options="$summary_options -l ${localnetscfg}"
+fi
 
+output=conn-summary.$open.log
+output_basename=conn-summary
 
+# Don't bother checking for errors here, because the log file will
+# contain the error messages.
+nice ${time} "${tracesummary}" $summary_options $input 2>&1 | grep -v "exceeds bandwidth" >$output
+
+if [ "${mailconnectionsummary}" = "1" ]; then
+    # Convert timestamps to the format HH:MM:SS, and build the subject line.
+    start=`echo $open | sed 's/^..-..-.._//' | sed 's/\./:/g'`
+    end=`echo $close | sed 's/^..-..-.._//' | sed 's/\./:/g'`
+    subject="Connection summary from $start-$end"
+
+    "${scriptsdir}"/send-mail "$subject" <$output
+fi
+
+# Archive the conn-summary log file.
+"${scriptsdir}"/archive-log $output $output_basename $open $close $terminating ascii
 
