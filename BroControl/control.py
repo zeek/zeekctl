@@ -347,12 +347,12 @@ class Controller:
             cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), "crash"])]
 
         for (node, success, output) in self.executor.runHelperParallel(cmds):
-            if not success:
-                self.ui.error("cannot run post-terminate for %s" % node.name)
-            else:
+            if success:
                 msuccess, moutput = self.sendMail("Crash report from %s" % node.name, msg + "\n".join(output))
                 if not msuccess:
                     self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
+            else:
+                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
 
             node.clearCrashed()
 
@@ -504,11 +504,11 @@ class Controller:
             cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
 
         for (node, success, output) in self.executor.runHelperParallel(cmds):
-            if not success:
-                self.ui.error("cannot run post-terminate for %s" % node.name)
-                self.logAction(node, "stopped (failed)")
-            else:
+            if success:
                 self.logAction(node, "stopped")
+            else:
+                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
+                self.logAction(node, "stopped (failed)")
 
             node.clearPID()
             node.clearCrashed()

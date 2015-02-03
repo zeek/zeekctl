@@ -1,118 +1,183 @@
 #! /usr/bin/env bash
 #
-# Cleans-up after termination.
+# Cleanup tasks after Bro termination:  move the node's working directory
+# to a tmp dir and create a new working directory, create a crash report if
+# the node crashed, wait for this node's archive-log processes to finish,
+# archive any remaining unrotated logs (if bro crashed or was killed), and
+# finally (if the node didn't crash) remove the tmp dir if it doesn't contain
+# any rotated log files.
 #
 # post-terminate <dir> [<crashflag>]
 #
-# If <crashflag> is "crash", then the scripts assumes that Bro crashed and
-# will return information about the crash on stdout which is suitable for
-# mailing to the user.  If <crashflag> is "killed", then Bro was terminated
-# forcefully (but intentionally) by SIGKILL.
+# <dir> is the node's working directory.
+#
+# If <crashflag> is not set, then BroControl has stopped Bro normally.
+# If <crashflag> is "crash", then BroControl has determined that Bro crashed
+# and this script will return information about the crash on stdout which is
+# suitable for mailing to the user.  If <crashflag> is "killed", then
+# BroControl terminated Bro forcefully (but intentionally) by SIGKILL while
+# trying to stop Bro.
 
-. `dirname $0`/broctl-config.sh
+if [ $# -lt 1 -o $# -gt 2 ]; then
+    echo "post-terminate: wrong usage"
+    exit 1
+fi
 
 dir=$1
+
+if [ ! -d "$dir" ]; then
+    echo "post-terminate: directory not found: $dir"
+    exit 1
+fi
 
 crash=0
 killed=0
 if [ "$2" = "crash" ]; then
-   crash=1
+    crash=1
 elif [ "$2" = "killed" ]; then
-   killed=1
+    killed=1
 fi
 
-if [ ! -d $dir ]; then
-   echo No $dir
-   exit
+# Compute both timestamps here so we get consistent results.
+timestamp=`date +%Y-%m-%d-%H-%M-%S`
+archivelogtime=`date +%y-%m-%d_%H.%M.%S`
+
+. `dirname $0`/broctl-config.sh
+
+if [ -z "${tmpdir}" ]; then
+    echo "post-terminate: broctl option tmpdir not set"
+    exit 1
 fi
 
-date=`date +%Y-%m-%d-%H-%M-%S`
-tmp=${tmpdir}/post-terminate-$date-$$
-
-if [ "$crash" = "1" ]; then
-   cd $1
-   ${scriptsdir}/crash-diag $dir
-   tmp=$tmp-crash
+if [ ! -d "${tmpdir}" ]; then
+    mkdir "${tmpdir}"
 fi
 
-if [ ! -d ${tmpdir} ]; then
-   mkdir ${tmpdir}
+tmp=${tmpdir}/post-terminate-$timestamp-$$
+
+if [ $crash -eq 1 ]; then
+    tmp=$tmp-crash
 fi
 
-mv $dir $tmp 2>/dev/null
-
-mkdir $dir 2>/dev/null
-
-if [ -d $tmp/.state ]; then
-   mv $tmp/.state $dir 2>/dev/null
+mv "$dir" "$tmp"
+if [ $? -ne 0 ]; then
+    exit 1
 fi
 
-cd $tmp
+mkdir "$dir"
 
-if [ "$crash" = "1" ]; then
-   mybro=${bro}
-   if [ "${havenfs}" -ne 0 ]; then
-       mybro=${tmpexecdir}/`basename ${bro}`
-   fi
-   cp $mybro .
+cd "$tmp"
+
+if [ -d .state ]; then
+    mv .state "$dir"
+fi
+
+if [ $crash -eq 1 ]; then
+    # output the crash report
+    "${scriptsdir}"/crash-diag "$tmp"
+
+    mybro=${bro}
+    if [ "${havenfs}" = "1" ]; then
+        mybro=${tmpexecdir}/`basename "${bro}"`
+    fi
+    cp "$mybro" .
 fi
 
 if [ ! -f .startup ]; then
-   echo No .startup
-   exit
+    echo "post-terminate: file not found: .startup"
+    exit 1
 fi
 
-( function waitforarchivelog() {
-    [ "$crash" = "1" ] && return 0
+# Execute the remaining part of this script in the background so that broctl
+# doesn't need to wait for it to finish.
+(
 
-    # Gather list of all archive-log PID files.
-    pidfiles=$(find . -maxdepth 1 -name '.archive-log.*.tmp' -type f -print)
+# Gather list of all archive-log PID files.
+pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
 
-    while [ -n "$pidfiles" ]; do
-        for pfile in $pidfiles ; do
-            # If PID file is empty, then check it again later.
-            if [ -s $pfile ]; then
-                # Check if a process with given PID exists
-                ps -p $(cat $pfile) > /dev/null 2>&1
-                if [ $? -ne 0 ]; then
-                    # No such process exists, so remove PID file
-                    rm -f $pfile
-                fi
+# Wait for any archive-log processes to finish, so that we can either
+# launch new ones (below) or remove this directory.
+while [ -n "$pidfiles" ]; do
+    for pfile in $pidfiles ; do
+        # If PID file is empty, then check it again later.
+        if [ -s $pfile ]; then
+            # Check if a process with given PID exists
+            ps -p $(cat $pfile) > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                # No such process exists, so remove PID file
+                rm -f $pfile
             fi
-        done
-
-        sleep 1
-
-        pidfiles=$(find . -maxdepth 1 -name '.archive-log.*.tmp' -type f -print)
+        fi
     done
 
-    # Check if any log files remain (this could happen if the archival
-    # failed, or if archive-log terminated before a log was archived) before
-    # removing the work dir.
-    if [ -z "$(find . -maxdepth 1 -name '*.*-*.log' -type f -print)" ]; then
-        rm -rf $tmp
+    sleep 1
+
+    pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
+done
+
+if [ $crash -eq 1 -o $killed -eq 1 ]; then
+    # If Bro crashed or was killed, then we run log postprocessors here
+    # on all unrotated logs (including stdout.log/stderr.log, as they might
+    # have useful info in this situation).  We ignore rotated logs here
+    # because presumably the archival of them was already attempted (and
+    # failed), and the presence of rotated logs will prevent the tmp directory
+    # from being removed (in order to give the user a chance to manually
+    # archive them).
+
+    find_cmd="find -E"
+    if [ "${os}" = "linux" ]; then
+        find_cmd=find
+    elif [ "${os}" = "openbsd" ]; then
+        find_cmd=gfind
     fi
 
-  }
+    flags=
+    if [ $crash -eq 1 ]; then
+        # If Bro crashed, then we tell archive-log to not delete the log file.
+        flags=-c
+    fi
 
-  for i in *.log; do
+    startuptime=`cat .startup | tail -1`
 
-    if [ "$crash" = "1" -o "$killed" = "1" ]; then
-        # In the event of a crash, or if Bro was killed, manually run log
-        # postprocessors on all remaining logs (including stderr.log and
-        # stdout.log).
-        basename=`echo $i | sed 's/\.log$//g'`
-        strt=`cat .startup | tail -1`
-        if [ -e .rotated.$basename ]; then
+    # Create list of all unrotated log files (this doesn't include rotated logs
+    # because they always have more than one period in the filename).
+    # Note: this assumes the user is using the default ".log" file extension.
+    unrotated_logs=$($find_cmd . -maxdepth 1 -type f -regex '\./[^.]+\.log')
+
+    for i in $unrotated_logs; do
+        # Strip off the leading "./"
+        logname=`echo $i | sed 's#^\./##'`
+
+        # Strip off the file extension
+        basename=`echo $logname | sed 's/\.[^.]*$//'`
+
+        # Since we don't have the actual start and end times for these logs,
+        # we try to construct reasonable values here.
+        strt=$startuptime
+        if [ -f .rotated.$basename ]; then
             strt=`cat .rotated.$basename`
         fi
-        end=`date +%y-%m-%d_%H.%M.%S`
+        end=$archivelogtime
 
-        # The "-c" option tells archive-log to not delete logs in work dir.
-        ${scriptsdir}/archive-log -c "$i" "$basename" "$strt" "$end" 1 ascii >/dev/null &
+        # Note: here we assume the log is ascii
+        "${scriptsdir}"/archive-log $flags $logname $basename $strt $end 1 ascii &
+    done
+
+    # If Bro crashed, then we don't need to do anything else, because we don't
+    # want to remove the tmp directory.
+    if [ $crash -eq 1 ]; then
+        exit 0
     fi
 
-    ${scriptsdir}/remove-link-for-log $i
+    # Wait for all the archive-log processes started here to finish.
+    wait
+fi 
 
-  done && wait && waitforarchivelog ) &
+# If no rotated log files remain, then remove the directory.
+# Note: this assumes the user is using the default ".log" file extension.
+if [ -z "$(find . -maxdepth 1 -type f -name '*.*.log')" ]; then
+    rm -rf "$tmp"
+fi
+
+) &
 
