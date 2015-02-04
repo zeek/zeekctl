@@ -65,9 +65,13 @@ options = [
 
     Option("MailConnectionSummary", "1", "bool", Option.USER, False,
            "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
+    Option("MailHostUpDown", "1", "bool", Option.USER, False,
+           "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
+    Option("StatsLogEnable", "1", "bool", Option.USER, False,
+           "True to enable BroControl to write statistics to the stats.log file."),
     Option("StatsLogExpireInterval", "0", "int", Option.USER, False,
            "Number of days entries in the stats.log file are kept (zero means never expire)."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,

@@ -39,6 +39,9 @@ class CronTasks:
         self.controller = controller
 
     def logStats(self, interval):
+        if self.config.statslogenable == "0":
+            return
+
         nodes = self.config.nodes()
         top = self.controller.getTopOutput(nodes)
 
@@ -145,12 +148,16 @@ class CronTasks:
                 if alive != previous:
                     # TODO: fix
                     #plugin.Registry.hostStatusChanged(node.host, alive == "1")
-                    self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
+                    if self.config.mailhostupdown != "0":
+                        self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
             self.config._setState(tag, alive)
 
 
     def updateHTTPStats(self):
+        if self.config.statslogenable == "0":
+            return
+
         # Create meta file.
         if not os.path.exists(self.config.statsdir):
             try:

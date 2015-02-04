@@ -331,6 +331,8 @@ class Controller:
         return results
 
     def logAction(self, node, action):
+        if self.config.statslogenable == "0":
+            return
         t = time.time()
         out = open(self.config.statslog, "a")
         out.write("%s %s action %s\n" % (t, node, action))
