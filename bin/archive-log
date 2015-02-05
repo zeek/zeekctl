@@ -2,85 +2,130 @@
 #
 # Bro postprocessor script to archive log files.
 #
-# archive-log [-c] <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+# archive-log [-c] <file_name> <base_name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+#
+#  -c:  if "-c" is specified, then don't delete log file after it's archived
+#  file_name:  the rotated log filename that we need to archive (the filename
+#              format doesn't really matter).
+#  base_name:  base name of the log (e.g. "conn").
+#  timestamp-when-opened:  timestamp when log file was created (must be in the
+#                          format YY-MM-DD_HH.MM.SS).
+#  timestamp-when-closed:  timestamp when log file was finished (must be in the
+#                          format YY-MM-DD_HH.MM.SS).
+#  terminating:  0 during normal log rotation, or 1 if Bro is shutting down.
+#  writer:  a string indicating the log writer type, such as "ascii".
+# 
+# Example:
+# archive-log conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
 
 # Create a PID file so that the post-terminate script knows when we're done.
 echo $$ > .archive-log.running.$$.tmp
-
-# Make sure PID file is removed upon exit from this script
-trap sig_handler 0
 
 function sig_handler
 {
     rm .archive-log.running.$$.tmp
 }
 
+# Make sure PID file is removed upon exit from this script
+trap sig_handler 0
+
+# This timestamp will be used by the post-terminate script to give a start time
+# to archive-log.
+now=`date +%y-%m-%d_%H.%M.%S`
+
 . `dirname $0`/broctl-config.sh
 
-if [ "${os}" == "openbsd" ]; then
-    find_cmd=gfind
-else
-    find_cmd=find
-fi
-
 delete=1
-if [ "$1" == "-c" ]; then
+if [ "$1" = "-c" ]; then
     delete=0
     shift
 fi
 
+# Make sure all parameters are supplied.
+if [ $# -ne 6 ]; then
+    echo "archive-log: wrong usage" >&2
+    exit 1
+fi
+
+file_name=$1
+base_name=$2
+from=$3
+to=$4
 terminating=$5
 writer=$6
 
-century=`date +%Y | sed 's/..$//g'`
+century=`date +%Y | sed 's/..$//'`
 
-from=`echo $3 | sed 's/[_.]/-/g'`
-from="$century$from"
+# Convert timestamps to the format YYYY-MM-DD-HH-MM-SS
+from=`echo $century$from | sed 's/[_.]/-/g'`
+to=`echo $century$to | sed 's/[_.]/-/g'`
 
-to=`echo $4 | sed 's/[_.]/-/g'`
-to="$century$to"
+# Extract file extension from original filename
+ext=`echo $file_name | sed 's/^.*\.//'`
 
-ext=`echo $1 | sed 's/^.*\.//'`
-dest=`${makearchivename} $2.$ext $writer $from $to `
+if [ ! -f "${makearchivename}" ]; then
+    echo "archive-log: broctl option makearchivename is not set correctly" >&2
+    exit 1
+fi
+# Compute the archived log filename
+dest=`"${makearchivename}" $base_name.$ext $writer $from $to`
+if [ -z "$dest" ]; then
+    echo "archive-log: ${makearchivename} did not return a file name" >&2
+    exit 1
+fi
 
+# If $dest is a relative path, then add ${logdir}
 echo $dest | grep -q '^/'
-
-if [ $? != 0 ]; then
+if [ $? -ne 0 ]; then
+    if [ -z "${logdir}" ]; then
+        echo "archive-log: broctl option logdir is not set" >&2
+        exit 1
+    fi
     dest="${logdir}/$dest"
 fi
 
-dest_dir=`dirname $dest`
+dest_dir=`dirname "$dest"`
 
-mkdir -p $dest_dir # Makes sure all parent directories exist.
+mkdir -p "$dest_dir" # Makes sure all parent directories exist.
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
-# Record time of last rotation.
-date +%y-%m-%d_%H.%M.%S >.rotated.$2 # Bro default format when rotating files.
+# Record time of last rotation (the post-terminate script passes this to
+# archive-log when Bro crashes, so it must be in the format that archive-log
+# expects).
+echo $now > .rotated.$base_name
 
 # Run other postprocessors.
-for pp in ${postprocdir}/*; do
-    nice $pp $@
-done
-
-if [ -e $1 ]; then
-    if [ "${compresslogs}" == "1" -a "$writer" == "ascii" ]; then
-        nice ${compresscmd} <$1 >$dest.${compressextension} 2>/dev/null &
-    else
-        nice cp $1 $dest &
-    fi
+if [ -d "${postprocdir}" ]; then
+    for pp in "${postprocdir}"/*; do
+        nice "$pp" $@
+    done
 fi
 
-wait
-
-if [ "$?" == "0" ]; then
-    if [ "$delete" == "1" ]; then
-        rm -rf $1
-    else
-        # Only delete if too large (>100MB).
-        $find_cmd $1 -size +104857600c -delete
-    fi
+# Test if the log still exists in case one of the postprocessors archived it.
+if [ ! -f $file_name ]; then
+    exit 0
 fi
 
-if [ "$terminating" == "1" ]; then
-    ${scriptsdir}/remove-link-for-log $2
+if [ "${compresslogs}" = "1" -a "$writer" = "ascii" -a -n "${compresscmd}" ]; then
+    nice ${compresscmd} < $file_name > "$dest.${compressextension}"
+else
+    nice cp $file_name "$dest"
+fi
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+if [ "$delete" = "1" ]; then
+    rm -f $file_name
+else
+    find_cmd=find
+    if [ "${os}" = "openbsd" ]; then
+        find_cmd=gfind
+    fi
+    # Only delete if too large (>100MB).
+    $find_cmd $file_name -size +104857600c -delete
 fi
 

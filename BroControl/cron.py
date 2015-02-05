@@ -39,6 +39,9 @@ class CronTasks:
         self.controller = controller
 
     def logStats(self, interval):
+        if self.config.statslogenable == "0":
+            return
+
         nodes = self.config.nodes()
         top = self.controller.getTopOutput(nodes)
 
@@ -50,7 +53,11 @@ class CronTasks:
 
         t = time.time()
 
-        out = open(self.config.statslog, "a")
+        try:
+            out = open(self.config.statslog, "a")
+        except IOError as err:
+            self.ui.error("failed to append to file: %s" % err)
+            return
 
         for (node, error, vals) in top:
             if not error:
@@ -145,12 +152,16 @@ class CronTasks:
                 if alive != previous:
                     # TODO: fix
                     #plugin.Registry.hostStatusChanged(node.host, alive == "1")
-                    self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
+                    if self.config.mailhostupdown != "0":
+                        self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
 
             self.config._setState(tag, alive)
 
 
     def updateHTTPStats(self):
+        if self.config.statslogenable == "0":
+            return
+
         # Create meta file.
         if not os.path.exists(self.config.statsdir):
             try:
@@ -194,6 +205,17 @@ class CronTasks:
                 self.ui.error("failed to create directory: %s" % err)
                 return
 
+        # Update the WWW data
+        statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
+
+        (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        if success:
+            shutil.copy(metadat, wwwdir)
+        else:
+            self.ui.error("error reported by stats-to-csv")
+            for line in output:
+                self.ui.error(line)
+
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
         try:
@@ -202,21 +224,18 @@ class CronTasks:
             self.ui.error("failed to append to file: %s" % err)
             return
 
-        fsrc = open(self.config.statslog, "r")
-        shutil.copyfileobj(fsrc, fdst)
-        fdst.close()
-        fsrc.close()
-
-        # Update the WWW data
-        statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
-
-        (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
-        if not success:
-            self.ui.error("stats-to-csv failed")
+        try:
+            fsrc = open(self.config.statslog, "r")
+        except IOError as err:
+            fdst.close()
+            self.ui.error("failed to read file: %s" % err)
             return
 
+        shutil.copyfileobj(fsrc, fdst)
+        fsrc.close()
+        fdst.close()
+
         os.unlink(self.config.statslog)
-        shutil.copy(metadat, wwwdir)
 
 
     def runCronCmd(self):

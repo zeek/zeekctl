@@ -59,6 +59,8 @@ echo "CLUSTER_NODE=${CLUSTER_NODE}" >>.env_vars
 
 echo $@ >.cmdline
 
+# Note: the post-terminate script reads the .startup file and expects a certain
+# format.
 date +%s >.startup
 date >>.startup
 date +%y-%m-%d_%H.%M.%S >>.startup # Bro default format when rotating files. 

@@ -20,6 +20,10 @@ def readNodes(meta):
             m = line.split()
 
             if m[0] == "node":
+                if len(m) < 3:
+                    print("error: 'node' line in meta.dat is missing some fields")
+                    sys.exit(1)
+
                 if m[2] == "worker":
                     Workers.add(m[1])
 
@@ -95,10 +99,18 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
         for line in ff:
             m = line.split()
 
+            if len(m) < 2:
+                print("error: line in stats.log has less than two fields")
+                sys.exit(1)
+
             if m[1] != node:
                 continue
 
-            t = float(m[0])
+            try:
+                t = float(m[0])
+            except ValueError:
+                print("error: line in stats.log has no timestamp")
+                sys.exit(1)
 
             if t != first and first >= 0:
                 printEntry(t, entry)
