@@ -1,0 +1,34 @@
+# Test that the netstats command can get status of all nodes, or just
+# a specified node.
+#
+# @TEST-SERIALIZE: broccoli
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster_no_netifs
+EOF
+
+ret=0
+
+broctl install
+broctl start
+
+# get status of all nodes
+broctl netstats > all.out 2>&1
+
+# get status of one node
+broctl netstats worker-2 > onenode.out 2>&1
+
+broctl stop
+
+# no nodes are running, so no status exists
+broctl netstats > stopped.out 2>&1
+# the file size should be zero
+test ! -s stopped.out || ret=1
+
+exit $ret

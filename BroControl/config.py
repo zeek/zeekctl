@@ -3,12 +3,15 @@
 import os
 import socket
 import re
+import json
 
 from BroControl import py3bro
 from BroControl import node as node_mod
 from BroControl import options
 from .state import SqliteState
 from .version import VERSION
+
+from BroControl import graph
 
 
 # Class storing the broctl configuration.
@@ -83,6 +86,8 @@ class Configuration:
             self._setOption("time", output[0].lower().strip())
         else:
             self._setOption("time", "")
+
+        self.overlay = graph.BGraph()
 
     def initPostPlugins(self):
         self.readState()
@@ -288,7 +293,12 @@ class Configuration:
         return env_vars
 
     # Parse node.cfg.
-    def _readNodes(self):
+    # Old version of readNodes, can be deleted
+    # functionality has been split onto
+    # - readNodes,
+    # - checkNodes, and
+    # - checkNodeStore
+    def _readNodes_Obsolete(self):
         config = py3bro.configparser.SafeConfigParser()
         if not config.read(self.nodecfg):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
@@ -302,6 +312,7 @@ class Configuration:
         nodestore = {}
 
         counts = {}
+
         for sec in config.sections():
             node = node_mod.Node(self, sec)
             nodestore[sec] = node
@@ -460,6 +471,286 @@ class Configuration:
 
         return nodestore
 
+    # Parse node.cfg.
+    def _readNodes(self):
+        config = py3bro.configparser.SafeConfigParser()
+        try:
+            if not config.read(self.nodecfg):
+                raise ConfigurationError("cannot read '%s'" % self.nodecfg)
+        except py3bro.configparser.MissingSectionHeaderError:
+            return self._readNodesJson()
+
+        manager = False
+        proxy = False
+        worker = False
+        standalone = False
+
+        file = self.nodecfg
+        nodestore = {}
+
+        counts = {}
+        for sec in config.sections():
+            node = node_mod.Node(self, sec)
+            nodestore[sec] = node
+            node.__dict__["id"] = sec
+
+            for (key, val) in config.items(sec):
+
+                key = key.replace(".", "_")
+
+                if key not in node_mod.Node._keys:
+                    self.ui.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
+                    continue
+
+                if key == "type":
+                    if val == "manager":
+                        if manager:
+                            raise ConfigurationError("only one manager can be defined")
+                        manager = True
+
+                    elif val == "proxy":
+                        proxy = True
+
+                    elif val == "worker":
+                        worker = True
+
+                    elif val == "standalone":
+                        standalone = True
+
+                    else:
+                        raise ConfigurationError("%s: unknown type '%s' in section '%s'" % (file, val, sec))
+
+                node.__dict__[key] = val
+
+            # Complete node entry, nodestore, and counts
+            node, nodestore, counts = self._checkNode(node, nodestore, counts)
+
+        # Check if nodestore is valid
+        self._checkNodeStore(nodestore, standalone, manager, proxy)
+        return nodestore
+    # _readNodes
+
+    # Check and complete node entry, nodestore, and counts
+    def _checkNode(self, node, nodestore, counts):
+
+        # 1. part of _readNodes
+        #
+        # Convert env_vars from a string to a dictionary.
+        try:
+            node.env_vars = self._getEnvVarDict(node.env_vars)
+        except ValueError as err:
+            raise ConfigurationError("%s: section %s: %s" % (file, node.name, err))
+
+        try:
+            addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
+            if len(addrinfo) == 0:
+                raise ConfigurationError("%s: no addresses resolved in section '%s' for host %s" % (file, node.name, node.host))
+
+            addr_str = addrinfo[0][4][0]
+            # zone_id is handled manually, so strip it if it's there
+            node.addr = addr_str.split('%')[0]
+        except AttributeError:
+            raise ConfigurationError("%s: no host given in section '%s'" % (file, node.name))
+        except socket.gaierror as e:
+            raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, node.name, e.args[1]))
+
+        # Each node gets a number unique across its type.
+        type = nodestore[node.id].type
+        try:
+            counts[type] += 1
+        except KeyError:
+            counts[type] = 1
+
+        node.count = counts[type]
+
+        # 2. Part of _readNodes
+        numprocs = 0
+        if node.lb_procs:
+            try:
+                numprocs = int(node.lb_procs)
+                if numprocs < 1:
+                    raise ConfigurationError("%s: value of lb_procs must be at least 1 in section '%s'" % (file, node.name))
+            except ValueError:
+                raise ConfigurationError("%s: value of lb_procs must be an integer in section '%s'" % (file, node.name))
+        elif node.lb_method:
+            raise ConfigurationError("%s: load balancing requires lb_procs in section '%s'" % (file, node.name))
+
+        try:
+            pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
+        except ValueError:
+            raise ConfigurationError("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, node.name))
+
+        if pin_cpus:
+            node.pin_cpus = pin_cpus[0]
+
+        if node.lb_procs:
+            if not node.lb_method:
+                raise ConfigurationError("%s: no load balancing method given in section '%s'" % (file, node.name))
+
+            if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+                raise ConfigurationError("%s: unknown load balancing method given in section '%s'" % (file, node.name))
+
+            if node.lb_method == "interfaces":
+                if not node.lb_interfaces:
+                    raise ConfigurationError("%s: no list of interfaces given in section '%s'" % (file, node.name))
+
+                # get list of interfaces to use, and assign one to each node
+                netifs = node.lb_interfaces.split(",")
+
+                if len(netifs) != int(node.lb_procs):
+                    raise ConfigurationError("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, node.name))
+
+                node.interface = netifs.pop().strip()
+
+            nodeName = node.name
+            # node names will have a numerical suffix
+            node.name = "%s-1" % node.name
+            print "nodeName " + str(nodeName) + " and node.name " + str(node.name)
+            raise ConfigurationError("stop here")
+
+            for num in range(2, numprocs + 1):
+                newnode = node.copy()
+                # only the node name, count, and pin_cpus need to be changed
+                newname = "%s-%d" % (nodeName, num)
+                newnode.name = newname
+                nodestore[newname] = newnode
+                counts[type] += 1
+                newnode.count = counts[type]
+                if pin_cpus:
+                    newnode.pin_cpus = pin_cpus[num-1]
+
+                if newnode.lb_method == "interfaces":
+                    newnode.interface = netifs.pop().strip()
+
+        nodestore[node.name] = node
+        return node, nodestore, counts
+
+    def _checkNodeStore(self, nodestore, standalone, manager, proxy):
+        if nodestore:
+            if not standalone:
+                if not manager:
+                    raise ConfigurationError("%s: no manager defined" % file)
+                if not proxy:
+                    raise ConfigurationError("%s: no proxy defined" % file)
+            else:
+                if len(nodestore) > 1:
+                    raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
+
+        manageronlocalhost = False
+        for n in nodestore.values():
+            if not n.name:
+                raise ConfigurationError("node configured without a name")
+
+            if not n.host:
+                raise ConfigurationError("no host given for node %s" % n.name)
+
+            if not n.type:
+                raise ConfigurationError("no type given for node %s" % n.name)
+
+            if n.type == "manager":
+                if n.addr not in self.localaddrs:
+                    raise ConfigurationError("script must be run on manager node")
+
+                if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
+                    manageronlocalhost = True
+
+        # If manager is on localhost, then all other nodes must be on localhost
+        if manageronlocalhost:
+            for n in nodestore.values():
+                if n.type != "manager" and n.type != "standalone":
+                    if n.addr != "127.0.0.1" and n.addr != "::1":
+                        raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
+
+    # Parse node.cfg in Json-Format
+    def _readNodesJson(self):
+        file = self.nodecfg
+        if not os.path.exists(file):
+            raise ConfigurationError("cannot read '%s'" % self.nodecfg)
+
+        manager = False
+        proxy = False
+        worker = False
+        peer = False
+        standalone = False
+
+        nodestore = {}
+        counts = {}
+        counter = 0
+
+        with open(file, 'r') as f:
+            data = json.load(f)
+            if "nodes" not in data.keys() or "connections" not in data.keys():
+                raise ConfigurationError("Misconfigured configuration file")
+
+            # Iterate over all node entries
+            for entry in data["nodes"]:
+                if "id" not in entry.keys() or "type" not in entry.keys():
+                    raise ConfigurationError("Misconfigured configuration file")
+
+                node = ""
+                # When node is a cluster, its members need to be queried
+                if entry["type"] == "cluster":
+                    for val in entry["members"]:
+                        nodeId= val["id"]
+                        node = node_mod.Node(self, nodeId)
+                        nodestore[nodeId] = node
+                        node, manager, proxy, worker, peer = self._extractNodeJson(val, node, manager, proxy, worker, peer)
+                        # Check node and complete node entry for nodestore
+                        node, nodestore, counts = self._checkNode(node, nodestore, counts)
+                # Entry is no cluster but ordinary node
+                else:
+                    nodeId= entry["id"]
+                    node = node_mod.Node(self, nodeId)
+                    nodestore[nodeId] = node
+                    node, manager, proxy, worker, peer = self._extractNodeJson(entry, node, manager, proxy, worker, peer)
+                    # Check node and complete node entry for nodestore
+                    node, nodestore, counts = self._checkNode(node, nodestore, counts)
+
+                if not node:
+                    raise ConfigurationError("there is something going wrong, node is empty")
+
+                # Add node/cluster to the graph
+                self.overlay.addNode(entry["id"])
+
+            if "connections" in data.keys():
+                # Parse connections between nodes
+                for val in data["connections"]:
+                    self.overlay.addEdge(val["from"], val["to"])
+            elif peer:
+                raise ConfigurationError("We have a peer but no connections")
+
+        if not self.overlay.isConnected() or not self.overlay.isTree():
+            raise ConfigurationError("Misconfigured overlay")
+        elif not proxy:
+            raise ConfigurationError("we have no proxy!")
+        elif not manager:
+            raise ConfigurationError("we have no manager!")
+
+        # Check if nodestore is valid
+        self._checkNodeStore(nodestore, standalone, manager, proxy)
+        return nodestore
+
+    # Parses a node entry in Json format
+    def _extractNodeJson(self, entry, node, manager, proxy, worker, peer):
+        for key in entry:
+            node.__dict__[key] = entry[key]
+
+        if  node.type == "manager":
+            if manager:
+                raise ConfigurationError("only one manager can be defined")
+            manager = True
+        elif node.type == "proxy":
+            proxy = True
+        elif node.type == "worker":
+            worker = True
+        elif node.type == "standalone":
+            standalone = True
+        elif node.type == "peer":
+            peer = True
+        else:
+            raise ConfigurationError("strange node.cfg configuration detected, node is " + str(node.type))
+
+        return node, manager, proxy, worker, peer
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):
@@ -481,6 +772,7 @@ class Configuration:
             config[key] = val.strip()
 
         return config
+
 
     # Initialize a global option if not already set.
     def _setOption(self, key, val):

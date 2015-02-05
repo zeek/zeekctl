@@ -1,0 +1,36 @@
+
+{
+"nodes" : [
+
+	{	
+		"id": "icsi-cluster",
+		"type": "cluster",
+		"members": [	
+
+		{	"id": "manager",
+			"type": "manager",
+			"host": "localhost",
+			"policy": "policy 1"},
+
+		{	"id": "proxy-1",
+			"type": "proxy",
+			"host": "localhost",
+			"policy": "policy 2"},
+
+		{	"id": "worker-1",
+			"type": "worker",
+			"host": "localhost",
+			"policy": "policy 4"},
+
+		{	"id": "worker-2",
+			"type": "worker",
+			"host": "localhost",
+			"policy": "policy 5"}
+	]}
+	
+],
+
+"connections":	[	
+				]
+
+}
