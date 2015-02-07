@@ -10,7 +10,7 @@
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
-etc/node.cfg__cluster_no_netifs_json
+etc/node.cfg__multiple_clusters_no_netifs_json
 EOF
 
 ret=0
@@ -22,7 +22,7 @@ broctl start
 broctl netstats > all.out 2>&1
 
 # get status of one node
-broctl netstats icsi-cluster::worker-2 > onenode.out 2>&1
+broctl netstats icsi-cluster-1::worker-1 > onenode.out 2>&1
 
 broctl stop
 

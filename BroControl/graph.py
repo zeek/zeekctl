@@ -10,9 +10,6 @@ class BGraph:
         if node in self.graph:
             raise RuntimeError("Node already exists")
         self.graph[node] = set()
-        #FIXME This is a hack, first node becomes root
-        if not self.root:
-            self.root = node
 
     def addEdge(self, u, v):
         if u in self.graph and v in self.graph[u]:
@@ -20,14 +17,31 @@ class BGraph:
         self.graph[u].add(v)
         self.edges.append((u, v))
 
-    def set_root(self, root):
-        print "root is " + str(root)
+    def setRoot(self, root):
         self.root = root
+
+    def finalize(self):
+        if not self.graph:
+            raise RuntimeError("Graph is empty")
+        node = self.graph.keys()[0]
+        next = node
+        while next:
+            node = next
+            next = self.getPredecessor(node)
+        self.setRoot(node)
+
+    def getRoot(self):
+        if not self.root:
+            self.finalize()
+        return self.root
 
     def size(self):
         return len(self.graph)
 
-    def get_graph(self):
+    def empty(self):
+        return self.size() == 0
+
+    def getGraph(self):
         return self.graph
 
     def nodes(self):
@@ -60,17 +74,22 @@ class BGraph:
         return neighbors
 
     def getSuccessors(self, node):
+        if node not in self.graph:
+            raise RuntimeError("Node " + str(node) + " does not exist")
         return self.graph[node]
 
     def getPredecessor(self, node):
-        pred = []
+        predList = []
+        pred = ""
         for (u, v) in self.edges:
             if v == node:
                 pred.append(u)
-        if not pred or (len(pred) > 1):
-            raise RuntimeError("No or more than one predecessor")
-        else:
-            return pred.pop()
+                pred = u
+
+        if (len(predList) > 1):
+            raise RuntimeError("More than one predecessor in hierarchy")
+
+        return pred
 
     def isConnected(self):
         visited = set()
@@ -87,6 +106,8 @@ class BGraph:
         return len(visited) == self.size()
 
     def isTree(self):
+        if not self.root:
+            self.finalize()
         visited = set()
         known = set()
         known.add(self.root)

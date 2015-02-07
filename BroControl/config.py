@@ -93,7 +93,7 @@ class Configuration:
         self.readState()
 
         # Read node.cfg
-        self.nodelist = self._readNodes()
+        self.nodelist, self.peers = self._readNodes()
         if not self.nodelist:
             return False
 
@@ -200,8 +200,6 @@ class Configuration:
 
         return nodes
 
-    # Returns the manager Node (cluster config) or standalone Node (standalone
-    # config).
     def manager(self):
         n = self.nodes("manager")
         if n:
@@ -481,12 +479,10 @@ class Configuration:
             return self._readNodesJson()
 
         manager = False
-        proxy = False
-        worker = False
-        standalone = False
 
         file = self.nodecfg
         nodestore = {}
+        cluster = {}
 
         counts = {}
         for sec in config.sections():
@@ -507,17 +503,7 @@ class Configuration:
                         if manager:
                             raise ConfigurationError("only one manager can be defined")
                         manager = True
-
-                    elif val == "proxy":
-                        proxy = True
-
-                    elif val == "worker":
-                        worker = True
-
-                    elif val == "standalone":
-                        standalone = True
-
-                    else:
+                    elif (val != "proxy" and val != "worker" and val != "standalone"):
                         raise ConfigurationError("%s: unknown type '%s' in section '%s'" % (file, val, sec))
 
                 node.__dict__[key] = val
@@ -526,9 +512,8 @@ class Configuration:
             node, nodestore, counts = self._checkNode(node, nodestore, counts)
 
         # Check if nodestore is valid
-        self._checkNodeStore(nodestore, standalone, manager, proxy)
-        return nodestore
-    # _readNodes
+        self._checkNodeStore(nodestore)
+        return nodestore, cluster
 
     # Check and complete node entry, nodestore, and counts
     def _checkNode(self, node, nodestore, counts):
@@ -555,7 +540,7 @@ class Configuration:
             raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, node.name, e.args[1]))
 
         # Each node gets a number unique across its type.
-        type = nodestore[node.id].type
+        type = nodestore[node.name].type
         try:
             counts[type] += 1
         except KeyError:
@@ -605,8 +590,6 @@ class Configuration:
             nodeName = node.name
             # node names will have a numerical suffix
             node.name = "%s-1" % node.name
-            print "nodeName " + str(nodeName) + " and node.name " + str(node.name)
-            raise ConfigurationError("stop here")
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
@@ -625,18 +608,15 @@ class Configuration:
         nodestore[node.name] = node
         return node, nodestore, counts
 
-    def _checkNodeStore(self, nodestore, standalone, manager, proxy):
-        if nodestore:
-            if not standalone:
-                if not manager:
-                    raise ConfigurationError("%s: no manager defined" % file)
-                if not proxy:
-                    raise ConfigurationError("%s: no proxy defined" % file)
-            else:
-                if len(nodestore) > 1:
-                    raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
+    def _checkNodeStore(self, nodestore):
+        if not nodestore:
+            raise ConfigurationError("No nodes found")
 
         manageronlocalhost = False
+        standalone = False
+        manager = False
+        proxy = False
+
         for n in nodestore.values():
             if not n.name:
                 raise ConfigurationError("node configured without a name")
@@ -654,6 +634,23 @@ class Configuration:
                 if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
                     manageronlocalhost = True
 
+                manager = True
+
+            elif n.type == "proxy":
+                proxy = True
+
+            elif n.type == "standalone":
+                standalone = True
+
+        if not standalone:
+            if not manager:
+                raise ConfigurationError("%s: no manager defined" % file)
+            elif not proxy:
+                raise ConfigurationError("%s: no proxy defined" % file)
+        else:
+            if len(nodestore) > 1:
+                raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
+
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
@@ -667,20 +664,17 @@ class Configuration:
         if not os.path.exists(file):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
-        manager = False
-        proxy = False
-        worker = False
-        peer = False
-        standalone = False
-
         nodestore = {}
         counts = {}
-        counter = 0
 
         with open(file, 'r') as f:
             data = json.load(f)
-            if "nodes" not in data.keys() or "connections" not in data.keys():
+            if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
                 raise ConfigurationError("Misconfigured configuration file")
+
+            head = data["head"]
+            cluster_head = ""
+            scope = ""
 
             # Iterate over all node entries
             for entry in data["nodes"]:
@@ -690,67 +684,83 @@ class Configuration:
                 node = ""
                 # When node is a cluster, its members need to be queried
                 if entry["type"] == "cluster":
+                    clusterId = entry["id"]
+                    # Add cluster to the graph
+                    self.overlay.addNode(clusterId)
+
                     for val in entry["members"]:
-                        nodeId= val["id"]
+                        if "id" not in val.keys() or "type" not in val.keys():
+                            raise ConfigurationError("Misconfigured configuration file")
+
+                        nodeId = clusterId + "::" + val["id"]
                         node = node_mod.Node(self, nodeId)
+                        node.__dict__["cluster"] = clusterId
+
                         nodestore[nodeId] = node
-                        node, manager, proxy, worker, peer = self._extractNodeJson(val, node, manager, proxy, worker, peer)
+                        node = self._extractNodeJson(val, node)
                         # Check node and complete node entry for nodestore
                         node, nodestore, counts = self._checkNode(node, nodestore, counts)
+
+                        if head == val["id"]:
+                            scope = clusterId
+
                 # Entry is no cluster but ordinary node
                 else:
                     nodeId= entry["id"]
                     node = node_mod.Node(self, nodeId)
+                    node.__dict__["cluster"] = ""
+
                     nodestore[nodeId] = node
-                    node, manager, proxy, worker, peer = self._extractNodeJson(entry, node, manager, proxy, worker, peer)
+                    node = self._extractNodeJson(entry, node)
                     # Check node and complete node entry for nodestore
                     node, nodestore, counts = self._checkNode(node, nodestore, counts)
+                    # Add node to the graph
+                    self.overlay.addNode(nodeId)
+
+                    if head == entry["id"]:
+                        scope = nodeId
 
                 if not node:
-                    raise ConfigurationError("there is something going wrong, node is empty")
+                    raise ConfigurationError("no node found in node.cfg")
+                elif not scope:
+                    raise ConfigurationError("Local node has no scope")
 
-                # Add node/cluster to the graph
-                self.overlay.addNode(entry["id"])
-
+            # Parse connections between nodes
             if "connections" in data.keys():
-                # Parse connections between nodes
                 for val in data["connections"]:
                     self.overlay.addEdge(val["from"], val["to"])
-            elif peer:
-                raise ConfigurationError("We have a peer but no connections")
 
         if not self.overlay.isConnected() or not self.overlay.isTree():
             raise ConfigurationError("Misconfigured overlay")
-        elif not proxy:
-            raise ConfigurationError("we have no proxy!")
-        elif not manager:
-            raise ConfigurationError("we have no manager!")
+
+        # Current scope of this peer: local node and its cluster
+        scope_list = {}
+        # Dict of direct successors of this peer
+        peers = {}
+
+        peer_list = self.overlay.getSuccessors(scope)
+        for key, value in nodestore.iteritems():
+            if key == head or (scope and value.cluster == scope):
+                scope_list[key] = nodestore[key]
+            elif key in peer_list:
+                peers[key] = nodestore[key]
+            elif (value.cluster in peer_list and value.type == "manager"):
+                peers[value.cluster] = nodestore[key]
 
         # Check if nodestore is valid
-        self._checkNodeStore(nodestore, standalone, manager, proxy)
-        return nodestore
+        self._checkNodeStore(scope_list)
+
+        return scope_list, peers
 
     # Parses a node entry in Json format
-    def _extractNodeJson(self, entry, node, manager, proxy, worker, peer):
+    def _extractNodeJson(self, entry, node):
         for key in entry:
             node.__dict__[key] = entry[key]
 
-        if  node.type == "manager":
-            if manager:
-                raise ConfigurationError("only one manager can be defined")
-            manager = True
-        elif node.type == "proxy":
-            proxy = True
-        elif node.type == "worker":
-            worker = True
-        elif node.type == "standalone":
-            standalone = True
-        elif node.type == "peer":
-            peer = True
-        else:
-            raise ConfigurationError("strange node.cfg configuration detected, node is " + str(node.type))
+        if (node.type != "manager" and node.type != "proxy" and node.type != "worker" and node.type != "standalone" and node.type != "peer"):
+            raise ConfigurationError("strange node type detected, node " + node.name + " is " + str(node.type))
 
-        return node, manager, proxy, worker, peer
+        return node
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _readConfig(self, file):
@@ -897,4 +907,3 @@ class Configuration:
             version = version[:-6]
 
         return version
-
