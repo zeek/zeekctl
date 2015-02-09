@@ -74,7 +74,7 @@ check_email || ret=1
 # Test with lots of free disk space, but different mindiskspace (email warning)
 
 # Remove previous free disk space records (otherwise we won't get an email)
-rm $BROCTL_INSTALL_PREFIX/spool/broctl.dat
+rm $BROCTL_INSTALL_PREFIX/spool/state.db
 
 # Update configuration
 echo "mindiskspace=50" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg

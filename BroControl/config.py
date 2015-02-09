@@ -17,7 +17,7 @@ from .version import VERSION
 #
 # - the global broctl configuration from broctl.cfg
 # - the node configuration from node.cfg
-# - dynamic state variables which are kept across restarts in spool/broctl.dat
+# - dynamic state variables which are kept across restarts in spool/state.db
 
 Config = None # Globally accessible instance of Configuration.
 
@@ -119,8 +119,8 @@ class Configuration:
         return True
 
     # Provides access to the configuration options via the dereference operator.
-    # Lookups the attribute in broctl.cfg first, then in the dynamic variables
-    # from broctl.dat.
+    # Lookup the attribute in broctl options first, then in the dynamic state
+    # variables.
     def __getattr__(self, attr):
         if attr in self.config:
             return self.config[attr]
@@ -498,7 +498,7 @@ class Configuration:
     def _getState(self, key):
         return self.state.get(key)
 
-    # Read dynamic state variables from {$spooldir}/broctl.dat .
+    # Read dynamic state variables.
     def readState(self):
         self.state = dict(self.state_store.items())
 
