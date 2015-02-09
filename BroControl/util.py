@@ -30,11 +30,7 @@ def _breakLock(cmdout):
     except (OSError, IOError):
         return False
 
-def _aquireLock(cmdout):
-    if not config.Config.manager():
-        # Initial install.
-        return True
-
+def _acquireLock(cmdout):
     pid = str(os.getpid())
     tmpfile = config.Config.lockfile + "." + pid
 
@@ -59,12 +55,12 @@ def _aquireLock(cmdout):
 
             # File is locked.
             if _breakLock(cmdout):
-                return _aquireLock(cmdout)
+                return _acquireLock(cmdout)
 
         except OSError as e:
             # File is already locked.
             if _breakLock(cmdout):
-                return _aquireLock(cmdout)
+                return _acquireLock(cmdout)
 
         except IOError as e:
             cmdout.error("cannot acquire lock: %s" % e)
@@ -73,9 +69,7 @@ def _aquireLock(cmdout):
     finally:
         try:
             os.unlink(tmpfile)
-        except OSError:
-            pass
-        except IOError:
+        except (OSError, IOError):
             pass
 
     return False
@@ -86,7 +80,7 @@ def _releaseLock(cmdout):
     except OSError as e:
         cmdout.error("cannot remove lock file: %s" % e)
 
-def lock(cmdout):
+def lock(cmdout, showwait=True):
     global lockCount
 
     if lockCount > 0:
@@ -94,23 +88,17 @@ def lock(cmdout):
         lockCount += 1
         return True
 
-    if not _aquireLock(cmdout):
+    if not _acquireLock(cmdout):
 
-        if config.Config.cron == "1":
-            do_output = 0
-        else:
-            do_output = 2
-
-        if do_output:
+        if showwait:
             cmdout.info("waiting for lock ...")
 
         count = 0
-        while not _aquireLock(cmdout):
+        while not _acquireLock(cmdout):
             time.sleep(1)
 
             count += 1
             if count > 30:
-                cmdout.info("cannot get lock") # always output this one.
                 return False
 
     lockCount = 1

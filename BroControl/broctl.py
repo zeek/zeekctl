@@ -40,6 +40,16 @@ def lock_required(func):
     wrapper.lock_required = True
     return wrapper
 
+def lock_required_silent(func):
+    def wrapper(self, *args, **kwargs):
+        self.lock(showwait=False)
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            self.unlock()
+    wrapper.lock_required = True
+    return wrapper
+
 class BroCtl(object):
     def __init__(self, basedir=version.BROBASE, ui=TermUI(), state=None):
         self.ui = ui
@@ -117,8 +127,8 @@ class BroCtl(object):
     def syntax(self, args):
         self.errror("Syntax error: %s" % args)
 
-    def lock(self):
-        lockstatus = util.lock(self.ui)
+    def lock(self, showwait=True):
+        lockstatus = util.lock(self.ui, showwait)
         if not lockstatus:
             raise RuntimeError("Unable to get lock")
 
@@ -268,6 +278,8 @@ class BroCtl(object):
         self.plugins.cmdPostWithNodes("status", nodes)
         return results
 
+    @expose
+    @lock_required
     def top(self, node_list=None):
         """- [<nodes>]
 
@@ -286,6 +298,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def diag(self, node_list=None):
         """- [<nodes>]
 
@@ -306,6 +320,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required_silent
     def cron(self, watch=True):
         """- [enable|disable|?] | [--no-watch]
 
@@ -335,6 +351,8 @@ class BroCtl(object):
 
         return True
 
+    @expose
+    @lock_required
     def cronenabled(self):
         results = False
         if self.plugins.cmdPre("cron", "?", False):
@@ -344,6 +362,8 @@ class BroCtl(object):
         self.plugins.cmdPost("cron", "?", False)
         return results
 
+    @expose
+    @lock_required
     def setcronenabled(self, enable=True):
         if enable:
             if self.plugins.cmdPre("cron", "enable", False):
@@ -408,6 +428,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def capstats(self, interval=10, node_list=None):
         """- [<nodes>] [<interval>]
 
@@ -424,6 +446,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def update(self, node_list=None):
         """- [<nodes>]
 
@@ -448,6 +472,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def df(self, node_list=None):
         """- [<nodes>]
 
@@ -461,6 +487,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def printid(self, id, node_list=None):
         """- <id> [<nodes>]
 
@@ -480,6 +508,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def peerstatus(self, node_list=None):
         """- [<nodes>]
 
@@ -494,6 +524,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def netstats(self, node_list=None):
         """- [<nodes>]
 
@@ -528,6 +560,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def scripts(self, check=False, node_list=None):
         """- [-c] [<nodes>]
 
@@ -547,6 +581,8 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @lock_required
     def process(self, trace, options, scripts):
         """- <trace> [options] [-- <scripts>]
 
