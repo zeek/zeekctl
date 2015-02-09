@@ -39,9 +39,10 @@ if [ ! -d "${tmpdir}" ]; then
     echo "update: directory not found: ${tmpdir}"
     exit 1
 fi
-dir=${tmpdir}/update-$1-$$
+dir=${tmpdir}/update-$$
 rm -rf "$dir"
 mkdir "$dir"
+
 cd "$dir"
 if [ $? -ne 0 ]; then
     exit 1
@@ -56,6 +57,7 @@ fi
 rc=$?
 
 grep -v -e "warning: no such host" -e "received termination signal" out.log
+
 rm -rf "$dir"
 
 exit $rc

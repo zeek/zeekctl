@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 #
+# Start Bro, output the Bro PID, and return zero.  Upon failure, output an
+# error message and return nonzero.
+#
 #  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <bro_args>
 #
 # -v var=value...:  environment variables to set.

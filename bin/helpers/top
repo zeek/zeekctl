@@ -23,17 +23,18 @@ cmd_darwin='top -l 2 -s0 -stats pid,vprvt,rsize,cpu,command | awk -v c=0 "{ if(\
 
 eval cmd="\$cmd_${os}"
 
-if [ "${os}" == "freebsd" ]; then
+if [ "${os}" = "freebsd" ]; then
    # Top's output looks different on non-SMP FreeBSD machines.
    top -u -b all | grep -q "STATE  *C  *TIME" || cmd="$cmd_freebsd_nonsmp"
 fi
 
 if [ -z "$cmd" ]; then
+    echo "unrecognized os: ${os}" >&2
     exit 1
 fi
 
 unset LINES
 unset COLUMNS
 
-eval $cmd | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f ${helperdir}/to-bytes.awk
+eval $cmd | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f "${helperdir}/to-bytes.awk"
 

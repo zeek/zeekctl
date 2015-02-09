@@ -18,8 +18,8 @@ def _breakLock(cmdout):
         # Check whether lock is stale.
         pid = open(config.Config.lockfile, "r").readline().strip()
         (success, output) = execute.runLocalCmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
-        if success:
-            # Process still exissts.
+        if success and output[0] == "running":
+            # Process still exists.
             return False
 
         # Break lock.

@@ -2,5 +2,5 @@
 #
 #  stop <pid> <signal>
 
-kill -$2 $1 >/dev/null 2>&1 
+kill -$2 $1
 

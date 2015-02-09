@@ -243,6 +243,10 @@ class Controller:
             cmds += [(node, "check-pid", [str(pid)])]
 
         for (node, success, output) in self.executor.runHelperParallel(cmds):
+            # If we cannot run the helper script, then we ignore this node
+            # because the process might actually be running but we can't tell.
+            if not success:
+                continue
 
             # If we cannot connect to the host at all, we filter it out because
             # the process might actually still be running but we can't tell.
@@ -251,9 +255,11 @@ class Controller:
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
 
-            results += [(node, success)]
+            running = output[0] == "running" and True or False
 
-            if not success:
+            results += [(node, running)]
+
+            if not running:
                 if setcrashed:
                     # Grmpf. It crashed.
                     node.clearPID()
@@ -598,11 +604,6 @@ class Controller:
         manager = self.config.manager()
 
         all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
-
-        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            self.ui.error("broctl-config.sh not found (try 'broctl install')")
-            results.set_cmd_fail()
-            return results
 
         nodes = []
         for (node, cwd) in all:
@@ -1032,8 +1033,12 @@ class Controller:
 
             success, output = res[node.host]
 
-            if not success or not output:
-                results += [(node, "cannot get top output", [{}])]
+            if not success:
+                results += [(node, "top failed: %s" % output[0], [{}])]
+                continue
+
+            if not output:
+                results += [(node, "no output from top", [{}])]
                 continue
 
             procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
@@ -1139,11 +1144,6 @@ class Controller:
 
         if not os.path.isfile(trace):
             self.ui.error("trace file not found: %s" % trace)
-            results.set_cmd_fail()
-            return results
-
-        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            self.ui.error("broctl-config.sh not found (try 'broctl install')")
             results.set_cmd_fail()
             return results
 
@@ -1315,11 +1315,14 @@ class Controller:
     def doCron(self, watch):
         if not self.config.hasAttr("cronenabled"):
             self.config._setState("cronenabled", True)
+
         if not self.config.cronenabled:
             return
 
+        # Check if "broctl install" has been run.
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            self.ui.error("broctl-config.sh not found (try 'broctl install')")
+            # Don't output anything here, otherwise the cron job may generate
+            # emails before the user has a chance to do "broctl install".
             return
 
         # Flag to indicate that we're running from cron.
@@ -1371,7 +1374,8 @@ class Controller:
         if output:
             success, out = self.sendMail("cron: " + output.splitlines()[0], output)
             if not success:
-                self.ui.error("error occurred while trying to send mail: %s" % out[0])
+                self.ui.error("broctl cron failed to send mail: %s" % out[0])
+                self.ui.info("\nOutput of broctl cron:\n%s" % output)
 
         self.config.config["cron"] = "0"
         logging.debug("cron done")
