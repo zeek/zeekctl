@@ -33,6 +33,7 @@ class Configuration:
 
         config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
+
         self.ui = ui
         self.localaddrs = localaddrs
         global Config
@@ -475,7 +476,9 @@ class Configuration:
         try:
             if not config.read(self.nodecfg):
                 raise ConfigurationError("cannot read '%s'" % self.nodecfg)
+            self.json = False
         except py3bro.configparser.MissingSectionHeaderError:
+            self.json = True
             return self._readNodesJson()
 
         manager = False
@@ -686,7 +689,7 @@ class Configuration:
                 if entry["type"] == "cluster":
                     clusterId = entry["id"]
                     # Add cluster to the graph
-                    self.overlay.addNode(clusterId)
+                    self.overlay.addNodeAttr(clusterId, "json-data", entry)
 
                     for val in entry["members"]:
                         if "id" not in val.keys() or "type" not in val.keys():
@@ -715,7 +718,7 @@ class Configuration:
                     # Check node and complete node entry for nodestore
                     node, nodestore, counts = self._checkNode(node, nodestore, counts)
                     # Add node to the graph
-                    self.overlay.addNode(nodeId)
+                    self.overlay.addNodeAttr(nodeId, "json-data", entry)
 
                     if head == entry["id"]:
                         scope = nodeId
@@ -739,13 +742,13 @@ class Configuration:
         peers = {}
 
         peer_list = self.overlay.getSuccessors(scope)
-        for key, value in nodestore.iteritems():
-            if key == head or (scope and value.cluster == scope):
+        for key, node in nodestore.iteritems():
+            if key == head or (scope and node.cluster == scope):
                 scope_list[key] = nodestore[key]
             elif key in peer_list:
                 peers[key] = nodestore[key]
-            elif (value.cluster in peer_list and value.type == "manager"):
-                peers[value.cluster] = nodestore[key]
+            elif node.cluster in peer_list and node.type == "manager":
+                peers[node.cluster] = nodestore[key]
 
         # Check if nodestore is valid
         self._checkNodeStore(scope_list)
@@ -757,7 +760,7 @@ class Configuration:
         for key in entry:
             node.__dict__[key] = entry[key]
 
-        if (node.type != "manager" and node.type != "proxy" and node.type != "worker" and node.type != "standalone" and node.type != "peer"):
+        if node.type not in ["manager", "proxy", "worker", "standalone", "peer"]:
             raise ConfigurationError("strange node type detected, node " + node.name + " is " + str(node.type))
 
         return node
@@ -907,3 +910,7 @@ class Configuration:
             version = version[:-6]
 
         return version
+
+    def writeJson(self, peer, data):
+        print "write Json configuration file for peer " + str(peer)
+

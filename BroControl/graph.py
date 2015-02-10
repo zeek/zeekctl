@@ -3,19 +3,35 @@ class BGraph:
 
     def __init__(self):
         self.graph = {}
-        self.edges = []
+        self.edge_list = []
         self.root = ""
+        self.node_attr = {}
 
     def addNode(self, node):
         if node in self.graph:
             raise RuntimeError("Node already exists")
         self.graph[node] = set()
 
+    def addNodeAttr(self, node, attr, val):
+        self.addNode(node)
+        self.addAttr(node, attr, val)
+
+    def addAttr(self, node, attr, val):
+        if attr not in self.node_attr.keys():
+            self.node_attr[attr] = {}
+            attr_dict = {}
+            attr_dict[node] = val
+            self.node_attr[attr] = attr_dict
+        elif node in self.node_attr[attr].keys():
+            raise RuntimeError("Node already exists")
+        else:
+            self.node_attr[attr][node] = val
+
     def addEdge(self, u, v):
         if u in self.graph and v in self.graph[u]:
             raise RuntimeError("Edge already exists")
         self.graph[u].add(v)
-        self.edges.append((u, v))
+        self.edge_list.append((u, v))
 
     def setRoot(self, root):
         self.root = root
@@ -47,6 +63,9 @@ class BGraph:
     def nodes(self):
         return self.graph.keys()
 
+    def edges(self):
+        return self.edge_list
+
     def getSubgraph(self, sroot):
         if sroot not in self.graph:
             raise RuntimeError("Node not found")
@@ -66,7 +85,7 @@ class BGraph:
 
     def getNeighbors(self, node):
         neighbors = set()
-        for (u, v) in self.edges:
+        for (u, v) in self.edge_list:
             if u == node:
                 neighbors.add(v)
             elif v == node:
@@ -81,7 +100,7 @@ class BGraph:
     def getPredecessor(self, node):
         predList = []
         pred = ""
-        for (u, v) in self.edges:
+        for (u, v) in self.edge_list:
             if v == node:
                 pred.append(u)
                 pred = u
@@ -90,6 +109,29 @@ class BGraph:
             raise RuntimeError("More than one predecessor in hierarchy")
 
         return pred
+
+    def getNodeAttr(self, node):
+        attr_list = []
+        for attr in self.node_attr.keys():
+            if node in self.node_attr[attr]:
+                attr_list.append(attr)
+
+        return attr_list
+
+    def getAttrNodes(self, attr):
+        attr_list = []
+        if attr not in self.node_attr:
+            return attr_list
+        else:
+            return self.node_attr[attr].keys()
+
+    def getAttrNodeVal(self, attr, node):
+        if attr not in self.node_attr:
+            return None
+        elif node not in self.node_attr[attr]:
+            return None
+        else:
+            return self.node_attr[attr][node]
 
     def isConnected(self):
         visited = set()
@@ -119,4 +161,22 @@ class BGraph:
                 known = known | self.graph[node]
 
         return len(visited) == self.size()
-# End BGraph
+
+    def exportSubgraphJson(self, node):
+        if "json-data" not in self.node_attr.keys():
+            raise RuntimeError("Attribute json-data is not part of graph")
+
+        g = self.getSubgraph(node)
+        file = "/home/mathias/node-" + str(node) + ".cfg"
+        with open(file, 'w') as f:
+            f.write("{\n")
+            f.write("nodes: [\n")
+            for n in g.nodes():
+                f.write(str(self.node_attr["json-data"][n]) + ",\n")
+            f.write("],\n")
+
+            f.write("connections: [\n")
+            for (u, v) in g.edges():
+                f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"},\n")
+            f.write("],\n")
+            f.write("}\n")
