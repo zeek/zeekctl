@@ -226,6 +226,10 @@ class Configuration:
 
         return nodelist
 
+    # Returns the list of peers in the hierarchy
+    def peers(self):
+        return self.peers
+
     # Replace all occurences of "${option}", with option being either
     # broctl.cfg option or a dynamic variable, with the corresponding value.
     # Defaults to replacement with the empty string for unknown options.
@@ -669,15 +673,19 @@ class Configuration:
 
         nodestore = {}
         counts = {}
+        # TODO built a complete node entry for
+        # the predecessor in the hierarchy / the head
+        head = ""
 
         with open(file, 'r') as f:
             data = json.load(f)
             if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
-                raise ConfigurationError("Misconfigured configuration file")
+                raise ConfigurationError("Misconfigured configuration file. One entry out of [head, node,connections] missing.")
 
-            head = data["head"]
-            cluster_head = ""
-            scope = ""
+            if "id" in data["head"].keys():
+                head = data["head"]["id"]
+            else:
+                raise ConfigurationError("Misconfigured configuration file, id for head missing")
 
             # Iterate over all node entries
             for entry in data["nodes"]:
@@ -704,9 +712,6 @@ class Configuration:
                         # Check node and complete node entry for nodestore
                         node, nodestore, counts = self._checkNode(node, nodestore, counts)
 
-                        if head == val["id"]:
-                            scope = clusterId
-
                 # Entry is no cluster but ordinary node
                 else:
                     nodeId= entry["id"]
@@ -720,13 +725,8 @@ class Configuration:
                     # Add node to the graph
                     self.overlay.addNodeAttr(nodeId, "json-data", entry)
 
-                    if head == entry["id"]:
-                        scope = nodeId
-
                 if not node:
                     raise ConfigurationError("no node found in node.cfg")
-                elif not scope:
-                    raise ConfigurationError("Local node has no scope")
 
             # Parse connections between nodes
             if "connections" in data.keys():
@@ -738,16 +738,22 @@ class Configuration:
 
         # Current scope of this peer: local node and its cluster
         scope_list = {}
-        # Dict of direct successors of this peer
+        # All direct successors of this peer in the hierarchy
         peers = {}
 
-        peer_list = self.overlay.getSuccessors(scope)
+        root = self.overlay.getRoot()
+        peer_list = self.overlay.getRootSuccessors()
         for key, node in nodestore.iteritems():
-            if key == head or (scope and node.cluster == scope):
+            if key == root:
                 scope_list[key] = nodestore[key]
+
+            elif node.cluster == root:
+                scope_list[key] = nodestore[key]
+
             elif key in peer_list:
                 peers[key] = nodestore[key]
-            elif node.cluster in peer_list and node.type == "manager":
+
+            elif node.cluster and node.cluster in peer_list and node.type == "manager":
                 peers[node.cluster] = nodestore[key]
 
         # Check if nodestore is valid

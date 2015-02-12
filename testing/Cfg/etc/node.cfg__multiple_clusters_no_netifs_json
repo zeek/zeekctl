@@ -1,5 +1,8 @@
 {
-"head": "manager-1",
+"head": {
+			"id": "manager-1",
+			"cluster-id": "icsi-cluster-1"
+		},
 
 "nodes" : [
 
@@ -8,42 +11,56 @@
 		"type": "cluster",
 		"members": [	
 
-				{	"id": "manager-1",
-				"type": "manager",
-				"host": "localhost",
-				"policy": "policy 1"},
+				{	
+					"id": "manager-1",
+					"type": "manager",
+					"host": "localhost",
+					"policy": "policy 1"
+				},
 
-				{	"id": "proxy-1",
-				"type": "proxy",
-				"host": "localhost",
-				"policy": "policy 2"},
+				{	
+					"id": "proxy-1",
+					"type": "proxy",
+					"host": "localhost",
+					"policy": "policy 2"
+				},
 
-				{	"id": "worker-1",
-				"type": "worker",
-				"host": "localhost",
-				"policy": "policy 4"}
-		]},
+				{	
+					"id": "worker-1",
+					"type": "worker",
+					"host": "localhost",
+					"policy": "policy 4"
+				}
+		]
+	},
 
 	{	
 		"id": "icsi-cluster-2",
 		"type": "cluster",
 		"members": [	
 
-				{	"id": "manager-2",
-				"type": "manager",
-				"host": "localhost",
-				"policy": "policy 1"},
+				{	
+					"id": "manager-2",
+					"type": "manager",
+					"host": "localhost",
+					"policy": "policy 1"
+				},
 
-				{	"id": "proxy-1",
-				"type": "proxy",
-				"host": "localhost",
-				"policy": "policy 2"},
+				{	
+					"id": "proxy-1",
+					"type": "proxy",
+					"host": "localhost",
+					"policy": "policy 2"
+				},
 
-				{	"id": "worker-1",
-				"type": "worker",
-				"host": "localhost",
-				"policy": "policy 4"}
-		]}
+				{	
+					"id": "worker-1",
+					"type": "worker",
+					"host": "localhost",
+					"policy": "policy 4"
+				}
+		]
+	}
 	
 ],
 

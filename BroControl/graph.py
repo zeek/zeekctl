@@ -1,3 +1,5 @@
+import json
+
 
 class BGraph:
 
@@ -97,6 +99,9 @@ class BGraph:
             raise RuntimeError("Node " + str(node) + " does not exist")
         return self.graph[node]
 
+    def getRootSuccessors(self):
+        return self.getSuccessors(self.getRoot())
+
     def getPredecessor(self, node):
         predList = []
         pred = ""
@@ -162,17 +167,18 @@ class BGraph:
 
         return len(visited) == self.size()
 
-    def exportSubgraphJson(self, node):
+    def exportSubgraphJson(self, file, node):
         if "json-data" not in self.node_attr.keys():
             raise RuntimeError("Attribute json-data is not part of graph")
 
         g = self.getSubgraph(node)
-        file = "/home/mathias/node-" + str(node) + ".cfg"
         with open(file, 'w') as f:
             f.write("{\n")
             f.write("nodes: [\n")
             for n in g.nodes():
-                f.write(str(self.node_attr["json-data"][n]) + ",\n")
+                # Change format from unicode to ascii
+                entry = json.JSONEncoder().encode(self.node_attr["json-data"][n])
+                f.write(entry + ",\n")
             f.write("],\n")
 
             f.write("connections: [\n")
