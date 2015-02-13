@@ -1,5 +1,8 @@
 import json
 
+#TODO Graph class can replace whole nodestore in config.py
+# and store all information on cluster nodes and peers in hierarchy
+# to maintain compatibility with legacy code currently not implemented
 
 class BGraph:
 
@@ -166,23 +169,3 @@ class BGraph:
                 known = known | self.graph[node]
 
         return len(visited) == self.size()
-
-    def exportSubgraphJson(self, file, node):
-        if "json-data" not in self.node_attr.keys():
-            raise RuntimeError("Attribute json-data is not part of graph")
-
-        g = self.getSubgraph(node)
-        with open(file, 'w') as f:
-            f.write("{\n")
-            f.write("nodes: [\n")
-            for n in g.nodes():
-                # Change format from unicode to ascii
-                entry = json.JSONEncoder().encode(self.node_attr["json-data"][n])
-                f.write(entry + ",\n")
-            f.write("],\n")
-
-            f.write("connections: [\n")
-            for (u, v) in g.edges():
-                f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"},\n")
-            f.write("],\n")
-            f.write("}\n")

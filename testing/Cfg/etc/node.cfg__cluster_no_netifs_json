@@ -1,5 +1,8 @@
 {
-"head": "manager-1",
+"head": {
+			"id": "manager-1",
+			"cluster": "icsi-cluster"
+		},
 
 "nodes" : [
 

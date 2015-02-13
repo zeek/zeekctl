@@ -94,7 +94,7 @@ class Configuration:
         self.readState()
 
         # Read node.cfg
-        self.nodelist, self.peers = self._readNodes()
+        self.nodelist, self.peers, self.head = self._readNodes()
         if not self.nodelist:
             return False
 
@@ -226,6 +226,10 @@ class Configuration:
 
         return nodelist
 
+    # Returns our predecessor in the hierarchy
+    def head(self):
+        return self.head
+
     # Returns the list of peers in the hierarchy
     def peers(self):
         return self.peers
@@ -295,184 +299,6 @@ class Configuration:
 
         return env_vars
 
-    # Parse node.cfg.
-    # Old version of readNodes, can be deleted
-    # functionality has been split onto
-    # - readNodes,
-    # - checkNodes, and
-    # - checkNodeStore
-    def _readNodes_Obsolete(self):
-        config = py3bro.configparser.SafeConfigParser()
-        if not config.read(self.nodecfg):
-            raise ConfigurationError("cannot read '%s'" % self.nodecfg)
-
-        manager = False
-        proxy = False
-        worker = False
-        standalone = False
-
-        file = self.nodecfg
-        nodestore = {}
-
-        counts = {}
-
-        for sec in config.sections():
-            node = node_mod.Node(self, sec)
-            nodestore[sec] = node
-
-            for (key, val) in config.items(sec):
-
-                key = key.replace(".", "_")
-
-                if key not in node_mod.Node._keys:
-                    self.ui.warn("%s: unknown key '%s' in section '%s'" % (file, key, sec))
-                    continue
-
-                if key == "type":
-                    if val == "manager":
-                        if manager:
-                            raise ConfigurationError("only one manager can be defined")
-                        manager = True
-
-                    elif val == "proxy":
-                        proxy = True
-
-                    elif val == "worker":
-                        worker = True
-
-                    elif val == "standalone":
-                        standalone = True
-
-                    else:
-                        raise ConfigurationError("%s: unknown type '%s' in section '%s'" % (file, val, sec))
-
-
-                node.__dict__[key] = val
-
-            # Convert env_vars from a string to a dictionary.
-            try:
-                node.env_vars = self._getEnvVarDict(node.env_vars)
-            except ValueError as err:
-                raise ConfigurationError("%s: section %s: %s" % (file, sec, err))
-
-            try:
-                addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
-                if len(addrinfo) == 0:
-                    raise ConfigurationError("%s: no addresses resolved in section '%s' for host %s" % (file, sec, node.host))
-
-                addr_str = addrinfo[0][4][0]
-                # zone_id is handled manually, so strip it if it's there
-                node.addr = addr_str.split('%')[0]
-            except AttributeError:
-                raise ConfigurationError("%s: no host given in section '%s'" % (file, sec))
-            except socket.gaierror as e:
-                raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (file, node.host, sec, e.args[1]))
-
-            # Each node gets a number unique across its type.
-            type = nodestore[sec].type
-            try:
-                counts[type] += 1
-            except KeyError:
-                counts[type] = 1
-
-            node.count = counts[type]
-
-            numprocs = 0
-
-            if node.lb_procs:
-                try:
-                    numprocs = int(node.lb_procs)
-                    if numprocs < 1:
-                        raise ConfigurationError("%s: value of lb_procs must be at least 1 in section '%s'" % (file, sec))
-                except ValueError:
-                    raise ConfigurationError("%s: value of lb_procs must be an integer in section '%s'" % (file, sec))
-            elif node.lb_method:
-                raise ConfigurationError("%s: load balancing requires lb_procs in section '%s'" % (file, sec))
-
-            try:
-                pin_cpus = self._getPinCPUList(node.pin_cpus, numprocs)
-            except ValueError:
-                raise ConfigurationError("%s: pin_cpus must be list of non-negative integers in section '%s'" % (file, sec))
-
-            if pin_cpus:
-                node.pin_cpus = pin_cpus[0]
-
-            if node.lb_procs:
-                if not node.lb_method:
-                    raise ConfigurationError("%s: no load balancing method given in section '%s'" % (file, sec))
-
-                if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
-                    raise ConfigurationError("%s: unknown load balancing method given in section '%s'" % (file, sec))
-
-                if node.lb_method == "interfaces":
-                    if not node.lb_interfaces:
-                        raise ConfigurationError("%s: no list of interfaces given in section '%s'" % (file, sec))
-
-                    # get list of interfaces to use, and assign one to each node
-                    netifs = node.lb_interfaces.split(",")
-
-                    if len(netifs) != int(node.lb_procs):
-                        raise ConfigurationError("%s: number of interfaces does not match value of lb_procs in section '%s'" % (file, sec))
-
-                    node.interface = netifs.pop().strip()
-
-                # node names will have a numerical suffix
-                node.name = "%s-1" % sec
-
-                for num in range(2, numprocs + 1):
-                    newnode = node.copy()
-                    # only the node name, count, and pin_cpus need to be changed
-                    newname = "%s-%d" % (sec, num)
-                    newnode.name = newname
-                    nodestore[newname] = newnode
-                    counts[type] += 1
-                    newnode.count = counts[type]
-                    if pin_cpus:
-                        newnode.pin_cpus = pin_cpus[num-1]
-
-                    if newnode.lb_method == "interfaces":
-                        newnode.interface = netifs.pop().strip()
-
-        if nodestore:
-
-            if not standalone:
-                if not manager:
-                    raise ConfigurationError("%s: no manager defined" % file)
-
-                if not proxy:
-                    raise ConfigurationError("%s: no proxy defined" % file)
-
-            else:
-                if len(nodestore) > 1:
-                    raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
-
-        manageronlocalhost = False
-
-        for n in nodestore.values():
-            if not n.name:
-                raise ConfigurationError("node configured without a name")
-
-            if not n.host:
-                raise ConfigurationError("no host given for node %s" % n.name)
-
-            if not n.type:
-                raise ConfigurationError("no type given for node %s" % n.name)
-
-            if n.type == "manager":
-                if n.addr not in self.localaddrs:
-                    raise ConfigurationError("script must be run on manager node")
-
-                if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
-                    manageronlocalhost = True
-
-        # If manager is on localhost, then all other nodes must be on localhost
-        if manageronlocalhost:
-            for n in nodestore.values():
-                if n.type != "manager" and n.type != "standalone":
-                    if n.addr != "127.0.0.1" and n.addr != "::1":
-                        raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
-
-        return nodestore
 
     # Parse node.cfg.
     def _readNodes(self):
@@ -667,27 +493,22 @@ class Configuration:
 
     # Parse node.cfg in Json-Format
     def _readNodesJson(self):
+        print "readNodesJson called "
         file = self.nodecfg
         if not os.path.exists(file):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
         nodestore = {}
         counts = {}
-        # TODO built a complete node entry for
         # the predecessor in the hierarchy / the head
         head = ""
 
         with open(file, 'r') as f:
             data = json.load(f)
             if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
-                raise ConfigurationError("Misconfigured configuration file. One entry out of [head, node,connections] missing.")
+                raise ConfigurationError("Misconfigured node.cfg. One entry out of [head, node,connections] missing.")
 
-            if "id" in data["head"].keys():
-                head = data["head"]["id"]
-            else:
-                raise ConfigurationError("Misconfigured configuration file, id for head missing")
-
-            # Iterate over all node entries
+            # Iterate over all node entries and create node objects for them
             for entry in data["nodes"]:
                 if "id" not in entry.keys() or "type" not in entry.keys():
                     raise ConfigurationError("Misconfigured configuration file")
@@ -704,29 +525,40 @@ class Configuration:
                             raise ConfigurationError("Misconfigured configuration file")
 
                         nodeId = clusterId + "::" + val["id"]
-                        node = node_mod.Node(self, nodeId)
+                        node, nodestore, counts = self._getNodeFromJson(val, nodeId, nodestore, counts)
                         node.__dict__["cluster"] = clusterId
-
-                        nodestore[nodeId] = node
-                        node = self._extractNodeJson(val, node)
-                        # Check node and complete node entry for nodestore
-                        node, nodestore, counts = self._checkNode(node, nodestore, counts)
 
                 # Entry is no cluster but ordinary node
                 else:
                     nodeId= entry["id"]
-                    node = node_mod.Node(self, nodeId)
-                    node.__dict__["cluster"] = ""
-
-                    nodestore[nodeId] = node
-                    node = self._extractNodeJson(entry, node)
-                    # Check node and complete node entry for nodestore
-                    node, nodestore, counts = self._checkNode(node, nodestore, counts)
+                    node, nodestore, counts = self._getNodeFromJson(val, nodeId, nodestore, counts)
                     # Add node to the graph
                     self.overlay.addNodeAttr(nodeId, "json-data", entry)
 
                 if not node:
                     raise ConfigurationError("no node found in node.cfg")
+
+
+            # Create a node entry for our predecessor (head) in the hierarchy
+            if "id" not in data["head"].keys():
+                raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
+
+            headId = ""
+            if "cluster" in data["head"] and data["head"]["cluster"]:
+                headId = data["head"]["cluster"] + "::" + data["head"]["id"]
+            else:
+                headId = data["head"]["id"]
+
+            # if we are not the root node of the hierarchy
+            if headId not in nodestore.keys():
+                head, nodestore, counts = self._getNodeFromJson(data["head"], headId, nodestore, counts)
+            # we are the root node in the hierarchy
+            else:
+               head = nodestore[headId]
+
+            if not hasattr(head, "host") and not hasattr(head, "type"):
+                raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
+
 
             # Parse connections between nodes
             if "connections" in data.keys():
@@ -734,7 +566,7 @@ class Configuration:
                     self.overlay.addEdge(val["from"], val["to"])
 
         if not self.overlay.isConnected() or not self.overlay.isTree():
-            raise ConfigurationError("Misconfigured overlay")
+            raise ConfigurationError("Misconfigured overlay.")
 
         # Current scope of this peer: local node and its cluster
         scope_list = {}
@@ -747,26 +579,36 @@ class Configuration:
             if key == root:
                 scope_list[key] = nodestore[key]
 
-            elif node.cluster == root:
+            elif hasattr(node, "cluster") and node.cluster == root:
                 scope_list[key] = nodestore[key]
 
             elif key in peer_list:
                 peers[key] = nodestore[key]
 
-            elif node.cluster and node.cluster in peer_list and node.type == "manager":
+            elif hasattr(node, "cluster") and node.cluster in peer_list and node.type == "manager":
                 peers[node.cluster] = nodestore[key]
+
+        self.overlay.exportSubgraphJson("/home/mathias/node.cfg", root)
 
         # Check if nodestore is valid
         self._checkNodeStore(scope_list)
 
-        return scope_list, peers
+        return scope_list, peers, head
+
+    def _getNodeFromJson(self, val, nodeId, nodestore, counts):
+        node = node_mod.Node(self, nodeId)
+        node = self._extractNodeJson(val, node)
+        nodestore[nodeId] = node
+        node, nodestore, counts = self._checkNode(node, nodestore, counts)
+
+        return node, nodestore, counts
 
     # Parses a node entry in Json format
     def _extractNodeJson(self, entry, node):
         for key in entry:
             node.__dict__[key] = entry[key]
 
-        if node.type not in ["manager", "proxy", "worker", "standalone", "peer"]:
+        if hasattr(node, "type") and node.type not in ["manager", "proxy", "worker", "standalone", "peer"]:
             raise ConfigurationError("strange node type detected, node " + node.name + " is " + str(node.type))
 
         return node

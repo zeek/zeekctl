@@ -1,10 +1,12 @@
-# Functions to install files on all nodes. 
+# Functions to install files on all nodes.
 
 import os
 import re
+import json
 
 from BroControl import util
 from BroControl import config
+from BroControl import graph
 
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
@@ -238,3 +240,40 @@ def makeConfig(path, cmdout, silent=False):
 
     out.close()
 
+# Write individual node.cfg files per successor in the hierarchy
+def makeNodeConfigs(path, nodes, cmdout, silent=False):
+    overlay = config.Config.overlay
+    head = config.Config.head()
+
+    if not silent:
+        cmdout.info("generating node.cfg per peer ...")
+
+    for n in nodes:
+        npath = path + "/node.cfg_" + str(n)
+        g = overlay.getSubgraph(n)
+
+        with open(npath, 'w') as f:
+            f.write("{\n")
+            # head entry
+            f.write("head: {")
+            f.write("\"id\": " + str(head.id) + ",")
+            if hasattr(head, "cluster"):
+                f.write("\"cluster\": " + str(head.cluster) + ",")
+            if hasattr(head, "host"):
+                f.write("\"host\": " + str(head.host) + ",")
+            f.write("},\n")
+
+            # node entries
+            f.write("nodes: [\n")
+            for n2 in g.nodes():
+                entry = json.JSONEncoder().encode(overlay.node_attr["json-data"][n2])
+                f.write(entry + ",\n")
+            f.write("],\n")
+
+            # connection entries
+            f.write("connections: [\n")
+            for (u, v) in g.edges():
+                f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"},\n")
+            f.write("],\n")
+
+            f.write("}\n")
