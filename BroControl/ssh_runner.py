@@ -195,7 +195,7 @@ class HostHandler(Thread):
             return False
 
     def connect_and_ping(self):
-        if self.alive is not True:
+        if self.alive != True:
             self.connect()
         self.alive = self.ping()
 
@@ -233,7 +233,7 @@ class HostHandler(Thread):
 
     def send_commands(self, commands, shell, rq):
         self.q.put((commands, shell, rq))
-            
+
 
 class MultiMasterManager:
     def __init__(self, ui, localaddrs=[]):

@@ -1,4 +1,4 @@
-# Functions to install files on all nodes. 
+# Functions to install files on all nodes.
 
 import os
 import re
@@ -45,9 +45,9 @@ def get_nfssyncs():
 # Generate shell script that sets Broctl dynamic variables according
 # to their current values.  This shell script gets included in all
 # other scripts.
-def generateDynamicVariableScript(cmdout):
+def make_broctl_config_sh(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
-    cfg_file = open(cfg_path, 'w')
+    cfg_file = open(cfg_path, "w")
     for substvartuple in config.Config.options():
         substvar = substvartuple[0]
         # don't write out if it has an invalid bash variable name
@@ -73,13 +73,13 @@ def generateDynamicVariableScript(cmdout):
     return True
 
 
-# Create Bro-side broctl configuration broctl-layout.bro.
-def makeLayout(path, cmdout, silent=False):
-    class port:
+# Create Bro-side broctl configuration file.
+def make_layout(path, cmdout, silent=False):
+    class Port:
         def __init__(self, startport):
             self.p = startport
 
-        def nextPort(self, node):
+        def next_port(self, node):
             self.p += 1
             node.setPort(self.p)
             return self.p
@@ -89,7 +89,7 @@ def makeLayout(path, cmdout, silent=False):
     if not manager:
         return
 
-    broport = port(int(config.Config.broport) - 1)
+    broport = Port(int(config.Config.broport) - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
 
@@ -106,9 +106,9 @@ def makeLayout(path, cmdout, silent=False):
         out = open(filename, "w")
         out.write("# Automatically generated. Do not edit.\n")
         # This is the port that standalone nodes listen on for remote control by default.
-        out.write("redef Communication::listen_port = %s/tcp;\n" % broport.nextPort(manager))
+        out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
         out.write("redef Communication::nodes += {\n")
-        out.write("	[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.formatBroAddr(manager.addr), manager.zone_id))
+        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
         out.close()
 
@@ -125,10 +125,10 @@ def makeLayout(path, cmdout, silent=False):
         out.write("redef Cluster::nodes = {\n")
 
         # Control definition.  For now just reuse the manager information.
-        out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.formatBroAddr(manager.addr), config.Config.zoneid, broport.nextPort(manager)))
+        out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
 
         # Manager definition
-        out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.formatBroAddr(manager.addr), manager.zone_id, broport.nextPort(manager)))
+        out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
         for s in workers:
             out.write("\"%s\"" % s.name)
             if s != workers[-1]:
@@ -137,7 +137,7 @@ def makeLayout(path, cmdout, silent=False):
 
         # Proxies definition
         for p in proxies:
-            out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.formatBroAddr(p.addr), p.zone_id, broport.nextPort(p), manager.name))
+            out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
             for s in workers:
                 out.write("\"%s\"" % s.name)
                 if s != workers[-1]:
@@ -147,7 +147,7 @@ def makeLayout(path, cmdout, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.formatBroAddr(w.addr), w.zone_id, broport.nextPort(w), w.interface, manager.name, proxies[p].name))
+            out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
@@ -158,18 +158,18 @@ def makeLayout(path, cmdout, silent=False):
         out.close()
 
 # Reads in a list of networks from file.
-def readNetworks(file):
+def read_networks(fname):
 
     nets = []
 
-    for line in open(file):
+    for line in open(fname):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
 
         fields = line.split(None, 1)
 
-        cidr = util.formatBroPrefix(fields[0])
+        cidr = util.format_bro_prefix(fields[0])
         tag = ""
         if len(fields) == 2:
             tag = fields[1]
@@ -180,7 +180,7 @@ def readNetworks(file):
 
 
 # Create Bro script which contains a list of local networks.
-def makeLocalNetworks(path, cmdout, silent=False):
+def make_local_networks(path, cmdout, silent=False):
 
     netcfg = config.Config.localnetscfg
 
@@ -191,7 +191,7 @@ def makeLocalNetworks(path, cmdout, silent=False):
     if not silent:
         cmdout.info("generating local-networks.bro ...")
 
-    nets = readNetworks(netcfg)
+    nets = read_networks(netcfg)
 
     out = open(os.path.join(path, "local-networks.bro"), "w")
     out.write("# Automatically generated. Do not edit.\n\n")
@@ -208,7 +208,7 @@ def makeLocalNetworks(path, cmdout, silent=False):
     return True
 
 
-def makeConfig(path, cmdout, silent=False):
+def make_broctl_config_policy(path, cmdout, silent=False):
     manager = config.Config.manager()
 
     if not manager:

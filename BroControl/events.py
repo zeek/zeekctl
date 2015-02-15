@@ -4,12 +4,10 @@ import logging
 from BroControl import config
 from BroControl import util
 
-haveBroccoli = True
-
 try:
     import broccoli
 except ImportError:
-    haveBroccoli = False
+    broccoli = None
 
 
 # Broccoli communication with running nodes.
@@ -30,32 +28,32 @@ except ImportError:
 #   result event, or [] if no result_event was specified.
 #   If success is False, results_args is a string with an error message.
 
-def sendEventsParallel(events):
+def send_events_parallel(events):
 
     results = []
     sent = []
 
     for (node, event, args, result_event) in events:
 
-        if not haveBroccoli:
+        if not broccoli:
             results += [(node, False, "no Python bindings for Broccoli installed")]
             continue
 
-        (success, bc) = _sendEventInit(node, event, args, result_event)
+        (success, bc) = _send_event_init(node, event, args, result_event)
         if success and result_event:
             sent += [(node, result_event, bc)]
         else:
             results += [(node, success, bc)]
 
     for (node, result_event, bc) in sent:
-        (success, result_args) = _sendEventWait(node, result_event, bc)
+        (success, result_args) = _send_event_wait(node, result_event, bc)
         results += [(node, success, result_args)]
 
     return results
 
-def _sendEventInit(node, event, args, result_event):
+def _send_event_init(node, event, args, result_event):
 
-    host = util.scopeAddr(node.addr)
+    host = util.scope_addr(node.addr)
 
     try:
         bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
@@ -71,7 +69,7 @@ def _sendEventInit(node, event, args, result_event):
     bc.send(event, *args)
     return (True, bc)
 
-def _sendEventWait(node, result_event, bc):
+def _send_event_wait(node, result_event, bc):
     # Wait until we have sent the event out.
     cnt = 0
     while bc.processInput():

@@ -4,20 +4,15 @@ class CmdResult:
     """Class representing the result of a broctl command."""
 
     def __init__(self):
+        # Command succeeded (True), or error occurred (False)
         self.ok = True
+
+        # Number of Bro nodes that command succeeded, and number that failed
         self.success_count = 0
         self.fail_count = 0
+
+        # List of results for each node
         self.nodes = []
-
-    def succeeded(self):
-        """Return True if command succeeded, or False if an error occurred."""
-
-        return self.ok
-
-    def failed(self):
-        """Return True if command failed, or False if no error occurred."""
-
-        return not self.ok
 
     def get_node_counts(self):
         """Return tuple (success, fail) of success and fail node counts."""
@@ -36,23 +31,18 @@ class CmdResult:
         Bro node, success is a boolean, and output is a list.
         """
 
-        ll = []
+        results = []
         for node, success, out in self.nodes:
             output = out.get("_output", [])
-            ll.append((node, success, output))
-        return ll
-
-    def set_cmd_fail(self):
-        """Records the fact that the command failed."""
-
-        self.ok = False
+            results.append((node, success, output))
+        return results
 
     def set_node_fail(self, node):
         """Records the fact that the given node failed."""
 
         self.nodes.append((node, False, {}))
         self.fail_count += 1
-        self.ok = False     
+        self.ok = False
 
     def set_node_success(self, node):
         """Records the fact that the given node succeeded."""
@@ -61,7 +51,7 @@ class CmdResult:
         self.success_count += 1
 
     def set_node_output(self, node, success, output):
-        """Records the success status of the given node, and stores some 
+        """Records the success status of the given node, and stores some
         output messages.  The node parameter is a Bro node, success is a
         boolean, and output is a list.
         """
@@ -76,7 +66,7 @@ class CmdResult:
             self.success_count += 1
         else:
             self.fail_count += 1
-            self.ok = False     
+            self.ok = False
 
     def set_node_data(self, node, success, data):
         """Records the success status of the given node, and stores some data.

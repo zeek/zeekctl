@@ -1,7 +1,5 @@
-# Configuration options. 
+# Configuration options.
 #
-
-import sys
 
 class Option:
     # Options category.
@@ -13,9 +11,10 @@ class Option:
         self.name = name
         self.default = default
         self.type = type
-        self.dontinit = dontinit
         self.category = category
+        self.dontinit = dontinit
         self.description = description
+
 
 options = [
     # User options.
@@ -210,13 +209,13 @@ options = [
            CMakeLists.txt must be adapted as well."""),
 ]
 
-def printOptions(cat):
+def print_options(category):
     out = ""
     err = ""
 
     for opt in sorted(options, key=lambda o: o.name):
 
-        if opt.category != cat:
+        if opt.category != category:
             continue
 
         default = ""

@@ -1,6 +1,5 @@
 import os
 import errno
-import sys
 import time
 import signal
 
@@ -11,13 +10,13 @@ def fmttime(t):
 
 lockCount = 0
 
-def _breakLock(cmdout):
+def _break_lock(cmdout):
     from BroControl import execute
 
     try:
         # Check whether lock is stale.
         pid = open(config.Config.lockfile, "r").readline().strip()
-        (success, output) = execute.runLocalCmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
+        (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
         if success and output[0] == "running":
             # Process still exists.
             return False
@@ -30,7 +29,7 @@ def _breakLock(cmdout):
     except (OSError, IOError):
         return False
 
-def _acquireLock(cmdout):
+def _acquire_lock(cmdout):
     pid = str(os.getpid())
     tmpfile = config.Config.lockfile + "." + pid
 
@@ -54,13 +53,13 @@ def _acquireLock(cmdout):
                 return True
 
             # File is locked.
-            if _breakLock(cmdout):
-                return _acquireLock(cmdout)
+            if _break_lock(cmdout):
+                return _acquire_lock(cmdout)
 
         except OSError as e:
             # File is already locked.
-            if _breakLock(cmdout):
-                return _acquireLock(cmdout)
+            if _break_lock(cmdout):
+                return _acquire_lock(cmdout)
 
         except IOError as e:
             cmdout.error("cannot acquire lock: %s" % e)
@@ -74,7 +73,7 @@ def _acquireLock(cmdout):
 
     return False
 
-def _releaseLock(cmdout):
+def _release_lock(cmdout):
     try:
         os.unlink(config.Config.lockfile)
     except OSError as e:
@@ -88,13 +87,13 @@ def lock(cmdout, showwait=True):
         lockCount += 1
         return True
 
-    if not _acquireLock(cmdout):
+    if not _acquire_lock(cmdout):
 
         if showwait:
             cmdout.info("waiting for lock ...")
 
         count = 0
-        while not _acquireLock(cmdout):
+        while not _acquire_lock(cmdout):
             time.sleep(1)
 
             count += 1
@@ -116,19 +115,19 @@ def unlock(cmdout):
         lockCount -= 1
         return
 
-    _releaseLock(cmdout)
+    _release_lock(cmdout)
 
     lockCount = 0
 
 # Keyboard interrupt handler.
-def sigIntHandler(signum, frame):
+def sigint_handler(signum, frame):
     config.Config.config["sigint"] = "1"
 
-def enableSignals():
+def enable_signals():
     pass
-    #signal.signal(signal.SIGINT, sigIntHandler)
+    #signal.signal(signal.SIGINT, sigint_handler)
 
-def disableSignals():
+def disable_signals():
     pass
     #signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -145,44 +144,44 @@ def force_symlink(src, dst):
 # Returns an IP address string suitable for embedding in a Bro script,
 # for IPv6 colon-hexadecimal address strings, that means surrounding it
 # with square brackets.
-def formatBroAddr(addr):
-    if addr.find(':') == -1:
+def format_bro_addr(addr):
+    if ":" not in addr:
         return addr
     else:
-        return "[" + addr + "]"
+        return "[%s]" % addr
 
 # Returns an IP prefix string suitable for embedding in a Bro script,
 # for IPv6 colon-hexadecimal prefix strings, that means surrounding the
 # IP address part with square brackets.
-def formatBroPrefix(prefix):
-    if prefix.find(':') == -1:
+def format_bro_prefix(prefix):
+    if ":" not in prefix:
         return prefix
     else:
-        parts = prefix.split('/')
-        return "[" + parts[0] + "]" + "/" + parts[1]
+        parts = prefix.split("/")
+        return "[%s]/%s" % (parts[0], parts[1])
 
 # Returns an IP address string suitable for use with rsync, which requires
 # encasing IPv6 addresses in square brackets, and some shells may require
 # quoting the brackets.
-def formatRsyncAddr(addr):
-    if addr.find(':') == -1:
+def format_rsync_addr(addr):
+    if ":" not in addr:
         return addr
     else:
-        return "'[" + addr + "]'"
+        return "'[%s]'" % addr
 
 # Scopes a non-global IPv6 address with a zone identifier according to RFC 4007
-def scopeAddr(addr):
+def scope_addr(addr):
     zoneid = config.Config.zoneid
-    if addr.find(':') == -1 or zoneid == "":
+    if ":" not in addr or zoneid == "":
         return addr
     else:
         return addr + "%" + zoneid
 
 # Convert a number into a string with a unit (e.g., 1024 into "1K").
-def prettyPrintVal(val):
+def number_unit_str(num):
     units = (("G", 1024*1024*1024), ("M", 1024*1024), ("K", 1024))
     for (unit, factor) in units:
-        if val >= factor:
-            return "%3.0f%s" % (val / factor, unit)
-    return " %3.0f" % (val)
+        if num >= factor:
+            return "%3.0f%s" % (num / factor, unit)
+    return " %3.0f" % (num)
 

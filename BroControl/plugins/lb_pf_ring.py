@@ -50,7 +50,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                     dd[nn.host][nn.interface] = cluster_id + len(dd[nn.host])
             else:
                 app_instance = first_app_instance
-                dd[nn.host] = { nn.interface : cluster_id }
+                dd[nn.host] = {nn.interface: cluster_id}
 
             # Apply environment variables, but do not override values from
             # the node.cfg or broctl.cfg files.

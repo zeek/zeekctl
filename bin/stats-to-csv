@@ -56,7 +56,7 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
             iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
 
     def printEntry(t, entry):
-        if len(entry) == 0:
+        if not entry:
             return
 
         if use_cflow:
