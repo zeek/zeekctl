@@ -3,6 +3,7 @@
 from collections import namedtuple
 import glob
 import os
+import shutil
 import time
 import logging
 
@@ -601,20 +602,22 @@ class Controller:
     def _check_config(self, nodes, installed, list_scripts):
         results = cmdresult.CmdResult()
 
-        manager = self.config.manager()
-
         nodetmpdirs = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
         nodes = []
         for (node, cwd) in nodetmpdirs:
             if os.path.isdir(cwd):
-                if not self.executor.rmdir(self.config.manager(), cwd):
-                    self.ui.error("cannot remove directory %s on manager" % cwd)
+                try:
+                    shutil.rmtree(cwd)
+                except OSError as err:
+                    self.ui.error("cannot remove directory: %s" % err)
                     results.ok = False
                     return results
 
-            if not self.executor.mkdir(self.config.manager(), cwd):
-                self.ui.error("cannot create directory %s on manager" % cwd)
+            try:
+                os.makedirs(cwd)
+            except OSError as err:
+                self.ui.error("cannot create directory: %s" % err)
                 results.ok = False
                 return results
 
@@ -639,7 +642,7 @@ class Controller:
 
         for ((node, cwd), success, output) in execute.run_localcmds(cmds):
             results.set_node_output(node, success, output)
-            self.executor.rmdir(manager, cwd)
+            shutil.rmtree(cwd)
 
         return results
 
@@ -1157,13 +1160,18 @@ class Controller:
 
         cwd = os.path.join(self.config.tmpdir, "testing")
 
-        if not self.executor.rmdir(self.config.manager(), cwd):
-            self.ui.error("cannot remove directory %s on manager" % cwd)
-            results.ok = False
-            return results
+        if os.path.isdir(cwd):
+            try:
+                shutil.rmtree(cwd)
+            except OSError as err:
+                self.ui.error("cannot remove directory: %s" % err)
+                results.ok = False
+                return results
 
-        if not self.executor.mkdir(self.config.manager(), cwd):
-            self.ui.error("cannot create directory %s on manager" % cwd)
+        try:
+            os.makedirs(cwd)
+        except OSError as err:
+            self.ui.error("cannot create directory: %s" % err)
             results.ok = False
             return results
 
@@ -1206,12 +1214,16 @@ class Controller:
         for dirpath in policies:
             if os.path.isdir(dirpath):
                 self.ui.info("removing old policies in %s ..." % dirpath)
-                if not self.executor.rmdir(manager, dirpath):
+                try:
+                    shutil.rmtree(dirpath)
+                except OSError as err:
                     results.ok = False
 
         self.ui.info("creating policy directories ...")
         for dirpath in policies:
-            if not self.executor.mkdir(manager, dirpath):
+            try:
+                os.makedirs(dirpath)
+            except OSError:
                 results.ok = False
 
         # Install local site policy.

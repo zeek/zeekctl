@@ -271,12 +271,6 @@ class Executor:
 
         return results
 
-    # A convenience function that calls mkdirs for one directory on one node.
-    # Returns a boolean (true if specified directory was created or already
-    # exists).
-    def mkdir(self, node, dir):
-        return self.mkdirs([(node, dir)])[0][1]
-
     # A convenience function that calls run_cmds to remove directories
     # on one or more hosts.
     # dirs:  a list of the form [ (node, dir), ... ]
@@ -295,10 +289,4 @@ class Executor:
             results += [(node, success)]
 
         return results
-
-    # A convenience function that calls rmdirs for one directory on one node.
-    # Returns a boolean (true if specified directory was removed or does not
-    # exist).
-    def rmdir(self, node, dir):
-        return self.rmdirs([(node, dir)])[0][1]
 
