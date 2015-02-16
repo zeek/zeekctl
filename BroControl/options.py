@@ -97,6 +97,9 @@ options = [
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for all Bro instances."),
 
+    Option("StatusCmdShowAll", "1", "bool", Option.USER, False,
+           "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),
+
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 

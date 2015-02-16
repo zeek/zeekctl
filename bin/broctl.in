@@ -189,18 +189,26 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             typewidth = 10
             hostwidth = 13
 
+        showall = "peers" in data[0][2]
+        if showall:
+            colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
+        else:
+            colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {started}"
+
         hdrlist = ["name", "type", "host", "status", "pid", "peers", "started"]
         header = dict((x, x.title()) for x in hdrlist)
-        colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
-        colfmt2 = "{name:<12} {type:<{0}} {host:<{1}} {status}"
         self.output(colfmt.format(typewidth, hostwidth, **header))
+
+        colfmtstopped = "{name:<12} {type:<{0}} {host:<{1}} {status}"
 
         for data in results.get_node_data():
             node_info = data[2]
             if node_info["pid"]:
-                self.output(colfmt.format(typewidth, hostwidth, **node_info))
+                mycolfmt = colfmt
             else:
-                self.output(colfmt2.format(typewidth, hostwidth, **node_info))
+                mycolfmt = colfmtstopped
+
+            self.output(mycolfmt.format(typewidth, hostwidth, **node_info))
 
             # Return status code of True only if all nodes are running
             if node_info["status"] != "running":

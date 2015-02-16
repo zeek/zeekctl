@@ -46,6 +46,11 @@ StatsLogExpireInterval = 0
 ###############################################
 # Other Options
 
+# Show all output of the broctl status command.  If set to 1, then all output
+# is shown.  If set to 0, then broctl status will not collect or show the peer
+# information (and the command will run faster).
+StatusCmdShowAll = 1
+
 # Site-specific policy script to load. Bro will look for this in
 # $PREFIX/share/bro/site. A default local.bro comes preinstalled
 # and can be customized as desired.

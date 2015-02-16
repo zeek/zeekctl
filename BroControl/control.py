@@ -529,7 +529,11 @@ class Controller:
     def status(self, nodes):
         results = cmdresult.CmdResult()
 
-        self.ui.info("Getting process status ...")
+        showall = self.config.statuscmdshowall != "0"
+
+        if showall:
+            self.ui.info("Getting process status ...")
+
         nodestatus = self._isrunning(nodes)
         running = []
 
@@ -547,18 +551,19 @@ class Controller:
         startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
         statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
 
-        peers = {}
-        nodes = [n for n in running if statuses[n.name] == "running"]
-        self.ui.info("Getting peer status ...")
-        for (node, success, args) in self._query_peerstatus(nodes):
-            if success:
-                peers[node.name] = []
-                for f in args[0].split():
-                    keyval = f.split("=")
-                    if len(keyval) > 1:
-                        (key, val) = keyval
-                        if key == "peer" and val != "":
-                            peers[node.name] += [val]
+        if showall:
+            self.ui.info("Getting peer status ...")
+            peers = {}
+            nodes = [n for n in running if statuses[n.name] == "running"]
+            for (node, success, args) in self._query_peerstatus(nodes):
+                if success:
+                    peers[node.name] = []
+                    for f in args[0].split():
+                        keyval = f.split("=")
+                        if len(keyval) > 1:
+                            (key, val) = keyval
+                            if key == "peer" and val != "":
+                                peers[node.name] += [val]
 
         for (node, isrunning) in nodestatus:
             node_info = {
@@ -567,9 +572,11 @@ class Controller:
                 "host": node.host,
                 "status": "stopped",
                 "pid": None,
-                "peers": None,
                 "started": None,
             }
+            if showall:
+                node_info["peers"] = None
+
             if isrunning:
                 node_info["status"] = statuses[node.name]
             elif node.hasCrashed():
@@ -578,10 +585,11 @@ class Controller:
             if isrunning:
                 node_info["pid"] = node.getPID()
 
-                if node.name in peers:
-                    node_info["peers"] = len(peers[node.name])
-                else:
-                    node_info["peers"] = "???"
+                if showall:
+                    if node.name in peers:
+                        node_info["peers"] = len(peers[node.name])
+                    else:
+                        node_info["peers"] = "???"
 
                 node_info["started"] = startups[node.name]
 
