@@ -709,12 +709,10 @@ class Controller:
     def diag(self, nodes):
         results = cmdresult.CmdResult()
 
-        for node in nodes:
-            if not self.executor.isdir(node, node.cwd()):
-                results.set_node_output(node, False, ["No work dir found"])
-                continue
+        crashdiag = os.path.join(self.config.scriptsdir, "crash-diag")
+        cmds = [(node, "run-cmd", [crashdiag, node.cwd()]) for node in nodes]
 
-            (success, output) = self.executor.run_helper_one(node, "run-cmd", [os.path.join(self.config.scriptsdir, "crash-diag"), node.cwd()])
+        for (node, success, output) in self.executor.run_helper(cmds):
             if not success:
                 errmsgs = ["error running crash-diag for %s" % node.name]
                 if output:

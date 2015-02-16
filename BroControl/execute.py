@@ -253,20 +253,6 @@ class Executor:
     def run_helper(self, cmds, shell=False):
         return self.run_cmds(cmds, shell, True)
 
-    # A convenience function that calls run_helper for one command on
-    # one node.
-    #
-    # Returns a tuple of the form: (success, output)
-    #   where "success" is a boolean (true if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr) or None
-    #   if no result was received (this could occur upon failure to communicate
-    #   with remote host, or if the command being executed did not finish
-    #   before the timeout).
-    def run_helper_one(self, node, cmd, args):
-        cmds = [(node, cmd, args)]
-        results = self.run_helper(cmds)
-        return (results[0][1], results[0][2])
-
     # A convenience function that calls run_cmds.
     # dirs:  a list of the form [ (node, dir), ... ]
     #
@@ -315,15 +301,4 @@ class Executor:
     # exist).
     def rmdir(self, node, dir):
         return self.rmdirs([(node, dir)])[0][1]
-
-    # A convenience function that calls run_cmds to check if a directory
-    # on a node exists.
-    #
-    # Returns a boolean (true if specified path exists and is a directory).
-    def isdir(self, node, path):
-        cmds = [(node, "test", ["-d", "%s" % path])]
-
-        results = self.run_cmds(cmds)
-
-        return results[0][1]
 
