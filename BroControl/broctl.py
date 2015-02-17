@@ -81,6 +81,8 @@ class BroCtl(object):
         self.plugins.initPlugins()
         util.enable_signals()
         os.chdir(self.config.brobase)
+
+    def warn_broctl_install(self):
         self.config.warn_broctl_install()
 
     # Turns nodes arguments into a list of node names.

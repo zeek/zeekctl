@@ -514,8 +514,12 @@ class Configuration:
         return True
 
 
-    # Warn user to run broctl install if any config changes are detected.
+    # Warn user to run broctl install if any changes are detected to broctl
+    # config options, node config, Bro version, or if certain state variables
+    # are missing.
     def warn_broctl_install(self):
+        missingstate = False
+
         # Check if Bro version is different from previously-installed version.
         if "broversion" in self.state:
             oldversion = self.state["broversion"]
@@ -525,6 +529,8 @@ class Configuration:
             if version != oldversion:
                 self.ui.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
                 return
+        else:
+            missingstate = True
 
         # Check if node config has changed since last install.
         if "hash-nodecfg" in self.state:
@@ -534,6 +540,8 @@ class Configuration:
                 self.ui.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
                 self._warn_dangling_bro()
                 return
+        else:
+            missingstate = True
 
         # Check if any config values have changed since last install.
         if "hash-broctlcfg" in self.state:
@@ -541,7 +549,18 @@ class Configuration:
             if cfghash != self.state["hash-broctlcfg"]:
                 self.ui.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
                 return
+        else:
+            missingstate = True
 
+        # If any of the state variables don't exist, then we need to install
+        # (this would most likely indicate an upgrade install was performed
+        # over an old version that didn't have the state.db file).
+        if missingstate:
+            # Don't show warning if we've never run broctl install, because
+            # nothing will work anyway without doing an initial install.
+            if os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh")):
+                self.ui.warn("state database needs updating (run the broctl \"install\" command)")
+            return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
     # no longer part of the current node configuration, but that are still

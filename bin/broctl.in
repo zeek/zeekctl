@@ -20,6 +20,10 @@ if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
     broctlprintdoc = True
     sys.path = [brobase] + sys.path
 
+cronrunning = False
+if len(sys.argv) == 2 and sys.argv[1] == "cron":
+    cronrunning = True
+
 sys.path = [os.path.join(brobase, "lib/broctl")] + sys.path
 
 from BroControl.broctl import BroCtl
@@ -35,6 +39,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def __init__(self, broctl_class=BroCtl):
         brocmd.ExitValueCmd.__init__(self)
         self.broctl = broctl_class(brobase, ui=self)
+        # Warn user to do broctl install, if needed.  Skip this check when
+        # running cron to avoid receiving annoying emails.
+        if not cronrunning:
+            self.broctl.warn_broctl_install()
 
     def output(self, text):
         self.stdout.write(text)
