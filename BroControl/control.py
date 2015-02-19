@@ -938,7 +938,7 @@ class Controller:
 
             cmds = []
             for node in nodes:
-                if key == "logdir" and node.type != "manager":
+                if key == "logdir" and node.type not in ("manager", "standalone"):
                     # Don't need this on the workers/proxies.
                     continue
 
