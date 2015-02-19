@@ -203,39 +203,38 @@ class Executor:
 
         dd = {}
         for nodecmd in cmds:
-            host = nodecmd[0].host
+            host = nodecmd[0].addr
             if host not in dd:
                 dd[host] = []
             dd[host].append(nodecmd)
 
-        sshcmds = []
-        for key in dd:
-            for nodecmd in dd[key]:
-                sshhost = nodecmd[0].host
+        nodecmdlist = []
+        for host in dd:
+            for bronode, cmd, args in dd[host]:
                 if helper:
-                    sshcmdargs = [os.path.join(self.helperdir, nodecmd[1])]
+                    cmdargs = [os.path.join(self.helperdir, cmd)]
                 else:
-                    sshcmdargs = [nodecmd[1]]
+                    cmdargs = [cmd]
 
                 if shell:
-                    sshcmdargs = [sshcmdargs[0] + " " + " ".join(nodecmd[2])]
+                    cmdargs = [cmdargs[0] + " " + " ".join(args)]
                 else:
-                    sshcmdargs += nodecmd[2]
+                    cmdargs += args
 
-                sshcmds.append((sshhost, sshcmdargs))
-                logging.debug(sshhost + ": " + " ".join(sshcmdargs))
+                nodecmdlist.append((bronode.addr, cmdargs))
+                logging.debug(bronode.host + ": " + " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(sshcmds, shell):
-            bronode = dd[host][0][0]
+        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell):
+            nodecmd = dd[host].pop(0)
+            bronode = nodecmd[0]
             if not isinstance(result, Exception):
                 res = result[0]
                 out = result[1].splitlines()
                 err = result[2].splitlines()
-                results.append( (bronode, res == 0, out + err) )
+                results.append((bronode, res == 0, out + err))
                 logging.debug("%s: exit code %d" % (bronode.host, res))
             else:
-                results.append( (bronode, False, None) )
-            del dd[host][0]
+                results.append((bronode, False, None))
 
         return results
 

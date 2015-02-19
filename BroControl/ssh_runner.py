@@ -97,12 +97,9 @@ class SSHMaster:
         self.master = None
         self.localaddrs = localaddrs
 
-    def islocal(self, addr):
-        return addr == "localhost" or addr in self.localaddrs
-
     def connect(self):
         if self.need_connect:
-            if self.islocal(self.host):
+            if self.host in self.localaddrs:
                 cmd = ["sh"]
             else:
                 cmd = self.base_cmd + ["sh"]
