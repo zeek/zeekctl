@@ -41,8 +41,6 @@ class Configuration:
 
         # Read broctl.cfg.
         self.config = self._read_config(config_file)
-        if self.config is None:
-            raise RuntimeError
 
         # Set defaults for options we get passed in.
         self._set_option("brobase", basedir)
@@ -89,15 +87,13 @@ class Configuration:
 
         # Read node.cfg
         self.nodestore = self._read_nodes()
-        if not self.nodestore:
-            return False
 
         # If "env_vars" was specified in broctl.cfg, then apply to all nodes.
         varlist = self.config.get("env_vars")
         if varlist:
             try:
                 global_env_vars = self._get_env_var_dict(varlist)
-            except ValueError as err:
+            except ConfigurationError as err:
                 raise ConfigurationError("env_vars option in broctl.cfg: %s" % err)
 
             for node in self.nodes("all"):
@@ -105,18 +101,15 @@ class Configuration:
                     # Values from node.cfg take precedence over broctl.cfg
                     node.env_vars.setdefault(key, val)
 
-        # Now that the nodes have been read in, set the standalone config option.
+        # Set the standalone config option.
         standalone = "0"
-        for node in self.nodes("all"):
-            if node.type == "standalone":
-                standalone = "1"
+        if len(self.nodestore) == 1:
+            standalone = "1"
 
         self._set_option("standalone", standalone)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
-
-        return True
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -263,8 +256,7 @@ class Configuration:
 
     # Convert a string consisting of a comma-separated list of environment
     # variables (e.g. "VAR1=123, VAR2=456") to a dictionary.
-    # If the string is empty, then return an empty dictionary.  Upon error,
-    # a ValueError is raised.
+    # If the string is empty, then return an empty dictionary.
     def _get_env_var_dict(self, text):
         env_vars = {}
 
@@ -278,10 +270,10 @@ class Configuration:
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' after environment variable name")
+                    raise ConfigurationError("missing '=' in env_vars")
 
                 if not key.strip():
-                    raise ConfigurationError("missing environment variable name")
+                    raise ConfigurationError("missing environment variable name in env_vars")
 
                 env_vars[key.strip()] = val.strip()
 
@@ -291,174 +283,172 @@ class Configuration:
     def _read_nodes(self):
         config = py3bro.configparser.SafeConfigParser()
         fname = self.nodecfg
-        if not config.read(fname):
-            raise ConfigurationError("cannot read '%s'" % fname)
-
-        manager = False
-        proxy = False
-        worker = False
-        standalone = False
+        try:
+            if not config.read(fname):
+                raise ConfigurationError("Cannot read '%s'" % fname)
+        except py3bro.configparser.MissingSectionHeaderError as err:
+            raise ConfigurationError(err)
 
         nodestore = {}
 
         counts = {}
         for sec in config.sections():
             node = node_mod.Node(self, sec)
-            nodestore[sec] = node
 
             for (key, val) in config.items(sec):
 
                 key = key.replace(".", "_")
 
                 if key not in node_mod.Node._keys:
-                    self.ui.warn("%s: unknown key '%s' in section '%s'" % (fname, key, sec))
+                    self.ui.warn("ignoring unrecognized node config option '%s' given for node '%s'" % (key, sec))
                     continue
-
-                if key == "type":
-                    if val == "manager":
-                        if manager:
-                            raise ConfigurationError("only one manager can be defined")
-                        manager = True
-
-                    elif val == "proxy":
-                        proxy = True
-
-                    elif val == "worker":
-                        worker = True
-
-                    elif val == "standalone":
-                        standalone = True
-
-                    else:
-                        raise ConfigurationError("%s: unknown type '%s' in section '%s'" % (fname, val, sec))
-
 
                 node.__dict__[key] = val
 
-            # Convert env_vars from a string to a dictionary.
+            self._check_node(node, nodestore, counts)
+
+            if node.name in nodestore:
+                raise ConfigurationError("Duplicate node name '%s'" % node.name)
+            nodestore[node.name] = node
+
+        self._check_nodestore(nodestore)
+        return nodestore
+
+    def _check_node(self, node, nodestore, counts):
+        if not node.type:
+            raise ConfigurationError("No type given for node %s" % node.name)
+
+        if node.type not in ("manager", "proxy", "worker", "standalone"):
+            raise ConfigurationError("Unknown node type '%s' given for node '%s'" % (node.type, node.name))
+
+        if not node.host:
+            raise ConfigurationError("No host given for node '%s'" % node.name)
+
+        try:
+            addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
+        except socket.gaierror as e:
+            raise ConfigurationError("Unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
+
+        addr_str = addrinfo[0][4][0]
+        # zone_id is handled manually, so strip it if it's there
+        node.addr = addr_str.split("%")[0]
+
+        # Convert env_vars from a string to a dictionary.
+        try:
+            node.env_vars = self._get_env_var_dict(node.env_vars)
+        except ConfigurationError as err:
+            raise ConfigurationError("Node '%s' config: %s" % (node.name, err))
+
+        # Each node gets a number unique across its type.
+        try:
+            counts[node.type] += 1
+        except KeyError:
+            counts[node.type] = 1
+
+        node.count = counts[node.type]
+
+        numprocs = 0
+
+        if node.lb_procs:
+            if node.type != "worker":
+                raise ConfigurationError("Load balancing node config options are only for worker nodes")
             try:
-                node.env_vars = self._get_env_var_dict(node.env_vars)
-            except ValueError as err:
-                raise ConfigurationError("%s: section %s: %s" % (fname, sec, err))
-
-            try:
-                addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
-                if not addrinfo:
-                    raise ConfigurationError("%s: no addresses resolved in section '%s' for host %s" % (fname, sec, node.host))
-
-                addr_str = addrinfo[0][4][0]
-                # zone_id is handled manually, so strip it if it's there
-                node.addr = addr_str.split("%")[0]
-            except AttributeError:
-                raise ConfigurationError("%s: no host given in section '%s'" % (fname, sec))
-            except socket.gaierror as e:
-                raise ConfigurationError("%s: unknown host '%s' in section '%s' [%s]" % (fname, node.host, sec, e.args[1]))
-
-            # Each node gets a number unique across its type.
-            type = nodestore[sec].type
-            try:
-                counts[type] += 1
-            except KeyError:
-                counts[type] = 1
-
-            node.count = counts[type]
-
-            numprocs = 0
-
-            if node.lb_procs:
-                try:
-                    numprocs = int(node.lb_procs)
-                    if numprocs < 1:
-                        raise ConfigurationError("%s: value of lb_procs must be at least 1 in section '%s'" % (fname, sec))
-                except ValueError:
-                    raise ConfigurationError("%s: value of lb_procs must be an integer in section '%s'" % (fname, sec))
-            elif node.lb_method:
-                raise ConfigurationError("%s: load balancing requires lb_procs in section '%s'" % (fname, sec))
-
-            try:
-                pin_cpus = self._get_pin_cpu_list(node.pin_cpus, numprocs)
+                numprocs = int(node.lb_procs)
             except ValueError:
-                raise ConfigurationError("%s: pin_cpus must be list of non-negative integers in section '%s'" % (fname, sec))
+                raise ConfigurationError("Number of load-balanced processes must be an integer for node '%s'" % node.name)
+            if numprocs < 2:
+                raise ConfigurationError("Number of load-balanced processes must be at least 2 for node '%s'" % node.name)
+        elif node.lb_method:
+            raise ConfigurationError("Number of load-balanced processes not specified for node '%s'" % node.name)
 
-            if pin_cpus:
-                node.pin_cpus = pin_cpus[0]
+        try:
+            pin_cpus = self._get_pin_cpu_list(node.pin_cpus, numprocs)
+        except ValueError:
+            raise ConfigurationError("Pin cpus list must contain only non-negative integers for node '%s'" % node.name)
 
-            if node.lb_procs:
-                if not node.lb_method:
-                    raise ConfigurationError("%s: no load balancing method given in section '%s'" % (fname, sec))
+        if pin_cpus:
+            node.pin_cpus = pin_cpus[0]
 
-                if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
-                    raise ConfigurationError("%s: unknown load balancing method given in section '%s'" % (fname, sec))
+        if node.lb_procs:
+            if not node.lb_method:
+                raise ConfigurationError("No load balancing method given for node '%s'" % node.name)
 
-                if node.lb_method == "interfaces":
-                    if not node.lb_interfaces:
-                        raise ConfigurationError("%s: no list of interfaces given in section '%s'" % (fname, sec))
+            if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+                raise ConfigurationError("Unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
 
-                    # get list of interfaces to use, and assign one to each node
-                    netifs = node.lb_interfaces.split(",")
+            if node.lb_method == "interfaces":
+                if not node.lb_interfaces:
+                    raise ConfigurationError("List of load-balanced interfaces not specified for node '%s'" % node.name)
 
-                    if len(netifs) != int(node.lb_procs):
-                        raise ConfigurationError("%s: number of interfaces does not match value of lb_procs in section '%s'" % (fname, sec))
+                # get list of interfaces to use, and assign one to each node
+                netifs = node.lb_interfaces.split(",")
 
-                    node.interface = netifs.pop().strip()
+                if len(netifs) != numprocs:
+                    raise ConfigurationError("Number of load-balanced interfaces is not same as number of load-balanced processes for node '%s'" % node.name)
 
-                # node names will have a numerical suffix
-                node.name = "%s-1" % sec
+                node.interface = netifs.pop().strip()
 
-                for num in range(2, numprocs + 1):
-                    newnode = node.copy()
-                    # only the node name, count, and pin_cpus need to be changed
-                    newname = "%s-%d" % (sec, num)
-                    newnode.name = newname
-                    nodestore[newname] = newnode
-                    counts[type] += 1
-                    newnode.count = counts[type]
-                    if pin_cpus:
-                        newnode.pin_cpus = pin_cpus[num-1]
+            origname = node.name
+            # node names will have a numerical suffix
+            node.name = "%s-1" % node.name
 
-                    if newnode.lb_method == "interfaces":
-                        newnode.interface = netifs.pop().strip()
+            for num in range(2, numprocs + 1):
+                newnode = node.copy()
+                # only the node name, count, and pin_cpus need to be changed
+                newname = "%s-%d" % (origname, num)
+                newnode.name = newname
+                if newname in nodestore:
+                    raise ConfigurationError("Duplicate node name '%s'" % newname)
+                nodestore[newname] = newnode
+                counts[node.type] += 1
+                newnode.count = counts[node.type]
+                if pin_cpus:
+                    newnode.pin_cpus = pin_cpus[num-1]
 
-        if nodestore:
+                if newnode.lb_method == "interfaces":
+                    newnode.interface = netifs.pop().strip()
 
-            if not standalone:
-                if not manager:
-                    raise ConfigurationError("%s: no manager defined" % fname)
+    def _check_nodestore(self, nodestore):
+        if not nodestore:
+            raise ConfigurationError("No nodes found")
 
-                if not proxy:
-                    raise ConfigurationError("%s: no proxy defined" % fname)
-
-            else:
-                if len(nodestore) > 1:
-                    raise ConfigurationError("%s: more than one node defined in stand-alone setup" % fname)
+        standalone = False
+        manager = False
+        proxy = False
 
         manageronlocalhost = False
 
         for n in nodestore.values():
-            if not n.name:
-                raise ConfigurationError("node configured without a name")
-
-            if not n.host:
-                raise ConfigurationError("no host given for node %s" % n.name)
-
-            if not n.type:
-                raise ConfigurationError("no type given for node %s" % n.name)
-
             if n.type == "manager":
-                if n.addr not in self.localaddrs:
-                    raise ConfigurationError("script must be run on manager node")
-
-                if ( n.addr == "127.0.0.1" or n.addr == "::1" ) and n.type != "standalone":
+                if manager:
+                    raise ConfigurationError("Only one manager can be defined")
+                manager = True
+                if n.addr in ("127.0.0.1", "::1"):
                     manageronlocalhost = True
+
+                if n.addr not in self.localaddrs:
+                    raise ConfigurationError("Must run broctl only on manager node")
+
+            elif n.type == "proxy":
+                proxy = True
+
+            elif n.type == "standalone":
+                standalone = True
+
+        if standalone:
+            if len(nodestore) > 1:
+                raise ConfigurationError("More than one node defined in standalone node config")
+        else:
+            if not manager:
+                raise ConfigurationError("No manager defined in node config")
+            elif not proxy:
+                raise ConfigurationError("No proxy defined in node config")
 
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.type != "standalone":
-                    if n.addr != "127.0.0.1" and n.addr != "::1":
-                        raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
-
-        return nodestore
+                if n.type != "manager" and n.addr not in ("127.0.0.1", "::1"):
+                    raise ConfigurationError("Cannot use localhost/127.0.0.1/::1 for manager host in node config")
 
 
     # Parses broctl.cfg and returns a dictionary of all entries.
