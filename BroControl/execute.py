@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import logging
 
+from BroControl import py3bro
 from BroControl import ssh_runner
 from BroControl import util
 
@@ -104,12 +105,16 @@ def _run_localcmd_init(id, cmd, env, donotcaptureoutput=False):
     return proc
 
 def _run_localcmd_wait(proc, inputtext):
+    if inputtext and py3bro.using_py3:
+        inputtext = inputtext.encode()
 
     (out, err) = proc.communicate(inputtext)
     rc = proc.returncode
 
     output = []
     if out:
+        if py3bro.using_py3:
+            out = out.decode()
         output = out.splitlines()
 
     for line in output:
@@ -143,6 +148,8 @@ def get_local_addrs(cmdout):
 
     if success:
         localaddrs = []
+        if py3bro.using_py3:
+            out = out.decode()
         for line in out.splitlines():
             fields = line.split()
             if "inet" in fields or "inet6" in fields:

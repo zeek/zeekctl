@@ -2,6 +2,7 @@
 # BroControl Plugin API.
 #
 
+from __future__ import print_function
 import logging
 
 from BroControl import config
@@ -142,7 +143,7 @@ class Plugin(object):
     @doc.api
     def message(self, msg):
         """Reports a message to the user."""
-        print "%s" % msg
+        print("%s" % msg)
 
     @doc.api
     def debug(self, msg):
@@ -152,7 +153,7 @@ class Plugin(object):
     @doc.api
     def error(self, msg):
         """Reports an error to the user."""
-        print "error: %s" % msg
+        print("error: %s" % msg)
 
     @doc.api
     def execute(self, node, cmd):
