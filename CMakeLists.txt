@@ -81,7 +81,7 @@ set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 # transformed to use an absolute path to an interpreter, use the
 # InstallShellScript macro.
 InstallShellScript(bin bin/broctl.in broctl)
-InstallShellScript(bin bin/broctld.in broctld)
+#InstallShellScript(bin bin/broctld.in broctld)
 InstallShellScript(share/broctl/scripts bin/archive-log)
 InstallShellScript(share/broctl/scripts bin/cflow-stats)
 InstallShellScript(share/broctl/scripts bin/check-config)
@@ -108,6 +108,10 @@ install(DIRECTORY BroControl
         DESTINATION lib/broctl
         PATTERN "options.py" EXCLUDE
         PATTERN "version.py" EXCLUDE
+        PATTERN "broctld.py" EXCLUDE
+        PATTERN "ser.py" EXCLUDE
+        PATTERN "test_cli.py" EXCLUDE
+        PATTERN "web.py" EXCLUDE
         PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
