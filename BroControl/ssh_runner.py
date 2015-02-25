@@ -280,7 +280,8 @@ class MultiMasterManager:
 
     def host_status(self):
         for h, o in self.masters.items():
-            yield h, o.alive
+            if h not in self.localaddrs:
+                yield h, o.alive
 
     def shutdown(self, host):
         self.masters[host].shutdown()

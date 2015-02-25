@@ -296,3 +296,6 @@ class Executor:
 
         return results
 
+    def host_status(self):
+        return self.sshrunner.host_status()
+

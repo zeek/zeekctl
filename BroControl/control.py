@@ -1349,7 +1349,7 @@ class Controller:
         self.config.config["cron"] = "1"
 
         cronui = cron.CronUI()
-        tasks = cron.CronTasks(cronui, self.config, self)
+        tasks = cron.CronTasks(cronui, self.config, self, self.executor, self.pluginregistry)
 
         cronui.buffer_output()
 

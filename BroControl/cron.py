@@ -32,10 +32,12 @@ class CronUI:
 
 
 class CronTasks:
-    def __init__(self, ui, config, controller):
+    def __init__(self, ui, config, controller, executor, pluginregistry):
         self.ui = ui
         self.config = config
         self.controller = controller
+        self.executor = executor
+        self.pluginregistry = pluginregistry
 
     def log_stats(self, interval):
         if self.config.statslogenable == "0":
@@ -136,23 +138,19 @@ class CronTasks:
                 self.ui.error(line)
 
     def check_hosts(self):
-        for node in self.config.hosts(nolocal=True):
-            tag = "alive-%s" % node.host.lower()
-            # TODO: fix
-            #alive = execute.isAlive(node.addr) and "1" or "0"
-            alive = "1"
+        for host, status in self.executor.host_status():
+            tag = "alive-%s" % host
+            alive = status and "1" or "0"
 
             if tag in self.config.state:
                 previous = self.config.state[tag]
 
                 if alive != previous:
-                    # TODO: fix
-                    #plugin.Registry.hostStatusChanged(node.host, alive == "1")
+                    self.pluginregistry.hostStatusChanged(host, alive == "1")
                     if self.config.mailhostupdown != "0":
-                        self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
+                        self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
 
             self.config.set_state(tag, alive)
-
 
     def update_http_stats(self):
         if self.config.statslogenable == "0":
