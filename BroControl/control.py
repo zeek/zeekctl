@@ -841,7 +841,7 @@ class Controller:
         # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
         # is needed to prevent capstats from trying to use the same interface
         # name as Bro.
-        if netif.startswith("dnacluster:") and netif.count("@") == 1:
+        if netif.startswith("dnacl") and netif.count("@") == 1:
             netif = netif.split("@", 1)[0]
 
         return netif
