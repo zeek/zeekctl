@@ -1,7 +1,7 @@
 # Test that the nodes command lists all nodes in a cluster.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-abspath | $SCRIPTS/diff-remove-localhost-values" btest-diff out
 
 . broctl-test-setup
 
@@ -9,5 +9,5 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster_test
 EOF
 
-broctl nodes > out
+broctl nodes > out 2>&1
 

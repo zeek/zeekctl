@@ -19,15 +19,15 @@ broctl install
 broctl start
 
 # print value from all nodes
-broctl print Log::default_rotation_interval > all.out
+broctl print Log::default_rotation_interval > all.out 2>&1
 
 # print value from one node
-broctl print Log::default_rotation_interval worker-2 > onenode.out
+broctl print Log::default_rotation_interval worker-2 > onenode.out 2>&1
 
 broctl stop
 
 # no nodes are running, so no value exists
-broctl print Log::default_rotation_interval > stopped.out
+broctl print Log::default_rotation_interval > stopped.out 2>&1
 # the file size should be zero
 test ! -s stopped.out || ret=1
 

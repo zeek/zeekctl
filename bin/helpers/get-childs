@@ -1,10 +1,8 @@
 #! /usr/bin/env bash
 #
+# Given a PID, output the PIDs of all of its child processes.
+#
 #  get-childs <pid> 
 
 ps ax -o pid,ppid | awk -v pid=$1 '$2==pid {print $1}'
-echo $?
-echo ~~~
-
-
 

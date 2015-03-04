@@ -3,6 +3,7 @@
 # This script can be used in place of Bro for testing purposes to simulate
 # some of the behavior of Bro.
 
+from __future__ import print_function
 import os, atexit, getopt, signal, sys, time
 
 def setprocstate(str):
@@ -29,7 +30,7 @@ optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:
 for (opt, val) in optlist:
     if opt == "-v":
         # broctl doesn't care which version bro reports
-        print "bro version 2.2-1"
+        print("bro version 2.2-1")
         sys.exit(0)
     elif opt == "-U":
         statusfile = val
@@ -49,7 +50,7 @@ if os.path.isfile(cfgfilepath):
         brovar = brovar.strip()
         broval = broval.strip()
         if brovar not in brotestcfg:
-            print >>sys.stderr, "Error: unknown option '%s' in: %s" % (brovar, cfgfilepath)
+            print("Error: unknown option '%s' in: %s" % (brovar, cfgfilepath), file=sys.stderr)
             sys.exit(1)
         brotestcfg[brovar] = broval
     testcfg.close()

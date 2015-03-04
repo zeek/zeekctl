@@ -1,37 +1,64 @@
 #! /usr/bin/env bash
 #
-# update <destination host> <zone_id> <destination port> <Bro args>
+# Update values of Bro script variables on a running Bro.
+#
+# update <host> <zone_id> <port> <bro_args>
+#
+# host:  the destination host.
+# zone_id:  the zone id, or "NOZONE" to indicate no zone id.
+# port:  the destination port.
+# bro_args:  Bro cmd-line arguments.
 
 . `dirname $0`/broctl-config.sh
+
+if [ $# -lt 4 ]; then
+    echo "update: missing arguments"
+    exit 1
+fi
+
+if [ ! -f "${bro}" ]; then
+    echo "update: file not found: ${bro}"
+    exit 1
+fi
 
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 use_installed_policies=1
-source ${scriptsdir}/set-bro-path
+source "${scriptsdir}"/set-bro-path
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 host=$1
-shift
-zone=$1
-shift
-port=$1
-shift
+zone=$2
+port=$3
+shift 3
 
-# Creating temporary working directory.
-dir=${tmpdir}/update-$1-$$
-rm -rf $dir
-mkdir $dir
-cd $dir
+# Create temporary working directory.
+if [ ! -d "${tmpdir}" ]; then
+    echo "update: directory not found: ${tmpdir}"
+    exit 1
+fi
+dir=${tmpdir}/update-$$
+rm -rf "$dir"
+mkdir "$dir"
+
+cd "$dir"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 zone_arg=""
 if [ "$zone" != "NOZONE" ]; then
     zone_arg="Control::zone_id=$zone"
 fi
 
-${bro} "$@" frameworks/control/controller "Control::host=$host" $zone_arg "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
+"${bro}" "$@" frameworks/control/controller "Control::host=$host" $zone_arg "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?
 
-cat out.log | egrep -v "warning: no such host|received termination signal"
-rm -rf $dir
+grep -v -e "warning: no such host" -e "received termination signal" out.log
+
+rm -rf "$dir"
 
 exit $rc
 

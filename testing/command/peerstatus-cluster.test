@@ -19,15 +19,15 @@ broctl install
 broctl start
 
 # get status of all nodes
-broctl peerstatus > all.out
+broctl peerstatus > all.out 2>&1
 
 # get status of one node
-broctl peerstatus worker-2 > onenode.out
+broctl peerstatus worker-2 > onenode.out 2>&1
 
 broctl stop
 
 # no nodes are running, so no status exists
-broctl peerstatus > stopped.out
+broctl peerstatus > stopped.out 2>&1
 # the file size should be zero
 test ! -s stopped.out || ret=1
 

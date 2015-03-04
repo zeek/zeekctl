@@ -20,11 +20,11 @@ broctl install
 broctl start
 
 # show all nodes
-broctl top 2> all.out
+broctl top > all.out 2>&1
 test $? -eq 0 || ret=1
 
 # show one node
-broctl top proxy-1 2> onenode.out
+broctl top proxy-1 > onenode.out 2>&1
 
 broctl stop worker-1
 
@@ -35,7 +35,7 @@ test $? -ne 0 || ret=1
 broctl stop
 
 # all nodes are stopped
-broctl top 2> stopped.out
+broctl top > stopped.out 2>&1
 test $? -ne 0 || ret=1
 
 exit $ret

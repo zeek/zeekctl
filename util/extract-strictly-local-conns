@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 import SubnetTree
@@ -20,13 +21,13 @@ def readNetworks(file):
         try:
             nets[cidr] = descr
         except KeyError:
-            print >>sys.stderr, "cannot parse network specification '%s'" % cidr
+            print("cannot parse network specification '%s'" % cidr, file=sys.stderr)
 
 
     return nets
 
 if len(sys.argv) != 2:
-    print >>sys.stderr, "usage: %s networks.cfg <conn.log" % sys.argv[0]
+    print("usage: %s networks.cfg <conn.log" % sys.argv[0], file=sys.stderr)
     sys.exit(1)
 
 nets = readNetworks(sys.argv[1])
@@ -41,4 +42,4 @@ for line in sys.stdin:
         continue
 
     if m[2] in nets and m[4] in nets:
-        print line,
+        print(line, end="")

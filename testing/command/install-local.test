@@ -17,14 +17,14 @@ while read line; do
 done << EOF
 logs/current
 spool/broctl-config.sh
-spool/broctl.dat
+spool/state.db
 spool/installed-scripts-do-not-touch/site/local.bro
 spool/installed-scripts-do-not-touch/auto/broctl-config.bro
 spool/installed-scripts-do-not-touch/auto/local-networks.bro
 spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
 EOF
 
-broctl install --local 2> out
+broctl install --local > out 2>&1
 
 test -h $BROCTL_INSTALL_PREFIX/logs/current || ret=1
 
@@ -32,7 +32,7 @@ while read line; do
     test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
 done << EOF
 spool/broctl-config.sh
-spool/broctl.dat
+spool/state.db
 spool/installed-scripts-do-not-touch/site/local.bro
 spool/installed-scripts-do-not-touch/auto/broctl-config.bro
 spool/installed-scripts-do-not-touch/auto/local-networks.bro

@@ -29,18 +29,18 @@ broctl start
 rm $BROCTL_INSTALL_PREFIX/broctltest.cfg
 
 # verify that a node crashed
-broctl status 2> status1.out
+broctl status > status1.out 2>&1
 
 # verify that no email has been sent
 test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
 
-broctl restart 2> restart.out
+broctl restart > restart.out 2>&1
 
 # verify that a crash report was sent
 grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
 
 # verify that all nodes are running
-broctl status 2> status2.out
+broctl status > status2.out 2>&1
 
 broctl stop
 

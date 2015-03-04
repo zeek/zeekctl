@@ -1,4 +1,67 @@
 
+1.3-150 | 2015-03-04 12:17:42 -0800
+
+  * Significant improvements (mostly internal), reorganization, and
+    cleanup across the whole code base. (Justin Azoff and Daniel
+    Thayer)
+
+    This includes:
+
+      - Refactor broctl to make it usable as a library (reduce global
+        state, module-level setup code, and functions return results
+        instead of printing).
+
+      - Integrate ssh_runner code into broctl to fix current problems
+        (use only one connection per host instead of one per Bro node;
+        broctl shouldn't hang when a host goes down or if we forgot to
+        run "broctl install"),
+
+      - Write state info using SQLite state storage instead of writing
+        to a plain text file (broctl.dat).
+
+      - When the node config changes, we now do additional checks if
+        there are any Bro nodes running that are no longer in our node
+        config and warn user if any are detected.
+
+      - Keep track of the expected state (running or stopped) of each
+        Bro node, and have broctl cron start or stop nodes as needed.
+
+      - Improved broctl cron by adding two new options (MailHostUpDown
+        and StatsLogEnable) to enable users the option to turn off
+        unwanted functionality to speed up broctl cron and reduce the
+        chance of errors.
+
+      - When broctl cron tries to send email but fails, now it will
+        output a message that includes the text it was trying to mail.
+
+      - Silence warning messages that are intended for interactive use
+        of broctl when broctl cron runs to reduce unwanted emails from
+        cron.
+        
+      - Added new broctl option StatusCmdShowAll to enable users to
+        speed up "broctl status" significantly.
+
+      - Fixed the stats-to-csv script to not create files that can
+        never include any data.
+
+      - Fixed archive-log script to detect exit status of gzip or cp
+        command, so that we don't delete log file when the archival
+        fails.
+
+      - Improved post-terminate script to process log files more
+        consistently.
+
+      - Made all broctl command output go to stdout (previously, some
+        output would go to stderr, which made grepping or redirecting
+        the output more difficult),
+
+      - Improved the default broctl.cfg file to show more of the
+        useful options.
+
+      - Added more error checks to help catch errors earlier.
+        
+      - Some error message output is more specific and helpful now.
+
 1.3-12 | 2014-12-08 13:53:23 -0800
 
   * Add man page for broctl. (Raúl Benencia)

@@ -5,53 +5,88 @@
 
 . `dirname $0`/broctl-config.sh
 
-if [ "${statslogexpireinterval}" -ne "0" ]; then
-    slfile=${statsdir}/stats.log
-    if [ -s $slfile ]; then
-        now=`date +%s`
-
-        # Convert to seconds and subtract this from the current time
-        exptime=$(( now - 86400*statslogexpireinterval ))
-
-        # Determine how many lines to remove from the beginning of stats.log
-        nl=`awk -v expiretime=${exptime} '{ if ( $1 > expiretime ) { print NR-1; exit } }' $slfile`
-
-        if [ -z "${nl}" ]; then
-            > $slfile
-        elif [ ${nl} -gt 0 ]; then
-            sed "1,${nl}d" $slfile > $slfile.new
-            mv $slfile.new $slfile
-        fi
+function expire_statslog()
+{
+    if [ ${statslogexpireinterval} -eq 0 ]; then
+        return 0
     fi
-fi
 
-if [ "${logexpireinterval}" -eq "0" ]; then
-    exit 0
-fi
+    if [ ! -d "${statsdir}" ]; then
+        echo "expire-logs: directory not found: ${statsdir}"
+        return 1
+    fi
 
-if [ "${os}" == "openbsd" ]; then
-    find_cmd=gfind
-else
+    slfile=${statsdir}/stats.log
+
+    # Make sure the file exists and has nonzero size before continuing.
+    if [ ! -s "$slfile" ]; then
+        return 0
+    fi
+
+    now=`date +%s`
+
+    # Convert to seconds and subtract this from the current time
+    exptime=$(( now - 86400*statslogexpireinterval ))
+
+    # Determine how many lines to remove from the beginning of stats.log
+    # (no output means all lines are older than the expire time).
+    nl=`awk -v expiretime=$exptime '{ if ( $1 > expiretime ) { print NR-1; exit } }' "$slfile"`
+
+    if [ -z "$nl" ]; then
+        > "$slfile"
+    elif [ $nl -gt 0 ]; then
+        sed "1,${nl}d" "$slfile" > "$slfile.new"
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+        mv "$slfile.new" "$slfile"
+    fi
+}
+
+function expire_log()
+{
+    if [ ${logexpireinterval} -eq 0 ]; then
+        return 0
+    fi
+
     find_cmd=find
+    if [ "${os}" = "openbsd" ]; then
+        find_cmd=gfind
+    fi
+
+    # Note: these patterns assume we're using the default make-archive-name
+    # script.  A custom script might use a different naming convention.
+    file_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.*$'
+    dir_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$'
+
+    exclude=""
+    if [ -n "${keeplogs}" ]; then
+        for name in ${keeplogs}; do
+            exclude="$exclude ! -name $name"
+        done
+    fi
+
+    if [ ! -d "${logdir}" ]; then
+        echo "expire-logs: directory not found: ${logdir}"
+        return 1
+    fi
+
+    # Remove old files.
+    $find_cmd "${logdir}" -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete
+    rc=$?
+
+    # Remove now empty directories (this will not remove non-empty dirs, so we
+    # ignore errors here).
+    $find_cmd "${logdir}" -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null
+
+    return $rc
+}
+
+if [ -n "${logexpireinterval}" ]; then
+    expire_log || exit 1
 fi
 
-base=${logdir}/
-
-file_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.*$'
-dir_pattern='.*/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$'
-
-exclude=""
-if [ "${keeplogs}" != "" ]; then
-   for name in ${keeplogs}; do
-      exclude="$exclude ! -name $name"
-   done
+if [ -n "${statslogexpireinterval}" ]; then
+    expire_statslog || exit 1
 fi
 
-# Remove old files.
-$find_cmd $base -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete 2>/dev/null
-rc=$?
-
-# Remove now empty directories (will fail for non-empty dirs).
-$find_cmd $base -type d -regex $dir_pattern -exec rmdir '{}' ';' 2>/dev/null
-
-exit $rc

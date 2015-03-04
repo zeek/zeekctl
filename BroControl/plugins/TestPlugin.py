@@ -168,12 +168,6 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_diag_post(self, nodes):
         self.message("TestPlugin: Test post 'diag': %s" % self._nodes(nodes))
 
-    def cmd_attachgdb_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'attachgdb':  %s" % self._nodes(nodes))
-
-    def cmd_attachgdb_post(self, nodes):
-        self.message("TestPlugin: Test post 'attachgdb': %s" % self._nodes(nodes))
-
     def cmd_peerstatus_pre(self, nodes):
         self.message("TestPlugin: Test pre 'peerstatus':  %s" % self._nodes(nodes))
 

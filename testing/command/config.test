@@ -9,5 +9,5 @@ broctl install
 
 # test the config command (many config items are system-dependent, so just grab
 # one)
-broctl config | grep mailsubjectprefix > out
+broctl config 2>&1 | grep mailsubjectprefix > out
 

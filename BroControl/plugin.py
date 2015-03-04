@@ -2,13 +2,11 @@
 # BroControl Plugin API.
 #
 
-import pluginreg
-import config
-import util
-import doc
-import execute
+from __future__ import print_function
+import logging
 
-Registry = pluginreg.PluginRegistry()
+from BroControl import config
+from BroControl import doc
 
 class Plugin(object):
     """The class ``Plugin`` is the base class for all BroControl plugins.
@@ -66,7 +64,7 @@ class Plugin(object):
         attribute *name*. If the user has not set the options, its default
         value is returned. See the output of ``broctl config`` for a complete
         list."""
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             raise KeyError
 
         return config.Config.__getattr__(name)
@@ -82,7 +80,7 @@ class Plugin(object):
         """
         name = "%s.%s" % (self.prefix().lower(), name.lower())
 
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             raise KeyError
 
         return config.Config.__getattr__(name)
@@ -100,7 +98,7 @@ class Plugin(object):
         """
         name = "%s.state.%s" % (self.prefix().lower(), name.lower())
 
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             return ""
 
         return config.Config.__getattr__(name)
@@ -121,39 +119,41 @@ class Plugin(object):
             self.error("plugin state variable names must not contain dots or spaces")
 
         name = "%s.state.%s" % (self.prefix(), name)
-        config.Config._setState(name, value)
+        config.Config.set_state(name, value)
 
     @doc.api
     def parseNodes(self, names):
-        """Returns a list of `Node`_ objects for a string of space-separated
-        node names. If a name does not correspond to a known node, an error
-        message is printed and the node is skipped from the returned list. If
-        no names are known, an empty list is returned."""
+        """Returns a tuple which contains two lists. The first list is a list
+        of `Node`_ objects for a string of space-separated node names. If a
+        name does not correspond to a known node, then the name is added
+        to the second list in the returned tuple.
+        """
         nodes = []
+        notnodes = []
 
         for arg in names.split():
-            h = config.Config.nodes(arg, True)
-            if not h:
-                util.output("unknown node '%s'" % arg)
+            nodelist = config.Config.nodes(arg, True)
+            if nodelist:
+                nodes += nodelist
             else:
-                nodes += h
+                notnodes.append(arg)
 
-        return nodes
+        return (nodes, notnodes)
 
     @doc.api
     def message(self, msg):
         """Reports a message to the user."""
-        util.output(msg, prefix="plugin:%s" % self.prefix())
+        print("%s" % msg)
 
     @doc.api
     def debug(self, msg):
         """Logs a debug message in BroControl's debug log if enabled."""
-        util.debug(1, msg, prefix="plugin:%s" % self.prefix())
+        logging.debug("%s: %s" % (self.prefix(), msg))
 
     @doc.api
     def error(self, msg):
-        """Reports an error to the user and terminates broctl."""
-        util.error(msg, prefix="plugin:%s" % self.prefix())
+        """Reports an error to the user."""
+        print("error: %s" % msg)
 
     @doc.api
     def execute(self, node, cmd):
@@ -161,7 +161,7 @@ class Plugin(object):
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
         stdout/stderr output (or None if we couldn't connect to the host)."""
-        result = execute.executeCmdsParallel([(node, cmd)])[0]
+        result = self.executor.run_shell_cmds([(node, cmd)])[0]
         return (result[1], result[2])
 
     @doc.api
@@ -198,7 +198,7 @@ class Plugin(object):
         ``success`` is True if the command ran successfully and ``output`` is
         the combined stdout/stderr output (or None if we couldn't connect to
         the host) for the corresponding ``node``."""
-        return execute.executeCmdsParallel(cmds)
+        return self.executor.run_shell_cmds(cmds)
 
     ### Methods that must be overridden by plugins.
 
@@ -602,7 +602,7 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_custom(self, cmd, args):
+    def cmd_custom(self, cmd, args, cmdout):
         """Called when a command defined by the ``commands`` method is executed.
         *cmd* is the command (without the plugin's prefix), and *args* is a
         single string with all arguments.
@@ -651,27 +651,6 @@ class Plugin(object):
     def cmd_diag_post(self, nodes):
         """Called just after the ``diag`` command has finished. Arguments are
         as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_attachgdb_pre(self, nodes):
-        """Called just before the ``attachgdb`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_attachgdb_post(self, nodes):
-        """Called just after the ``attachgdb`` command has finished. Arguments
-        are as with the ``pre`` method.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.
@@ -898,4 +877,4 @@ class Plugin(object):
             if not isinstance(default, str):
                 self.error("plugin option default must be a string")
 
-            config.Config._setOption("%s.%s" % (self.prefix(), name), default)
+            config.Config._set_option("%s.%s" % (self.prefix(), name), default)

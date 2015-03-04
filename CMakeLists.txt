@@ -81,17 +81,15 @@ set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 # transformed to use an absolute path to an interpreter, use the
 # InstallShellScript macro.
 InstallShellScript(bin bin/broctl.in broctl)
+#InstallShellScript(bin bin/broctld.in broctld)
 InstallShellScript(share/broctl/scripts bin/archive-log)
 InstallShellScript(share/broctl/scripts bin/cflow-stats)
 InstallShellScript(share/broctl/scripts bin/check-config)
 InstallShellScript(share/broctl/scripts bin/crash-diag)
-InstallShellScript(share/broctl/scripts bin/create-link-for-log)
 InstallShellScript(share/broctl/scripts bin/delete-log)
 InstallShellScript(share/broctl/scripts bin/expire-logs)
-InstallShellScript(share/broctl/scripts bin/local-interfaces)
 InstallShellScript(share/broctl/scripts bin/make-archive-name)
 InstallShellScript(share/broctl/scripts bin/post-terminate)
-InstallShellScript(share/broctl/scripts bin/remove-link-for-log)
 InstallShellScript(share/broctl/scripts bin/run-bro)
 InstallShellScript(share/broctl/scripts bin/send-mail)
 InstallShellScript(share/broctl/scripts bin/stats-to-csv)
@@ -99,11 +97,7 @@ InstallShellScript(share/broctl/scripts bin/update)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/cat-file)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/check-pid)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/df)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/exists)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/gdb-attach)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/get-childs)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/is-dir)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/rmdir)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/run-cmd)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
@@ -113,10 +107,19 @@ InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summar
 install(DIRECTORY BroControl
         DESTINATION lib/broctl
         PATTERN "options.py" EXCLUDE
+        PATTERN "version.py" EXCLUDE
+        PATTERN "broctld.py" EXCLUDE
+        PATTERN "ser.py" EXCLUDE
+        PATTERN "test_cli.py" EXCLUDE
+        PATTERN "web.py" EXCLUDE
         PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
+configure_file(BroControl/version.py
+               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py
+        DESTINATION lib/broctl/BroControl)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py
         DESTINATION lib/broctl/BroControl)
 install(DIRECTORY BroControl/plugins
         DESTINATION lib/broctl)

@@ -37,7 +37,7 @@ BROSRCDIR=${BROCTLSRCDIR}/../..
 BROCTLBUILDDIR=${BROCTLSRCDIR}/build
 
 # Absolute path of a directory where all of the broctl test files are located.
-BROCTL_TEST=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${BROCTLBUILDDIR}/testing`
+BROCTL_TEST=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" ${BROCTLBUILDDIR}/testing`
 test $? -ne 0 && exit 1
 
 if [ "$1" = "cleanall" ]; then

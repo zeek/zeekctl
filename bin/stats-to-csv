@@ -2,10 +2,12 @@
 #
 # stats-to-csv <stats.log> <meta.dat> <wwwdir>
 #
-# Reads information from stats directory and outputs csv files <wwwdir>/<node>.<type>.csv.
-# If any of these files already exists, we append (without writing the header line again).
+# Reads information from stats log and outputs csv files
+# <wwwdir>/<node>.<type>.csv.
+# If any of these files already exists, we append (without writing the header
+# line again).
 
-import os.path
+from __future__ import print_function
 import os
 import sys
 
@@ -13,104 +15,126 @@ Workers = set()
 Proxies = set()
 
 def readNodes(meta):
-    for line in open(meta):
-        m = line.split()
+    with open(meta, "r") as f:
+        for line in f:
+            m = line.split()
 
-        if m[0] == "node":
-            if m[2] == "worker":
-                Workers.add(m[1])
+            if m[0] == "node":
+                if len(m) < 3:
+                    print("error: 'node' line in meta.dat is missing some fields")
+                    sys.exit(1)
 
-            if m[2] == "proxy":
-                Workers.add(m[1])
+                if m[2] == "worker":
+                    Workers.add(m[1])
 
-def processNode(stats, wwwdir, node, iface):
+                if m[2] == "proxy":
+                    Workers.add(m[1])
 
-    print node, "..."
+def processNode(stats, wwwdir, node, iface, use_cflow=False):
+
+    print(node, "...")
 
     def openFile(tag, columns):
 
         name = os.path.join(wwwdir, "%s.%s.csv" % (node, tag))
 
         if os.path.exists(name):
-            return open(name, "a")
+            f = open(name, "a")
         else:
             f = open(name, "w")
-            print >>f, "time," + ",".join(columns)
+            f.write("time,%s\n" % ",".join(columns))
 
         return f
 
-    iface_mbps = openFile("mbps", ["MBits/sec"])
-    iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
-    cpu = openFile("cpu", ["CPU"])
-    mem = openFile("mem", ["Memory"])
-    cflow = openFile("in", ["MBits/sec"])
+    if use_cflow:
+        cflow = openFile("in", ["MBits/sec"])
+    else:
+        cpu = openFile("cpu", ["CPU"])
+        mem = openFile("mem", ["Memory"])
+        if iface:
+            iface_mbps = openFile("mbps", ["MBits/sec"])
+            iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
 
     def printEntry(t, entry):
+        if not entry:
+            return
+
+        if use_cflow:
+            e = entry.get("in-mbps")
+            if e:
+                cflow.write("%s,%s\n" % (t, e))
+            return
 
         try:
             val = int(entry["parent-cpu"]) + int(entry["child-cpu"])
-            print >>cpu, "%s,%s" % (t, val)
+            cpu.write("%s,%s\n" % (t, val))
         except KeyError:
             pass
 
         try:
             val = int(entry["parent-vsize"]) + int(entry["child-vsize"])
-            print >>mem, "%s,%s" % (t, val)
+            mem.write("%s,%s\n" % (t, val))
         except KeyError:
             pass
 
         if iface:
-            try:
-                print >>iface_mbps, "%s,%s" % (t, entry["interface-mbps"])
-            except KeyError:
-                pass
+            e = entry.get("interface-mbps")
+            if e:
+                iface_mbps.write("%s,%s\n" % (t, e))
 
             try:
-                tc = float(entry["interface-t"])
-                ud = float(entry["interface-u"])
-                ic = float(entry["interface-i"])
-                ot = float(entry["interface-o"])
-                print >>iface_pkts, "%s,%s,%s,%s,%s" % (t, tc, ud, ic, ot)
+                tc = entry["interface-t"]
+                ud = entry["interface-u"]
+                ic = entry["interface-i"]
+                ot = entry["interface-o"]
+                iface_pkts.write("%s,%s,%s,%s,%s\n" % (t, tc, ud, ic, ot))
 
             except KeyError:
                 pass
-
-        if "in-mbps" in entry:
-            print >>cflow, "%s,%s" % (t, entry["in-mbps"])
 
     entry = {}
     first = -1
 
-    for line in open(stats):
-        m = line.split()
+    with open(stats, "r") as ff:
+        for line in ff:
+            m = line.split()
 
-        if m[1] != node:
-            continue
+            if len(m) < 2:
+                print("error: line in stats.log has less than two fields")
+                sys.exit(1)
 
-        t = m[0]
+            if m[1] != node:
+                continue
 
-        if t != first and first >= 0:
-            printEntry(t, entry)
-            entry = {}
+            try:
+                t = float(m[0])
+            except ValueError:
+                print("error: line in stats.log has no timestamp")
+                sys.exit(1)
 
-        first = t
+            if t != first and first >= 0:
+                printEntry(t, entry)
+                entry = {}
 
-        try:
-            entry["%s-%s" % (m[2], m[3])] = m[4]
-        except IndexError:
-            pass
+            first = t
+
+            if len(m) > 4:
+                entry["%s-%s" % (m[2], m[3])] = m[4]
 
     if first >= 0:
         printEntry(t, entry)
 
-    iface_mbps.close()
-    iface_pkts.close()
-    cpu.close()
-    mem.close()
-    cflow.close()
+    if use_cflow:
+        cflow.close()
+    else:
+        cpu.close()
+        mem.close()
+        if iface:
+            iface_mbps.close()
+            iface_pkts.close()
 
 if len(sys.argv) != 4:
-    print "usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0]
+    print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
     sys.exit(1)
 
 stats = sys.argv[1]
@@ -132,8 +156,8 @@ try:
         processNode(stats, wwwdir, p, False)
 
     processNode(stats, wwwdir, "manager", False)
-    processNode(stats, wwwdir, "cflow", False)
-except IOError, err:
-    print "Error: %s" % err
+    processNode(stats, wwwdir, "cflow", False, use_cflow=True)
+except IOError as err:
+    print("Error: %s" % err)
     sys.exit(1)
 

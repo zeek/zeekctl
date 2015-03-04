@@ -17,7 +17,7 @@ EOF
 broctl install
 
 # verify that the env_vars option is empty
-broctl config | grep -i env_vars > out
+broctl config 2>&1 | grep -i env_vars > out
 
 # verify that the env. vars. are passed to Bro
 broctl start

@@ -17,10 +17,10 @@ broctl install
 broctl start
 
 # output diags for all nodes
-broctl diag 2> all.out
+broctl diag > all.out 2>&1
 
 # output diags for one node
-broctl diag worker-2 2> onenode.out
+broctl diag worker-2 > onenode.out 2>&1
 
 broctl stop
 

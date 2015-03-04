@@ -21,18 +21,18 @@ rmpaths='awk "{ if(\$1 ~ /\/.*/) { if(p==0) { print \"<...paths...>\"; p=1; } } 
 broctl install
 
 # show loaded_scripts.log for all nodes
-broctl scripts 2> tmp1.out
+broctl scripts > tmp1.out 2>&1
 eval ${rmpaths} tmp1.out > all.out
 
 # show loaded_scripts.log for one node
-broctl scripts proxy-1 2> tmp2.out
+broctl scripts proxy-1 > tmp2.out 2>&1
 eval ${rmpaths} tmp2.out > onenode.out
 
 # Test with "-c" for all nodes
-broctl scripts -c 2> tmp3.out
+broctl scripts -c > tmp3.out 2>&1
 eval ${rmpaths} tmp3.out > c-all.out
 
 # Test with "-c" for one node
-broctl scripts -c proxy-1 2> tmp4.out
+broctl scripts -c proxy-1 > tmp4.out 2>&1
 eval ${rmpaths} tmp4.out > c-onenode.out
 

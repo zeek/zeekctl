@@ -15,8 +15,8 @@ EOF
 broctl install
 
 # check all nodes
-broctl check 2> all.out
+broctl check > all.out 2>&1
 
 # check one node
-broctl check proxy-1 2> onenode.out
+broctl check proxy-1 > onenode.out 2>&1
 

@@ -18,14 +18,14 @@ EOF
 broctl install
 
 # get capstats on all nodes
-broctl capstats 2> all.out
+broctl capstats > all.out 2>&1
 
 # get capstats on one node
-broctl capstats worker-2 2> onenode.out
+broctl capstats worker-2 > onenode.out 2>&1
 
 # get the capstats over a specified time interval
-broctl capstats 4 2> interval.out
+broctl capstats 4 > interval.out 2>&1
 
 # get capstats on one node over a specified time interval
-broctl capstats worker-2 3 2> onenode-interval.out
+broctl capstats worker-2 3 > onenode-interval.out 2>&1
 

@@ -1,274 +1,241 @@
 # Tasks which are to be done on a regular basis from cron.
-
+from __future__ import print_function
 import os
 import time
 import shutil
 
-import util
-import config
-import execute
-import control
-import plugin
+from BroControl import execute
+from BroControl import py3bro
 
-# Triggers all activity which is to be done regularly via cron.
-def doCron(watch):
+class CronUI:
+    def __init__(self):
+        self.buffer = None
 
-    if config.Config.cronenabled == "0":
-        return
-
-    if not os.path.exists(os.path.join(config.Config.scriptsdir, "broctl-config.sh")):
-        util.output("error: broctl-config.sh not found (try 'broctl install')") 
-        return
-
-    config.Config.config["cron"] = "1"  # Flag to indicate that we're running from cron.
-
-    if not util.lock():
-        return
-
-    util.bufferOutput()
-
-    if watch:
-        # Check whether nodes are still running an restart if neccessary.
-        for (node, isrunning) in control.isRunning(config.Config.nodes()):
-            if not isrunning and node.hasCrashed():
-                control.start([node])
-
-    # Check for dead hosts.
-    _checkHosts()
-
-    # Generate statistics.
-    _logStats(5)
-
-    # Check available disk space.
-    _checkDiskSpace()
-
-    # Expire old log files.
-    _expireLogs()
-
-    # Update the HTTP stats directory.
-    _updateHTTPStats()
-
-    # Run external command if we have one.
-    if config.Config.croncmd:
-        (success, output) = execute.runLocalCmd(config.Config.croncmd)
-        if not success:
-            util.output("error running croncmd: %s" % config.Config.croncmd)
-
-    # Mail potential output.
-    output = util.getBufferedOutput()
-    if output:
-        util.sendMail("cron: " + output.split("\n")[0], output)
-
-    util.unlock()
-
-    config.Config.config["cron"] = "0"
-    util.debug(1, "cron done")
-
-def logAction(node, action):
-    t = time.time()
-    out = open(config.Config.statslog, "a")
-    print >>out, t, node, "action", action
-    out.close()
-
-def _logStats(interval):
-
-    nodes = config.Config.nodes()
-    top = control.getTopOutput(nodes)
-
-    have_cflow = config.Config.cflowaddress and config.Config.cflowuser and config.Config.cflowpassword
-    have_capstats = config.Config.capstatspath
-    cflow_start = cflow_end = None
-    capstats = []
-    cflow_rates = []
-
-    if have_cflow:
-        cflow_start = control.getCFlowStatus()
-
-    if have_capstats:
-        capstats = control.getCapstatsOutput(nodes, interval)
-
-    elif have_cflow:
-        time.sleep(interval)
-
-    if have_cflow:
-        cflow_end = control.getCFlowStatus()
-        if cflow_start and cflow_end:
-            cflow_rates = control.calculateCFlowRate(cflow_start, cflow_end, interval)
-
-    t = time.time()
-
-    out = open(config.Config.statslog, "a")
-
-    for (node, error, vals) in top:
-        if not error:
-            for proc in vals:
-                type = proc["proc"]
-                for (val, key) in proc.items():
-                    if val != "proc":
-                        print >>out, t, node, type, val, key
+    def output(self, txt):
+        if self.buffer:
+            self.buffer.write("%s\n" % txt)
         else:
-            print >>out, t, node, "error", "error", error
+            print(txt)
+    info = output
+    debug = output
+    error = output
+    warn = output
 
-    for (node, netif, error, vals) in capstats:
-        if not error:
+    def buffer_output(self):
+        self.buffer = py3bro.io.StringIO()
+
+    def get_buffered_output(self):
+        buf = self.buffer.getvalue()
+        self.buffer.close()
+        self.buffer = None
+        return buf
+
+
+class CronTasks:
+    def __init__(self, ui, config, controller, executor, pluginregistry):
+        self.ui = ui
+        self.config = config
+        self.controller = controller
+        self.executor = executor
+        self.pluginregistry = pluginregistry
+
+    def log_stats(self, interval):
+        if self.config.statslogenable == "0":
+            return
+
+        nodes = self.config.nodes()
+        top = self.controller.get_top_output(nodes)
+
+        have_capstats = self.config.capstatspath
+        capstats = []
+
+        if have_capstats:
+            capstats = self.controller.get_capstats_output(nodes, interval)
+
+        t = time.time()
+
+        try:
+            out = open(self.config.statslog, "a")
+        except IOError as err:
+            self.ui.error("failed to append to file: %s" % err)
+            return
+
+        for (node, error, vals) in top:
+            if not error:
+                for proc in vals:
+                    parentchild = proc["proc"]
+                    for (val, key) in proc.items():
+                        if val != "proc":
+                            out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
+            else:
+                out.write("%s %s error error %s\n" % (t, node, error))
+
+        for (node, netif, success, vals) in capstats:
+            if not success:
+                out.write("%s %s error error %s\n" % (t, node, vals))
+                continue
+
             for (key, val) in vals.items():
-                print >>out, t, node, "interface", key, val
+                out.write("%s %s interface %s %s\n" % (t, node, key, val))
 
                 if key == "pkts" and str(node) != "$total":
                     # Report if we don't see packets on an interface.
                     tag = "lastpkts-%s" % node.name.lower()
 
-                    if tag in config.Config.state:
-                        last = float(config.Config.state[tag])
+                    if tag in self.config.state:
+                        last = float(self.config.state[tag])
                     else:
                         last = -1.0
 
                     if float(val) == 0.0 and last != 0.0:
-                        util.output("%s is not seeing any packets on interface %s" % (node.host, netif))
+                        self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
                     if float(val) != 0.0 and last == 0.0:
-                        util.output("%s is seeing packets again on interface %s" % (node.host, netif))
+                        self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
-                    config.Config._setState(tag, val)
+                    self.config.set_state(tag, val)
 
+        out.close()
+
+    def check_disk_space(self):
+        minspace = float(self.config.mindiskspace)
+        if minspace == 0.0:
+            return
+
+        results = self.controller.df(self.config.hosts())
+        for (node, _, dfs) in results.get_node_data():
+            host = node.host
+
+            for key, df in dfs.items():
+                if key == "FAIL":
+                    # A failure here is normally caused by a host that is down,
+                    # so we don't need to output the error message.
+                    continue
+
+                fs = df[0]
+                perc = df[4]
+                key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
+
+                if perc > 100 - minspace:
+                    if key in self.config.state:
+                        if float(self.config.state[key]) > 100 - minspace:
+                            # Already reported.
+                            continue
+
+                    self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
+
+                self.config.set_state(key, "%.1f" % perc)
+
+    def expire_logs(self):
+        if self.config.logexpireinterval == "0" and self.config.statslogexpireinterval == "0":
+            return
+
+        (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+
+        if not success:
+            self.ui.error("expire-logs failed\n")
+            for line in output:
+                self.ui.error(line)
+
+    def check_hosts(self):
+        for host, status in self.executor.host_status():
+            tag = "alive-%s" % host
+            alive = status and "1" or "0"
+
+            if tag in self.config.state:
+                previous = self.config.state[tag]
+
+                if alive != previous:
+                    self.pluginregistry.hostStatusChanged(host, alive == "1")
+                    if self.config.mailhostupdown != "0":
+                        self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
+
+            self.config.set_state(tag, alive)
+
+    def update_http_stats(self):
+        if self.config.statslogenable == "0":
+            return
+
+        # Create meta file.
+        if not os.path.exists(self.config.statsdir):
+            try:
+                os.makedirs(self.config.statsdir)
+            except OSError as err:
+                self.ui.error("failure creating directory: %s" % err)
+                return
+
+            self.ui.info("creating directory for stats file: %s" % self.config.statsdir)
+
+        metadat = os.path.join(self.config.statsdir, "meta.dat")
+        try:
+            meta = open(metadat, "w")
+        except IOError as err:
+            self.ui.error("failure creating file: %s" % err)
+            return
+
+        for node in self.config.hosts():
+            meta.write("node %s %s %s\n" % (node, node.type, node.host))
+
+        meta.write("time %s\n" % time.asctime())
+        meta.write("version %s\n" % self.config.version)
+
+        try:
+            meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
+        except IndexError:
+            meta.write("os <error>\n")
+
+        try:
+            meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
+        except IndexError:
+            meta.write("host <error>\n")
+
+        meta.close()
+
+        wwwdir = os.path.join(self.config.statsdir, "www")
+        if not os.path.isdir(wwwdir):
+            try:
+                os.makedirs(wwwdir)
+            except OSError as err:
+                self.ui.error("failed to create directory: %s" % err)
+                return
+
+        # Update the WWW data
+        statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
+
+        (success, output) = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        if success:
+            shutil.copy(metadat, wwwdir)
         else:
-            print >>out, t, node, "error", "error", error
+            self.ui.error("error reported by stats-to-csv")
+            for line in output:
+                self.ui.error(line)
 
-    for (port, error, vals) in cflow_rates:
-        if not error:
-            for (key, val) in vals.items():
-                print >>out, t, "cflow", port.lower(), key, val
-
-    out.close()
-
-def _checkDiskSpace():
-
-    minspace = float(config.Config.mindiskspace)
-    if minspace == 0.0:
-        return
-
-    results = control.getDf(config.Config.hosts())
-    for (nodehost, dfs) in results:
-        host = nodehost.split("/")[1]
-
-        for df in dfs:
-            if df[0] == "FAIL":
-                # A failure here is normally caused by a host that is down, so
-                # we don't need to output the error message.
-                continue
-
-            fs = df[0]
-            perc = df[4]
-            key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
-
-            if perc > 100 - minspace:
-                if key in config.Config.state:
-                    if float(config.Config.state[key]) > 100 - minspace:
-                        # Already reported.
-                        continue
-
-                util.output("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
-
-            config.Config.state[key] = "%.1f" % perc
-
-def _expireLogs():
-
-    i = int(config.Config.logexpireinterval)
-    i2 = int(config.Config.statslogexpireinterval)
-
-    if i == 0 and i2 == 0:
-        return
-
-    (success, output) = execute.runLocalCmd(os.path.join(config.Config.scriptsdir, "expire-logs"))
-
-    if not success:
-        util.output("error running expire-logs\n\n")
-        util.output(output)
-
-def _checkHosts():
-
-    for node in config.Config.hosts():
-        if execute.isLocal(node):
-            continue
-
-        tag = "alive-%s" % node.host.lower()
-        alive = execute.isAlive(node.addr) and "1" or "0"
-
-        if tag in config.Config.state:
-            previous = config.Config.state[tag]
-
-            if alive != previous:
-                plugin.Registry.hostStatusChanged(node.host, alive == "1")
-                util.output("host %s %s" % (node.host, alive == "1" and "up" or "down"))
-
-        config.Config._setState(tag, alive)
-
-
-def _updateHTTPStats():
-    # Create meta file.
-    if not os.path.exists(config.Config.statsdir):
+        # Append the current stats.log in spool to the one in ${statsdir}
+        dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
         try:
-            os.makedirs(config.Config.statsdir)
-        except OSError, err:
-            util.output("error creating directory: %s" % err)
+            fdst = open(dst, "a")
+        except IOError as err:
+            self.ui.error("failed to append to file: %s" % err)
             return
 
-        util.warn("creating directory for stats file: %s" % config.Config.statsdir)
-
-    metadat = os.path.join(config.Config.statsdir, "meta.dat")
-    try:
-        meta = open(metadat, "w")
-    except IOError, err:
-        util.output("error creating file: %s" % err)
-        return
-
-    for node in config.Config.hosts():
-        print >>meta, "node", node, node.type, node.host
-
-    print >>meta, "time", time.asctime()
-    print >>meta, "version", config.Config.version
-
-    try:
-        print >>meta, "os", execute.runLocalCmd("uname -a")[1][0]
-    except IndexError:
-        print >>meta, "os <error>"
-
-    try:
-        print >>meta, "host", execute.runLocalCmd("hostname")[1][0]
-    except IndexError:
-        print >>meta, "host <error>"
-
-    meta.close()
-
-    wwwdir = os.path.join(config.Config.statsdir, "www")
-    if not os.path.isdir(wwwdir):
         try:
-            os.makedirs(wwwdir)
-        except OSError, err:
-            util.output("failed to create directory: %s" % err)
+            fsrc = open(self.config.statslog, "r")
+        except IOError as err:
+            fdst.close()
+            self.ui.error("failed to read file: %s" % err)
             return
 
-    # Append the current stats.log in spool to the one in ${statsdir}
-    dst = os.path.join(config.Config.statsdir, os.path.basename(config.Config.statslog))
-    try:
-        fdst = open(dst, "a")
-    except IOError, err:
-        util.output("failed to append to file: %s" % err)
-        return
+        shutil.copyfileobj(fsrc, fdst)
+        fsrc.close()
+        fdst.close()
 
-    fsrc = open(config.Config.statslog, "r")
-    shutil.copyfileobj(fsrc, fdst)
-    fdst.close()
-    fsrc.close()
+        os.unlink(self.config.statslog)
 
-    # Update the WWW data
-    statstocsv = os.path.join(config.Config.scriptsdir, "stats-to-csv")
 
-    (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, config.Config.statslog, metadat, wwwdir))
-    if not success:
-        util.output("stats-to-csv failed")
-        return
-
-    os.unlink(config.Config.statslog)
-    shutil.copy(metadat, wwwdir)
+    def run_cron_cmd(self):
+        # Run external command if we have one.
+        if self.config.croncmd:
+            (success, output) = execute.run_localcmd(self.config.croncmd)
+            if not success:
+                self.ui.error("failure running croncmd: %s" % self.config.croncmd)
 

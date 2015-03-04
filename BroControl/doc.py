@@ -18,18 +18,22 @@ def api(*deco_args):
             return method
         return _api
 
-def printIndented(str, level):
-    if not isinstance(str, list):
-        str = str.split("\n")
+def print_indented(text, level):
+    out = ""
+    if not isinstance(text, list):
+        text = text.splitlines()
 
-    for line in str:
-        print "    " * level, line
-    print
+    for line in text:
+        out += "%s %s\n" % ("    " * level, line)
+    out += "\n"
+
+    return out
 
 # Prints API documentation for a class. Includes all methods tagged with
 # @api(tag). (Use an unknown tag to not exclude all methods.) If header is
 # False, the class's name and doc string is not included.
-def printClass(cls, tag="", header=True):
+def print_class(cls, tag="", header=True):
+    out = ""
     methods = {}
 
     for (key, val) in cls.__dict__.items():
@@ -43,31 +47,21 @@ def printClass(cls, tag="", header=True):
             methods[key] = val
 
     if header:
-        print ".. _%s:" % cls.__name__
-        print
-        print "Class ``%s``" % cls.__name__
-        print "~~~~~~~~%s~~" % "~" * len(cls.__name__)
-        print
-        print "class **%s**" % cls.__name__
-        printIndented(inspect.getdoc(cls), 1)
+        out += ".. _%s:\n\n" % cls.__name__
+        out += "Class ``%s``\n" % cls.__name__
+        out += "~~~~~~~~%s~~" % ("~" * len(cls.__name__))
+        out += "\n\n"
+        out += "class **%s**\n" % cls.__name__
+        out += print_indented(inspect.getdoc(cls), 1)
 
     for name in sorted(methods.keys()):
         func = methods[name]
 
         (args, varargs, keywords, defaults) = inspect.getargspec(func)
 
-        printIndented(".. _%s.%s:" % (cls.__name__, name), 1)
-        printIndented("**%s** (%s)" % (name, ", ".join(args)), 1)
-        printIndented(inspect.getdoc(func), 2)
+        out += print_indented(".. _%s.%s:" % (cls.__name__, name), 1)
+        out += print_indented("**%s** (%s)" % (name, ", ".join(args)), 1)
+        out += print_indented(inspect.getdoc(func), 2)
 
-if __name__ == "__main__":
-    # Print documentation.
-    import plugin
-    import node
-
-    printClass(plugin.Plugin, tag="no-methods")
-    printClass(plugin.Plugin, header=False)
-    printClass(plugin.Plugin, "override", header=False)
-
-    printClass(node.Node)
+    return out
 

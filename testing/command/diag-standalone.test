@@ -13,7 +13,7 @@ EOF
 broctl install
 broctl start
 
-broctl diag 2> out
+broctl diag > out 2>&1
 
 broctl stop
 

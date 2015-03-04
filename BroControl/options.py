@@ -1,8 +1,5 @@
-# Configuration options. 
+# Configuration options.
 #
-# If started directly, will print option reference documentation.
-
-import sys
 
 class Option:
     # Options category.
@@ -14,9 +11,10 @@ class Option:
         self.name = name
         self.default = default
         self.type = type
-        self.dontinit = dontinit
         self.category = category
+        self.dontinit = dontinit
         self.description = description
+
 
 options = [
     # User options.
@@ -66,9 +64,13 @@ options = [
 
     Option("MailConnectionSummary", "1", "bool", Option.USER, False,
            "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
+    Option("MailHostUpDown", "1", "bool", Option.USER, False,
+           "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
 
     Option("MinDiskSpace", "5", "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
+    Option("StatsLogEnable", "1", "bool", Option.USER, False,
+           "True to enable BroControl to write statistics to the stats.log file."),
     Option("StatsLogExpireInterval", "0", "int", Option.USER, False,
            "Number of days entries in the stats.log file are kept (zero means never expire)."),
     Option("LogExpireInterval", "0", "int", Option.USER, False,
@@ -94,6 +96,9 @@ options = [
            "Space-separated list of local policy files for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for all Bro instances."),
+
+    Option("StatusCmdShowAll", "1", "bool", Option.USER, False,
+           "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),
 
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
@@ -173,7 +178,7 @@ options = [
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
            "File defining the local networks."),
-    Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
+    Option("StateFile", "${SpoolDir}/state.db", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,
            "Lock file preventing concurrent shell operations."),
@@ -207,17 +212,19 @@ options = [
            CMakeLists.txt must be adapted as well."""),
 ]
 
-def printOptions(cat):
+def print_options(category):
+    out = ""
+    err = ""
 
     for opt in sorted(options, key=lambda o: o.name):
 
-        if opt.category != cat:
+        if opt.category != category:
             continue
 
         default = ""
 
         if not opt.type:
-            print >>sys.stderr, "no type given for", opt.name
+            err += "no type given for %s\n" % opt.name
 
         if opt.default and opt.type == "string":
             opt.default = '"%s"' % opt.default
@@ -231,21 +238,7 @@ def printOptions(cat):
         default = default.replace("{", "\\{")
         description = opt.description.replace("{", "\\{")
 
-        print ".. _%s:\n\n*%s* (%s%s)\n    %s\n" % (opt.name, opt.name, opt.type, default, description)
+        out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
+    return (out, err)
 
-if __name__ == '__main__':
-
-    print ".. Automatically generated. Do not edit."
-    print
-    print "User Options"
-    print "~~~~~~~~~~~~"
-
-    printOptions(Option.USER)
-
-    print
-    print "Internal Options"
-    print "~~~~~~~~~~~~~~~~"
-    print
-
-    printOptions(Option.AUTOMATIC)
