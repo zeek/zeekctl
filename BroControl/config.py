@@ -25,10 +25,9 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, cfgfile, ui, localaddrs=[], state=None):
+    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
         from BroControl import execute
 
-        broscriptdir = os.path.join(basedir, "share/bro")
         self.ui = ui
         self.localaddrs = localaddrs
         global Config
