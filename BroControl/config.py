@@ -25,10 +25,9 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, ui, localaddrs=[], state=None):
+    def __init__(self, basedir, cfgfile, ui, localaddrs=[], state=None):
         from BroControl import execute
 
-        config_file = os.path.join(basedir, "etc/broctl.cfg")
         broscriptdir = os.path.join(basedir, "share/bro")
         self.ui = ui
         self.localaddrs = localaddrs
@@ -40,7 +39,7 @@ class Configuration:
         self.nodestore = {}
 
         # Read broctl.cfg.
-        self.config = self._read_config(config_file)
+        self.config = self._read_config(cfgfile)
 
         # Set defaults for options we get passed in.
         self._set_option("brobase", basedir)

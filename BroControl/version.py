@@ -4,3 +4,4 @@
 
 VERSION = "@VERSION@"
 BROBASE = "@PREFIX@"
+CFGFILE = "@ETC@/broctl.cfg"
