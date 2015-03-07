@@ -2,29 +2,12 @@
 #
 # The BroControl interactive shell.
 
-import os
 import sys
 import time
 import logging
 
-brobase = "@PREFIX@"
-
-# Allow user to override default broctl install directory
-tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
-if tmpbrobase and os.path.isdir(tmpbrobase):
-    brobase = tmpbrobase
-
-# Hidden command to print the documentation.
-broctlprintdoc = False
-if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
-    broctlprintdoc = True
-    sys.path = [brobase] + sys.path
-
-cronrunning = False
-if len(sys.argv) == 2 and sys.argv[1] == "cron":
-    cronrunning = True
-
-sys.path = [os.path.join(brobase, "lib/broctl")] + sys.path
+# This is needed so that we can import BroControl.
+sys.path.insert(0, "@PREFIX@/lib/broctl")
 
 from BroControl.broctl import BroCtl
 from BroControl import brocmd
@@ -36,12 +19,15 @@ from BroControl import version
 class BroCtlCmdLoop(brocmd.ExitValueCmd):
     prompt = '[BroControl] > '
 
-    def __init__(self, broctl_class=BroCtl):
+    def __init__(self, broctl_class=BroCtl, interactive=False, iscron=False):
         brocmd.ExitValueCmd.__init__(self)
-        self.broctl = broctl_class(brobase, ui=self)
+        self.broctl = broctl_class(ui=self)
+
+        self.interactive = interactive
+
         # Warn user to do broctl install, if needed.  Skip this check when
         # running cron to avoid receiving annoying emails.
-        if not cronrunning:
+        if not iscron:
             self.broctl.warn_broctl_install()
 
     def output(self, text):
@@ -269,7 +255,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         until key ``q`` is pressed. If invoked non-interactively, the
         status is printed only once."""
 
-        if not interactive:
+        if not self.interactive:
             success, lines = self._do_top_once(args)
             for line in lines:
                 self.output(line)
@@ -736,22 +722,33 @@ BroControl Version %s
   update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (version.VERSION, plugin_help))
 
-# Hidden command to print the documentation.
-if broctlprintdoc:
-    from BroControl import printdoc
-    printdoc.print_broctl_docs(sys.argv[2], BroCtlCmdLoop)
-    sys.exit(0)
+def main():
+    # Undocumented option to print the documentation.
+    if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
+        from BroControl import printdoc
+        printdoc.print_broctl_docs(sys.argv[2], BroCtlCmdLoop)
+        return 0
 
-loop = BroCtlCmdLoop(BroCtl)
-
-if len(sys.argv) > 1:
-    interactive = False
-    cmdline = " ".join(sys.argv[1:])
-    loop.precmd(cmdline)
-    cmdsuccess = loop.onecmd(cmdline)
-    loop.postcmd(False, cmdline)
-else:
     interactive = True
-    cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+    if len(sys.argv) > 1:
+        interactive = False
 
-sys.exit(not cmdsuccess)
+    iscron = False
+    if len(sys.argv) == 2 and sys.argv[1] == "cron":
+        iscron = True
+
+    loop = BroCtlCmdLoop(BroCtl, interactive, iscron)
+
+    if len(sys.argv) > 1:
+        cmdline = " ".join(sys.argv[1:])
+        loop.precmd(cmdline)
+        cmdsuccess = loop.onecmd(cmdline)
+        loop.postcmd(False, cmdline)
+    else:
+        cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+
+    return not cmdsuccess
+
+if __name__ == "__main__":
+    sys.exit(main())
+

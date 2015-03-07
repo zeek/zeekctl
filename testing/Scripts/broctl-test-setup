@@ -1,10 +1,14 @@
 #! /usr/bin/env bash
 #
-# Broctl test setup script.
-# This script should be sourced at the start of each test case.
+# Broctl test setup script (source this at the start of each test script).
+#
 # This script installs Bro to a directory that is unique to each test,
 # and provides a function "installcfgfile" that a test script can 
-# optionally use to install files.
+# optionally use to install files, and a function "replaceprefix" that a
+# test script can use to alter the contents of a test file to set the
+# correct install directory path.  This script also exports an environment
+# variable "BROCTL_INSTALL_PREFIX" that provides a test script with the
+# directory path of the Bro install.
 
 
 # installcfgfile <rel.path> [--new]
@@ -15,7 +19,7 @@
 # where <dir> is the directory, <dest.name> is the destination filename, and
 # <text> is some descriptive text for the config file.
 # If "--new" is given, then skip check for existence of destination file.
-function installcfgfile() {
+installcfgfile() {
     set +x
 
     if [ -z "$1" ]; then
@@ -76,7 +80,7 @@ function installcfgfile() {
 #
 # Replace the text "@PREFIX@" with the bro install prefix in the specified
 # file (given as a relative pathname).
-function replaceprefix() {
+replaceprefix() {
     set +x
 
     if [ -z "$1" ]; then
@@ -96,10 +100,22 @@ function replaceprefix() {
 }
 
 
+# This function sets the correct install prefix directory in all files where
+# it's needed (this is done immediately after untarring the Bro install).
+replaceprefixes() {
+    for i in etc/broctl.cfg bin/broctl lib/broctl/BroControl/version.py ; do
+        sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#" $i > $i.new && cp $i.new $i && rm $i.new
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    done
+}
+
+
 # This function creates a test-specific directory, installs Bro to this
-# directory, and exports BROCTL_INSTALL_PREFIX with the path of this directory.
+# directory, and exports some env. vars. with the path of this directory.
 # Cleanup happens automatically unless BROCTL_TEST_DEBUG is defined.
-function installbro() {
+installbro() {
     if [ -z "${INSTALL}" ]; then
         echo "Error: INSTALL not defined (check btest.cfg)" 1>&2
         exit 1
@@ -119,17 +135,16 @@ function installbro() {
     fi
 
     # Create test-specific bro installation directory
-    newprefix=$basedir/test.$$
-    mkdir "$newprefix"
+    export BROCTL_INSTALL_PREFIX=$basedir/test.$$
+    mkdir "$BROCTL_INSTALL_PREFIX"
     test $? -ne 0 && exit 1
-    export BROCTL_INSTALL_PREFIX=$newprefix
-    export LD_LIBRARY_PATH=$newprefix/lib
 
     # Install bro
-    (cd "$newprefix" && tar xf "$tarfile" && sed "s#@PREFIX@#$newprefix#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg)
+    (cd "$BROCTL_INSTALL_PREFIX" && tar xf "$tarfile" && replaceprefixes)
     test $? -ne 0 && exit 1
 
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
+    export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
     # to help setup environment for running broctl manually.
@@ -137,12 +152,11 @@ function installbro() {
         how2run=${BROCTL_INSTALL_PREFIX}/how_to_run_broctl
         echo "# In order to run broctl in this directory, first type '. how_to_run_broctl'" >> $how2run
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
-        echo "export BROCTL_INSTALL_PREFIX=$BROCTL_INSTALL_PREFIX" >> $how2run
         echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib" >> $how2run
     fi
 }
 
-function cleanup() {
+cleanup() {
     set +x
     test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
 }
