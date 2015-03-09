@@ -99,6 +99,12 @@ class BroCtl(object):
 
             nodes += nodelist
 
+        if args != "all":
+            # Remove duplicate nodes
+            newlist = list(set(nodes))
+            if len(newlist) != len(nodes):
+                nodes = newlist
+
         return nodes
 
     # Turns node name arguments into a list of nodes.  The result is a subset
