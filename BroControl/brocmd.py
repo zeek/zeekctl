@@ -1,4 +1,4 @@
-import traceback
+from __future__ import print_function
 import cmd
 
 from BroControl import py3bro
@@ -47,9 +47,9 @@ class ExitValueCmd(cmd.Cmd):
                 line = self.precmd(line)
                 try:
                     success = self.onecmd(line)
-                except:
+                except Exception as e:
                     success = False
-                    traceback.print_exc()
+                    print("Error: %s" % e)
                 self.postcmd(False, line)
             self.postloop()
         finally:

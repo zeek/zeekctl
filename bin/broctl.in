@@ -2,6 +2,7 @@
 #
 # The BroControl interactive shell.
 
+from __future__ import print_function
 import sys
 import time
 import logging
@@ -737,12 +738,21 @@ def main():
     if len(sys.argv) == 2 and sys.argv[1] == "cron":
         iscron = True
 
-    loop = BroCtlCmdLoop(BroCtl, interactive, iscron)
+    try:
+        loop = BroCtlCmdLoop(BroCtl, interactive, iscron)
+    except Exception as e:
+        print("Error: %s" % e)
+        return 1
 
     if len(sys.argv) > 1:
         cmdline = " ".join(sys.argv[1:])
         loop.precmd(cmdline)
-        cmdsuccess = loop.onecmd(cmdline)
+        try:
+            cmdsuccess = loop.onecmd(cmdline)
+        except Exception as e:
+            print("Error: %s" % e)
+            return 1
+
         loop.postcmd(False, cmdline)
     else:
         cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)

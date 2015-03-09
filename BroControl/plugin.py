@@ -65,7 +65,7 @@ class Plugin(object):
         value is returned. See the output of ``broctl config`` for a complete
         list."""
         if not config.Config.has_attr(name):
-            raise KeyError
+            raise KeyError("unknown config option %s" % name)
 
         return config.Config.__getattr__(name)
 
@@ -81,7 +81,7 @@ class Plugin(object):
         name = "%s.%s" % (self.prefix().lower(), name.lower())
 
         if not config.Config.has_attr(name):
-            raise KeyError
+            raise KeyError("unknown plugin option %s" % name)
 
         return config.Config.__getattr__(name)
 
