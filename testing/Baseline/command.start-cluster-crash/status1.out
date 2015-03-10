@@ -1,7 +1,7 @@
 Getting process status ...
 Getting peer status ...
 Name         Type    Host             Status    Pid    Peers  Started
-worker-1     worker  localhost        crashed
 manager      manager localhost        running   31773  ???    25 Nov 19:03:26
 proxy-1      proxy   localhost        running   31797  ???    25 Nov 19:03:28
+worker-1     worker  localhost        crashed
 worker-2     worker  localhost        running   31836  ???    25 Nov 19:03:30

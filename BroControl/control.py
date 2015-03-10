@@ -762,6 +762,9 @@ class Controller:
     def get_capstats_output(self, nodes, interval):
         results = []
 
+        # Construct a list of (node, interface) tuples, one tuple for each
+        # unique (host, interface) pair.
+        nodenetifs = []
         hosts = {}
         for node in nodes:
             if not node.interface:
@@ -769,16 +772,12 @@ class Controller:
 
             netif = self._capstats_interface(node)
 
-            try:
-                hosts[(node.addr, netif)] = node
-            except AttributeError:
-                continue
+            if hosts.setdefault((node.addr, netif), node) == node:
+                nodenetifs.append((node, netif))
 
         cmds = []
 
-        for (addr, interface) in hosts.keys():
-            node = hosts[addr, interface]
-
+        for (node, interface) in nodenetifs:
             # Interface name needs to be quoted because the eval command
             # is used (this prevents any metacharacters in name from being
             # interpreted by the shell).

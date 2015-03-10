@@ -132,11 +132,14 @@ class Plugin(object):
         notnodes = []
 
         for arg in names.split():
-            nodelist = config.Config.nodes(arg, True)
+            nodelist = config.Config.nodes(arg)
             if nodelist:
                 nodes += nodelist
             else:
                 notnodes.append(arg)
+
+        # Sort the list so that it doesn't depend on initial order of arguments
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         return (nodes, notnodes)
 

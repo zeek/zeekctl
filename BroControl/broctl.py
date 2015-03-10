@@ -85,8 +85,9 @@ class BroCtl(object):
     def warn_broctl_install(self):
         self.config.warn_broctl_install()
 
-    # Turns nodes arguments into a list of node names.
-    def node_args(self, args=None):
+    # Turns nodes arguments into a list of node names.  If "get_hosts" is True,
+    # then only one node per host is chosen.
+    def node_args(self, args=None, get_hosts=False):
         if not args:
             args = "all"
 
@@ -105,27 +106,18 @@ class BroCtl(object):
             if len(newlist) != len(nodes):
                 nodes = newlist
 
-        return nodes
+        # Sort the list so that it doesn't depend on initial order of arguments
+        nodes.sort(key=lambda n: (n.type, n.name))
 
-    # Turns node name arguments into a list of nodes.  The result is a subset
-    # of a similar call to node_args() but here only one node is chosen for
-    # each host.
-    def node_host_args(self, args=None):
-        if not args:
-            args = "all"
-
-        hosts = {}
-        nodes = []
-
-        for arg in args.split():
-            nodelist = self.config.hosts(arg)
-            if not nodelist and arg != "all":
-                raise InvalidNodeError("unknown node '%s'" % arg)
-
-            for node in nodelist:
+        if get_hosts:
+            hosts = {}
+            hostnodes = []
+            for node in nodes:
                 if node.host not in hosts:
                     hosts[node.host] = 1
-                    nodes.append(node)
+                    hostnodes.append(node)
+
+            nodes = hostnodes
 
         return nodes
 
@@ -344,7 +336,7 @@ class BroCtl(object):
     @expose
     @lock_required
     def df(self, node_list=None):
-        nodes = self.node_host_args(node_list)
+        nodes = self.node_args(node_list, get_hosts=True)
         nodes = self.plugins.cmdPreWithNodes("df", nodes)
         results = self.controller.df(nodes)
         self.plugins.cmdPostWithNodes("df", nodes)
@@ -389,9 +381,11 @@ class BroCtl(object):
 
     @expose
     def execute(self, cmd):
+        nodes = self.node_args(get_hosts=True)
+
         results = None
         if self.plugins.cmdPre("exec", cmd):
-            results = self.controller.execute_cmd(self.config.hosts(), cmd)
+            results = self.controller.execute_cmd(nodes, cmd)
         self.plugins.cmdPost("exec", cmd)
 
         return results
