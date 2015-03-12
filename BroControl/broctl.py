@@ -179,6 +179,7 @@ class BroCtl(object):
         """
 
         nodes = self.nodeArgs(node_list)
+        print ("broctl.py: start " + str(len(nodes)) + " nodes")
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)
@@ -503,8 +504,11 @@ class BroCtl(object):
         if not node_list:
             if self.config.nodes("standalone"):
                 node_list = "standalone"
-            else:
+            elif self.config.nodes("workers"):
                 node_list = "workers"
+            elif self.config.nodes("peers"):
+                node_list = "peers"
+            #FIXME will not work like that for peers when workers are present
 
         nodes = self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("netstats", nodes)

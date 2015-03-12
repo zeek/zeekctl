@@ -73,10 +73,15 @@ class BGraph:
 
     def getSubgraph(self, sroot):
         if sroot not in self.graph:
+            print "sroot " + str(sroot) + " not found among"
+            for n in self.nodes():
+                print " - " + str(n)
             raise RuntimeError("Node not found")
 
         sg = BGraph()
         sg.addNode(sroot)
+        self.copyNodeAttr(sg, sroot)
+        sg.setRoot(sroot)
 
         visit = [sroot]
         while len(visit) != 0:
@@ -84,8 +89,10 @@ class BGraph:
             # print("node chosen " + node)
             for succ in self.getSuccessors(node):
                 sg.addNode(succ)
+                self.copyNodeAttr(sg, succ)
                 sg.addEdge(node, succ)
                 visit.append(succ)
+
         return sg
 
     def getNeighbors(self, node):
@@ -140,6 +147,13 @@ class BGraph:
             return None
         else:
             return self.node_attr[attr][node]
+
+    def copyNodeAttr(self, sgraph, node):
+        attributes = self.getNodeAttr(node)
+        for a in attributes:
+            sgraph.addAttr(node, a, self.getAttrNodeVal(a, node))
+
+        return sgraph
 
     def isConnected(self):
         visited = set()

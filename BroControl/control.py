@@ -72,6 +72,11 @@ def _makeBroParams(node, live):
             args += ["local-proxy"]
         elif node.type == "worker":
             args += config.Config.sitepolicyworker.split()
+        elif node.type == "peer":
+            args += config.Config.sitepolicyworker.split()
+            print "makeBroParams, config " + str(config.Config.sitepolicyworker.split())
+        else:
+            raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
     args += ["broctl/auto"]
 
     if getattr(node, "aux_scripts", None):
@@ -110,6 +115,7 @@ class Controller:
         manager = []
         proxies = []
         workers = []
+        peers = []
 
         for n in nodes:
             n.setExpectRunning(True)
@@ -118,26 +124,42 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            else:
+            elif n.type == "manager":
                 manager += [n]
+            elif n.type == "peer":
+                peers += [n]
+            else:
+                raise AttributeError("Type not found")
 
-        # Start nodes. Do it in the order manager, proxies, workers.
+        # Start nodes. Do it in the order manager, proxies, workers, peers.
 
-        self._startNodes(manager, results)
+        if manager:
+            self._startNodes(manager, results)
 
-        if results.failed():
-            for n in (proxies + workers):
-                results.set_node_fail(n)
-            return results
+            if results.failed():
+                for n in (proxies + workers + peers):
+                    results.set_node_fail(n)
+                return results
 
-        self._startNodes(proxies, results)
+        if proxies:
+            self._startNodes(proxies, results)
 
-        if results.failed():
-            for n in workers:
-                results.set_node_fail(n)
-            return results
+            if results.failed():
+                for n in (workers + peers):
+                    results.set_node_fail(n)
+                return results
 
-        self._startNodes(workers, results)
+        if workers:
+            self._startNodes(workers, results)
+
+            if results.failed():
+                for n in peers:
+                    results.set_node_fail(n)
+                return results
+
+        if peers:
+            self._startNodes(peers, results)
+
 
         return results
 
@@ -594,7 +616,7 @@ class Controller:
 
     def _doCheckConfig(self, nodes, installed, list_scripts):
         results = cmdresult.CmdResult()
-
+        nodeList = nodes
         manager = self.config.manager()
 
         all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
@@ -635,6 +657,12 @@ class Controller:
             cmd += " broctl/check"
 
             cmds += [((node, cwd), cmd, env, None)]
+            print "cwd is " + str(cwd)
+
+        # node.cfg configuration per peer in the hierarchy
+        all = [(peer, os.path.join(self.config.tmpdir, "check-config-%s" % peer.name)) for peer in config.Config.nodes("peers")]
+        for (peer, cwd) in all:
+            install.makeNodeConfig(cwd, peer, self.ui, True)
 
         for ((node, cwd), success, output) in execute.runLocalCmdsParallel(cmds):
             results.set_node_output(node, success, output)
@@ -781,7 +809,7 @@ class Controller:
         totals = {}
 
         for (node, success, output) in outputs:
-            netif = self.getCapstatsInterface(node) 
+            netif = self.getCapstatsInterface(node)
 
             if not success:
                 if output:
@@ -1215,7 +1243,6 @@ class Controller:
                 results.set_cmd_fail()
 
         # Install local site policy.
-
         if self.config.sitepolicypath:
             self.ui.info("installing site policies ...")
             dst = self.config.policydirsiteinstall
@@ -1229,6 +1256,9 @@ class Controller:
         if not install.makeLocalNetworks(self.config.policydirsiteinstallauto, self.ui):
             results.set_cmd_fail()
         install.makeConfig(self.config.policydirsiteinstallauto, self.ui)
+
+        # Install node configurations and the overlay hierarchy
+        install.makeNodeConfigs(self.config.policydirsiteinstallauto, config.Config.nodes("peers"), self.ui)
 
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
         try:
@@ -1245,11 +1275,11 @@ class Controller:
         if local_only:
             return results
 
-        # Sync to clients.
-        self.ui.info("updating nodes ...")
-
         # Make sure we install each remote host only once.
         nodes = self.config.hosts(nolocal=True)
+
+        # Sync to clients.
+        self.ui.info("updating nodes ...")
 
         if self.config.havenfs != "1":
             # Non-NFS, need to explicitly synchronize.

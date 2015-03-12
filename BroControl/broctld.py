@@ -45,19 +45,20 @@ class Common:
         return json.loads(msg)
 
 class BroCtrldWorker(Thread, Common):
-    def __init__(self, command_queue):
+    def __init__(self, command_queue, basedir):
         self.q = Queue()
         Thread.__init__(self)
         self.daemon = True
         self.command_queue = command_queue
         self._id = None
+        self.basedir = basedir
 
     def send(self, id, cmd, *args):
         self.q.put((id, cmd, args))
 
     def run(self):
         #FIXME: deepcopy breaks here if i set ui=self
-        self.broctl = BroCtl(ui=TermUI())
+        self.broctl = BroCtl(self.basedir, ui=TermUI())
         self.broctl.ui = self
         self.broctl.controller.ui = self
         self.broctl.executor.ui = self
@@ -100,12 +101,12 @@ class BroCtrldWorker(Thread, Common):
     warn = error
 
 class BroCtld(Thread, Common):
-    def __init__(self, command_queue, logs):
+    def __init__(self, command_queue, logs, basedir):
         Thread.__init__(self)
         self.daemon = True
         self.logs = logs
         self.command_queue = command_queue
-        self.worker = BroCtrldWorker(self.command_queue)
+        self.worker = BroCtrldWorker(self.command_queue, basedir)
 
         self.results = {}
         self.running = True
@@ -206,7 +207,7 @@ def main(basedir='/bro'):
     logs = Logs()
 
     command_queue = Queue()
-    d = BroCtld(command_queue, logs)
+    d = BroCtld(command_queue, logs, basedir)
 
     d.start()
 

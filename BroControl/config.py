@@ -88,13 +88,14 @@ class Configuration:
         else:
             self._setOption("time", "")
 
+        # Hierarchy overlay
         self.overlay = graph.BGraph()
 
     def initPostPlugins(self):
         self.readState()
 
         # Read node.cfg
-        self.nodelist, self.peers, self.head = self._readNodes()
+        self.nodelist, self.localNode, self.head = self._readNodes()
         if not self.nodelist:
             return False
 
@@ -168,11 +169,9 @@ class Configuration:
         nodes = []
         type = None
 
-        if tag == "all":
+        if tag == "all" or tag == "cluster":
             if not expand_all:
                 return []
-
-            tag = None
 
         elif tag == "standalone":
             type = "standalone"
@@ -186,18 +185,27 @@ class Configuration:
         elif tag == "workers":
             type = "worker"
 
+        elif tag == "peers":
+            type = "peer"
+
         for n in self.nodelist.values():
             if type:
                 if type == n.type:
                     nodes += [n]
-
-            elif tag == n.name or not tag:
+            elif tag == n.name:
+                nodes += [n]
+            elif tag == "cluster" and (n.type != "peer"):
+                nodes += [n]
+            elif tag == "all" or not tag:
                 nodes += [n]
 
         nodes.sort(key=lambda n: (n.type, n.name))
 
         if not nodes and tag == "manager":
-            nodes = self.nodes("standalone")
+            if len(self.nodelist) > 1 or self.localNode != self.head:
+                nodes += [self.localNode]
+            else:
+                nodes = self.nodes("standalone")
 
         return nodes
 
@@ -205,9 +213,11 @@ class Configuration:
         n = self.nodes("manager")
         if n:
             return n[0]
+
         n = self.nodes("standalone")
         if n:
             return n[0]
+
         return None
 
     # Returns a list of nodes which is a subset of the result a similar call to
@@ -226,13 +236,13 @@ class Configuration:
 
         return nodelist
 
-    # Returns our predecessor in the hierarchy
-    def head(self):
-        return self.head
+    # Returns a Node entry for the local node
+    def getLocalNode(self):
+        return self.localNode
 
-    # Returns the list of peers in the hierarchy
-    def peers(self):
-        return self.peers
+    # Returns a Node entry for our predecessor in the hierarchy
+    def getHead(self):
+        return self.head
 
     # Replace all occurences of "${option}", with option being either
     # broctl.cfg option or a dynamic variable, with the corresponding value.
@@ -315,7 +325,6 @@ class Configuration:
 
         file = self.nodecfg
         nodestore = {}
-        cluster = {}
 
         counts = {}
         for sec in config.sections():
@@ -346,7 +355,7 @@ class Configuration:
 
         # Check if nodestore is valid
         self._checkNodeStore(nodestore)
-        return nodestore, cluster
+        return nodestore
 
     # Check and complete node entry, nodestore, and counts
     def _checkNode(self, node, nodestore, counts):
@@ -449,6 +458,7 @@ class Configuration:
         standalone = False
         manager = False
         proxy = False
+        peer = False
 
         for n in nodestore.values():
             if not n.name:
@@ -475,11 +485,19 @@ class Configuration:
             elif n.type == "standalone":
                 standalone = True
 
+            elif n.type == "peer":
+                peer = True
+
         if not standalone:
-            if not manager:
-                raise ConfigurationError("%s: no manager defined" % file)
-            elif not proxy:
-                raise ConfigurationError("%s: no proxy defined" % file)
+            if peer:
+                if manager and not proxy and not peer:
+                    raise ConfigurationError("%s: no proxy defined" % file)
+            else:
+                if not manager:
+                    raise ConfigurationError("%s: no manager defined" % file)
+                elif not proxy:
+                    raise ConfigurationError("%s: no proxy defined" % file)
+
         else:
             if len(nodestore) > 1:
                 raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
@@ -493,28 +511,30 @@ class Configuration:
 
     # Parse node.cfg in Json-Format
     def _readNodesJson(self):
-        print "readNodesJson called "
         file = self.nodecfg
         if not os.path.exists(file):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
         nodestore = {}
         counts = {}
-        # the predecessor in the hierarchy / the head
-        head = ""
+        # the predecessor in the hierarchy / the local node in case it is the
+        # root of the complete hierarchy
+        head = None
 
         with open(file, 'r') as f:
             data = json.load(f)
             if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
                 raise ConfigurationError("Misconfigured node.cfg. One entry out of [head, node,connections] missing.")
 
-            # Iterate over all node entries and create node objects for them
+            #
+            # 1. Iterate over all node entries and create node objects for them
+            #
             for entry in data["nodes"]:
                 if "id" not in entry.keys() or "type" not in entry.keys():
                     raise ConfigurationError("Misconfigured configuration file")
 
                 node = ""
-                # When node is a cluster, its members need to be queried
+                # Node entry is a cluster
                 if entry["type"] == "cluster":
                     clusterId = entry["id"]
                     # Add cluster to the graph
@@ -528,18 +548,22 @@ class Configuration:
                         node, nodestore, counts = self._getNodeFromJson(val, nodeId, nodestore, counts)
                         node.__dict__["cluster"] = clusterId
 
-                # Entry is no cluster but ordinary node
+                # Node entry is ordinary node
                 else:
                     nodeId= entry["id"]
-                    node, nodestore, counts = self._getNodeFromJson(val, nodeId, nodestore, counts)
+                    if "::" in nodeId:
+                        raise ConfigurationError("Misconfigured ID entry of a node, id should not contain \"::\"")
+                    node, nodestore, counts = self._getNodeFromJson(entry, nodeId, nodestore, counts)
                     # Add node to the graph
                     self.overlay.addNodeAttr(nodeId, "json-data", entry)
 
                 if not node:
                     raise ConfigurationError("no node found in node.cfg")
 
-
-            # Create a node entry for our predecessor (head) in the hierarchy
+            #
+            # 2. Create a node entry for the head node of the local subtree, which
+            #    is either the local node (when it is the root) or its predecessor
+            #
             if "id" not in data["head"].keys():
                 raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
 
@@ -549,51 +573,65 @@ class Configuration:
             else:
                 headId = data["head"]["id"]
 
-            # if we are not the root node of the hierarchy
+            # we are not the head
+            # (and thus the head entry was not included in the nodes section)
             if headId not in nodestore.keys():
                 head, nodestore, counts = self._getNodeFromJson(data["head"], headId, nodestore, counts)
-            # we are the root node in the hierarchy
-            else:
+
+            else: # we are the head
                head = nodestore[headId]
 
             if not hasattr(head, "host") and not hasattr(head, "type"):
                 raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
 
-
-            # Parse connections between nodes
+            #
+            # 3. Parse connections between nodes
+            #
             if "connections" in data.keys():
                 for val in data["connections"]:
                     self.overlay.addEdge(val["from"], val["to"])
 
+
         if not self.overlay.isConnected() or not self.overlay.isTree():
             raise ConfigurationError("Misconfigured overlay.")
 
-        # Current scope of this peer: local node and its cluster
-        scope_list = {}
-        # All direct successors of this peer in the hierarchy
-        peers = {}
+        # Current scope of this peer:
+        # 1. local node
+        # 2. its cluster (proxy and worker nodes)
+        # 3. its peers (predecessor and successors in hierarchy)
+        scopelist = {}
 
+        # root/head of the tree
         root = self.overlay.getRoot()
-        peer_list = self.overlay.getRootSuccessors()
+
+        # The local node is the manager of its subtree
+        local_node = nodestore[root]
+        local_node.type = "manager"
+        nodestore[root] = local_node
+
+        # The direct successors of the root
+        peer_list = self.overlay.getSuccessors(root)
+
         for key, node in nodestore.iteritems():
             if key == root:
-                scope_list[key] = nodestore[key]
+                scopelist[key] = node
 
             elif hasattr(node, "cluster") and node.cluster == root:
-                scope_list[key] = nodestore[key]
+                scopelist[key] = node
 
-            elif key in peer_list:
-                peers[key] = nodestore[key]
+            elif key in peer_list: # and key != headId:
+                node.type = "peer"
+                scopelist[key] = node
 
             elif hasattr(node, "cluster") and node.cluster in peer_list and node.type == "manager":
-                peers[node.cluster] = nodestore[key]
+                node.type = "peer"
+                scopelist[node.cluster] = node
 
-        self.overlay.exportSubgraphJson("/home/mathias/node.cfg", root)
 
         # Check if nodestore is valid
-        self._checkNodeStore(scope_list)
+        self._checkNodeStore(scopelist)
 
-        return scope_list, peers, head
+        return scopelist, local_node, head
 
     def _getNodeFromJson(self, val, nodeId, nodestore, counts):
         node = node_mod.Node(self, nodeId)

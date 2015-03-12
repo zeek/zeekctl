@@ -1,9 +1,7 @@
 {
 "head": {
-			"id": "manager-5",
-			"cluster": "icsi-cluster-3",
-			"host": "localhost",
-			"type": "peer"
+			"id": "manager-1",
+			"cluster": "icsi-cluster-1"
 		},
 
 "nodes" : [
