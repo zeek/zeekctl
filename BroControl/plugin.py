@@ -562,6 +562,25 @@ class Plugin(object):
         pass
 
     @doc.api("override")
+    def cmd_deploy_pre(self):
+        """Called just before the ``deploy`` command is run. Returns a
+        boolean indicating whether or not the command should run.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        return True
+
+    @doc.api("override")
+    def cmd_deploy_post(self):
+        """Called just after the ``deploy`` command has finished.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
+    @doc.api("override")
     def cmd_status_pre(self, nodes):
         """Called just before the ``status`` command is run. It receives the
         list of nodes, and returns the list of nodes that should proceed with

@@ -105,6 +105,13 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_config_post(self):
         self.message("TestPlugin: Test post 'config'")
 
+    def cmd_deploy_pre(self):
+        self.message("TestPlugin: Test pre 'deploy'")
+        return True
+
+    def cmd_deploy_post(self):
+        self.message("TestPlugin: Test post 'deploy'")
+
     def cmd_exec_pre(self, cmdline):
         self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
         return True

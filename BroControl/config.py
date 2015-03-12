@@ -515,7 +515,7 @@ class Configuration:
             version = self._get_bro_version()
 
             if version != oldversion:
-                self.ui.warn("new bro version detected (run the broctl \"install\" command)")
+                self.ui.warn("new bro version detected (run the broctl \"deploy\" command)")
                 return
         else:
             missingstate = True
@@ -525,7 +525,7 @@ class Configuration:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                self.ui.warn("broctl node config has changed (run the broctl \"install\" command)")
+                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
                 self._warn_dangling_bro()
                 return
         else:
@@ -535,7 +535,7 @@ class Configuration:
         if "hash-broctlcfg" in self.state:
             cfghash = self._get_broctlcfg_hash()
             if cfghash != self.state["hash-broctlcfg"]:
-                self.ui.warn("broctl config has changed (run the broctl \"install\" command)")
+                self.ui.warn("broctl config has changed (run the broctl \"deploy\" command)")
                 return
         else:
             missingstate = True
@@ -547,7 +547,7 @@ class Configuration:
             # Don't show warning if we've never run broctl install, because
             # nothing will work anyway without doing an initial install.
             if os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh")):
-                self.ui.warn("state database needs updating (run the broctl \"install\" command)")
+                self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are

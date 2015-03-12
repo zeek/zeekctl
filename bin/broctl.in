@@ -168,6 +168,20 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.restart(clean=clean, node_list=args)
         return results.ok
 
+    def do_deploy(self, args):
+        """
+        Checks for errors in Bro policy scripts, then does an install followed
+        by a restart on all nodes.  This command should be run after any
+        changes to Bro policy scripts or the broctl configuration, and after
+        Bro is upgraded or even just recompiled.
+        """
+        if args:
+            raise SyntaxError("deploy does not take any arguments")
+
+        results = self.broctl.deploy()
+
+        return results.ok
+
     def do_status(self, args):
         """- [<nodes>]
 
@@ -703,6 +717,7 @@ BroControl Version %s
   config                           - Print broctl configuration
   cron [--no-watch]                - Perform jobs intended to run from cron
   cron enable|disable|?            - Enable/disable \"cron\" jobs
+  deploy                           - Check, install, and restart on all nodes
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
   exec <shell cmd>                 - Execute shell command on all hosts

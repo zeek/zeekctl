@@ -225,6 +225,34 @@ class BroCtl(object):
 
     @expose
     @lock_required
+    def deploy(self):
+        results = None
+        if not self.plugins.cmdPre("deploy"):
+            return results
+
+        self.output("checking configurations ...")
+        results = self.check()
+        if not results.ok:
+            return results
+
+        self.output("installing ...")
+        results = self.install()
+        if not results.ok:
+            return results
+
+        self.output("stopping ...")
+        results = self.stop()
+        if not results.ok:
+            return results
+
+        self.output("starting ...")
+        results = self.start()
+
+        self.plugins.cmdPost("deploy")
+        return results
+
+    @expose
+    @lock_required
     def status(self, node_list=None):
         nodes = self.node_args(node_list)
 
