@@ -91,6 +91,7 @@ class SSHMaster:
         self.host = host
         self.base_cmd = [
             "ssh",
+            "-o", "BatchMode=yes",
             host,
         ]
         self.need_connect = True
