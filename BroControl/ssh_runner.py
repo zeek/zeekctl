@@ -169,12 +169,12 @@ class HostHandler(Thread):
     def __init__(self, host, ui, localaddrs):
         self.ui = ui
         self.host = host
+        self.localaddrs = localaddrs
         self.q = Queue()
         self.alive = "Unknown"
         self.master = None
         Thread.__init__(self)
         self.daemon = True
-        self.localaddrs = localaddrs
 
     def shutdown(self):
         self.q.put((STOP_RUNNING, None, None))

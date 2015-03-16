@@ -82,6 +82,10 @@ class BroCtl(object):
         util.enable_signals()
         os.chdir(self.config.brobase)
 
+    def finish(self):
+        self.executor.finish()
+        self.plugins.finishPlugins()
+
     def warn_broctl_install(self):
         self.config.warn_broctl_install()
 

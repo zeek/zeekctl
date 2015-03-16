@@ -31,6 +31,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not iscron:
             self.broctl.warn_broctl_install()
 
+    def finish(self):
+        self.broctl.finish()
+
     def output(self, text):
         self.stdout.write(text)
         self.stdout.write("\n")
@@ -770,6 +773,8 @@ def main():
         loop.postcmd(False, cmdline)
     else:
         cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+
+    loop.finish()
 
     return not cmdsuccess
 

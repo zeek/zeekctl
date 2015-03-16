@@ -187,6 +187,9 @@ class Executor:
         self.sshrunner = ssh_runner.MultiMasterManager(ui, localaddrs)
         self.helperdir = helperdir
 
+    def finish(self):
+        self.sshrunner.shutdown_all()
+
     # Run commands in parallel on one or more hosts.
     #
     # cmds:  a list of the form: [ (node, cmd, args), ... ]
