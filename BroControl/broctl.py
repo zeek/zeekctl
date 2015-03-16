@@ -230,6 +230,12 @@ class BroCtl(object):
         if not self.plugins.cmdPre("deploy"):
             return results
 
+        # Make sure broctl-config.sh exists, otherwise "check" will fail
+        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+            results = self.install(local=True)
+            if not results.ok:
+                return results
+
         self.output("checking configurations ...")
         results = self.check()
         if not results.ok:
