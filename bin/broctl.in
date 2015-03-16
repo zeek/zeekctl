@@ -150,10 +150,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         Restarts the given nodes, or all nodes if none are specified. The
         effect is the same as first executing stop_ followed
         by a start_, giving the same nodes in both cases.
-        This command is most useful to activate any changes made to Bro policy
-        scripts (after running install_ first). Note that a
-        subset of policy changes can also be installed on the fly via
-        update_, without requiring a restart.
 
         If ``--clean`` is given, the installation is reset into a clean state
         before restarting. More precisely, a ``restart --clean`` turns into
@@ -174,6 +170,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         by a restart on all nodes.  This command should be run after any
         changes to Bro policy scripts or the broctl configuration, and after
         Bro is upgraded or even just recompiled.
+
+        This command is equivalent to running the check_, install_, and
+        restart_ commands, in that order.
         """
         if args:
             raise SyntaxError("deploy does not take any arguments")
@@ -717,7 +716,7 @@ BroControl Version %s
   config                           - Print broctl configuration
   cron [--no-watch]                - Perform jobs intended to run from cron
   cron enable|disable|?            - Enable/disable \"cron\" jobs
-  deploy                           - Check, install, and restart on all nodes
+  deploy                           - Check, install, and restart
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
   exec <shell cmd>                 - Execute shell command on all hosts
