@@ -232,11 +232,11 @@ class PluginRegistry:
                     logging.debug("Loaded plugin %s from %s (version %d, prefix %s)"
                                % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
                 except NotImplementedError:
-                    cmdout.error("plugin at %s does not override required methods" % path)
+                    cmdout.error("plugin at %s disabled because it doesn't override required methods" % path)
                     continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
-                    cmdout.warn("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
+                    cmdout.warn("plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
@@ -245,14 +245,14 @@ class PluginRegistry:
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
                         break
 
                 if not sameprefix:
                     self._plugins += [p]
 
         if not found:
-            cmdout.warn("No plugin found in %s" % module.__file__)
+            cmdout.warn("no plugin found in %s" % module.__file__)
 
         return True
 

@@ -65,7 +65,7 @@ class Plugin(object):
         value is returned. See the output of ``broctl config`` for a complete
         list."""
         if not config.Config.has_attr(name):
-            raise KeyError
+            raise KeyError("unknown config option %s" % name)
 
         return config.Config.__getattr__(name)
 
@@ -81,7 +81,7 @@ class Plugin(object):
         name = "%s.%s" % (self.prefix().lower(), name.lower())
 
         if not config.Config.has_attr(name):
-            raise KeyError
+            raise KeyError("unknown plugin option %s" % name)
 
         return config.Config.__getattr__(name)
 
@@ -132,11 +132,14 @@ class Plugin(object):
         notnodes = []
 
         for arg in names.split():
-            nodelist = config.Config.nodes(arg, True)
+            nodelist = config.Config.nodes(arg)
             if nodelist:
                 nodes += nodelist
             else:
                 notnodes.append(arg)
+
+        # Sort the list so that it doesn't depend on initial order of arguments
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         return (nodes, notnodes)
 
@@ -552,6 +555,25 @@ class Plugin(object):
         """Called just after the ``stop`` command has finished. It receives
         the list of 2-tuples ``(node, bool)`` indicating the nodes the command
         was executed for, along with their success status.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        pass
+
+    @doc.api("override")
+    def cmd_deploy_pre(self):
+        """Called just before the ``deploy`` command is run. Returns a
+        boolean indicating whether or not the command should run.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        return True
+
+    @doc.api("override")
+    def cmd_deploy_post(self):
+        """Called just after the ``deploy`` command has finished.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

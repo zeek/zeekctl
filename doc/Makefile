@@ -8,4 +8,4 @@ all: generate-docs
 
 generate-docs:
 	@echo "Creating broctl.rst ..."
-	@BROCTL_INSTALL_PREFIX=.. ../bin/broctl.in --print-doc main.rst >broctl.rst
+	@PYTHONPATH=.. ../bin/broctl.in --print-doc main.rst >broctl.rst
