@@ -47,14 +47,21 @@ Running BroControl requires the following prerequisites:
     require some tweaking. Note that in a cluster setup, all systems
     must be running exactly the *same* operating system.
 
-  - A version of *Python* >= 2.6.
+  - A version of *Python* >= 2.6 (on FreeBSD, the package "py27-sqlite3" must
+    also be installed).
 
   - A *bash* (note in particular, that on FreeBSD, *bash* is not
     installed by default).
 
   - In a cluster setup, *rsync* must be installed on every host
-    in the cluster.  In addition, *sshd* must be installed and running on
-    every host except the manager, and *ssh* must be installed on the manager.
+    in the cluster.
+
+  - In a cluster setup, *sshd* must be installed and running on every host
+    except the manager, and *ssh* must be installed on the manager.
+
+  - If *sendmail* is installed (for a cluster setup, it is needed on the
+    manager only), then BroControl can send mail.  Otherwise, BroControl
+    will not attempt to send mail.
 
 If you're using a load-balancing method such as PF_RING, then there is
 additional software to install (for details, see the
