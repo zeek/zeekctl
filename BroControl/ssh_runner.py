@@ -5,6 +5,8 @@ import select
 import textwrap
 import time
 import os
+import logging
+
 from threading import Thread
 
 from BroControl import py3bro
@@ -233,7 +235,7 @@ class HostHandler(Thread):
 
     def send_commands(self, commands, shell, rq):
         self.q.put((commands, shell, rq))
-            
+
 
 class MultiMasterManager:
     def __init__(self, ui, localaddrs=[]):

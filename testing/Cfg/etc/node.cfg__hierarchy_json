@@ -6,7 +6,6 @@
 
 "nodes" : [
 
-
 		{	
 				"id": "icsi-1",
 				"type": "peer",
@@ -17,8 +16,8 @@
 		{	
 				"id": "icsi-2",
 				"type": "peer",
-				"host": "localhost",
-				"policy": "policy 2"
+				"host": "192.168.56.101",
+				"policy": "policy 1"
 		}
 ],
 

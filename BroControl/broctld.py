@@ -72,6 +72,7 @@ class BroCtrldWorker(Thread, Common):
     def iteration(self):
         id, cmd, args = self.q.get()
         self._id = id
+        print "obtained command " + str(cmd)
 
         if cmd is STOP_RUNNING:
             return True

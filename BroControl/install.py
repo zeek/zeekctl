@@ -3,6 +3,7 @@
 import os
 import re
 import json
+import logging
 
 from BroControl import util
 from BroControl import config
@@ -17,8 +18,10 @@ from BroControl import config
 # directory is just created.
 def get_syncs():
     syncs = [
-    ("${brobase}", False),
+    ("${brobase}", True),
     ("${brobase}/share", True),
+    # FIXME just a hack for testing
+    ("${brobase}/../bro-build", True),
     ("${cfgdir}", True),
     ("${libdir}", True),
     ("${bindir}", True),
@@ -28,8 +31,9 @@ def get_syncs():
     # ("${staticdir}", True),
     ("${logdir}", False),
     ("${spooldir}", False),
-    ("${tmpdir}", False),
-    ("${broctlconfigdir}/broctl-config.sh", True)
+    ("${spooldir}/broctl-config.sh", True),
+    ("${broctlconfigdir}/broctl-config.sh", True),
+    ("${tmpdir}", False)
     ]
 
     return syncs
@@ -97,7 +101,8 @@ def makeLayout(path, cmdout, silent=False):
 
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
-    if config.Config.nodes("standalone"):
+    #if config.Config.nodes("standalone"):
+    if config.Config.standalone:
         if os.access(filename, os.W_OK):
             os.unlink(filename)
         # We do need to establish the port for the manager.
@@ -246,16 +251,22 @@ def makeNodeConfigs(path, peers, cmdout, silent=False):
     if not silent:
         cmdout.info("generating node.cfg per peer ...")
 
+    localNode = config.Config.getLocalNode()
+    logging.debug(str(localNode.name) + "@" + str(config.Config.localaddrs[0]) + " :: create node configuration")
+
     for p in peers:
-        makeNodeConfig(path, p, cmdout, silent)
+        if p != localNode:
+            makeNodeConfig(path, p, cmdout, silent)
 
 
 # Write individual node.cfg file for node
 def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
     head = config.Config.getHead()
+    localNode = config.Config.getLocalNode()
 
-    npath = path + "/node.cfg_" + str(node.name)
+    npath = os.path.join (path, "node.cfg_" + str(node.name))
+    logging.debug(str(localNode.name) + " write node.cfg for " + str(node.name) + " to path " + str(npath))
 
     g = ""
     if hasattr(node, "cluster"):
@@ -263,29 +274,54 @@ def makeNodeConfig(path, node, cmdout, silent=False):
     else:
         g= overlay.getSubgraph(node.name)
 
+    edgeNum = len(g.edges())
+    nodeNum = len(g.nodes())
+
     with open(npath, 'w') as f:
         f.write("{\n")
-        # head entry
-        f.write("head: {")
-        f.write("\"id\": " + str(head.name) + ",")
+
+        # 1. head entry
+        f.write("\"head\" : {\n")
+        f.write("\"id\": \"" + str(head.name) + "\",\n")
+        if hasattr(head, "type"):
+            f.write("\"type\": \"" + str(head.type) + "\",\n")
         if hasattr(head, "cluster"):
-            f.write("\"cluster\": " + str(head.cluster) + ",")
+            f.write("\"cluster\": \"" + str(head.cluster) + "\",\n")
         if hasattr(head, "host"):
-            f.write("\"host\": " + str(head.host) + ",")
-        f.write("},\n")
+            f.write("\"host\": \"" + str(head.host) + "\"\n")
+        f.write("},\n\n")
 
-        # node entries
-        f.write("nodes: [\n")
+        # 2. node entries
+        counter = 0
+        f.write("\"nodes\" : [\n")
         for n2 in g.nodes():
-            entry = json.JSONEncoder().encode(overlay.node_attr["json-data"][n2])
-            f.write(entry + ",\n")
-        f.write("],\n")
+            counter += 1
+            if nodeNum - counter == 0:
+                #f.write(json.JSONEncoder().encode(str(overlay.node_attr["json-data"][n2]) + "\n"))
+                #json.dump(overlay.node_attr["json-data"][n2], f)
+                f.write(json.dumps(overlay.node_attr["json-data"][n2]) + "\n")
+            else:
+                #f.write(json.JSONEncoder().encode(str(overlay.node_attr["json-data"][n2]) + ",\n"))
+                #json.dump(overlay.node_attr["json-data"][n2], f)
+                f.write(json.dumps(overlay.node_attr["json-data"][n2]) + ",\n")
+        f.write("],\n\n")
 
-        # connection entries
-        f.write("connections: [\n")
-        f.write("{\"from\": \"" + str(head.name) + "\", \"to\": \"" + str(node.name) + "\"},\n")
+        # 3. connection entries
+
+        f.write("\"connections\" : [\n")
+
+        #if edgeNum == 0:
+        #    f.write("{\"from\": \"" + str(head.name) + "\", \"to\": \"" + str(node.name) + "\"}\n")
+        #else:
+        #    f.write("{\"from\": \"" + str(head.name) + "\", \"to\": \"" + str(node.name) + "\"},\n")
+
+        counter = 0
         for (u, v) in g.edges():
-            f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"},\n")
-        f.write("],\n")
+            counter += 1
+            if edgeNum - counter == 0:
+                f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"}\n")
+            else:
+                f.write("{\"from\": \"" + str(u) + "\", \"to\": \"" + str(v) + "\"},\n")
+        f.write("]\n")
 
         f.write("}\n")

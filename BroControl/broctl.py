@@ -58,6 +58,7 @@ class BroCtl(object):
         self.setup()
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
 
+
     def setup(self):
         for dir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
             if dir:
@@ -179,7 +180,7 @@ class BroCtl(object):
         """
 
         nodes = self.nodeArgs(node_list)
-        print ("broctl.py: start " + str(len(nodes)) + " nodes")
+        logging.debug(str(config.Config.getLocalNode().name) +  " start " + str(len(nodes)) + " nodes")
 
         nodes = self.plugins.cmdPreWithNodes("start", nodes)
         results = self.controller.start(nodes)

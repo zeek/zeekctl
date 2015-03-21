@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+
+
+
+. `dirname $0`/broctl-config.sh
+. ${brobase}/how_to_run_broctl
+
+"${bindir}"/broctl install 
+"${bindir}"/broctl start

@@ -4,6 +4,9 @@ import os
 import socket
 import re
 import json
+import logging
+import random
+import shutil
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -68,6 +71,21 @@ class Configuration:
         self._setOption("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
         self._setOption("mailalarmsto", self.config["mailto"])
 
+        # Create a directory for the debuglog per individual host
+        # TODO hostname should be replaced by unique identifier per node/peer
+        dlpath = os.path.join(self.spooldir, str(socket.gethostname()))
+        if not os.path.exists(dlpath):
+            os.makedirs(dlpath)
+        self.debuglog = os.path.join(dlpath, "debug.log")
+
+        # One directory per node.cfg per peer
+        # TODO hostname should be replaced by unique identifier per node/peer
+        nodecfgpath = os.path.join(self.cfgdir, str(socket.gethostname()))
+        if not os.path.exists(nodecfgpath):
+            os.makedirs(nodecfgpath)
+            shutil.move(self.nodecfg, nodecfgpath)
+        self.nodecfg = os.path.join(nodecfgpath, "node.cfg")
+
         # Determine operating system.
         (success, output) = execute.runLocalCmd("uname")
         if not success:
@@ -115,7 +133,7 @@ class Configuration:
         # Now that the nodes have been read in, set the standalone config option.
         standalone = "0"
         for node in self.nodes("all"):
-            if node.type == "standalone":
+            if node.type == "standalone" or node.type == "peer":
                 standalone = "1"
 
         self._setOption("standalone", standalone)
@@ -189,7 +207,9 @@ class Configuration:
             type = "peer"
 
         for n in self.nodelist.values():
-            if type:
+            if type == "peer" and type == n.type and self.getLocalNode() != n:
+                nodes += [n]
+            elif type:
                 if type == n.type:
                     nodes += [n]
             elif tag == n.name:
@@ -355,7 +375,7 @@ class Configuration:
 
         # Check if nodestore is valid
         self._checkNodeStore(nodestore)
-        return nodestore
+        return nodestore, None, None
 
     # Check and complete node entry, nodestore, and counts
     def _checkNode(self, node, nodestore, counts):
@@ -498,20 +518,17 @@ class Configuration:
                 elif not proxy:
                     raise ConfigurationError("%s: no proxy defined" % file)
 
-        else:
-            if len(nodestore) > 1:
-                raise ConfigurationError("%s: more than one node defined in stand-alone setup" % file)
-
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.type != "standalone":
+                if n.type != "manager" and n.type != "standalone" and n.type != "peer":
                     if n.addr != "127.0.0.1" and n.addr != "::1":
                         raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
     # Parse node.cfg in Json-Format
     def _readNodesJson(self):
         file = self.nodecfg
+        logging.debug(str(self.localaddrs[0]) + " :: read the node.cfg configuration from file " + str(file))
         if not os.path.exists(file):
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
@@ -521,10 +538,20 @@ class Configuration:
         # root of the complete hierarchy
         head = None
 
+        plainData = None
         with open(file, 'r') as f:
-            data = json.load(f)
+            plainData = f.readlines()
+
+        with open(file, 'r') as f:
+            #plainData = f.readlines()
+            try:
+                data = json.load(f)
+            except ValueError:
+                logging.debug(str(self.localaddrs[0]) + " :: json data to read: " + str(plainData))
+                raise ConfigurationError(str(self.localaddrs[0]) + " :: Json: node.cfg could not be decoded")
+
             if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
-                raise ConfigurationError("Misconfigured node.cfg. One entry out of [head, node,connections] missing.")
+                raise ConfigurationError("Misconfigured node.cfg. One entry out of [head, node, connections] missing.")
 
             #
             # 1. Iterate over all node entries and create node objects for them
@@ -606,8 +633,9 @@ class Configuration:
 
         # The local node is the manager of its subtree
         local_node = nodestore[root]
-        local_node.type = "manager"
-        nodestore[root] = local_node
+        if local_node.type == "peer":
+            local_node.type = "standalone"
+            nodestore[root] = local_node
 
         # The direct successors of the root
         peer_list = self.overlay.getSuccessors(root)
@@ -799,4 +827,3 @@ class Configuration:
 
     def writeJson(self, peer, data):
         print "write Json configuration file for peer " + str(peer)
-
