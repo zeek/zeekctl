@@ -452,21 +452,21 @@ class Configuration:
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
         config = {}
-        for line in open(fname):
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
 
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+                args = line.split("=", 1)
+                if len(args) != 2:
+                    raise ConfigurationError("broctl config syntax error: %s" % line)
 
-            args = line.split("=", 1)
-            if len(args) != 2:
-                raise ConfigurationError("broctl config syntax error: %s" % line)
+                (key, val) = args
+                key = key.strip().lower()
 
-            (key, val) = args
-            key = key.strip().lower()
-
-            # if the key already exists, just overwrite with new value
-            config[key] = val.strip()
+                # if the key already exists, just overwrite with new value
+                config[key] = val.strip()
 
         return config
 

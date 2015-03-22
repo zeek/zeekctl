@@ -15,7 +15,8 @@ def _break_lock(cmdout):
 
     try:
         # Check whether lock is stale.
-        pid = open(config.Config.lockfile, "r").readline().strip()
+        with open(config.Config.lockfile, "r") as f:
+            pid = f.readline().strip()
         (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
         if success and output[0] == "running":
             # Process still exists.
@@ -41,9 +42,8 @@ def _acquire_lock(cmdout):
     try:
         try:
             # This should be NFS-safe.
-            f = open(tmpfile, "w")
-            f.write("%s\n" % pid)
-            f.close()
+            with open(tmpfile, "w") as f:
+                f.write("%s\n" % pid)
 
             n = os.stat(tmpfile)[3]
             os.link(tmpfile, config.Config.lockfile)

@@ -341,9 +341,8 @@ class Controller:
         if self.config.statslogenable == "0":
             return
         t = time.time()
-        out = open(self.config.statslog, "a")
-        out.write("%s %s action %s\n" % (t, node, action))
-        out.close()
+        with open(self.config.statslog, "a") as out:
+            out.write("%s %s action %s\n" % (t, node, action))
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
