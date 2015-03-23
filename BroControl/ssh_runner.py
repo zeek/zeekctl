@@ -2,9 +2,10 @@ import collections
 import json
 import subprocess
 import select
-import textwrap
 import time
 import os
+import base64
+import zlib
 from threading import Thread
 
 from BroControl import py3bro
@@ -14,74 +15,72 @@ Empty = py3bro.Empty
 
 def get_muxer(shell):
     muxer = r"""
-    import json
-    import os
-    import sys
-    import subprocess
-    import signal
-    import select
+import os,sys,subprocess,signal,select,json
+TIMEOUT=120
 
-    TIMEOUT=120
+def w(s):
+	sys.stdout.write(json.dumps(s) + "\n")
+	sys.stdout.flush()
 
-    def w(s):
-        sys.stdout.write(json.dumps(s) + "\n")
-        sys.stdout.flush()
+def exec_cmds(cmds):
+	p=[]
+	for i,cmd in enumerate(cmds):
+		try:
+			proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE __SHELL__)
+			p.append((i,proc))
+		except Exception as e:
+			w((i,(1,'',str(e))))
+	return p
 
-    def exec_commands(cmds):
-        procs = []
-        for i, cmd in enumerate(cmds):
-            try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=__SHELL__)
-                procs.append((i, proc))
-            except Exception as e:
-                w( (i, (1, '', str(e))) )
-        return procs
+w("ready")
+commands=[]
+signal.alarm(TIMEOUT)
+for line in iter(sys.stdin.readline,"done\n"):
+	commands.append(json.loads(line))
 
-    w("ready")
-    commands = []
-    signal.alarm(TIMEOUT)
-    for line in iter(sys.stdin.readline, "done\n"):
-        commands.append(json.loads(line))
-    procs = exec_commands(commands)
+procs=exec_cmds(commands)
+cmd_map={}
+fd_map={}
+fds=set()
+for i,proc in procs:
+	o={"idx":i, "proc":proc, "stdout":[], "stderr":[], "waiting":2}
+	fd_map[proc.stdout]=o["stdout"]
+	fd_map[proc.stderr]=o["stderr"]
+	cmd_map[proc.stdout]=o
+	cmd_map[proc.stderr]=o
+	fds.update((proc.stderr,proc.stdout))
 
-    cmd_mapping = {}
-    fd_mapping = {}
-    allfds = set()
-    for i, proc in procs:
-        o = {"idx": i, "proc": proc, "stdout": [], "stderr": [], "waiting": 2}
-        fd_mapping[proc.stdout] = o["stdout"]
-        fd_mapping[proc.stderr] = o["stderr"]
-        cmd_mapping[proc.stdout] = o
-        cmd_mapping[proc.stderr] = o
-        allfds.update([proc.stderr, proc.stdout])
+while fds:
+	r,_,_=select.select(fds,[],[])
+	for fd in r:
+		output=os.read(fd.fileno(),1024)
+		if output:
+			fd_map[fd].append(output)
+			continue
 
-    while allfds:
-        r, _, _ = select.select(allfds, [], [])
-        for fd in r:
-            output = os.read(fd.fileno(), 1024)
-            if output:
-                fd_mapping[fd].append(output)
-                continue
+		cmd=cmd_map[fd]
+		cmd["waiting"]-=1
+		if cmd["waiting"]:
+			continue
 
-            cmd = cmd_mapping[fd]
-            cmd["waiting"] -= 1
-            if cmd["waiting"] != 0:
-                continue
+		proc=cmd["proc"]
+		res=proc.wait()
+		out="".join(cmd["stdout"])
+		err="".join(cmd["stderr"])
+		w((cmd["idx"],(res,out,err)))
+		fds.remove(proc.stdout)
+		fds.remove(proc.stderr)
 
-            proc = cmd["proc"]
-            res = proc.wait()
-            out = "".join(cmd["stdout"])
-            err = "".join(cmd["stderr"])
-            w( (cmd["idx"], (res, out, err)) )
-            allfds.remove(proc.stdout)
-            allfds.remove(proc.stderr)
+w("done")
+"""
 
-    w("done")
-    """
-
-    muxer = textwrap.dedent(muxer.replace("__SHELL__", str(shell)))
-
-    return muxer.encode("zlib").encode("base64").replace("\n", "")
+    if shell:
+        muxer = muxer.replace("__SHELL__", ",shell=True")
+    else:
+        muxer = muxer.replace("__SHELL__", "")
+    muxer = base64.b64encode(zlib.compress(muxer))
+    muxer = 'import zlib,base64; exec(zlib.decompress(base64.b64decode("%s")))' % muxer
+    return muxer
 
 
 CmdResult = collections.namedtuple("CmdResult", "status stdout stderr")
@@ -121,7 +120,7 @@ class SSHMaster:
 
     def send_commands(self, cmds, shell=False, timeout=10):
         self.connect()
-        run_mux = """python -c 'exec("%s".decode("base64").decode("zlib"))'\n""" % get_muxer(shell)
+        run_mux = "python -c '%s'\n" % get_muxer(shell)
         self.master.stdin.write(run_mux)
         self.master.stdin.flush()
         self.readline_with_timeout(timeout)
