@@ -227,7 +227,8 @@ class Executor:
                     cmdargs = [cmd]
 
                 if shell:
-                    cmdargs = [cmdargs[0] + " " + " ".join(args)]
+                    if args:
+                        cmdargs = ["%s %s" % (cmdargs[0], " ".join(args))]
                 else:
                     cmdargs += args
 
