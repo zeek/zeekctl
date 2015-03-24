@@ -492,14 +492,9 @@ class Configuration:
 
     # Record the Bro version.
     def record_bro_version(self):
-        try:
-            version = self._get_bro_version()
-        except ConfigurationError:
-            return False
-
+        version = self._get_bro_version()
         self.set_state("broversion", version)
         self.set_state("bro", self.subst("${bindir}/bro"))
-        return True
 
 
     # Warn user to run broctl install if any changes are detected to broctl

@@ -17,7 +17,7 @@ from BroControl import util
 # Works for files and directories (recursive).
 def install(src, dstdir, cmdout):
     if not os.path.lexists(src):
-        cmdout.error("file does not exist: %s" % src)
+        cmdout.error("pathname not found: %s" % src)
         return False
 
     dst = os.path.join(dstdir, os.path.basename(src))
@@ -36,6 +36,9 @@ def install(src, dstdir, cmdout):
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
         pass
+    except IOError as err:
+        cmdout.error("failed to copy: %s" % err)
+        return False
 
     return True
 
@@ -52,7 +55,7 @@ def sync(nodes, paths, cmdout):
 
     for (id, success, output) in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.host), output))
+            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.host), "\n".join(output)))
             result = False
 
     return result

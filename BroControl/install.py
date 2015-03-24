@@ -10,9 +10,10 @@ from BroControl import config
 # the corresponding configuration option.
 
 # Directories/files in form (path, mirror) which are synced from the manager to
-# all nodes.
-# If 'mirror' is true, the path is fully mirrored recursively, otherwise the
-# directory is just created.
+# all remote hosts.
+# If "mirror" is False, then the path is assumed to be a directory and it will
+# just be created on the remote host.  If "mirror" is True, then the path
+# is fully mirrored recursively.
 def get_syncs():
     syncs = [
     ("${brobase}", False),
@@ -35,6 +36,8 @@ def get_syncs():
 # In NFS-mode, only these will be synced.
 def get_nfssyncs():
     nfssyncs = [
+    ("${spooldir}", False),
+    ("${tmpdir}", False),
     ("${policydirsiteinstall}", True),
     ("${policydirsiteinstallauto}", True),
     ("${broctlconfigdir}/broctl-config.sh", True)
@@ -84,10 +87,6 @@ def make_layout(path, cmdout, silent=False):
             return self.p
 
     manager = config.Config.manager()
-
-    if not manager:
-        return
-
     broport = Port(int(config.Config.broport) - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
@@ -183,11 +182,8 @@ def make_local_networks(path, cmdout, silent=False):
     netcfg = config.Config.localnetscfg
 
     if not os.path.exists(netcfg):
-        cmdout.error("list of local networks does not exist in %s" % netcfg)
+        cmdout.error("file not found: %s" % netcfg)
         return False
-
-    if not silent:
-        cmdout.info("generating local-networks.bro ...")
 
     nets = read_networks(netcfg)
 
@@ -207,12 +203,6 @@ def make_local_networks(path, cmdout, silent=False):
 
 def make_broctl_config_policy(path, cmdout, silent=False):
     manager = config.Config.manager()
-
-    if not manager:
-        return
-
-    if not silent:
-        cmdout.info("generating broctl-config.bro ...")
 
     filename = os.path.join(path, "broctl-config.bro")
     with open(filename, "w") as out:
