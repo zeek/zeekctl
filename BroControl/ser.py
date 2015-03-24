@@ -2,10 +2,13 @@ import json
 from json import dumps as json_dumps, loads
 
 from BroControl import node
+from BroControl import cmdresult
 
 class MyJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, node.Node):
+            return obj.to_dict()
+        if isinstance(obj, cmdresult.CmdResult):
             return obj.to_dict()
         return json.JSONEncoder.default(self, obj)
 

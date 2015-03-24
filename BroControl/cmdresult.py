@@ -14,6 +14,13 @@ class CmdResult:
         # List of results for each node
         self.nodes = []
 
+    def to_dict(self):
+        return {
+            "success_count": self.success_count,
+            "fail_count": self.fail_count,
+            "nodes": self.get_node_data(),
+        }
+
     def get_node_counts(self):
         """Return tuple (success, fail) of success and fail node counts."""
 
