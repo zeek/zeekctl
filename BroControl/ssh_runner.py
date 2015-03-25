@@ -48,7 +48,7 @@ for i,proc in procs:
 	fd_map[proc.stderr]=o["stderr"]
 	cmd_map[proc.stdout]=o
 	cmd_map[proc.stderr]=o
-	fds.update((proc.stderr,proc.stdout))
+	fds.update((proc.stdout,proc.stderr))
 
 while fds:
 	r,_,_=select.select(fds,[],[])
@@ -59,6 +59,7 @@ while fds:
 			continue
 
 		cmd=cmd_map[fd]
+		fds.remove(fd)
 		cmd["waiting"]-=1
 		if cmd["waiting"]:
 			continue
@@ -68,8 +69,6 @@ while fds:
 		out="".join(cmd["stdout"])
 		err="".join(cmd["stderr"])
 		w((cmd["idx"],(res,out,err)))
-		fds.remove(proc.stdout)
-		fds.remove(proc.stderr)
 
 w("done")
 """
