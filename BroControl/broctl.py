@@ -89,9 +89,10 @@ class BroCtl(object):
     def warn_broctl_install(self):
         self.config.warn_broctl_install()
 
-    # Turns nodes arguments into a list of node names.  If "get_hosts" is True,
-    # then only one node per host is chosen.
-    def node_args(self, args=None, get_hosts=False):
+    # Turns node name arguments into a list of nodes.  If "get_hosts" is True,
+    # then only one node per host is chosen.  If "get_types" is True, then
+    # only one node per node type (manager, proxy, etc.) is chosen.
+    def node_args(self, args=None, get_hosts=False, get_types=False):
         if not args:
             args = "all"
 
@@ -122,6 +123,16 @@ class BroCtl(object):
                     hostnodes.append(node)
 
             nodes = hostnodes
+
+        if get_types:
+            types = {}
+            typenodes = []
+            for node in nodes:
+                if node.type not in types:
+                    types[node.type] = 1
+                    typenodes.append(node)
+
+            nodes = typenodes
 
         return nodes
 
@@ -241,7 +252,7 @@ class BroCtl(object):
                 return results
 
         self.output("checking configurations ...")
-        results = self.check()
+        results = self.check(check_node_types=True)
         if not results.ok:
             return results
 
@@ -331,8 +342,8 @@ class BroCtl(object):
 
     @expose
     @lock_required
-    def check(self, node_list=None):
-        nodes = self.node_args(node_list)
+    def check(self, node_list=None, check_node_types=False):
+        nodes = self.node_args(node_list, get_types=check_node_types)
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.check(nodes)
