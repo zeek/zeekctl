@@ -254,6 +254,12 @@ class BroCtl(object):
         self.output("checking configurations ...")
         results = self.check(check_node_types=True)
         if not results.ok:
+            for (node, success, output) in results.get_node_output():
+                if not success:
+                    self.error("%s scripts failed." % node)
+                    for line in output:
+                        self.error("%s" % line)
+
             return results
 
         self.output("installing ...")
