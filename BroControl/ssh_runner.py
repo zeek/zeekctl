@@ -55,7 +55,7 @@ while fds:
 	for fd in r:
 		output=os.read(fd.fileno(),1024)
 		if output:
-			fd_map[fd].append(output)
+			fd_map[fd].append(output.decode())
 			continue
 
 		cmd=cmd_map[fd]
@@ -77,8 +77,24 @@ w("done")
         muxer = muxer.replace("__SHELL__", ",shell=True")
     else:
         muxer = muxer.replace("__SHELL__", "")
+
+    if py3bro.using_py3:
+        muxer = muxer.encode()
+    else:
+        # Remove code that is only needed for Py3
+        muxer = muxer.replace(".decode()", "")
+
     muxer = base64.b64encode(zlib.compress(muxer))
-    muxer = 'import zlib,base64; exec(zlib.decompress(base64.b64decode("%s")))' % muxer
+
+    if py3bro.using_py3:
+        muxer = muxer.decode()
+
+    # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
+    muxer = "python -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % muxer
+
+    if py3bro.using_py3:
+        muxer = muxer.encode()
+
     return muxer
 
 
@@ -94,6 +110,8 @@ class SSHMaster:
         self.need_connect = True
         self.master = None
         self.localaddrs = localaddrs
+        self.run_mux = get_muxer(False)
+        self.run_mux_shell = get_muxer(True)
 
     def connect(self):
         if self.need_connect:
@@ -108,7 +126,10 @@ class SSHMaster:
         readable, _, _ = select.select([self.master.stdout], [], [], timeout)
         if not readable:
             return False
-        return self.master.stdout.readline()
+        jtxt = self.master.stdout.readline()
+        if py3bro.using_py3:
+            jtxt = jtxt.decode()
+        return jtxt
 
     def exec_command(self, cmd, shell=False, timeout=60):
         return self.exec_commands([cmd], shell, timeout)[0]
@@ -119,13 +140,19 @@ class SSHMaster:
 
     def send_commands(self, cmds, shell=False, timeout=10):
         self.connect()
-        run_mux = "python -c '%s'\n" % get_muxer(shell)
-        self.master.stdin.write(run_mux)
+        if shell:
+            self.master.stdin.write(self.run_mux_shell)
+        else:
+            self.master.stdin.write(self.run_mux)
         self.master.stdin.flush()
         self.readline_with_timeout(timeout)
         for cmd in cmds:
-            self.master.stdin.write(json.dumps(cmd) + "\n")
-        self.master.stdin.write("done\n")
+            jcmd = "%s\n" % json.dumps(cmd)
+            if py3bro.using_py3:
+                jcmd = jcmd.encode()
+            self.master.stdin.write(jcmd)
+        # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
+        self.master.stdin.write(b"done\n")
         self.master.stdin.flush()
         self.sent_commands = len(cmds)
 

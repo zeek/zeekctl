@@ -443,7 +443,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             totals = None
 
-            for (node, success, vals) in sorted(data):
+            for (node, success, vals) in data:
 
                 if not success:
                     self.error(vals["output"])
