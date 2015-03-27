@@ -934,43 +934,43 @@ class Controller:
         for node in nodes:
             df[node.name] = {}
 
-        for key in dirs:
-            path = self.config.config[key]
-
-            cmds = []
-            for node in nodes:
+        cmds = []
+        for node in nodes:
+            for key in dirs:
                 if key == "logdir" and node.type not in ("manager", "standalone"):
                     # Don't need this on the workers/proxies.
                     continue
 
+                path = self.config.config[key]
+
                 cmds += [(node, "df", [path])]
 
-            res = self.executor.run_helper(cmds)
+        res = self.executor.run_helper(cmds)
 
-            for (node, success, output) in res:
-                if success:
-                    if not output:
-                        df[node.name]["FAIL"] = "no output from df helper"
-                        continue
+        for (node, success, output) in res:
+            if success:
+                if not output:
+                    df[node.name]["FAIL"] = "no output from df helper"
+                    continue
 
-                    fields = output[0].split()
+                fields = output[0].split()
 
-                    fs = fields[0]
-                    # Ignore NFS mounted volumes.
-                    if ":" in fs:
-                        continue
+                fs = fields[0]
+                # Ignore NFS mounted volumes.
+                if ":" in fs:
+                    continue
 
-                    total = float(fields[1])
-                    used = float(fields[2])
-                    avail = float(fields[3])
-                    perc = used * 100.0 / (used + avail)
-                    df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+                total = float(fields[1])
+                used = float(fields[2])
+                avail = float(fields[3])
+                perc = used * 100.0 / (used + avail)
+                df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+            else:
+                if output:
+                    msg = output[0]
                 else:
-                    if output:
-                        msg = output[0]
-                    else:
-                        msg = "unknown failure"
-                    df[node.name]["FAIL"] = msg
+                    msg = "unknown failure"
+                df[node.name]["FAIL"] = msg
 
         for node in nodes:
             success = "FAIL" not in df[node.name]
