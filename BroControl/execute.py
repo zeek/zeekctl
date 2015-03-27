@@ -215,14 +215,16 @@ class Executor:
             return results
 
         dd = {}
+        hostlist = []
         for nodecmd in cmds:
             host = nodecmd[0].addr
             if host not in dd:
                 dd[host] = []
+                hostlist.append(host)
             dd[host].append(nodecmd)
 
         nodecmdlist = []
-        for host in dd:
+        for host in hostlist:
             for bronode, cmd, args in dd[host]:
                 if helper:
                     cmdargs = [os.path.join(self.helperdir, cmd)]
