@@ -769,10 +769,15 @@ def main():
         except Exception as e:
             print("Error: %s" % e)
             return 1
+        except KeyboardInterrupt:
+            cmdsuccess = False
 
         loop.postcmd(False, cmdline)
     else:
-        cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        try:
+            cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        except KeyboardInterrupt:
+            cmdsuccess = False
 
     loop.finish()
 
