@@ -58,6 +58,14 @@ if (MISSING_PREREQS)
     message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
 endif ()
 
+execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
+                RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
+
+if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
+    message(FATAL_ERROR "The sqlite3 python module is required to use "
+            "BroControl, but was not found.  Configuration aborted.")
+endif ()
+
 if (NOT BRO_ROOT_DIR)
     message(WARNING "A Bro installation was not found, your BroControl "
                     " installation may not work.  Please review the install "
