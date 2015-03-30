@@ -123,22 +123,24 @@ class Controller:
                 manager += [n]
 
         # Start nodes. Do it in the order manager, proxies, workers.
+        if manager:
+            self._start_nodes(manager, results)
 
-        self._start_nodes(manager, results)
+            if not results.ok:
+                for n in (proxies + workers):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + workers):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._start_nodes(proxies, results)
 
-        self._start_nodes(proxies, results)
+            if not results.ok:
+                for n in workers:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in workers:
-                results.set_node_fail(n)
-            return results
-
-        self._start_nodes(workers, results)
+        if workers:
+            self._start_nodes(workers, results)
 
         return results
 
@@ -392,22 +394,24 @@ class Controller:
 
         # Stop nodes. Do it in the order workers, proxies, manager
         # (the reverse of "start").
+        if workers:
+            self._stop_nodes(workers, results)
 
-        self._stop_nodes(workers, results)
+            if not results.ok:
+                for n in (proxies + manager):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + manager):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._stop_nodes(proxies, results)
 
-        self._stop_nodes(proxies, results)
+            if not results.ok:
+                for n in manager:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in manager:
-                results.set_node_fail(n)
-            return results
-
-        self._stop_nodes(manager, results)
+        if manager:
+            self._stop_nodes(manager, results)
 
         return results
 
