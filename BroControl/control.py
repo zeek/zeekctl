@@ -199,8 +199,7 @@ class Controller:
                 self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
                 results.set_node_fail(node)
                 if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
+                    self.ui.error("\n".join(output))
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -249,11 +248,6 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                continue
-
-            # If we cannot connect to the host at all, we filter it out because
-            # the process might actually still be running but we can't tell.
-            if output == None:
                 if self.config.cron == "0":
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
@@ -732,8 +726,7 @@ class Controller:
         for (node, success, output) in self.executor.run_helper(cmds):
             if not success:
                 errmsgs = ["error running crash-diag for %s" % node.name]
-                if output:
-                    errmsgs += output
+                errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
 

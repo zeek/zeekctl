@@ -204,10 +204,10 @@ class Executor:
     #
     # Returns a list of results: [(node, success, output), ...]
     #   where "success" is a boolean (True if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr) or None
-    #   if no result was received (this could occur upon failure to communicate
-    #   with remote host, or if the command being executed did not finish
-    #   before the timeout).
+    #   and "output" is a list of strings (stdout followed by stderr) or an
+    #   error message if no result was received (this could occur upon failure
+    #   to communicate with remote host, or if the command being executed
+    #   did not finish before the timeout).
     def run_cmds(self, cmds, shell=False, helper=False):
         results = []
 
@@ -250,7 +250,7 @@ class Executor:
                 results.append((bronode, res == 0, out + err))
                 logging.debug("%s: exit code %d" % (bronode.host, res))
             else:
-                results.append((bronode, False, None))
+                results.append((bronode, False, [str(result)]))
 
         return results
 

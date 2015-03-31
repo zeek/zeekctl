@@ -6,6 +6,7 @@ import time
 import os
 import base64
 import zlib
+import logging
 from threading import Thread
 
 from BroControl import py3bro
@@ -213,7 +214,7 @@ class HostHandler(Thread):
         try:
             return self.master.ping()
         except Exception as e:
-            self.ui.output("Error in ping for %s" % self.host)
+            logging.debug("No response from host %s" % self.host)
             return False
 
     def connect_and_ping(self):
@@ -281,7 +282,7 @@ class MultiMasterManager:
             return rq.get(timeout=timeout)
         except Empty:
             self.shutdown(host)
-            return [Exception("Timeout")] #FIXME: needs to be the right length
+            return [Exception("Communication timeout")] #FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]

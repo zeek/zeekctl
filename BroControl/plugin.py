@@ -163,7 +163,7 @@ class Plugin(object):
         """Executes a command on the host for the given *node* of type
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
-        stdout/stderr output (or None if we couldn't connect to the host)."""
+        stdout/stderr output."""
         result = self.executor.run_shell_cmds([(node, cmd)])[0]
         return (result[1], result[2])
 
@@ -199,8 +199,7 @@ class Plugin(object):
         instance and *cmd* is a string with the command to execute for it. The
         method returns a list of tuples ``(node, success, output)``, in which
         ``success`` is True if the command ran successfully and ``output`` is
-        the combined stdout/stderr output (or None if we couldn't connect to
-        the host) for the corresponding ``node``."""
+        the combined stdout/stderr output for the corresponding ``node``."""
         return self.executor.run_shell_cmds(cmds)
 
     ### Methods that must be overridden by plugins.

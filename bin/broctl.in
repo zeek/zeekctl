@@ -580,7 +580,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            out = output and "\n> ".join(output) or ""
+            out = "\n> ".join(output)
             self.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
 
         return results.ok
