@@ -594,7 +594,7 @@ class Configuration:
             if success and output:
                 version = output[-1]
         else:
-            raise ConfigurationError("cannot find Bro binary")
+            raise ConfigurationError("cannot find Bro binary: %s" % bro)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
