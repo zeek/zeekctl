@@ -1266,7 +1266,7 @@ class Controller:
             util.force_symlink(manager.cwd(), current)
         except (IOError, OSError) as err:
             results.ok = False
-            self.ui.error("failed to update current log symlink")
+            self.ui.error("failed to update symlink '%s': %s" % (current, err))
             return results
 
         self.ui.info("generating broctl-config.sh ...")

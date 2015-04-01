@@ -159,6 +159,8 @@ def force_symlink(src, dst):
         if e.errno == errno.EEXIST:
             os.remove(dst)
             os.symlink(src, dst)
+        else:
+            raise
 
 # Returns an IP address string suitable for embedding in a Bro script,
 # for IPv6 colon-hexadecimal address strings, that means surrounding it
