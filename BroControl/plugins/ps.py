@@ -57,7 +57,7 @@ class PsBro(BroControl.plugin.Plugin):
         # Run them in parallel and print output.
 
         def startNode(n, success, output, first_node):
-            # Note: output might be None or an empty list, in which case we
+            # Note: output might be an empty list, in which case we
             # still want the "failed" message below.
             if first_node and output:
                 cmdout.info("        %s" % output[0])

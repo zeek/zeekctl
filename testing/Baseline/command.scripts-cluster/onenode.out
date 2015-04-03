@@ -1,11 +1,2 @@
 proxy-1 scripts are ok.
-  #separator \x09
-  #set_separator	,
-  #empty_field	(empty)
-  #unset_field	-
-  #path	loaded_scripts
-  #open	2014-01-15-19-48-02
-  #fields	name
-  #types	string
 <...paths...>
-  #close	2014-01-15-19-48-02

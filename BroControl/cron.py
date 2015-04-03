@@ -55,47 +55,44 @@ class CronTasks:
         t = time.time()
 
         try:
-            out = open(self.config.statslog, "a")
+            with open(self.config.statslog, "a") as out:
+                for (node, error, vals) in top:
+                    if not error:
+                        for proc in vals:
+                            parentchild = proc["proc"]
+                            for (val, key) in proc.items():
+                                if val != "proc":
+                                    out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
+                    else:
+                        out.write("%s %s error error %s\n" % (t, node, error))
+
+                for (node, netif, success, vals) in capstats:
+                    if not success:
+                        out.write("%s %s error error %s\n" % (t, node, vals))
+                        continue
+
+                    for (key, val) in vals.items():
+                        out.write("%s %s interface %s %s\n" % (t, node, key, val))
+
+                        if key == "pkts" and str(node) != "$total":
+                            # Report if we don't see packets on an interface.
+                            tag = "lastpkts-%s" % node.name.lower()
+
+                            last = -1.0
+                            if tag in self.config.state:
+                                last = float(self.config.state[tag])
+
+                            if float(val) == 0.0 and last != 0.0:
+                                self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
+
+                            if float(val) != 0.0 and last == 0.0:
+                                self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
+
+                            self.config.set_state(tag, val)
+
         except IOError as err:
             self.ui.error("failed to append to file: %s" % err)
             return
-
-        for (node, error, vals) in top:
-            if not error:
-                for proc in vals:
-                    parentchild = proc["proc"]
-                    for (val, key) in proc.items():
-                        if val != "proc":
-                            out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
-            else:
-                out.write("%s %s error error %s\n" % (t, node, error))
-
-        for (node, netif, success, vals) in capstats:
-            if not success:
-                out.write("%s %s error error %s\n" % (t, node, vals))
-                continue
-
-            for (key, val) in vals.items():
-                out.write("%s %s interface %s %s\n" % (t, node, key, val))
-
-                if key == "pkts" and str(node) != "$total":
-                    # Report if we don't see packets on an interface.
-                    tag = "lastpkts-%s" % node.name.lower()
-
-                    if tag in self.config.state:
-                        last = float(self.config.state[tag])
-                    else:
-                        last = -1.0
-
-                    if float(val) == 0.0 and last != 0.0:
-                        self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
-
-                    if float(val) != 0.0 and last == 0.0:
-                        self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
-
-                    self.config.set_state(tag, val)
-
-        out.close()
 
     def check_disk_space(self):
         minspace = float(self.config.mindiskspace)
@@ -168,28 +165,26 @@ class CronTasks:
 
         metadat = os.path.join(self.config.statsdir, "meta.dat")
         try:
-            meta = open(metadat, "w")
+            with open(metadat, "w") as meta:
+                for node in self.config.hosts():
+                    meta.write("node %s %s %s\n" % (node, node.type, node.host))
+
+                meta.write("time %s\n" % time.asctime())
+                meta.write("version %s\n" % self.config.version)
+
+                try:
+                    meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
+                except IndexError:
+                    meta.write("os <error>\n")
+
+                try:
+                    meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
+                except IndexError:
+                    meta.write("host <error>\n")
+
         except IOError as err:
             self.ui.error("failure creating file: %s" % err)
             return
-
-        for node in self.config.hosts():
-            meta.write("node %s %s %s\n" % (node, node.type, node.host))
-
-        meta.write("time %s\n" % time.asctime())
-        meta.write("version %s\n" % self.config.version)
-
-        try:
-            meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
-        except IndexError:
-            meta.write("os <error>\n")
-
-        try:
-            meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
-        except IndexError:
-            meta.write("host <error>\n")
-
-        meta.close()
 
         wwwdir = os.path.join(self.config.statsdir, "www")
         if not os.path.isdir(wwwdir):
@@ -213,21 +208,12 @@ class CronTasks:
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
         try:
-            fdst = open(dst, "a")
+            with open(self.config.statslog, "r") as fsrc:
+                with open(dst, "a") as fdst:
+                    shutil.copyfileobj(fsrc, fdst)
         except IOError as err:
-            self.ui.error("failed to append to file: %s" % err)
+            self.ui.error("failed to append file: %s" % err)
             return
-
-        try:
-            fsrc = open(self.config.statslog, "r")
-        except IOError as err:
-            fdst.close()
-            self.ui.error("failed to read file: %s" % err)
-            return
-
-        shutil.copyfileobj(fsrc, fdst)
-        fsrc.close()
-        fdst.close()
 
         os.unlink(self.config.statslog)
 

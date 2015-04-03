@@ -31,6 +31,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not iscron:
             self.broctl.warn_broctl_install()
 
+    def finish(self):
+        self.broctl.finish()
+
     def output(self, text):
         self.stdout.write(text)
         self.stdout.write("\n")
@@ -440,7 +443,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             totals = None
 
-            for (node, success, vals) in sorted(data):
+            for (node, success, vals) in data:
 
                 if not success:
                     self.error(vals["output"])
@@ -577,7 +580,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            out = output and "\n> ".join(output) or ""
+            out = "\n> ".join(output)
             self.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
 
         return results.ok
@@ -766,10 +769,17 @@ def main():
         except Exception as e:
             print("Error: %s" % e)
             return 1
+        except KeyboardInterrupt:
+            cmdsuccess = False
 
         loop.postcmd(False, cmdline)
     else:
-        cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        try:
+            cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        except KeyboardInterrupt:
+            cmdsuccess = False
+
+    loop.finish()
 
     return not cmdsuccess
 

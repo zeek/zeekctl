@@ -123,22 +123,24 @@ class Controller:
                 manager += [n]
 
         # Start nodes. Do it in the order manager, proxies, workers.
+        if manager:
+            self._start_nodes(manager, results)
 
-        self._start_nodes(manager, results)
+            if not results.ok:
+                for n in (proxies + workers):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + workers):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._start_nodes(proxies, results)
 
-        self._start_nodes(proxies, results)
+            if not results.ok:
+                for n in workers:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in workers:
-                results.set_node_fail(n)
-            return results
-
-        self._start_nodes(workers, results)
+        if workers:
+            self._start_nodes(workers, results)
 
         return results
 
@@ -197,8 +199,7 @@ class Controller:
                 self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
                 results.set_node_fail(node)
                 if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
+                    self.ui.error("\n".join(output))
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -247,11 +248,6 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                continue
-
-            # If we cannot connect to the host at all, we filter it out because
-            # the process might actually still be running but we can't tell.
-            if output == None:
                 if self.config.cron == "0":
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
@@ -341,9 +337,8 @@ class Controller:
         if self.config.statslogenable == "0":
             return
         t = time.time()
-        out = open(self.config.statslog, "a")
-        out.write("%s %s action %s\n" % (t, node, action))
-        out.close()
+        with open(self.config.statslog, "a") as out:
+            out.write("%s %s action %s\n" % (t, node, action))
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
@@ -393,22 +388,24 @@ class Controller:
 
         # Stop nodes. Do it in the order workers, proxies, manager
         # (the reverse of "start").
+        if workers:
+            self._stop_nodes(workers, results)
 
-        self._stop_nodes(workers, results)
+            if not results.ok:
+                for n in (proxies + manager):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + manager):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._stop_nodes(proxies, results)
 
-        self._stop_nodes(proxies, results)
+            if not results.ok:
+                for n in manager:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in manager:
-                results.set_node_fail(n)
-            return results
-
-        self._stop_nodes(manager, results)
+        if manager:
+            self._stop_nodes(manager, results)
 
         return results
 
@@ -640,7 +637,10 @@ class Controller:
             print_scripts = list_scripts and "1" or "0"
 
             install.make_layout(cwd, self.ui, True)
-            install.make_local_networks(cwd, self.ui, True)
+            if not install.make_local_networks(cwd, self.ui, True):
+                results.ok = False
+                return results
+
             install.make_broctl_config_policy(cwd, self.ui, True)
 
             cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_make_bro_params(node, False)))
@@ -726,8 +726,7 @@ class Controller:
         for (node, success, output) in self.executor.run_helper(cmds):
             if not success:
                 errmsgs = ["error running crash-diag for %s" % node.name]
-                if output:
-                    errmsgs += output
+                errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
 
@@ -932,43 +931,43 @@ class Controller:
         for node in nodes:
             df[node.name] = {}
 
-        for key in dirs:
-            path = self.config.config[key]
-
-            cmds = []
-            for node in nodes:
+        cmds = []
+        for node in nodes:
+            for key in dirs:
                 if key == "logdir" and node.type not in ("manager", "standalone"):
                     # Don't need this on the workers/proxies.
                     continue
 
+                path = self.config.config[key]
+
                 cmds += [(node, "df", [path])]
 
-            res = self.executor.run_helper(cmds)
+        res = self.executor.run_helper(cmds)
 
-            for (node, success, output) in res:
-                if success:
-                    if not output:
-                        df[node.name]["FAIL"] = "no output from df helper"
-                        continue
+        for (node, success, output) in res:
+            if success:
+                if not output:
+                    df[node.name]["FAIL"] = "no output from df helper"
+                    continue
 
-                    fields = output[0].split()
+                fields = output[0].split()
 
-                    fs = fields[0]
-                    # Ignore NFS mounted volumes.
-                    if ":" in fs:
-                        continue
+                fs = fields[0]
+                # Ignore NFS mounted volumes.
+                if ":" in fs:
+                    continue
 
-                    total = float(fields[1])
-                    used = float(fields[2])
-                    avail = float(fields[3])
-                    perc = used * 100.0 / (used + avail)
-                    df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+                total = float(fields[1])
+                used = float(fields[2])
+                avail = float(fields[3])
+                perc = used * 100.0 / (used + avail)
+                df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+            else:
+                if output:
+                    msg = output[0]
                 else:
-                    if output:
-                        msg = output[0]
-                    else:
-                        msg = "unknown failure"
-                    df[node.name]["FAIL"] = msg
+                    msg = "unknown failure"
+                df[node.name]["FAIL"] = msg
 
         for node in nodes:
             success = "FAIL" not in df[node.name]
@@ -1209,7 +1208,10 @@ class Controller:
     def install(self, local_only):
         results = cmdresult.CmdResult()
 
-        if not self.config.record_bro_version():
+        try:
+            self.config.record_bro_version()
+        except config.ConfigurationError as err:
+            self.ui.error("%s" % err)
             results.ok = False
             return results
 
@@ -1224,14 +1226,18 @@ class Controller:
                 try:
                     shutil.rmtree(dirpath)
                 except OSError as err:
+                    self.ui.error("failed to remove directory: %s" % err)
                     results.ok = False
+                    return results
 
         self.ui.info("creating policy directories ...")
         for dirpath in policies:
             try:
                 os.makedirs(dirpath)
-            except OSError:
+            except OSError as err:
+                self.ui.error("failed to create directory: %s" % err)
                 results.ok = False
+                return results
 
         # Install local site policy.
 
@@ -1243,10 +1249,16 @@ class Controller:
                 for pathname in glob.glob(os.path.join(dirpath, "*")):
                     if not execute.install(pathname, dst, self.ui):
                         results.ok = False
+                        return results
 
         install.make_layout(self.config.policydirsiteinstallauto, self.ui)
+
+        self.ui.info("generating local-networks.bro ...")
         if not install.make_local_networks(self.config.policydirsiteinstallauto, self.ui):
             results.ok = False
+            return results
+
+        self.ui.info("generating broctl-config.bro ...")
         install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui)
 
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
@@ -1257,6 +1269,7 @@ class Controller:
             self.ui.error("failed to update current log symlink")
             return results
 
+        self.ui.info("generating broctl-config.sh ...")
         if not install.make_broctl_config_sh(self.ui):
             results.ok = False
             return results
@@ -1270,56 +1283,34 @@ class Controller:
         # Make sure we install each remote host only once.
         nodes = self.config.hosts(nolocal=True)
 
+        dirs = []
+
         if self.config.havenfs != "1":
             # Non-NFS, need to explicitly synchronize.
-            dirs = []
             syncs = install.get_syncs()
-            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-                dirs += [(n, dir) for n in nodes]
-
-            for (node, success) in self.executor.mkdirs(dirs):
-                if not success:
-                    self.ui.error("cannot create directory %s on %s" % (dir, node.name))
-                    results.ok = False
-
-            # An error at this point means the entire install failed.
-            if not results.ok:
-                return results
-
-            paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
-            if not execute.sync(nodes, paths, self.ui):
-                results.ok = False
-                return results
-
         else:
             # NFS. We only need to take care of the spool/log directories.
-            paths = [self.config.spooldir]
-            paths += [self.config.tmpdir]
-
-            dirs = []
-            syncs = install.get_nfssyncs()
-            for dir in paths:
-                dirs += [(n, dir) for n in nodes]
-
-            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-                dirs += [(n, dir) for n in nodes]
 
             # We need this only on the manager.
-            dirs += [(manager, self.config.logdir)]
+            dirs.append((manager, self.config.logdir))
 
-            for (node, success) in self.executor.mkdirs(dirs):
-                if not success:
-                    self.ui.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
-                    results.ok = False
+            syncs = install.get_nfssyncs()
 
-            # An error at this point means the entire install failed.
-            if not results.ok:
-                return results
+        createdirs = [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]
+        for n in nodes:
+            for dir in createdirs:
+                dirs.append((n, dir))
 
-            paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
-            if not execute.sync(nodes, paths, self.ui):
+        for (node, success) in self.executor.mkdirs(dirs):
+            if not success:
+                self.ui.error("cannot create (some of the) directories %s on node %s" % (",".join(createdirs), node.name))
                 results.ok = False
                 return results
+
+        paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
+        if not execute.sync(nodes, paths, self.ui):
+            results.ok = False
+            return results
 
         # Save current node configuration state.
         self.config.update_nodecfg_hash()

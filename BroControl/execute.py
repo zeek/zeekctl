@@ -17,7 +17,7 @@ from BroControl import util
 # Works for files and directories (recursive).
 def install(src, dstdir, cmdout):
     if not os.path.lexists(src):
-        cmdout.error("file does not exist: %s" % src)
+        cmdout.error("pathname not found: %s" % src)
         return False
 
     dst = os.path.join(dstdir, os.path.basename(src))
@@ -36,6 +36,9 @@ def install(src, dstdir, cmdout):
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
         pass
+    except IOError as err:
+        cmdout.error("failed to copy: %s" % err)
+        return False
 
     return True
 
@@ -52,7 +55,7 @@ def sync(nodes, paths, cmdout):
 
     for (id, success, output) in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.host), output))
+            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.host), "\n".join(output)))
             result = False
 
     return result
@@ -187,6 +190,9 @@ class Executor:
         self.sshrunner = ssh_runner.MultiMasterManager(ui, localaddrs)
         self.helperdir = helperdir
 
+    def finish(self):
+        self.sshrunner.shutdown_all()
+
     # Run commands in parallel on one or more hosts.
     #
     # cmds:  a list of the form: [ (node, cmd, args), ... ]
@@ -198,10 +204,10 @@ class Executor:
     #
     # Returns a list of results: [(node, success, output), ...]
     #   where "success" is a boolean (True if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr) or None
-    #   if no result was received (this could occur upon failure to communicate
-    #   with remote host, or if the command being executed did not finish
-    #   before the timeout).
+    #   and "output" is a list of strings (stdout followed by stderr) or an
+    #   error message if no result was received (this could occur upon failure
+    #   to communicate with remote host, or if the command being executed
+    #   did not finish before the timeout).
     def run_cmds(self, cmds, shell=False, helper=False):
         results = []
 
@@ -209,14 +215,16 @@ class Executor:
             return results
 
         dd = {}
+        hostlist = []
         for nodecmd in cmds:
             host = nodecmd[0].addr
             if host not in dd:
                 dd[host] = []
+                hostlist.append(host)
             dd[host].append(nodecmd)
 
         nodecmdlist = []
-        for host in dd:
+        for host in hostlist:
             for bronode, cmd, args in dd[host]:
                 if helper:
                     cmdargs = [os.path.join(self.helperdir, cmd)]
@@ -224,7 +232,8 @@ class Executor:
                     cmdargs = [cmd]
 
                 if shell:
-                    cmdargs = [cmdargs[0] + " " + " ".join(args)]
+                    if args:
+                        cmdargs = ["%s %s" % (cmdargs[0], " ".join(args))]
                 else:
                     cmdargs += args
 
@@ -241,7 +250,7 @@ class Executor:
                 results.append((bronode, res == 0, out + err))
                 logging.debug("%s: exit code %d" % (bronode.host, res))
             else:
-                results.append((bronode, False, None))
+                results.append((bronode, False, [str(result)]))
 
         return results
 

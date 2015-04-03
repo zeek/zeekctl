@@ -10,9 +10,10 @@ from BroControl import config
 # the corresponding configuration option.
 
 # Directories/files in form (path, mirror) which are synced from the manager to
-# all nodes.
-# If 'mirror' is true, the path is fully mirrored recursively, otherwise the
-# directory is just created.
+# all remote hosts.
+# If "mirror" is False, then the path is assumed to be a directory and it will
+# just be created on the remote host.  If "mirror" is True, then the path
+# is fully mirrored recursively.
 def get_syncs():
     syncs = [
     ("${brobase}", False),
@@ -35,6 +36,8 @@ def get_syncs():
 # In NFS-mode, only these will be synced.
 def get_nfssyncs():
     nfssyncs = [
+    ("${spooldir}", False),
+    ("${tmpdir}", False),
     ("${policydirsiteinstall}", True),
     ("${policydirsiteinstallauto}", True),
     ("${broctlconfigdir}/broctl-config.sh", True)
@@ -47,14 +50,13 @@ def get_nfssyncs():
 # other scripts.
 def make_broctl_config_sh(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
-    cfg_file = open(cfg_path, "w")
-    for substvartuple in config.Config.options():
-        substvar = substvartuple[0]
-        # don't write out if it has an invalid bash variable name
-        if not re.search("-", substvar):
-            substvarvalue = substvartuple[1]
-            cfg_file.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
-    cfg_file.close()
+    with open(cfg_path, "w") as out:
+        for substvartuple in config.Config.options():
+            substvar = substvartuple[0]
+            # don't write if it has an invalid bash variable name
+            if not re.search("-", substvar):
+                substvarvalue = substvartuple[1]
+                out.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
@@ -85,10 +87,6 @@ def make_layout(path, cmdout, silent=False):
             return self.p
 
     manager = config.Config.manager()
-
-    if not manager:
-        return
-
     broport = Port(int(config.Config.broport) - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
@@ -103,78 +101,77 @@ def make_layout(path, cmdout, silent=False):
             cmdout.info("generating standalone-layout.bro ...")
 
         filename = os.path.join(path, "standalone-layout.bro")
-        out = open(filename, "w")
-        out.write("# Automatically generated. Do not edit.\n")
-        # This is the port that standalone nodes listen on for remote control by default.
-        out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
-        out.write("redef Communication::nodes += {\n")
-        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
-        out.write("};\n")
-        out.close()
+        with open(filename, "w") as out:
+            out.write("# Automatically generated. Do not edit.\n")
+            # This is the port that standalone nodes listen on for remote
+            # control by default.
+            out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
+            out.write("redef Communication::nodes += {\n")
+            out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+            out.write("};\n")
 
     else:
         if not silent:
             cmdout.info("generating cluster-layout.bro ...")
 
-        out = open(filename, "w")
-
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
 
-        out.write("# Automatically generated. Do not edit.\n")
-        out.write("redef Cluster::nodes = {\n")
+        with open(filename, "w") as out:
+            out.write("# Automatically generated. Do not edit.\n")
+            out.write("redef Cluster::nodes = {\n")
 
-        # Control definition.  For now just reuse the manager information.
-        out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
+            # Control definition.  For now just reuse the manager information.
+            out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
 
-        # Manager definition
-        out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
-        for s in workers:
-            out.write("\"%s\"" % s.name)
-            if s != workers[-1]:
-                out.write(", ")
-        out.write(")],\n")
-
-        # Proxies definition
-        for p in proxies:
-            out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
+            # Manager definition
+            out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
             for s in workers:
                 out.write("\"%s\"" % s.name)
                 if s != workers[-1]:
                     out.write(", ")
             out.write(")],\n")
 
-        # Workers definition
-        for w in workers:
-            p = w.count % len(proxies)
-            out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
+            # Proxies definition
+            for p in proxies:
+                out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
+                for s in workers:
+                    out.write("\"%s\"" % s.name)
+                    if s != workers[-1]:
+                        out.write(", ")
+                out.write(")],\n")
 
-        # Activate time-machine support if configured.
-        if config.Config.timemachinehost:
-            out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
+            # Workers definition
+            for w in workers:
+                p = w.count % len(proxies)
+                out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
 
-        out.write("};\n")
+            # Activate time-machine support if configured.
+            if config.Config.timemachinehost:
+                out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
 
-        out.close()
+            out.write("};\n")
+
 
 # Reads in a list of networks from file.
 def read_networks(fname):
 
     nets = []
 
-    for line in open(fname):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
+    with open(fname, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
 
-        fields = line.split(None, 1)
+            fields = line.split(None, 1)
 
-        cidr = util.format_bro_prefix(fields[0])
-        tag = ""
-        if len(fields) == 2:
-            tag = fields[1]
+            cidr = util.format_bro_prefix(fields[0])
+            tag = ""
+            if len(fields) == 2:
+                tag = fields[1]
 
-        nets += [(cidr, tag)]
+            nets += [(cidr, tag)]
 
     return nets
 
@@ -185,25 +182,21 @@ def make_local_networks(path, cmdout, silent=False):
     netcfg = config.Config.localnetscfg
 
     if not os.path.exists(netcfg):
-        cmdout.error("list of local networks does not exist in %s" % netcfg)
+        cmdout.error("file not found: %s" % netcfg)
         return False
-
-    if not silent:
-        cmdout.info("generating local-networks.bro ...")
 
     nets = read_networks(netcfg)
 
-    out = open(os.path.join(path, "local-networks.bro"), "w")
-    out.write("# Automatically generated. Do not edit.\n\n")
+    with open(os.path.join(path, "local-networks.bro"), "w") as out:
+        out.write("# Automatically generated. Do not edit.\n\n")
 
-    out.write("redef Site::local_nets = {\n")
-    for (cidr, tag) in nets:
-        out.write("\t%s," % cidr)
-        if tag:
-            out.write("\t# %s" % tag)
-        out.write("\n")
-    out.write("};\n\n")
-    out.close()
+        out.write("redef Site::local_nets = {\n")
+        for (cidr, tag) in nets:
+            out.write("\t%s," % cidr)
+            if tag:
+                out.write("\t# %s" % tag)
+            out.write("\n")
+        out.write("};\n\n")
 
     return True
 
@@ -211,30 +204,23 @@ def make_local_networks(path, cmdout, silent=False):
 def make_broctl_config_policy(path, cmdout, silent=False):
     manager = config.Config.manager()
 
-    if not manager:
-        return
-
-    if not silent:
-        cmdout.info("generating broctl-config.bro ...")
-
     filename = os.path.join(path, "broctl-config.bro")
-    out = open(filename, "w")
-    out.write("# Automatically generated. Do not edit.\n")
-    out.write("redef Notice::mail_dest = \"%s\";\n" % config.Config.mailto)
-    out.write("redef Notice::mail_dest_pretty_printed = \"%s\";\n" % config.Config.mailalarmsto)
-    out.write("redef Notice::sendmail  = \"%s\";\n" % config.Config.sendmail)
-    out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
-    out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
-    if manager.type != "standalone":
-        out.write("@if ( Cluster::local_node_type() == Cluster::MANAGER )\n")
-    out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
-    out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
-    if manager.type != "standalone":
-        out.write("@endif\n")
-    if config.Config.ipv6comm == "1":
-        out.write("redef Communication::listen_ipv6 = T ;\n")
-    else:
-        out.write("redef Communication::listen_ipv6 = F ;\n")
+    with open(filename, "w") as out:
+        out.write("# Automatically generated. Do not edit.\n")
+        out.write("redef Notice::mail_dest = \"%s\";\n" % config.Config.mailto)
+        out.write("redef Notice::mail_dest_pretty_printed = \"%s\";\n" % config.Config.mailalarmsto)
+        out.write("redef Notice::sendmail  = \"%s\";\n" % config.Config.sendmail)
+        out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
+        out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
+        if manager.type != "standalone":
+            out.write("@if ( Cluster::local_node_type() == Cluster::MANAGER )\n")
+        out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
+        out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
+        if manager.type != "standalone":
+            out.write("@endif\n")
 
-    out.close()
+        if config.Config.ipv6comm == "1":
+            out.write("redef Communication::listen_ipv6 = T ;\n")
+        else:
+            out.write("redef Communication::listen_ipv6 = F ;\n")
 

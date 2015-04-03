@@ -49,7 +49,7 @@ touch .checking
 rc=$?
 
 if [ $rc -eq 0 -a "$print_loaded_scripts" = "1" ]; then
-    cat loaded_scripts*
+    grep -v '^#' loaded_scripts*
 fi
 
 exit $rc

@@ -2,9 +2,11 @@ import collections
 import json
 import subprocess
 import select
-import textwrap
 import time
 import os
+import base64
+import zlib
+import logging
 from threading import Thread
 
 from BroControl import py3bro
@@ -14,74 +16,87 @@ Empty = py3bro.Empty
 
 def get_muxer(shell):
     muxer = r"""
-    import json
-    import os
-    import sys
-    import subprocess
-    import signal
-    import select
+import os,sys,subprocess,signal,select,json
+TIMEOUT=120
 
-    TIMEOUT=120
+def w(s):
+	sys.stdout.write(json.dumps(s) + "\n")
+	sys.stdout.flush()
 
-    def w(s):
-        sys.stdout.write(json.dumps(s) + "\n")
-        sys.stdout.flush()
+def exec_cmds(cmds):
+	p=[]
+	for i,cmd in enumerate(cmds):
+		try:
+			proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE __SHELL__)
+			p.append((i,proc))
+		except Exception as e:
+			w((i,(1,'',str(e))))
+	return p
 
-    def exec_commands(cmds):
-        procs = []
-        for i, cmd in enumerate(cmds):
-            try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=__SHELL__)
-                procs.append((i, proc))
-            except Exception as e:
-                w( (i, (1, '', str(e))) )
-        return procs
+w("ready")
+commands=[]
+signal.alarm(TIMEOUT)
+for line in iter(sys.stdin.readline,"done\n"):
+	commands.append(json.loads(line))
 
-    w("ready")
-    commands = []
-    signal.alarm(TIMEOUT)
-    for line in iter(sys.stdin.readline, "done\n"):
-        commands.append(json.loads(line))
-    procs = exec_commands(commands)
+procs=exec_cmds(commands)
+cmd_map={}
+fd_map={}
+fds=set()
+for i,proc in procs:
+	o={"idx":i, "proc":proc, "stdout":[], "stderr":[], "waiting":2}
+	fd_map[proc.stdout]=o["stdout"]
+	fd_map[proc.stderr]=o["stderr"]
+	cmd_map[proc.stdout]=o
+	cmd_map[proc.stderr]=o
+	fds.update((proc.stdout,proc.stderr))
 
-    cmd_mapping = {}
-    fd_mapping = {}
-    allfds = set()
-    for i, proc in procs:
-        o = {"idx": i, "proc": proc, "stdout": [], "stderr": [], "waiting": 2}
-        fd_mapping[proc.stdout] = o["stdout"]
-        fd_mapping[proc.stderr] = o["stderr"]
-        cmd_mapping[proc.stdout] = o
-        cmd_mapping[proc.stderr] = o
-        allfds.update([proc.stderr, proc.stdout])
+while fds:
+	r,_,_=select.select(fds,[],[])
+	for fd in r:
+		output=os.read(fd.fileno(),1024)
+		if output:
+			fd_map[fd].append(output.decode())
+			continue
 
-    while allfds:
-        r, _, _ = select.select(allfds, [], [])
-        for fd in r:
-            output = os.read(fd.fileno(), 1024)
-            if output:
-                fd_mapping[fd].append(output)
-                continue
+		cmd=cmd_map[fd]
+		fds.remove(fd)
+		cmd["waiting"]-=1
+		if cmd["waiting"]:
+			continue
 
-            cmd = cmd_mapping[fd]
-            cmd["waiting"] -= 1
-            if cmd["waiting"] != 0:
-                continue
+		proc=cmd["proc"]
+		res=proc.wait()
+		out="".join(cmd["stdout"])
+		err="".join(cmd["stderr"])
+		w((cmd["idx"],(res,out,err)))
 
-            proc = cmd["proc"]
-            res = proc.wait()
-            out = "".join(cmd["stdout"])
-            err = "".join(cmd["stderr"])
-            w( (cmd["idx"], (res, out, err)) )
-            allfds.remove(proc.stdout)
-            allfds.remove(proc.stderr)
+w("done")
+"""
 
-    w("done")
-    """
+    if shell:
+        muxer = muxer.replace("__SHELL__", ",shell=True")
+    else:
+        muxer = muxer.replace("__SHELL__", "")
 
-    muxer = textwrap.dedent(muxer.replace("__SHELL__", str(shell)))
+    if py3bro.using_py3:
+        muxer = muxer.encode()
+    else:
+        # Remove code that is only needed for Py3
+        muxer = muxer.replace(".decode()", "")
 
-    return muxer.encode("zlib").encode("base64").replace("\n", "")
+    muxer = base64.b64encode(zlib.compress(muxer))
+
+    if py3bro.using_py3:
+        muxer = muxer.decode()
+
+    # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
+    muxer = "python -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % muxer
+
+    if py3bro.using_py3:
+        muxer = muxer.encode()
+
+    return muxer
 
 
 CmdResult = collections.namedtuple("CmdResult", "status stdout stderr")
@@ -96,6 +111,8 @@ class SSHMaster:
         self.need_connect = True
         self.master = None
         self.localaddrs = localaddrs
+        self.run_mux = get_muxer(False)
+        self.run_mux_shell = get_muxer(True)
 
     def connect(self):
         if self.need_connect:
@@ -110,7 +127,10 @@ class SSHMaster:
         readable, _, _ = select.select([self.master.stdout], [], [], timeout)
         if not readable:
             return False
-        return self.master.stdout.readline()
+        jtxt = self.master.stdout.readline()
+        if py3bro.using_py3:
+            jtxt = jtxt.decode()
+        return jtxt
 
     def exec_command(self, cmd, shell=False, timeout=60):
         return self.exec_commands([cmd], shell, timeout)[0]
@@ -121,13 +141,19 @@ class SSHMaster:
 
     def send_commands(self, cmds, shell=False, timeout=10):
         self.connect()
-        run_mux = """python -c 'exec("%s".decode("base64").decode("zlib"))'\n""" % get_muxer(shell)
-        self.master.stdin.write(run_mux)
+        if shell:
+            self.master.stdin.write(self.run_mux_shell)
+        else:
+            self.master.stdin.write(self.run_mux)
         self.master.stdin.flush()
         self.readline_with_timeout(timeout)
         for cmd in cmds:
-            self.master.stdin.write(json.dumps(cmd) + "\n")
-        self.master.stdin.write("done\n")
+            jcmd = "%s\n" % json.dumps(cmd)
+            if py3bro.using_py3:
+                jcmd = jcmd.encode()
+            self.master.stdin.write(jcmd)
+        # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
+        self.master.stdin.write(b"done\n")
         self.master.stdin.flush()
         self.sent_commands = len(cmds)
 
@@ -169,12 +195,12 @@ class HostHandler(Thread):
     def __init__(self, host, ui, localaddrs):
         self.ui = ui
         self.host = host
+        self.localaddrs = localaddrs
         self.q = Queue()
         self.alive = "Unknown"
         self.master = None
         Thread.__init__(self)
         self.daemon = True
-        self.localaddrs = localaddrs
 
     def shutdown(self):
         self.q.put((STOP_RUNNING, None, None))
@@ -188,7 +214,7 @@ class HostHandler(Thread):
         try:
             return self.master.ping()
         except Exception as e:
-            self.ui.output("Error in ping for %s" % self.host)
+            logging.debug("No response from host %s" % self.host)
             return False
 
     def connect_and_ping(self):
@@ -256,7 +282,7 @@ class MultiMasterManager:
             return rq.get(timeout=timeout)
         except Empty:
             self.shutdown(host)
-            return [Exception("Timeout")] #FIXME: needs to be the right length
+            return [Exception("Communication timeout")] #FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]
