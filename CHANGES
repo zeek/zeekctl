@@ -1,4 +1,117 @@
 
+1.3-185 | 2015-04-03 14:54:06 -0400
+
+  * Merge branch 'topic/dnthayer/fixes-for-2.4'
+
+    * topic/dnthayer/fixes-for-2.4:
+      Update some test baselines
+      Check if state database directory exists
+      Minor change to executor class
+      Added checks if there are any nodes to start or stop
+      Preserve order of hosts in command lists to be executed
+      Catch the KeyboardInterrupt exception
+      Reorganize code for the df command
+      Python 3 compatibility fixes
+      Make sure "broctl deploy" error msgs are visible
+      Speedup the deploy command
+      Fix a race condition that results in data loss
+      While waiting for lock, show owning PID of lock
+      Improve error handling for broctl install and check commands
+      Python 3 compatibility fix
+      Minor change to avoid having a command with trailing space
+      Make sure broctl always closes any file that it opens
+      Update broctl install requirements lis
+      Don't show log header lines in "broctl scripts" outpu
+      Added functions to cleanup before broctl terminates (Justin Azoff)
+
+  * Update some test baselines (Daniel Thayer)
+
+  * Check if state database directory exists
+
+    Check if the state database directory exists and give a useful error
+    message if not.  Without this check, the user would just get the error
+    message "unable to open database file", which is confusing. (Daniel Thayer)
+
+  * Minor change to executor class
+
+    Changed the run_cmds method so it returns an error message from
+    ssh_runner instead of None when it fails to run a command on a remote
+    host.  This gives the user a better error message, and is a less
+    confusing API. (Daniel Thayer)
+
+  * Added checks if there are any nodes to start or stop
+
+    This is just to avoid executing code unnecessarily. (Daniel Thayer)
+
+  * Preserve order of hosts in command lists to be executed (Daniel Thayer)
+
+  * Catch the KeyboardInterrupt exception (Daniel Thayer)
+
+  * Reorganize code for the df command
+
+    Reorganized the code for the df command so that we call the
+    run_helper() only once with all the commands to run, instead of
+    calling it once for every directory to check on all nodes. (Daniel Thayer)
+
+  * Python 3 compatibility fixes
+
+    Fixed some python 3 issues in ssh_runner.  Also, a small optimization
+    was made so that the get_muxer function is called only during
+    initialization of the SSHMaster class instead of every time we send
+    a command.
+
+    Removed a sorted() in the main broctl script that didn't work in
+    python 3 due to unorderable types.  It was redundant anyway, because
+    the results are already sorted by the cmdresult module. (Daniel Thayer)
+
+  * Make sure "broctl deploy" error msgs are visible (Daniel Thayer)
+
+  * Speedup the deploy command
+
+    For a cluster config with more than about a dozen nodes, the deploy
+    command spends most of its time doing the "check".  Changed this
+    to only check one node of each node type, resulting in the deploy
+    command running much faster. (Daniel Thayer)
+
+  * Fix a race condition that results in data loss
+
+    In the ssh_runner muxer code, when a file descriptor reaches EOF,
+    we need to immediately remove it from the list of file descriptors.
+    If it is not removed immediately, then it is sometimes returned from
+    select() two consecutive times.  If this happens, then the "waiting"
+    counter might be decremented to zero before all of the data has been
+    read on the other file descriptor associated with that process. (Daniel Thayer)
+
+  * While waiting for lock, show owning PID of lock
+
+    While waiting to acquire the lock, show the PID of the owner of the
+    lock.  This makes it more convenient for the user to figure out why
+    there is a lock.
+
+    Also added a couple more error messages to help the user understand
+    what's happening when an error occurs. (Daniel Thayer)
+
+  * Improve error handling for broctl install and check commands (Daniel Thayer)
+
+  * Python 3 compatibility fix
+
+    The encode()/decode() methods that were used do not work in Python 3.
+    Also made the muxer code more compact. (Daniel Thayer)
+
+  * Minor change to avoid having a command with trailing space (Daniel Thayer)
+
+  * Make sure broctl always closes any file that it opens (Daniel Thayer)
+
+  * Update broctl install requirements list (Daniel Thayer)
+
+  * Don't show log header lines in "broctl scripts" outpu
+
+    The log header lines don't contain useful info in this context, so
+    removing them from the output. (Daniel Thayer)
+
+  * Added functions to cleanup before broctl terminates (Daniel Thayer)
+
+
 1.3-165 | 2015-03-30 13:46:23 -0500
 
   * BIT-1326: Add configure-time check for required sqlite3 python
