@@ -23,11 +23,11 @@ connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log.gz
 origconnlog=conn.2013-12-30-22-24-20.log
 origtestlog=broctltest.2013-12-30-22-24-20.log
 
-ret=0
-broctl install
-
 # Create the custom log dir (broctl does not do this)
 mkdir $BROCTL_INSTALL_PREFIX/mylogs
+
+ret=0
+broctl install
 
 # Create Bro's working directory, chdir to that dir, and create rotated logs
 mkdir $BROCTL_INSTALL_PREFIX/spool/bro
