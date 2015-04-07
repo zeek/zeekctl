@@ -30,7 +30,7 @@ optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:
 for (opt, val) in optlist:
     if opt == "-v":
         # broctl doesn't care which version bro reports
-        print("bro version 2.2-1")
+        print("bro version 2.2-1", file=sys.stderr)
         sys.exit(0)
     elif opt == "-U":
         statusfile = val
