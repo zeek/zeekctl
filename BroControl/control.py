@@ -346,11 +346,10 @@ class Controller:
             self.pluginregistry.broProcessDied(n)
 
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
-        cmds = []
-        for node in nodes:
-            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), "crash"])]
+        postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
+        cmds = [(node, postterminate, [node.cwd(), "crash"]) for node in nodes]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
                 msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg + "\n".join(output))
                 if not msuccess:
@@ -502,14 +501,15 @@ class Controller:
         cleanup = [node for node in terminated if not node.hasCrashed()]
 
         cmds = []
+        postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         for node in cleanup:
             crashflag = ""
             if node in kill:
                 crashflag = "killed"
 
-            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
+            cmds += [(node, postterminate, [node.cwd(), crashflag])]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
                 self._log_action(node, "stopped")
             else:
@@ -721,9 +721,9 @@ class Controller:
         results = cmdresult.CmdResult()
 
         crashdiag = os.path.join(self.config.scriptsdir, "crash-diag")
-        cmds = [(node, "run-cmd", [crashdiag, node.cwd()]) for node in nodes]
+        cmds = [(node, crashdiag, [node.cwd()]) for node in nodes]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
                 errmsgs = ["error running crash-diag for %s" % node.name]
                 errmsgs += output
@@ -774,17 +774,10 @@ class Controller:
             if hosts.setdefault((node.addr, netif), node) == node:
                 nodenetifs.append((node, netif))
 
-        cmds = []
+        capstats = self.config.capstatspath
+        cmds = [(node, capstats, ["-I", str(interval), "-n", "1", "-i", interface]) for (node, interface) in nodenetifs]
 
-        for (node, interface) in nodenetifs:
-            # Interface name needs to be quoted because the eval command
-            # is used (this prevents any metacharacters in name from being
-            # interpreted by the shell).
-            capstats = [self.config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'%s'" % interface]
-
-            cmds += [(node, "run-cmd", capstats)]
-
-        outputs = self.executor.run_helper(cmds)
+        outputs = self.executor.run_cmds(cmds)
 
         totals = {}
 
