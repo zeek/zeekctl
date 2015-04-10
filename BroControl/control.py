@@ -622,7 +622,7 @@ class Controller:
             try:
                 os.makedirs(cwd)
             except OSError as err:
-                self.ui.error("cannot create directory: %s" % err)
+                self.ui.error("cannot create temporary directory: %s" % err)
                 results.ok = False
                 return results
 

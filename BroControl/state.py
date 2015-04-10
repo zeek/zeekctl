@@ -1,15 +1,15 @@
-import os
 import json
 import sqlite3
 
 class SqliteState:
     def __init__(self, path):
         self.path = path
-        if path != ":memory:":
-            dbdir = os.path.dirname(path)
-            if not os.path.isdir(dbdir):
-                raise sqlite3.Error("directory not found: %s" % dbdir)
-        self.db = sqlite3.connect(self.path)
+
+        try:
+            self.db = sqlite3.connect(self.path)
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s" % (err, path))
+
         self.c = self.db.cursor()
 
         self.setup()

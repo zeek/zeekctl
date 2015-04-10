@@ -283,7 +283,7 @@ class Configuration:
         fname = self.nodecfg
         try:
             if not config.read(fname):
-                raise ConfigurationError("cannot read '%s'" % fname)
+                raise ConfigurationError("cannot read node config file: %s" % fname)
         except py3bro.configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
@@ -587,14 +587,19 @@ class Configuration:
     def _get_bro_version(self):
         from BroControl import execute
 
-        version = ""
         bro = self.subst("${bindir}/bro")
-        if os.path.lexists(bro):
-            (success, output) = execute.run_localcmd("%s -v" % bro)
-            if success and output:
-                version = output[-1]
-        else:
+        if not os.path.lexists(bro):
             raise ConfigurationError("cannot find Bro binary: %s" % bro)
+
+        version = ""
+        (success, output) = execute.run_localcmd("%s -v" % bro)
+        if success and output:
+            version = output[-1]
+        else:
+            msg = ""
+            if output:
+                msg = " with output:\n%s" % "\n".join(output)
+            raise ConfigurationError("running \"bro -v\" failed%s" % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
