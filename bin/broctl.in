@@ -767,8 +767,8 @@ def main():
         try:
             cmdsuccess = loop.onecmd(cmdline)
         except Exception as e:
+            cmdsuccess = False
             print("Error: %s" % e)
-            return 1
         except KeyboardInterrupt:
             cmdsuccess = False
 
