@@ -291,7 +291,7 @@ nodes if none are given.
     instructions. While not intended for interactive use, no harm will be
     caused by executing the command manually: all the maintenance tasks
     will then just be performed one more time.
-    
+
     The second mode is for interactive usage and determines if the regular
     tasks are indeed performed when ``broctl cron`` is executed. In other
     words, even with ``broctl cron`` in your crontab, you can still
@@ -308,7 +308,7 @@ nodes if none are given.
     by a restart on all nodes.  This command should be run after any
     changes to Bro policy scripts or the broctl configuration, and after
     Bro is upgraded or even just recompiled.
-    
+
     This command is equivalent to running the check_, install_, and
     restart_ commands, in that order.
 
@@ -411,10 +411,10 @@ nodes if none are given.
     rotation. Additional Bro command line flags and scripts can
     be given (each argument after a ``--`` argument is interpreted as
     a script).
-    
+
     Upon completion, the command prints a path where the log files can be
     found. Subsequent runs of this command may delete these logs.
-    
+
     In cluster mode, Bro is run with *both* manager and worker scripts
     loaded into a single instance. While that doesn't fully reproduce the
     live setup, it is often sufficient for debugging analysis scripts.
@@ -432,7 +432,7 @@ nodes if none are given.
     Restarts the given nodes, or all nodes if none are specified. The
     effect is the same as first executing stop_ followed
     by a start_, giving the same nodes in both cases.
-    
+
     If ``--clean`` is given, the installation is reset into a clean state
     before restarting. More precisely, a ``restart --clean`` turns into
     the command sequence stop_, cleanup_, check_, install_, and
@@ -940,16 +940,16 @@ Class ``Plugin``
 
 class **Plugin**
      The class ``Plugin`` is the base class for all BroControl plugins.
-     
+
      The class has a number of methods for plugins to override, and every
      plugin must at least override ``name()`` and ``pluginVersion()``.
-     
+
      For each BroControl command ``foo``, there are two methods,
      ``cmd_foo_pre`` and ``cmd_foo_post``, that are called just before the
      command is executed and just after it has finished, respectively. The
      arguments these methods receive correspond to their command-line
      parameters, and are further documented below.
-     
+
      The ``cmd_<XXX>_pre`` methods have the ability to prevent the command's
      execution, either completely or partially for those commands that take
      nodes as parameters. In the latter case, the method receives a list of
@@ -960,20 +960,20 @@ class **Plugin**
      the command for a subset, remove the affected ones.  For commands that do
      not receive nodes as arguments, the return value is interpreted as boolean
      indicating whether command execution should proceed (True) or not (False).
-     
+
      The ``cmd_<XXX>_post`` methods likewise receive the commands arguments as
      their parameter, as documented below. For commands taking nodes, the list
      corresponds to those nodes for which the command was actually executed
      (i.e., after any ``cmd_<XXX>_pre`` filtering).
-     
+
      Note that if a plugin prevents a command from executing either completely or
      partially, it should report its reason via the ``message()`` or
      ``error()`` methods.
-     
+
      If multiple plugins hook into the same command, all their
      ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
      executed on the intersection of all ``cmd_<XXX>_pre`` results.
-     
+
      Finally, note that the ``restart`` command is just a combination of other
      commands and thus their callbacks are run in addition to the callbacks
      for ``restart``.
@@ -1026,7 +1026,7 @@ class **Plugin**
 
          Returns the value of one of the plugin's options, *name*. The
          returned value will always be a string.
-         
+
          An option has a default value (see *options()*), which can be
          overridden by a user in ``broctl.cfg``. An option's value cannot be
          changed by the plugin.
@@ -1038,10 +1038,10 @@ class **Plugin**
          Returns the current value of one of the plugin's state variables,
          *name*. The returned value will always be a string. If it has not yet
          been set, an empty string will be returned.
-         
+
          Different from options, state variables can be set by the plugin.
          They are persistent across restarts.
-         
+
          Note that a plugin cannot query any global BroControl state variables.
 
      .. _Plugin.hosts:
@@ -1081,7 +1081,7 @@ class **Plugin**
          Sets one of the plugin's state variables, *name*, to *value*.
          *value* must be a string. The change is permanent and will be recorded
          to disk.
-         
+
          Note that a plugin cannot change any global BroControl state
          variables.
 
@@ -1093,7 +1093,7 @@ class **Plugin**
          to have terminated unexpectedly. This method will be called just
          before BroControl prepares the node's "crash report" and before it
          cleans up the node's spool directory.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1103,7 +1103,7 @@ class **Plugin**
 
          Called just after the ``capstats`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1115,7 +1115,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *interval* is an integer with the measurement interval in
          seconds.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1126,7 +1126,7 @@ class **Plugin**
          Called just after the ``check`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1137,7 +1137,7 @@ class **Plugin**
          Called just before the ``check`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1147,7 +1147,7 @@ class **Plugin**
 
          Called just after the ``cleanup`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1159,7 +1159,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *all* is boolean indicating whether the ``--all``
          argument has been given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1168,7 +1168,7 @@ class **Plugin**
      **cmd_config_post** (self)
 
          Called just after the ``config`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1178,7 +1178,7 @@ class **Plugin**
 
          Called just before the ``config`` command is run. Returns a boolean
          indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1188,7 +1188,7 @@ class **Plugin**
 
          Called just after the ``cron`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1201,10 +1201,10 @@ class **Plugin**
          one of the strings: ``enable``, ``disable``, ``?``. *watch* is a
          boolean indicating whether the ``cron`` command should restart
          abnormally terminated Bro processes; it's only valid if *arg* is empty.
-         
+
          Returns a boolean indicating whether or not the ``cron`` command should
          run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1215,10 +1215,10 @@ class **Plugin**
          Called when a command defined by the ``commands`` method is executed.
          *cmd* is the command (without the plugin's prefix), and *args* is a
          single string with all arguments.
-         
+
          If the arguments are actually node names, ``parseNodes`` can
          be used to get the `Node`_ objects.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1227,7 +1227,7 @@ class **Plugin**
      **cmd_deploy_post** (self)
 
          Called just after the ``deploy`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1237,7 +1237,7 @@ class **Plugin**
 
          Called just before the ``deploy`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1247,7 +1247,7 @@ class **Plugin**
 
          Called just after the ``df`` command has finished. Arguments are as
          with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1258,7 +1258,7 @@ class **Plugin**
          Called just before the ``df`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1268,7 +1268,7 @@ class **Plugin**
 
          Called just after the ``diag`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1279,7 +1279,7 @@ class **Plugin**
          Called just before the ``diag`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1289,7 +1289,7 @@ class **Plugin**
 
          Called just after the ``exec`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1299,10 +1299,10 @@ class **Plugin**
 
          Called just before the ``exec`` command is run. *cmdline* is a
          string with the command line to execute.
-         
+
          Returns a boolean indicating whether or not the ``exec`` command
          should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1311,7 +1311,7 @@ class **Plugin**
      **cmd_install_post** (self)
 
          Called just after the ``install`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1321,7 +1321,7 @@ class **Plugin**
 
          Called just before the ``install`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1331,7 +1331,7 @@ class **Plugin**
 
          Called just after the ``netstats`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1342,7 +1342,7 @@ class **Plugin**
          Called just before the ``netstats`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1351,7 +1351,7 @@ class **Plugin**
      **cmd_nodes_post** (self)
 
          Called just after the ``nodes`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1361,7 +1361,7 @@ class **Plugin**
 
          Called just before the ``nodes`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1371,7 +1371,7 @@ class **Plugin**
 
          Called just after the ``peerstatus`` command has finished.
          Arguments are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1382,7 +1382,7 @@ class **Plugin**
          Called just before the ``peerstatus`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1392,7 +1392,7 @@ class **Plugin**
 
          Called just after the ``print`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1403,7 +1403,7 @@ class **Plugin**
          Called just before the ``print`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command. *id* is a string with the name of the ID to be printed.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1414,7 +1414,7 @@ class **Plugin**
          Called just after the ``process`` command has finished. Arguments
          are as with the ``pre`` method, plus an additional boolean *success*
          indicating whether Bro terminated normally.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1425,10 +1425,10 @@ class **Plugin**
          Called just before the ``process`` command is run. It receives the
          *trace* to read from as a string, a list of additional Bro *options*,
          and a list of additional Bro *scripts*.
-         
+
          Returns a boolean indicating whether or not the ``process`` command
          should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1439,7 +1439,7 @@ class **Plugin**
          Called just after the ``restart`` command has finished. It receives
          a list of *nodes* indicating the nodes on which the command was
          executed.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1451,7 +1451,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *clean* is boolean indicating whether the ``--clean``
          argument has been given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1461,7 +1461,7 @@ class **Plugin**
 
          Called just after the ``scripts`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1473,7 +1473,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *check* is boolean indicating whether the ``-c``
          option was given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1484,7 +1484,7 @@ class **Plugin**
          Called just after the ``start`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1495,7 +1495,7 @@ class **Plugin**
          Called just before the ``start`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1505,7 +1505,7 @@ class **Plugin**
 
          Called just after the ``status`` command has finished.  Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1516,7 +1516,7 @@ class **Plugin**
          Called just before the ``status`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1527,7 +1527,7 @@ class **Plugin**
          Called just after the ``stop`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1538,7 +1538,7 @@ class **Plugin**
          Called just before the ``stop`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1550,7 +1550,7 @@ class **Plugin**
          as with the ``pre`` method. Note that when ``top`` is run
          interactively to auto-refresh continuously, this method will be called
          once after each update.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1562,7 +1562,7 @@ class **Plugin**
          of nodes, and returns the list of nodes that should proceed with the
          command. Note that when ``top`` is run interactively to auto-refresh
          continuously, this method will be called once before each update.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1573,7 +1573,7 @@ class **Plugin**
          Called just after the ``update`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1584,7 +1584,7 @@ class **Plugin**
          Called just before the ``update`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1594,26 +1594,26 @@ class **Plugin**
 
          Returns a set of custom commands provided by the
          plugin.
-         
+
          The return value is a list of 3-tuples each having the following
          elements:
-         
+
              ``command``
                  A string with the command's name. Note that the command name
                  exposed to the user will be prefixed with the plugin's prefix
                  as returned by *prefix()* (e.g., ``myplugin.mycommand``).
-         
+
              ``arguments``
                  A string describing the command's arguments in a textual form
                  suitable for use in the ``help`` command summary (e.g.,
                  ``[<nodes>]`` for a command taking an optional list of nodes).
                  Empty if no arguments are expected.
-         
+
              ``description``
                  A string with a description of the command's semantics suitable
                  for use in the ``help`` command summary.
-         
-         
+
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1624,7 +1624,7 @@ class **Plugin**
 
          Called once just before BroControl terminates. This method can do
          any cleanup the plugin may require.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1640,11 +1640,11 @@ class **Plugin**
          the name of the *host* and a boolean *status* set to False. Once the
          host becomes available again, the method will be called again for the
          same host with *status* now set to True.
-         
+
          Note that BroControl's ``cron`` tracks a host's availability across
          execution, so if the next time it's run the host is still down, this
          method will not be called again.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1654,15 +1654,15 @@ class **Plugin**
 
          Called once just before BroControl starts executing any commands.
          This method can do any initialization that the plugin may require.
-         
+
          Note that when this method executes, BroControl guarantees that all
          internals are fully set up (e.g., user-defined options are available).
          This may not be the case when the class ``__init__`` method runs.
-         
+
          Returns a boolean, indicating whether the plugin should be used. If it
          returns ``False``, the plugin will be removed and no other methods
          called.
-         
+
          This method can be overridden by derived classes. The default
          implementation always returns True.
 
@@ -1672,7 +1672,7 @@ class **Plugin**
 
          Returns a string with a descriptive name for the plugin (e.g.,
          ``"TestPlugin"``). The name must not contain any whitespace.
-         
+
          This method must be overridden by derived classes. The implementation
          must not call the parent class' implementation.
 
@@ -1685,7 +1685,7 @@ class **Plugin**
          value for a key will be available from the `Node`_ object as attribute
          ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not set, the
          attribute will be set to an empty string.
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1696,29 +1696,29 @@ class **Plugin**
 
          Returns a set of local configuration options provided by the
          plugin.
-         
+
          The return value is a list of 4-tuples each having the following
          elements:
-         
+
              ``name``
                  A string with name of the option (e.g., ``Path``). Option
                  names are case-insensitive. Note that the option name exposed
                  to the user will be prefixed with your plugin's prefix as
                  returned by *prefix()* (e.g., ``myplugin.Path``).
-         
+
              ``type``
                  A string with type of the option, which must be one of
                  ``"bool"``, ``"string"``, or ``"int"``.
-         
+
              ``default``
                  A string with the option's default value. Note that this must
                  always be a string, even for non-string types. For booleans,
                  use ``"0"`` for False and ``"1"`` for True. For integers, give
                  the value as a string ``"42"``.
-         
+
              ``description``
                  A string with a description of the option semantics.
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1729,7 +1729,7 @@ class **Plugin**
 
          Returns an integer with a version number for the plugin. Plugins
          should increase their version number with any significant change.
-         
+
          This method must be overridden by derived classes. The implementation
          must not call the parent class' implementation.
 
@@ -1739,7 +1739,7 @@ class **Plugin**
 
          Returns a string with a prefix for the plugin's options and
          commands names (e.g., "myplugin").
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns a lower-cased version of *name()*.
@@ -1754,43 +1754,43 @@ class **Node**
      standalone mode, there's always exactly one node of type ``standalone``. In
      a cluster setup, there is exactly one of type ``manager``, one or
      more of type ``proxy``, and zero or more of type ``worker``.
-     
+
      A ``Node`` object has a number of keys with values that are set
      via the ``node.cfg`` file and can be accessed directly (from a plugin)
      via corresponding Python attributes (e.g., ``node.name``):
-     
+
          ``name`` (string)
              The name of the node, which corresponds to the ``[<name>]``
              section in ``node.cfg``.
-     
+
          ``type`` (string)
              The type of the node, which will be one of ``standalone``,
              ``manager``, ``proxy``, and ``worker``.
-     
+
          ``env_vars`` (string)
              A comma-separated list of environment variables to set when
              running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``). These
              node-specific values override global values (specified in
              the ``broctl.cfg`` file).
-     
+
          ``host`` (string)
              The hostname of the system the node is running on.
-     
+
          ``interface`` (string)
              The network interface for Bro to use; empty if not set.
-     
+
          ``lb_procs`` (integer)
              The number of clustered Bro workers you'd like to start up.
-     
+
          ``lb_method`` (string)
              The load balancing method to distribute packets to all of the
              processes (must be one of: ``pf_ring``, ``myricom``, or
              ``interfaces``).
-     
+
          ``lb_interfaces`` (string)
              If the load balancing method is ``interfaces``, then this is
              a comma-separated list of network interface names to use.
-     
+
          ``pin_cpus`` (string)
              A comma-separated list of CPU numbers to which the node's Bro
              processes will be pinned (if not specified, then CPU pinning will
@@ -1804,25 +1804,25 @@ class **Node**
              than one (if not enough CPU numbers are specified) Bro processes
              pinned to them.  Only the specified CPU numbers will be used,
              regardless of whether additional CPU cores exist.
-     
+
          ``aux_scripts`` (string)
              Any node-specific Bro script configured for this node.
-     
+
          ``zone_id`` (string)
              If BroControl is managing a cluster comprised of nodes
              using non-global IPv6 addresses, then this configures the
              :rfc:`4007` ``zone_id`` string that the node associates with
              the common zone that all cluster nodes are a part of.  This
              identifier may differ between nodes.
-     
+
      Any attribute that is not defined in ``node.cfg`` will be empty.
-     
+
      In addition, plugins can override `Plugin.nodeKeys`_ to define their own
      node keys, which can then be likewise set in ``node.cfg``. The key names
      will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
      ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
      ``node.cfg``).
-     
+
      Finally, a Node object has the following methods that can be called
      from a plugin:
 
