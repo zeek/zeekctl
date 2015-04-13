@@ -17,6 +17,13 @@ class CmdResult:
         # Results in the "nodes" list have been sorted (True), or not (False)
         self._sorted = False
 
+    def to_dict(self):
+        return {
+            "success_count": self.success_count,
+            "fail_count": self.fail_count,
+            "nodes": self.get_node_data(),
+        }
+
     def get_node_counts(self):
         """Return tuple (success, fail) of success and fail node counts."""
 
