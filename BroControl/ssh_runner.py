@@ -140,7 +140,7 @@ class SSHMaster:
         self.send_commands(cmds, shell, timeout)
         return self.collect_results(timeout)
 
-    def send_commands(self, cmds, shell=False, timeout=10):
+    def send_commands(self, cmds, shell=False, timeout):
         self.connect()
         if shell:
             self.master.stdin.write(self.run_mux_shell)
@@ -158,7 +158,7 @@ class SSHMaster:
         self.master.stdin.flush()
         self.sent_commands = len(cmds)
 
-    def collect_results(self, timeout=60):
+    def collect_results(self, timeout):
         outputs = [Exception("SSH Timeout")] * self.sent_commands
         while True:
             line = self.readline_with_timeout(timeout)
@@ -172,8 +172,8 @@ class SSHMaster:
             outputs[idx] = CmdResult(*out)
         return outputs
 
-    def ping(self, timeout=5):
-        output = self.exec_command(["/bin/echo", "ping"])
+    def ping(self, timeout=10):
+        output = self.exec_command(["/bin/echo", "ping"], timeout=timeout)
         return output and output.stdout.strip() == "ping"
 
     def close(self):
