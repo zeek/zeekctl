@@ -137,10 +137,10 @@ class SSHMaster:
         return self.exec_commands([cmd], shell, timeout)[0]
 
     def exec_commands(self, cmds, shell=False, timeout=60):
-        self.send_commands(cmds, shell, timeout)
+        self.send_commands(cmds, timeout, shell)
         return self.collect_results(timeout)
 
-    def send_commands(self, cmds, shell=False, timeout):
+    def send_commands(self, cmds, timeout, shell=False):
         self.connect()
         if shell:
             self.master.stdin.write(self.run_mux_shell)
