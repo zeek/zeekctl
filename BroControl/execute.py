@@ -186,9 +186,10 @@ def get_local_addrs(cmdout):
 
 
 class Executor:
-    def __init__(self, localaddrs, helperdir):
+    def __init__(self, localaddrs, helperdir, timeout):
         self.sshrunner = ssh_runner.MultiMasterManager(localaddrs)
         self.helperdir = helperdir
+        self.timeout = timeout
 
     def finish(self):
         self.sshrunner.shutdown_all()
@@ -240,7 +241,7 @@ class Executor:
                 nodecmdlist.append((bronode.addr, cmdargs))
                 logging.debug(bronode.host + ": " + " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell):
+        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.timeout):
             nodecmd = dd[host].pop(0)
             bronode = nodecmd[0]
             if not isinstance(result, Exception):

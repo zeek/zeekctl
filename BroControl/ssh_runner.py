@@ -194,9 +194,10 @@ class SSHMaster:
 STOP_RUNNING = object()
 
 class HostHandler(Thread):
-    def __init__(self, host, localaddrs):
+    def __init__(self, host, localaddrs, timeout):
         self.host = host
         self.localaddrs = localaddrs
+        self.timeout = timeout
         self.q = Queue()
         self.alive = "Unknown"
         self.master = None
@@ -246,7 +247,7 @@ class HostHandler(Thread):
             return False
 
         try:
-            resp = self.master.exec_commands(item, shell)
+            resp = self.master.exec_commands(item, shell, self.timeout)
         except Exception as e:
             self.alive = False
             msg = "Exception in iteration for %s: %s" % (self.host, e)
@@ -267,13 +268,13 @@ class MultiMasterManager:
         self.response_queues = {}
         self.localaddrs = localaddrs
 
-    def setup(self, host):
+    def setup(self, host, timeout):
         if host not in self.masters:
-            self.masters[host] = HostHandler(host, self.localaddrs)
+            self.masters[host] = HostHandler(host, self.localaddrs, timeout)
             self.masters[host].start()
 
-    def send_commands(self, host, commands, shell=False):
-        self.setup(host)
+    def send_commands(self, host, commands, timeout, shell=False):
+        self.setup(host, timeout)
         rq = Queue()
         self.response_queues[host] = rq
         self.masters[host].send_commands(commands, shell, rq)
@@ -291,8 +292,7 @@ class MultiMasterManager:
         return self.exec_commands(host, [command], timeout)[0]
 
     def exec_commands(self, host, commands, timeout=65):
-        self.setup(host)
-        self.send_commands(host, commands)
+        self.send_commands(host, commands, timeout)
         return self.get_result(host, timeout)
 
     def exec_multihost_commands(self, cmds, shell=False, timeout=65):
@@ -301,7 +301,7 @@ class MultiMasterManager:
             hosts[host].append(cmd)
 
         for host, cmds in hosts.items():
-            self.send_commands(host, cmds, shell)
+            self.send_commands(host, cmds, timeout, shell)
 
         for host in hosts:
             for res in self.get_result(host, timeout):

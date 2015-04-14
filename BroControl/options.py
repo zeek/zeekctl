@@ -30,6 +30,8 @@ options = [
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", "10", "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
+    Option("CommandTimeout", "60", "int", Option.USER, False,
+           "The number of seconds to wait for a command to return results."),
     Option("BroPort", "47760", "int", Option.USER, False,
            "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
