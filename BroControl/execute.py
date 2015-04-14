@@ -186,8 +186,8 @@ def get_local_addrs(cmdout):
 
 
 class Executor:
-    def __init__(self, ui, localaddrs, helperdir):
-        self.sshrunner = ssh_runner.MultiMasterManager(ui, localaddrs)
+    def __init__(self, localaddrs, helperdir):
+        self.sshrunner = ssh_runner.MultiMasterManager(localaddrs)
         self.helperdir = helperdir
 
     def finish(self):

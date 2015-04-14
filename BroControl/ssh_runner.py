@@ -159,10 +159,11 @@ class SSHMaster:
         self.sent_commands = len(cmds)
 
     def collect_results(self, timeout):
-        outputs = [Exception("SSH Timeout")] * self.sent_commands
+        outputs = [Exception("Command timeout")] * self.sent_commands
         while True:
             line = self.readline_with_timeout(timeout)
             if not line:
+                logging.debug("Command timeout on host %s" % self.host)
                 self.close()
                 break
             resp = json.loads(line)
@@ -193,8 +194,7 @@ class SSHMaster:
 STOP_RUNNING = object()
 
 class HostHandler(Thread):
-    def __init__(self, host, ui, localaddrs):
-        self.ui = ui
+    def __init__(self, host, localaddrs):
         self.host = host
         self.localaddrs = localaddrs
         self.q = Queue()
@@ -216,7 +216,7 @@ class HostHandler(Thread):
         try:
             return self.master.ping()
         except Exception as e:
-            logging.debug("No response from host %s" % self.host)
+            logging.debug("Host %s is not alive" % self.host)
             return False
 
     def connect_and_ping(self):
@@ -248,10 +248,11 @@ class HostHandler(Thread):
         try:
             resp = self.master.exec_commands(item, shell)
         except Exception as e:
-            self.ui.output("Exception in iteration for %s" % self.host)
             self.alive = False
+            msg = "Exception in iteration for %s: %s" % (self.host, e)
+            logging.debug(msg)
+            resp = [Exception(msg)] * len(item)
             time.sleep(2)
-            resp = [e] * len(item)
         rq.put(resp)
 
         return False
@@ -261,15 +262,14 @@ class HostHandler(Thread):
 
 
 class MultiMasterManager:
-    def __init__(self, ui, localaddrs=[]):
-        self.ui = ui
+    def __init__(self, localaddrs=[]):
         self.masters = {}
         self.response_queues = {}
         self.localaddrs = localaddrs
 
     def setup(self, host):
         if host not in self.masters:
-            self.masters[host] = HostHandler(host, self.ui, self.localaddrs)
+            self.masters[host] = HostHandler(host, self.localaddrs)
             self.masters[host].start()
 
     def send_commands(self, host, commands, shell=False):
@@ -283,8 +283,9 @@ class MultiMasterManager:
         try:
             return rq.get(timeout=timeout)
         except Empty:
+            logging.debug("Host timeout %s" % host)
             self.shutdown(host)
-            return [Exception("Communication timeout")] #FIXME: needs to be the right length
+            return [Exception("Host timeout")] #FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]

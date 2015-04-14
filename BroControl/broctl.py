@@ -65,7 +65,7 @@ class BroCtl(object):
                                 datefmt=self.config.timefmt,
                                 level=logging.DEBUG)
 
-        self.executor = execute.Executor(self.ui, self.localaddrs, self.config.helperdir)
+        self.executor = execute.Executor(self.localaddrs, self.config.helperdir)
         self.plugins = pluginreg.PluginRegistry()
         self.setup()
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
