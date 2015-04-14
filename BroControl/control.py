@@ -289,7 +289,7 @@ class Controller:
             # Check nodes' .status file
             cmds = []
             for node in todo.values():
-                cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
                 if success:
@@ -534,19 +534,19 @@ class Controller:
         nodestatus = self._isrunning(nodes)
         running = []
 
-        cmds1 = []
-        cmds2 = []
+        cmds = []
         for (node, isrunning) in nodestatus:
             if isrunning:
                 running += [node]
-                cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
-                cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
 
-        startups = self.executor.run_helper(cmds1)
-        statuses = self.executor.run_helper(cmds2)
+        res = self.executor.run_helper(cmds)
 
-        startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
-        statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
+        startups = {}
+        statuses = {}
+        for (n, success, output) in res:
+            startups[n.name] = success and util.fmttime(output[0]) or "???"
+            statuses[n.name] = success and output[1].split()[0].lower() or "???"
 
         if showall:
             self.ui.info("Getting peer status ...")
