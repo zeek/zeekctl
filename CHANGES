@@ -1,4 +1,12 @@
 
+1.3-197 | 2015-04-16 16:15:25 -0500
+
+  * Use daemon threads only for remote hosts (Daniel Thayer)
+
+  * Fix to prevent the broctl stop command from hanging (Daniel Thayer)
+
+  * Remove the run-cmd helper script (Daniel Thayer)
+
 1.3-185 | 2015-04-03 14:54:06 -0400
 
   * Update test baselines. (Daniel Thayer)

@@ -200,7 +200,8 @@ class HostHandler(Thread):
         self.alive = "Unknown"
         self.master = None
         Thread.__init__(self)
-        self.daemon = True
+        if self.host not in self.localaddrs:
+            self.daemon = True
 
     def shutdown(self):
         self.q.put((STOP_RUNNING, None, None))

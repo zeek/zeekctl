@@ -179,5 +179,5 @@ if [ -z "$(find . -maxdepth 1 -type f -name '*.*.log')" ]; then
     rm -rf "$tmp"
 fi
 
-) &
+) >/dev/null 2>&1 &
 

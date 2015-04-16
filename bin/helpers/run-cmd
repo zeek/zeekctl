@@ -1,6 +1,0 @@
-#! /usr/bin/env bash
-#
-#  run-cmd <cmd> 
-
-eval $@ 2>&1
-
