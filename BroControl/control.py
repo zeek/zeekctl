@@ -292,17 +292,19 @@ class Controller:
                 cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
-                if success:
-                    try:
-                        (stat, loc) = output[0].split()
-                        if status in stat:
-                            # Status reached. Cool.
-                            del todo[node.name]
-                            results += [(node, True)]
-                    except IndexError:
-                        # Something's wrong. We give up on that node.
+                if not success or not output[0]:
+                    continue
+
+                fields = output[0].split()
+                if len(fields) == 2:
+                    if status in fields[0]:
+                        # Status reached. Cool.
                         del todo[node.name]
-                        results += [(node, False)]
+                        results += [(node, True)]
+                else:
+                    # Something's wrong. We give up on that node.
+                    del todo[node.name]
+                    results += [(node, False)]
 
             for (node, isrunning) in running:
                 if node.name in todo and not isrunning:
@@ -540,13 +542,11 @@ class Controller:
                 running += [node]
                 cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
 
-        res = self.executor.run_helper(cmds)
-
         startups = {}
         statuses = {}
-        for (n, success, output) in res:
-            startups[n.name] = success and util.fmttime(output[0]) or "???"
-            statuses[n.name] = success and output[1].split()[0].lower() or "???"
+        for (n, success, output) in self.executor.run_helper(cmds):
+            startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
+            statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
 
         if showall:
             self.ui.info("Getting peer status ...")
