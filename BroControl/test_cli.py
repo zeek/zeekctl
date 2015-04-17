@@ -23,7 +23,7 @@ def wait(id):
         res = requests.get("http://localhost:8082/result/%d" % id).json()
         last = log(id, last)
         if res['result'] is not None:
-            return json.dumps(res['result'])
+            return json.loads(res['result'])
         time.sleep(.2)
 
 
@@ -33,12 +33,10 @@ def run(action):
 
 def call(action):
     out = requests.get("http://localhost:8082/%s" % action).text
-    return str(out)
     try:
         return json.loads(out)
     except:
         return out
-    return res
 
 if __name__ == "__main__":
     if sys.argv[1] == 'bg':

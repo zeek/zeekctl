@@ -289,20 +289,22 @@ class Controller:
             # Check nodes' .status file
             cmds = []
             for node in todo.values():
-                cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
-                if success:
-                    try:
-                        (stat, loc) = output[0].split()
-                        if status in stat:
-                            # Status reached. Cool.
-                            del todo[node.name]
-                            results += [(node, True)]
-                    except IndexError:
-                        # Something's wrong. We give up on that node.
+                if not success or not output[0]:
+                    continue
+
+                fields = output[0].split()
+                if len(fields) == 2:
+                    if status in fields[0]:
+                        # Status reached. Cool.
                         del todo[node.name]
-                        results += [(node, False)]
+                        results += [(node, True)]
+                else:
+                    # Something's wrong. We give up on that node.
+                    del todo[node.name]
+                    results += [(node, False)]
 
             for (node, isrunning) in running:
                 if node.name in todo and not isrunning:
@@ -534,19 +536,17 @@ class Controller:
         nodestatus = self._isrunning(nodes)
         running = []
 
-        cmds1 = []
-        cmds2 = []
+        cmds = []
         for (node, isrunning) in nodestatus:
             if isrunning:
                 running += [node]
-                cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
-                cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
 
-        startups = self.executor.run_helper(cmds1)
-        statuses = self.executor.run_helper(cmds2)
-
-        startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
-        statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
+        startups = {}
+        statuses = {}
+        for (n, success, output) in self.executor.run_helper(cmds):
+            startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
+            statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
 
         if showall:
             self.ui.info("Getting peer status ...")
@@ -622,7 +622,7 @@ class Controller:
             try:
                 os.makedirs(cwd)
             except OSError as err:
-                self.ui.error("cannot create directory: %s" % err)
+                self.ui.error("cannot create temporary directory: %s" % err)
                 results.ok = False
                 return results
 

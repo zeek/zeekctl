@@ -158,7 +158,7 @@ class CronTasks:
             try:
                 os.makedirs(self.config.statsdir)
             except OSError as err:
-                self.ui.error("failure creating directory: %s" % err)
+                self.ui.error("failure creating directory in broctl option statsdir: %s" % err)
                 return
 
             self.ui.info("creating directory for stats file: %s" % self.config.statsdir)

@@ -1,0 +1,11 @@
+#! /usr/bin/env bash
+#
+# Given one or more filenames, output the first line of each file and return 0.
+# If a filename does not correspond to a regular file, or if this script
+# lacks read permission to the file, then output a blank line.
+#
+# first-line <file> ...
+
+for fname in "$@"; do
+    [ -s "$fname" ] && head -n 1 "$fname" 2>/dev/null || echo
+done

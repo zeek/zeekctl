@@ -1,4 +1,75 @@
 
+1.3-212 | 2015-04-17 15:27:14 -0500
+
+  * Merge branch 'topic/dnthayer/ticket1353'
+
+    * topic/dnthayer/ticket1353:
+      Fix the use of the "first-line" helper scrip
+      Add a new broctl option to specify a command timeou
+      Improve error reporting for ssh_runner
+      Change status command to run only one helper
+      Fix typo in previous commi
+      Remove unused default timeout values in ssh_runner
+      Improve some error messages
+      Fix to prevent broctl from hanging when an exception occurs
+      fix response handling
+      enable json serialization of CmdResult objects
+      enable BatchMode for ssh (Justin Azoff)
+
+  * Fix the use of the "first-line" helper script (Daniel Thayer)
+
+  * Merge remote-tracking branch 'origin/master' into topic/dnthayer/ticket1353 (Daniel Thayer)
+
+  * Add a new broctl option to specify a command timeou
+
+    Added a new broctl option "CommandTimeout" that specifies the number
+    of seconds to wait for a command to return results.  This value is
+    passed to ssh_runner. (Daniel Thayer)
+
+  * Improve error reporting for ssh_runner
+
+    Added some debug log messages and changed a couple of error messages. (Daniel Thayer)
+
+  * Change status command to run only one helper
+
+    Changed the status command to run only one helper script so that the
+    status command takes half as long to run in the worst-case scenario.
+    This involved replacing the "cat-file" helper with a new one tha
+    can handle multiple files, and only outputs the first line of each file. (Daniel Thayer)
+
+  * Fix typo in previous commit (Daniel Thayer)
+
+  * Remove unused default timeout values in ssh_runner
+
+    Also changed the ping timeout and changed the code to actually use it. (Daniel Thayer)
+
+  * Merge remote-tracking branch 'origin/master' into topic/dnthayer/more-fixes-for-2.4 (Daniel Thayer)
+
+  * Merge branch 'topic/jazoff/broctld' into topic/dnthayer/more-fixes-for-2.4
+
+    Conflicts:
+    	BroControl/cmdresult.py (Daniel Thayer)
+
+  * fix response handling (Justin Azoff)
+
+  * enable json serialization of CmdResult objects (Justin Azoff)
+
+  * enable BatchMode for ssh
+
+    From the ssh manual:
+
+        If set to ``yes'', passphrase/password querying will be disabled.
+        This option is useful in scripts and other batch jobs where no user
+        is present to supply the password. (Justin Azoff)
+
+  * Improve some error messages (Daniel Thayer)
+
+  * Fix to prevent broctl from hanging when an exception occurs
+
+    Make sure that the finish method is called (to signal that we're done
+    to the ssh_runner worker threads). (Daniel Thayer)
+
+
 1.3-197 | 2015-04-16 16:15:25 -0500
 
   * Use daemon threads only for remote hosts (Daniel Thayer)
