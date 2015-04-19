@@ -155,6 +155,9 @@ class BroCtl(object):
     def unlock(self):
         util.unlock(self.ui)
 
+    def node_names(self):
+        return [ n.name for n in self.config.nodes() ]
+
     @expose
     def nodes(self):
         nodes = []

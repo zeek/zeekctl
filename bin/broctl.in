@@ -23,7 +23,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def __init__(self, broctl_class=BroCtl, interactive=False, iscron=False):
         brocmd.ExitValueCmd.__init__(self)
         self.broctl = broctl_class(ui=self)
-
+        self.node_names = self.broctl.node_names()
         self.interactive = interactive
 
         # Warn user to do broctl install, if needed.  Skip this check when
@@ -691,7 +691,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not args or args[0] not in nodes_cmds:
             return []
 
-        nodes = ["manager", "workers", "proxies", "all"] + [n.name for n in Config.nodes()]
+        nodes = ["manager", "workers", "proxies", "all"] + self.node_names
 
         return [n for n in nodes if n.startswith(text)]
 
