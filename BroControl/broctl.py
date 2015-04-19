@@ -86,8 +86,8 @@ class BroCtl(object):
         self.executor.finish()
         self.plugins.finishPlugins()
 
-    def warn_broctl_install(self):
-        self.config.warn_broctl_install()
+    def warn_broctl_install(self, isinstall):
+        self.config.warn_broctl_install(isinstall)
 
     # Turns node name arguments into a list of nodes.  If "get_hosts" is True,
     # then only one node per host is chosen.  If "get_types" is True, then

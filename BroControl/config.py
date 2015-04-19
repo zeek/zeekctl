@@ -499,11 +499,32 @@ class Configuration:
 
     # Warn user to run broctl install if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
-    # are missing.
-    def warn_broctl_install(self):
+    # are missing.  If the "isinstall" parameter is True, then we're running
+    # the install or deploy command, so some of the warnings are skipped.
+    def warn_broctl_install(self, isinstall):
         missingstate = False
 
-        # Check if Bro version is different from previously-installed version.
+        # Check if node config has changed since last install.
+        if "hash-nodecfg" in self.state:
+            nodehash = self._get_nodecfg_hash()
+
+            if nodehash != self.state["hash-nodecfg"]:
+                # If running the install/deploy cmd, then skip this warning
+                if not isinstall:
+                    self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+
+                self._warn_dangling_bro()
+                return
+        else:
+            missingstate = True
+
+        # If we're running the install or deploy commands, then skip the
+        # rest of the checks.
+        if isinstall:
+            return
+
+        # Check if Bro version is different from the previously-installed
+        # version.
         if "broversion" in self.state:
             oldversion = self.state["broversion"]
 
@@ -511,17 +532,6 @@ class Configuration:
 
             if version != oldversion:
                 self.ui.warn("new bro version detected (run the broctl \"deploy\" command)")
-                return
-        else:
-            missingstate = True
-
-        # Check if node config has changed since last install.
-        if "hash-nodecfg" in self.state:
-            nodehash = self._get_nodecfg_hash()
-
-            if nodehash != self.state["hash-nodecfg"]:
-                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
-                self._warn_dangling_bro()
                 return
         else:
             missingstate = True

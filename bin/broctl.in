@@ -20,7 +20,7 @@ from BroControl import version
 class BroCtlCmdLoop(brocmd.ExitValueCmd):
     prompt = '[BroControl] > '
 
-    def __init__(self, broctl_class=BroCtl, interactive=False, iscron=False):
+    def __init__(self, broctl_class=BroCtl, interactive=False, cmd=""):
         brocmd.ExitValueCmd.__init__(self)
         self.broctl = broctl_class(ui=self)
         self.node_names = self.broctl.node_names()
@@ -28,8 +28,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         # Warn user to do broctl install, if needed.  Skip this check when
         # running cron to avoid receiving annoying emails.
-        if not iscron:
-            self.broctl.warn_broctl_install()
+        if cmd != "cron":
+            self.broctl.warn_broctl_install(cmd in ("install", "deploy"))
 
     def finish(self):
         self.broctl.finish()
@@ -751,12 +751,12 @@ def main():
     if len(sys.argv) > 1:
         interactive = False
 
-    iscron = False
-    if len(sys.argv) == 2 and sys.argv[1] == "cron":
-        iscron = True
+    cmd = ""
+    if len(sys.argv) == 2:
+        cmd = sys.argv[1]
 
     try:
-        loop = BroCtlCmdLoop(BroCtl, interactive, iscron)
+        loop = BroCtlCmdLoop(BroCtl, interactive, cmd)
     except Exception as e:
         print("Error: %s" % e)
         return 1
