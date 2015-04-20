@@ -1,7 +1,6 @@
 # Functions to install files on all nodes.
 
 import os
-import re
 
 from BroControl import util
 from BroControl import config
@@ -50,13 +49,16 @@ def get_nfssyncs():
 # other scripts.
 def make_broctl_config_sh(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
+
     with open(cfg_path, "w") as out:
-        for substvartuple in config.Config.options():
-            substvar = substvartuple[0]
-            # don't write if it has an invalid bash variable name
-            if not re.search("-", substvar):
-                substvarvalue = substvartuple[1]
-                out.write("%s=\"%s\"\n" % (substvar.replace(".", "_"), substvarvalue))
+        for (varname, value) in config.Config.options():
+            # Don't write if variable name is an invalid bash variable name
+            if "-" not in varname:
+                value = str(value)
+                # Don't write if the value contains any double quotes (this
+                # could happen for BroArgs, which we don't need in this file)
+                if '"' not in value:
+                    out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
