@@ -324,14 +324,14 @@ class Controller:
             if timeout <= 0:
                 break
 
-            logging.debug("Waiting for %d node(s)..." % len(todo))
+            logging.debug("Waiting for %d node(s)...", len(todo))
 
         for node in todo.values():
             # These did time-out.
             results += [(node, False)]
 
         if todo:
-            logging.debug("Timeout while waiting for %d node(s)" % len(todo))
+            logging.debug("Timeout while waiting for %d node(s)", len(todo))
 
         return results
 

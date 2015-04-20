@@ -44,7 +44,7 @@ class PluginRegistry:
                 continue
 
             if not init:
-                logging.debug("Plugin '%s' disabled because its init() returned False)" % p.name())
+                logging.debug("Plugin '%s' disabled because its init() returned False", p.name())
                 continue
 
             plugins += [p]
@@ -168,7 +168,7 @@ class PluginRegistry:
         for p in self._plugins:
             for key in p.nodeKeys():
                 key = "%s_%s" % (p.prefix(), key)
-                logging.debug("adding node key %s for plugin %s" % (key, p.name()))
+                logging.debug("adding node key %s for plugin %s", key, p.name())
                 node.Node.addKey(key)
 
     def _loadPlugins(self, cmdout):
@@ -204,13 +204,13 @@ class PluginRegistry:
                 try:
                     p = cls()
                 except Exception as e:
-                    cmdout.warn("plugin class %s __init__ failed: %s" % (cls.__name__, str(e)))
+                    cmdout.warn("plugin class %s __init__ failed: %s" % (cls.__name__, e))
                     break
 
                 # verify that the plugin overrides all required methods
                 try:
-                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)"
-                               % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
+                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)",
+                               p.name(), module.__file__, p.pluginVersion(), p.prefix())
                 except NotImplementedError:
                     cmdout.warn("plugin at %s disabled because it doesn't override required methods" % path)
                     continue
