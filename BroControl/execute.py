@@ -171,7 +171,7 @@ def get_local_addrs(cmdout):
                         localaddrs.append(locaddr)
                         break
     else:
-        cmdout.output("cannot get list of local IP addresses")
+        cmdout.info("cannot get list of local IP addresses")
 
         localaddrs = ["127.0.0.1", "::1"]
         try:

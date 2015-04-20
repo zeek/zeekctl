@@ -16,10 +16,8 @@ class InvalidNodeError(Exception):
     pass
 
 class TermUI:
-    def output(self, txt):
+    def info(self, txt):
         print(txt)
-    info = output
-    debug = output
 
     def error(self, txt):
         print(txt, file=sys.stderr)
@@ -136,15 +134,6 @@ class BroCtl(object):
 
         return nodes
 
-    def output(self, text):
-        self.ui.info(text)
-
-    def error(self, text):
-        self.ui.error(text)
-
-    def syntax(self, args):
-        self.error("Syntax error: %s" % args)
-
     def lock(self, showwait=True):
         lockstatus = util.lock(self.ui, showwait)
         if not lockstatus:
@@ -214,28 +203,28 @@ class BroCtl(object):
         nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
         args = " ".join([ str(n) for n in nodes ])
 
-        self.output("stopping ...")
+        self.ui.info("stopping ...")
         results = self.stop(node_list)
         if not results.ok:
             return results
 
         if clean:
-            self.output("cleaning up ...")
+            self.ui.info("cleaning up ...")
             results = self.cleanup(node_list)
             if not results.ok:
                 return results
 
-            self.output("checking configurations ...")
+            self.ui.info("checking configurations ...")
             results = self.check(node_list)
             if not results.ok:
                 return results
 
-            self.output("installing ...")
+            self.ui.info("installing ...")
             results = self.install()
             if not results.ok:
                 return results
 
-        self.output("starting ...")
+        self.ui.info("starting ...")
         results = self.start(node_list)
 
         self.plugins.cmdPostWithNodes("restart", nodes)
@@ -254,28 +243,27 @@ class BroCtl(object):
             if not results.ok:
                 return results
 
-        self.output("checking configurations ...")
+        self.ui.info("checking configurations ...")
         results = self.check(check_node_types=True)
         if not results.ok:
             for (node, success, output) in results.get_node_output():
                 if not success:
-                    self.error("%s scripts failed." % node)
-                    for line in output:
-                        self.error("%s" % line)
+                    self.ui.info("%s scripts failed." % node)
+                    self.ui.info("\n".join(output))
 
             return results
 
-        self.output("installing ...")
+        self.ui.info("installing ...")
         results = self.install()
         if not results.ok:
             return results
 
-        self.output("stopping ...")
+        self.ui.info("stopping ...")
         results = self.stop()
         if not results.ok:
             return results
 
-        self.output("starting ...")
+        self.ui.info("starting ...")
         results = self.start()
 
         self.plugins.cmdPost("deploy")
@@ -339,12 +327,12 @@ class BroCtl(object):
         if enable:
             if self.plugins.cmdPre("cron", "enable", False):
                 self.config.set_state("cronenabled", True)
-                self.output("cron enabled")
+                self.ui.info("cron enabled")
             self.plugins.cmdPost("cron", "enable", False)
         else:
             if self.plugins.cmdPre("cron", "disable", False):
                 self.config.set_state("cronenabled", False)
-                self.output("cron disabled")
+                self.ui.info("cron disabled")
             self.plugins.cmdPost("cron", "disable", False)
 
         return True

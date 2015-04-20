@@ -218,7 +218,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.error("%s terminated immediately after starting; check output with \"diag\"" % node.name)
+                self.ui.info("%s terminated immediately after starting; check output with \"diag\"" % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
@@ -900,7 +900,7 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.error("could not update %s: %s" % (tag, output[0]))
+                self.ui.info("failed to update %s: %s" % (tag, output[0]))
                 results.set_node_fail(node)
             else:
                 self.ui.info("%s: %s" % (tag, output[0]))
