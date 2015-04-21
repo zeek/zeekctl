@@ -1,4 +1,18 @@
 
+1.3-220 | 2015-04-21 14:54:49 -0400
+
+  * Fix problem where use of broargs causes error message (Daniel Thayer)
+
+  * Avoid unnecessary string building in logging functions (Daniel Thayer)
+
+  * Handle broctl output messages more consistently (Daniel Thayer)
+
+  * Don't show certain warnings when they're not useful (Daniel Thayer)
+
+  * Fix the interactive command tab completion feature (Daniel Thayer)
+
+  * Simplify some SQL and remove unused code in the state database (Daniel Thayer)
+
 1.3-212 | 2015-04-17 15:27:14 -0500
 
   * Fix the use of the "first-line" helper script (Daniel Thayer)

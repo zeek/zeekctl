@@ -25,7 +25,7 @@ def install(src, dstdir, cmdout):
         # Do not clobber existing files/dirs (this is not an error)
         return True
 
-    logging.debug("cp %s %s" % (src, dstdir))
+    logging.debug("cp %s %s", src, dstdir)
 
     try:
         if os.path.isfile(src):
@@ -121,9 +121,9 @@ def _run_localcmd_wait(proc, inputtext):
         output = out.splitlines()
 
     for line in output:
-        logging.debug("    > %s" % line)
+        logging.debug("    > %s", line)
 
-    logging.debug("exit status: %d" % rc)
+    logging.debug("exit status: %d", rc)
 
     return (rc == 0, output)
 
@@ -171,7 +171,7 @@ def get_local_addrs(cmdout):
                         localaddrs.append(locaddr)
                         break
     else:
-        cmdout.output("cannot get list of local IP addresses")
+        cmdout.info("cannot get list of local IP addresses")
 
         localaddrs = ["127.0.0.1", "::1"]
         try:
@@ -239,7 +239,7 @@ class Executor:
                     cmdargs += args
 
                 nodecmdlist.append((bronode.addr, cmdargs))
-                logging.debug(bronode.host + ": " + " ".join(cmdargs))
+                logging.debug("%s: %s", bronode.host, " ".join(cmdargs))
 
         for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.timeout):
             nodecmd = dd[host].pop(0)
@@ -249,7 +249,7 @@ class Executor:
                 out = result[1].splitlines()
                 err = result[2].splitlines()
                 results.append((bronode, res == 0, out + err))
-                logging.debug("%s: exit code %d" % (bronode.host, res))
+                logging.debug("%s: exit code %d", bronode.host, res)
             else:
                 results.append((bronode, False, [str(result)]))
 

@@ -11,15 +11,13 @@ class CronUI:
     def __init__(self):
         self.buffer = None
 
-    def output(self, txt):
+    def info(self, txt):
         if self.buffer:
             self.buffer.write("%s\n" % txt)
         else:
             print(txt)
-    info = output
-    debug = output
-    error = output
-    warn = output
+    error = info
+    warn = info
 
     def buffer_output(self):
         self.buffer = py3bro.io.StringIO()

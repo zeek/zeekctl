@@ -163,7 +163,7 @@ class SSHMaster:
         while True:
             line = self.readline_with_timeout(timeout)
             if not line:
-                logging.debug("Command timeout on host %s" % self.host)
+                logging.debug("Command timeout on host %s", self.host)
                 self.close()
                 break
             resp = json.loads(line)
@@ -217,7 +217,7 @@ class HostHandler(Thread):
         try:
             return self.master.ping()
         except Exception as e:
-            logging.debug("Host %s is not alive" % self.host)
+            logging.debug("Host %s is not alive", self.host)
             return False
 
     def connect_and_ping(self):
@@ -284,7 +284,7 @@ class MultiMasterManager:
         try:
             return rq.get(timeout=timeout)
         except Empty:
-            logging.debug("Host timeout %s" % host)
+            logging.debug("Host timeout %s", host)
             self.shutdown(host)
             return [Exception("Host timeout")] #FIXME: needs to be the right length
 

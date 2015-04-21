@@ -151,7 +151,7 @@ class Plugin(object):
     @doc.api
     def debug(self, msg):
         """Logs a debug message in BroControl's debug log if enabled."""
-        logging.debug("%s: %s" % (self.prefix(), msg))
+        logging.debug("%s: %s", self.prefix(), msg)
 
     @doc.api
     def error(self, msg):
