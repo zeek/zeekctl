@@ -15,6 +15,10 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
+        #FIXME evil hack
+        if BroControl.config.Config.pfringclusterid == "@PF_RING_CLUSTER_ID@":
+            return False
+
         cluster_id = int(BroControl.config.Config.pfringclusterid)
         if cluster_id == 0:
             return False
