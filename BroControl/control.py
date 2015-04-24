@@ -263,7 +263,7 @@ class Controller:
         return results
 
     # Start peers by copying all configuration files
-    # and initiating broctl on them
+    # and initiating broctld on them
     def _startPeers(self, peers, results):
         localNode = self.config.getLocalNode()
 
@@ -303,7 +303,7 @@ class Controller:
                 results.set_node_fail(peer)
 
 
-        # 1. Copy broctl node.cfg configuration.
+        # 1. Copy broctld node.cfg configuration.
         cmds = []
         targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
         for peer in peers:
@@ -366,7 +366,7 @@ class Controller:
             # the process might actually still be running but we can't tell.
             if output == None:
                 if self.config.cron == "0":
-                    self.ui.error(str(localNode.name) + " :: cannot connect to %s" % node.name)
+                    self.ui.error("cannot connect to %s" % node.name)
                 continue
 
             results += [(node, success)]
@@ -714,7 +714,6 @@ class Controller:
 
     def _doCheckConfig(self, nodes, installed, list_scripts):
         results = cmdresult.CmdResult()
-        nodeList = nodes
         manager = self.config.manager()
 
         all = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]

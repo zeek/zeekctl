@@ -1,4 +1,4 @@
-# Configuration options. 
+# Configuration options.
 #
 
 import sys
@@ -19,7 +19,7 @@ class Option:
 
 options = [
     # User options.
-    Option("Debug", "0", "bool", Option.USER, False,
+    Option("Debug", "1", "bool", Option.USER, False,
            "Enable extensive debugging output in spool/debug.log."),
 
     Option("HaveNFS", "0", "bool", Option.USER, False,

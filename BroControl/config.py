@@ -655,9 +655,10 @@ class Configuration:
                 node.type = "peer"
                 scopelist[node.cluster] = node
 
-
         # Check if nodestore is valid
         self._checkNodeStore(scopelist)
+
+        logging.debug("local node is " + str(local_node) + " and head is " + str(head))
 
         return scopelist, local_node, head
 
