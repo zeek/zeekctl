@@ -3,7 +3,7 @@
 import SocketServer
 import socket
 import time
-import sys
+import traceback
 
 from collections import defaultdict
 from Queue import Queue
@@ -70,17 +70,24 @@ class DBroCtld(Thread):
         elif dtype == "peer-disconnect":
             self.handlePeerDisconnect(data)
 
-    def handleCommand(self, cmd):
+    def handleCommand(self, data):
+        args= data.split(" ")
+        cmd = args[0]
+        args.remove(cmd)
         print "received command", cmd
 
-        if cmd not in ["start", "stop", "status", "netstats"]:
+        # 1. Execute command
+        func = getattr(self.broctl, cmd, self.noop)
+        if not hasattr(func, 'api_exposed'):
             print "unknown command, ignoring it"
+            return
 
-        if cmd == "start":
-            self.broctl.start()
-        elif cmd == "stop":
-            self.broctl.stop()
+        try :
+            res = func(*args)
+        except Exception as e:
+            res = traceback.format_exc()
 
+        # 2. Forward command
         self.forwardCommand(cmd)
 
     def handlePeerConnect(self, peer):
@@ -94,6 +101,9 @@ class DBroCtld(Thread):
     def forwardCommand(self, cmd):
         for peer in self.outbound:
             self.bserver.send(peer, cmd)
+
+    def noop(self, *args, **kwargs):
+        return True
 
 ####################################
 
