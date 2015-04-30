@@ -177,9 +177,13 @@ def get_local_addrs(cmdout):
                         # remove "addr:" prefix (if any)
                         if field.startswith("addr:"):
                             locaddr = field[5:]
+                        elif field.startswith("Adresse:"):
+                            locaddr = field[8:]
                         # remove everything after "/" or "%" (if any)
                         locaddr = locaddr.split("/")[0]
                         locaddr = locaddr.split("%")[0]
+                        if "Adresse" in locaddr:
+                            raise RuntimeError("stop here")
                         localaddrs.append(locaddr)
                         break
 

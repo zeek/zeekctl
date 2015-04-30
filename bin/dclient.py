@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import socket
 import sys
 import time
@@ -10,12 +12,12 @@ class BClient(cmd.Cmd):
     def __init__(self, host, port):
         cmd.Cmd.__init__(self)
         if host and port:
-            self.host = host
-            self.port = port
             self.connect(host, port)
 
     def connect(self, host, port):
         if host and port:
+            self.host = host
+            self.port = port
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.host, self.port))
             self.sock.setblocking(False)
@@ -70,7 +72,7 @@ class BClient(cmd.Cmd):
 
 
 def main(argv):
-    client = BClient("localhost", 10042)
+    client = BClient(None, None)
     client.cmdloop()
     #client.sendAndReceiveData(data)
     client.finish()

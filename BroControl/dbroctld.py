@@ -12,6 +12,7 @@ from threading import Thread
 from BroControl.broctl import BroCtl
 
 # Global options
+# TODO need to be moved to options.py
 peer_timeout = 5
 handler_sleep_time = 0.2
 server_port = 10042
@@ -29,8 +30,8 @@ class DBroCtld(Thread):
     def init_server(self):
         # BroCtl
         self.broctl = BroCtl(self.basedir, ui=TermUI())
-        self.parent_address = self.broctl.config.getHead().host
-        self.server_address = self.broctl.config.getLocalNode().host
+        self.parent_address = self.broctl.config.getHead().addr
+        self.server_address = self.broctl.config.getLocalNode().addr
         print "server_host is", self.server_address, "parent is", self.parent_address
 
         # Server
@@ -43,6 +44,7 @@ class DBroCtld(Thread):
         # Client only if we are not the root node of the hierarchy
         if self.parent_address and self.parent_address != self.server_address:
             print "starting bclient... "
+            print "connecting to parent", self.parent_address, "on port", server_port
             self.bclient = BClient((self.parent_address, server_port), self.squeue)
             self.bclient.start()
 

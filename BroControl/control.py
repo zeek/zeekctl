@@ -291,40 +291,11 @@ class Controller:
         crashed = [peer for peer in peers if peer.hasCrashed()]
         self._makeCrashReports(crashed)
 
-        # Make working directories.
-        dirs = [(peer, peer.cwd()) for peer in peers]
-        peers = []
-        for (peer, success) in self.executor.mkdirs(dirs):
-            if success:
-                peers += [peer]
-            else:
-                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot create working directory for %s" % peer.name)
-                logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot create working directory for %s" % peer.name)
-                results.set_node_fail(peer)
-
-
-        # 1. Copy broctld node.cfg configuration.
-        cmds = []
-        targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
-        for peer in peers:
-            localcfg = os.path.join(self.config.cfgdir, "node.cfg_" + str(peer.name))
-            # FIXME this command should better be issued in the install function
-            cmds += [(peer, "mv", [localcfg, targetcfg])]
-
-        for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
-            if success:
-                logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " command successful")
-            else:
-                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % peer.name)
-                results.set_node_fail(peer)
-                if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
-
-        # 2. Start broctl and keep connection
+        # Start broctl and keep connection
         cmds = []
         for peer in peers:
             cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
+            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
 
         peers = []
         for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
@@ -335,16 +306,14 @@ class Controller:
                     logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " setting PID to " + str(output[0]))
                     peer.setPID(int(output[0]))
                 else:
-                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " no PID value could be obtained")
+                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " no PID value could be obtained for " + str(peer.name))
             else:
-                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % peer.name)
+                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % str(peer.name))
                 results.set_node_fail(peer)
                 if output:
                     for line in output:
                         self.ui.error("%s" % line)
 
-        # 3. Check
-        # 4. Return results
         return results
 
     def isRunning(self, nodes, setcrashed=True):
@@ -1435,6 +1404,9 @@ class Controller:
                 results.set_cmd_fail()
                 return results
 
+        # Make working directories and copy node.cfg configuration
+        self.install_peers(peers)
+
         # Save current node configuration state.
         self.config.updateNodeCfgHash()
 
@@ -1442,6 +1414,39 @@ class Controller:
         self.config.updateBroctlCfgHash()
 
         return results
+
+
+    def install_peers(self, peers):
+        localNode = self.config.getLocalNode()
+
+        # Make working directories.
+        dirs = [(peer, peer.cwd()) for peer in peers]
+        peers = []
+        for (peer, success) in self.executor.mkdirs(dirs):
+            if success:
+                peers += [peer]
+            else:
+                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot create working directory for %s" % peer.name)
+                logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot create working directory for %s" % peer.name)
+                results.set_node_fail(peer)
+
+        # Copy broctld node.cfg configuration.
+        cmds = []
+        targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
+        for peer in peers:
+            localcfg = os.path.join(self.config.cfgdir, "node.cfg_" + str(peer.name))
+            # FIXME this command should better be issued in the install function
+            cmds += [(peer, "mv", [localcfg, targetcfg])]
+
+        for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
+            if success:
+                logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " command successful")
+            else:
+                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % peer.name)
+                results.set_node_fail(peer)
+                if output:
+                    for line in output:
+                        self.ui.error("%s" % line)
 
 
     # Triggers all activity which is to be done regularly via cron.

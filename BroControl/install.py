@@ -287,8 +287,8 @@ def makeNodeConfig(path, node, cmdout, silent=False):
             f.write("\"type\": \"" + str(head.type) + "\",\n")
         if hasattr(head, "cluster"):
             f.write("\"cluster\": \"" + str(head.cluster) + "\",\n")
-        if hasattr(head, "host"):
-            f.write("\"host\": \"" + str(head.host) + "\"\n")
+        if hasattr(head, "addr"):
+            f.write("\"host\": \"" + str(head.addr) + "\"\n")
         f.write("},\n\n")
 
         # 2. node entries

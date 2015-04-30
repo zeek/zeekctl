@@ -5,14 +5,16 @@ BroBase = "@PREFIX@"
 import os
 import sys
 
-from BroControl import broctld
-
 BroBase = "@PREFIX@"
 
 # Allow user to override default broctl install directory
 tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
 if tmpbrobase and os.path.isdir(tmpbrobase):
     BroBase = tmpbrobase
+
+sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
+
+from BroControl import broctld
 
 # Hidden command to print the documentation.
 broctlprintdoc = False
