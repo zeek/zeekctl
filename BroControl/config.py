@@ -39,6 +39,8 @@ class Configuration:
 
         self.ui = ui
         self.localaddrs = localaddrs
+        logging.debug("localaddrs:", localaddrs)
+
         global Config
         Config = self
 
@@ -246,6 +248,7 @@ class Configuration:
     def hosts(self, tag = None, nolocal=False):
         hosts = {}
         nodelist = []
+
         for node in self.nodes(tag):
             if node.host in hosts:
                 continue

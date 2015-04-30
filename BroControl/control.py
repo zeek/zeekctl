@@ -294,8 +294,8 @@ class Controller:
         # Start broctl and keep connection
         cmds = []
         for peer in peers:
-            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
-            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
+            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
+            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
 
         peers = []
         for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
