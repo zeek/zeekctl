@@ -1,0 +1,21 @@
+
+{
+"head": {
+			"id": "icsi-1"
+		},
+
+"nodes" : [
+
+		{	
+				"id": "icsi-1",
+				"type": "peer",
+				"host": "localhost",
+				"policy": "policy 1"
+		}
+
+],
+
+"connections":	[	
+				]
+
+}
