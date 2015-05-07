@@ -15,6 +15,8 @@ from BroControl.broctl import BroCtl
 # Global options
 # TODO need to be moved to options.py
 server_port = 10042
+peer_timeout = 5
+polling_interval = 0.2
 
 class DBroCtld(Thread):
     def __init__(self, logs, basedir):
@@ -69,8 +71,7 @@ class DBroCtld(Thread):
         self.running = False
 
         # Kill the local thread
-        #os.__exit()
-        logging.debug("Everything stopped")
+        logging.debug("DBroctld stopped")
 
     def run(self):
         self.init_server()
@@ -120,17 +121,18 @@ class DBroCtld(Thread):
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)
-        logging.debug("peer " + str(peer) + " connected outbound")
-        print "peer", peer, "connected, size outbound", len(self.outbound)
+        logging.debug("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
+        print ("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
 
     def handlePeerDisconnect(self, peer):
         print "peer", peer, "disconnected"
         if peer in self.outbound:
-            logging.debug("peer " + str(peer) + " disconnected outbound")
+            logging.debug(" outbound peer " + str(peer) + " disconnected")
             self.outbound.remove(peer)
 
     def forwardCommand(self, cmd):
-        logging.debug("forward cmd to ")
+        if self.outbound:
+            logging.debug("forward cmd to ")
 
         for peer in self.outbound:
             logging.debug(" - " + str(peer))
@@ -138,7 +140,6 @@ class DBroCtld(Thread):
 
     def noop(self, *args, **kwargs):
         return True
-
 
 ####################################
 
@@ -173,7 +174,6 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
             self.outbound[peer].send(data)
 
     def stop(self):
-        logging.debug("stopping peer handlers, num: " + str(len(self.outbound)))
         self.socket.close()
         logging.debug("SocketServer stopped")
 
@@ -182,36 +182,44 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
 class BSocketHandler(SocketServer.BaseRequestHandler):
 
     def setup(self):
+        logging.debug("SocketHandler for client " + str(self.client_address) + " created")
         self.running = True
         self.server.peer_connected(self.client_address, self)
 
     def handle(self):
-        logging.debug("SocketHandler for client " + str(self.client_address) + " created")
+        try:
+            counter = 0
+            while self.running:
+                data = self.request.recv(1024).strip()
 
-        while self.running:
-            data = self.request.recv(1024).strip()
-            logging.debug("data received " + str(data))
+                if data != "":
+                    counter = 0
+                    logging.debug("Handler for peer " + str(self.client_address) + " received data: " + str(data))
+                    self.server.receive_data(data)
+                    self.request.sendto("Ack", self.client_address)
+                    if "shutdown" in data:
+                        self.stop()
+                else:
+                    counter += 1
 
-            if "shutdown" in data:
-                self.stop()
+                if counter >= (peer_timeout / polling_interval):
+                    break
 
-            if data != "":
-                logging.debug("handler for " + str(self.client_address) + " received data " + str(data))
-                self.server.receive_data(data)
-                self.request.sendto("Ack", self.client_address)
+                # Go to sleep
+                time.sleep(polling_interval)
 
-        logging.debug("handler for " + str(self.client_address) + " end of handle")
+        finally:
+            self.stop()
 
     def send(self, data):
         self.request.sendto(data, self.client_address)
 
     def finish(self):
-        logging.debug("handler for" + str(self.client_address) + "finished")
+        logging.debug("handler for" + str(self.client_address) + " terminates")
         self.server.peer_disconnected(self.client_address)
 
     def stop(self):
         self.running = False
-        logging.debug("Closing SocketHandler for client " + str(self.client_address))
 
 ####################################
 
@@ -237,10 +245,11 @@ class BClient():
                 else:
                     counter +=1
 
-                if counter >= (peer_timeout / handler_sleep_time):
+                if counter >= (peer_timeout / polling_interval):
                     break
 
-            time.sleep(handler_sleep_time)
+            # Go to sleep
+            time.sleep(polling_interval)
 
         finally:
             self.finish()
