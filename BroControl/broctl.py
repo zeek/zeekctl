@@ -170,6 +170,23 @@ class BroCtl(object):
         self.plugins.cmdPost("install")
         return results
 
+
+    @expose
+    @lock_required
+    def create_overlay(self):
+        """- [<peers>]
+
+        Starts the successor peers in the deep cluster setup
+        to establish an overlay of dbroctld instances
+        """
+
+        peers = config.Config.nodes("peers")
+        logging.debug(str(config.Config.getLocalNode().name) +  " create overlay with " + str(len(peers)) + " successors")
+
+        results = self.controller.start_peers(peers)
+
+        return results
+
     @expose
     @lock_required
     def start(self, node_list=None):

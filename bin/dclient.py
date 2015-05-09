@@ -5,6 +5,7 @@ import sys
 import time
 import cmd
 import errno
+import json
 
 class BClient(cmd.Cmd):
     prompt = '[BClient] > '
@@ -28,7 +29,7 @@ class BClient(cmd.Cmd):
         self.sendData(data)
         while data:
             try:
-                data = self.sock.recv(1024).strip()
+                data = json.loads(self.sock.recv(1024).strip())
                 print "response:", data
             except socket.error, e:
                 err = e.args[0]
@@ -42,8 +43,9 @@ class BClient(cmd.Cmd):
 
     def sendData(self, data):
         print "data to send: ", data
+        data = {'type': 'command', 'payload': data}
         try:
-            self.sock.sendall(data)
+            self.sock.sendall(json.dumps(data))
         finally:
             pass
 

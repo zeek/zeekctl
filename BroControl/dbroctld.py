@@ -5,6 +5,7 @@ import socket
 import time
 import traceback
 import logging
+import json
 
 from collections import defaultdict
 from Queue import Queue
@@ -15,8 +16,9 @@ from BroControl.broctl import BroCtl
 # Global options
 # TODO need to be moved to options.py
 server_port = 10042
-peer_timeout = 5
+peer_timeout = 50
 polling_interval = 0.2
+
 
 class DBroCtld(Thread):
     def __init__(self, logs, basedir):
@@ -33,10 +35,10 @@ class DBroCtld(Thread):
         self.broctl = BroCtl(self.basedir, ui=TermUI())
         self.parent_address = self.broctl.config.getHead().addr
         self.server_address = self.broctl.config.getLocalNode().addr
-        print "server_host is", self.server_address, "parent is", self.parent_address
 
         # Server
-        print "starting bserver... "
+        print "starting dbroctld... "
+        print "  -- dbroctld listens on", self.server_address, "::", server_port
         self.bserver = BSocketServer(self.squeue, (self.server_address, server_port), BSocketHandler, bind_and_activate=True)
         self.server_thread = Thread(target=self.bserver.serve_forever)
         self.server_thread.daemon = True
@@ -44,49 +46,40 @@ class DBroCtld(Thread):
         self.server_thread.start()
         logging.debug("DBroctlD SocketServer started")
 
-        self.bclient  = None
+        self.bclient = None
         # Client only if we are not the root node of the hierarchy
         if self.parent_address and self.parent_address != self.server_address:
-            print "starting bclient... "
-            print "connecting to parent", self.parent_address, "on port", server_port
+            print "  -- parent is", self.parent_address
             self.bclient = BClient((self.parent_address, server_port), self.squeue)
             self.client_thread = Thread(target=self.bclient.run)
             self.client_thread.daemon = True
             self.client_thread.start()
             logging.debug("DClient started")
+        else:
+            print "  -- we are the root node of the deep cluster"
 
-    def stop(self):
-        print "exit dbroctld..."
-
-        # Shutting down the client
-        if self.bclient:
-            self.bclient.run = False
-            self.bclient.stop()
-
-        # Shutting down the server
-        self.bserver.stop()
-        self.bserver.shutdown()
-
-        # Shutting down ourselves
-        self.running = False
-
-        # Kill the local thread
-        logging.debug("DBroctld stopped")
+    def init_overlay(self):
+        # Install the local node, its cluster nodes, and its peers
+        self.broctl.install()
+        # Start the peers in the deep cluster recursively
+        self.broctl.create_overlay()
 
     def run(self):
         self.init_server()
+        self.init_overlay()
         while self.running:
             self.recv()
 
     def recv(self):
         (dtype, data) = self.squeue.get()
-        logging.debug("dtype: " + str(dtype) + " data: " + str(data))
+        logging.debug("dtype: " + str(dtype) + " with data: " + str(data))
 
-        if dtype not in ["command", "peer-connect", "peer-disconnect"]:
+        if dtype not in ["msg", "peer-connect", "peer-disconnect"]:
+            logging.debug("DBroctlD: malformed data type", dtype, "received")
             raise RuntimeError("DBroctlD: malformed data type", dtype, "received")
 
-        if dtype == "command":
-            self.handleCommand(data)
+        if dtype == "msg":
+            self.handleMessage(data)
 
         elif dtype == "peer-connect":
             self.handlePeerConnect(data)
@@ -94,30 +87,49 @@ class DBroCtld(Thread):
         elif dtype == "peer-disconnect":
             self.handlePeerDisconnect(data)
 
-    def handleCommand(self, data):
-        args= data.split(" ")
-        cmd = args[0]
-        args.remove(cmd)
+    def handleMessage(self, msg):
+        logging.debug("handleMessage: msg received: " +  str(msg))
+
+        if 'type' not in msg.keys():
+            logging.debug("Error: received a msg with no type")
+            raise RuntimeError("malformed message received")
+
+        if msg["type"] == "command":
+            self.handleCommand(msg)
+        else:
+            logging.debug("handleMessage: unknown message type received")
+            raise RuntimeError("message type unknown")
+
+    def handleCommand(self, msg):
+        cmd = msg['payload']
         logging.debug("received command " + str(cmd))
 
-        if "shutdown" in cmd:
-            self.forwardCommand(cmd)
-            self.stop()
-            return
+        # Distinguish between command and its parameters
+        args= cmd.split(" ")
+        cmd = args[0]
+        args.remove(cmd)
 
-        # 1. Execute command
+        logging.debug("issuing cmd " + str(cmd) + " with args " + str(args))
+        # Execute command...
         func = getattr(self.broctl, cmd, self.noop)
-        if not hasattr(func, 'api_exposed'):
-            print "unknown command, ignoring it"
-            return
 
-        try :
-            res = func(*args)
-        except Exception as e:
-            res = traceback.format_exc()
+        if hasattr(func,  'api_exposed'):
+            try:
+                res = func(*args)
+            except Exception as e:
+                res = traceback.format_exc()
 
-        # 2. Forward command
-        self.forwardCommand(cmd)
+            # Forward command ...
+            self.forwardCommand(cmd)
+
+        elif cmd == 'shutdown':
+            # Forward command ...
+            self.forwardCommand(cmd)
+            # Stop all local bro processes
+            self.stop()
+
+        else:
+            logging.debug("handleCommand: unknown command, ignoring it")
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)
@@ -132,16 +144,39 @@ class DBroCtld(Thread):
 
     def forwardCommand(self, cmd):
         if self.outbound:
-            logging.debug("forward cmd to ")
+            logging.debug("forward cmd \"" + str(cmd) + "\" to ")
 
         for peer in self.outbound:
             logging.debug(" - " + str(peer))
-            self.bserver.send(peer, cmd)
+            self.sendCommand(peer, cmd)
+
+    def sendCommand(self, peer, cmd):
+        msg = {'type':'command', 'payload':cmd}
+        self.bserver.send(peer, msg)
 
     def noop(self, *args, **kwargs):
         return True
 
-####################################
+    def stop(self):
+        print "exit dbroctld..."
+
+        # Shutting down the local bro instances
+        self.broctl.stop()
+
+        # Shutting down the client
+        if self.bclient:
+            self.bclient.run = False
+            self.bclient.stop()
+
+        # Shutting down the server
+        self.bserver.stop()
+        self.bserver.shutdown()
+
+        # Shutting down ourselves
+        self.running = False
+
+        logging.debug("DBroctld stopped")
+
 
 class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer):
 
@@ -151,23 +186,21 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
         SocketServer.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
 
     def server_activate(self):
-        print "server activated..."
-        logging.debug("server activated")
         self.socket.listen(self.request_queue_size)
 
     def peer_connected(self, peer, handler):
-        logging.debug("SocketServer::Peer connected: " + str(peer))
+        logging.debug("Peer connected: " + str(peer))
 
         self.outbound[peer] = handler
         self.squeue.put(("peer-connect", peer))
 
     def peer_disconnected(self, peer):
-        logging.debug("SocketServer:: disconnect peer " + str(peer))
+        logging.debug("Peer disconnected: " + str(peer))
         self.outbound.pop(peer)
         self.squeue.put(("peer-disconnect", peer))
 
     def receive_data(self, data):
-        self.squeue.put(("command", data))
+        self.squeue.put(("msg", data))
 
     def send(self, peer, data):
         if peer in self.outbound:
@@ -177,12 +210,10 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
         self.socket.close()
         logging.debug("SocketServer stopped")
 
-####################################
 
 class BSocketHandler(SocketServer.BaseRequestHandler):
-
     def setup(self):
-        logging.debug("SocketHandler for client " + str(self.client_address) + " created")
+        logging.debug("SocketHandler for peer " + str(self.client_address) + " created")
         self.running = True
         self.server.peer_connected(self.client_address, self)
 
@@ -191,14 +222,20 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
             counter = 0
             while self.running:
                 data = self.request.recv(1024).strip()
-
                 if data != "":
+                    data = json.loads(data)
                     counter = 0
                     logging.debug("Handler for peer " + str(self.client_address) + " received data: " + str(data))
                     self.server.receive_data(data)
-                    self.request.sendto("Ack", self.client_address)
-                    if "shutdown" in data:
+
+                    # Send a reply
+                    reply = {'type': 'Ack', 'payload':'Ack'}
+                    self.request.sendto(json.dumps(reply), self.client_address)
+
+                    # Stop the handler if we receive a shutdown command
+                    if 'type' in data.keys() and data['type'] == 'command' and data['payload'] == 'shutdown':
                         self.stop()
+
                 else:
                     counter += 1
 
@@ -212,21 +249,18 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
             self.stop()
 
     def send(self, data):
-        self.request.sendto(data, self.client_address)
+        self.request.sendto(json.dumps(data), self.client_address)
 
     def finish(self):
-        logging.debug("handler for" + str(self.client_address) + " terminates")
+        logging.debug("Handler for peer " + str(self.client_address) + " terminates")
         self.server.peer_disconnected(self.client_address)
 
     def stop(self):
         self.running = False
 
-####################################
 
 class BClient():
     def __init__(self, server_address, queue):
-        #Thread.__init__(self)
-
         self.server_address = server_address
         self.cqueue = queue
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -237,13 +271,12 @@ class BClient():
         try:
             counter = 0
             while self.running:
-                data = self.socket.recv(1024)
+                data = json.loads(self.socket.recv(1024).strip())
                 if data:
-                    print "received data", data
-                    self.cqueue.put(("command", data))
+                    self.cqueue.put(("msg", data))
                     counter = 0
                 else:
-                    counter +=1
+                    counter += 1
 
                 if counter >= (peer_timeout / polling_interval):
                     break
@@ -261,7 +294,6 @@ class BClient():
         self.running = False
         self.finish()
 
-####################################
 
 class TermUI:
     def __init__(self):
@@ -276,6 +308,7 @@ class TermUI:
 
 ####################################
 
+
 class Logs:
     def __init__(self):
         self.store = defaultdict(list)
@@ -288,6 +321,25 @@ class Logs:
         return msgs[since:]
 
 ####################################
+
+
+#TODO not used yet
+class BBaseMessage:
+    def __init__(self, mtype):
+        self.message = {}
+        self.message['type'] = mtype
+
+    def dump(self):
+        return json.dumps(self.message)
+
+
+class BCommandMessage(BBaseMessage):
+    def __init__(self, mtype, payload):
+        super(BCommandMessage, self).__init__(mtype)
+        self.message['payload'] = payload
+
+####################################
+
 
 def main(basedir='/bro'):
     logs = Logs()

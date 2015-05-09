@@ -110,12 +110,53 @@ class Controller:
         self.executor = executor
         self.pluginregistry = pluginregistry
 
+    # Copies all configuration files to peers
+    # and starts dbroctld on them
+    def start_peers(self, peers):
+        localNode = self.config.getLocalNode()
+
+        results = cmdresult.CmdResult()
+
+        if localNode in peers:
+            logging.debug("something is wrong with the peer list@" + str(localNode.name) + ", stop here")
+            raise RuntimeError("something is wrong with the peer list@" + str(localNode.name))
+
+        logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " start " + str(len(peers)) + " peers")
+
+        # TODO Ignore peers which are still running.
+        # TODO Generate crash report for any crashed nodes.
+
+        # Start dbroctld and keep connection
+        cmds = []
+        for peer in peers:
+            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
+            logging.debug(str(localNode.name) + " - Starting dbroctld on peer " + str(peer.name))
+            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
+
+        peers = []
+        for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
+            logging.debug("command to " + str(peer.name) + " success: " + str(success) + " output: " + str(output))
+            if success:
+                peers += [peer]
+                if (output and isinstance(output, int)):
+                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " setting PID to " + str(output[0]))
+                    peer.setPID(int(output[0]))
+                else:
+                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " no PID value could be obtained for " + str(peer.name))
+            else:
+                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % str(peer.name))
+                results.set_node_fail(peer)
+                if output:
+                    for line in output:
+                        self.ui.error("%s" % line)
+
+        return results
+
     def start(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
         proxies = []
         workers = []
-        peers = []
 
         for n in nodes:
             n.setExpectRunning(True)
@@ -126,28 +167,23 @@ class Controller:
                 proxies += [n]
             elif n.type == "manager":
                 manager += [n]
-            elif n.type == "peer":
-                peers += [n]
             elif n.type == "standalone":
                 manager += [n]
-            else:
-                raise RuntimeError("node type " + str(n.type) + " unknown")
 
         if not manager:
             local= config.Config.getLocalNode()
-            if not local in peers:
-                raise RuntimeError("we have no manager and local node is no peer")
-            else:
-                manager += [local]
+            # If there is no manager defined explicitely,
+            # the local node of type peer is the manager
+            manager += [local]
 
-        # Start nodes. Do it in the order manager, proxies, workers, peers.
-        logging.debug(str(self.config.getLocalNode().name) + "@" + str(self.config.localaddrs[0]) + "*** start " + str(len(manager)) + " manager, " + str(len(proxies)) + " proxies, " + str(len(workers)) + " workers, " + str(len(peers)) + " peers")
+        # Start nodes. Do it in the order manager, proxies, workers.
+        logging.debug(str(self.config.getLocalNode().name) + "@" + str(self.config.localaddrs[0]) + "** Cluster ** start " + str(len(manager)) + " manager, " + str(len(proxies)) + " proxies, " + str(len(workers)) + " workers, ")
 
         if manager:
             self._startNodes(manager, results)
 
             if results.failed():
-                for n in (proxies + workers + peers):
+                for n in (proxies + workers):
                     results.set_node_fail(n)
                 return results
 
@@ -155,20 +191,12 @@ class Controller:
             self._startNodes(proxies, results)
 
             if results.failed():
-                for n in (workers + peers):
+                for n in (workers):
                     results.set_node_fail(n)
                 return results
 
         if workers:
             self._startNodes(workers, results)
-
-            if results.failed():
-                for n in peers:
-                    results.set_node_fail(n)
-                return results
-
-        if peers:
-            self._startPeers(peers, results)
 
         return results
 
@@ -262,59 +290,6 @@ class Controller:
 
         return results
 
-    # Start peers by copying all configuration files
-    # and initiating broctld on them
-    def _startPeers(self, peers, results):
-        localNode = self.config.getLocalNode()
-
-        if localNode in peers:
-            logging.debug("something is wrong with the peer list@" + str(localNode.name) + ", stop here")
-            raise RuntimeError("something is wrong with the peer list@" + str(localNode.name))
-
-        logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " start " + str(len(peers)) + " peers")
-        filtered = []
-
-        # Ignore peers which are still running.
-        for (peer, isrunning) in self.isRunning(peers):
-            if not isrunning:
-                filtered += [peer]
-                if peer.hasCrashed():
-                    self.ui.info(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: starting peer %s (was crashed) ..." % peer.name)
-                else:
-                    self.ui.info(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: starting peer %s ..." % peer.name)
-            else:
-                self.ui.info(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: peer %s still running" % peer.name)
-
-        nodes = filtered
-
-        # Generate crash report for any crashed nodes.
-        crashed = [peer for peer in peers if peer.hasCrashed()]
-        self._makeCrashReports(crashed)
-
-        # Start broctl and keep connection
-        cmds = []
-        for peer in peers:
-            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
-            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
-
-        peers = []
-        for (peer, success, output) in self.executor.runCmdsParallel(cmds, shell=True, helper=False):
-            logging.debug("command to " + str(peer.name) + " success: " + str(success) + " output: " + str(output))
-            if success:
-                peers += [peer]
-                if (output and isinstance(output, int)):
-                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " setting PID to " + str(output[0]))
-                    peer.setPID(int(output[0]))
-                else:
-                    logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " no PID value could be obtained for " + str(peer.name))
-            else:
-                self.ui.error(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % str(peer.name))
-                results.set_node_fail(peer)
-                if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
-
-        return results
 
     def isRunning(self, nodes, setcrashed=True):
 
@@ -1405,7 +1380,7 @@ class Controller:
                 return results
 
         # Make working directories and copy node.cfg configuration
-        self.install_peers(peers)
+        results = self.install_peers(peers, results)
 
         # Save current node configuration state.
         self.config.updateNodeCfgHash()
@@ -1416,7 +1391,7 @@ class Controller:
         return results
 
 
-    def install_peers(self, peers):
+    def install_peers(self, peers, results):
         localNode = self.config.getLocalNode()
 
         # Make working directories.
@@ -1430,7 +1405,7 @@ class Controller:
                 logging.debug(str(localNode.name) + "@" + str(self.config.localaddrs[0]) + " :: cannot create working directory for %s" % peer.name)
                 results.set_node_fail(peer)
 
-        # Copy broctld node.cfg configuration.
+        # Copy dbroctld node.cfg configuration.
         cmds = []
         targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
         for peer in peers:
@@ -1448,6 +1423,7 @@ class Controller:
                     for line in output:
                         self.ui.error("%s" % line)
 
+        return results
 
     # Triggers all activity which is to be done regularly via cron.
     def doCron(self, watch):
@@ -1513,4 +1489,3 @@ class Controller:
 
         self.config.config["cron"] = "0"
         logging.debug("cron done")
-
