@@ -523,6 +523,14 @@ class Configuration:
         if isinstall:
             return
 
+        freshinstall = not os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh"))
+
+        # If this is a fresh install (i.e., broctl install not yet run), then
+        # inform the user what to do.
+        if freshinstall:
+            self.ui.warn("Run the broctl \"deploy\" command to get started.")
+            return
+
         # Check if Bro version is different from the previously-installed
         # version.
         if "broversion" in self.state:
@@ -549,10 +557,7 @@ class Configuration:
         # (this would most likely indicate an upgrade install was performed
         # over an old version that didn't have the state.db file).
         if missingstate:
-            # Don't show warning if we've never run broctl install, because
-            # nothing will work anyway without doing an initial install.
-            if os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh")):
-                self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
+            self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
