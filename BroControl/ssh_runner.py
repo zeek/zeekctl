@@ -124,7 +124,7 @@ class SSHMaster:
                 cmd = ["sh"]
             else:
                 cmd = self.base_cmd + ["sh"]
-            self.master = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, close_fds=True, preexec_fn=os.setsid)
+            self.master = subprocess.Popen(cmd, bufsize=0, stdout=subprocess.PIPE, stdin=subprocess.PIPE, close_fds=True, preexec_fn=os.setsid)
             self.need_connect = False
 
     def readline_with_timeout(self, timeout):
