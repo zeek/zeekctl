@@ -15,6 +15,9 @@ Empty = py3bro.Empty
 
 
 def get_muxer(shell):
+    # The full path of the Python interpreter.  Configured by CMake.
+    pythonpath = "@PYTHON_EXECUTABLE@"
+
     muxer = r"""
 import os,sys,subprocess,signal,select,json
 TIMEOUT=120
@@ -91,7 +94,7 @@ w("done")
         muxer = muxer.decode()
 
     # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
-    muxer = "python -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % muxer
+    muxer = "%s -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % (pythonpath, muxer)
 
     if py3bro.using_py3:
         muxer = muxer.encode()
