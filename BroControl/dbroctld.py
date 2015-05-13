@@ -15,7 +15,7 @@ from BroControl.broctl import BroCtl
 
 # Global options
 # TODO need to be moved to options.py
-server_port = 10042
+server_port = 10043
 peer_timeout = 50
 polling_interval = 0.2
 
@@ -33,8 +33,8 @@ class DBroCtld(Thread):
     def init_server(self):
         # BroCtl
         self.broctl = BroCtl(self.basedir, ui=TermUI())
-        self.parent_address = self.broctl.config.getHead().addr
-        self.server_address = self.broctl.config.getLocalNode().addr
+        self.parent_address = self.broctl.config.get_head().addr
+        self.server_address = self.broctl.config.get_local().addr
 
         # Server
         print "starting dbroctld... "

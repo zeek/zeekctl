@@ -41,7 +41,7 @@ class Node:
             The number of clustered Bro workers you'd like to start up.
 
         ``lb_method`` (string)
-            The load balancing method to distribute packets to all of the 
+            The load balancing method to distribute packets to all of the
             processes (must be one of: ``pf_ring``, ``myricom``, or
             ``interfaces``).
 
@@ -87,10 +87,10 @@ class Node:
 
     # Valid keys in nodes file. The values will be stored in attributes of the
     # same name. Custom keys can be add via addKey().
-    _keys = { "type": 1, "host": 1, "interface": 1, "aux_scripts": 1, 
-              "brobase": 1, "ether": 1, "zone_id": 1,
-              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
-              "pin_cpus": 1, "env_vars": 1 }
+    _keys = {"type": 1, "host": 1, "interface": 1, "aux_scripts": 1,
+             "brobase": 1, "ether": 1, "zone_id": 1,
+             "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
+             "pin_cpus": 1, "env_vars": 1}
 
 
     def __init__(self, config, name):
@@ -122,12 +122,12 @@ class Node:
         """Returns a list of (key, value) tuples, sorted by key, of a node."""
 
         def tostr(v):
-            if type(v) is dict:
+            if isinstance(v, dict):
                 return ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
             else:
                 return str(v)
 
-        return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())] 
+        return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())]
 
     @doc.api
     def describe(self):
@@ -135,9 +135,9 @@ class Node:
         its keys with values (sorted by key)."""
 
         def fmt(v):
-            if type(v) is list:
+            if isinstance(v, list):
                 v = ",".join(v)
-            elif type(v) is dict:
+            elif isinstance(v, dict):
                 v = ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
 
             return v
@@ -161,57 +161,57 @@ class Node:
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
         key = "%s-pid" % self.name
-        self._config._setState(key, pid)
+        self._config.set_state(key, pid)
         key = "%s-host" % self.name
-        self._config._setState(key, self.host)
+        self._config.set_state(key, self.host)
 
     @doc.api
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
-        t = "%s-pid" % self.name.lower()
-        return self._config._getState(t)
+        key = "%s-pid" % self.name.lower()
+        return self._config.get_state(key)
 
     def clearPID(self):
         """Clears the stored process ID for the node's Bro process, indicating
         that it is no longer running."""
         key = "%s-pid" % self.name
-        self._config._setState(key, None)
+        self._config.set_state(key, None)
 
     def setCrashed(self):
         """Marks node's Bro process as having terminated unexpectedly."""
         key = "%s-crashed" % self.name
-        self._config._setState(key, True)
+        self._config.set_state(key, True)
 
     # Unsets the flag for unexpected termination.
     def clearCrashed(self):
         """Clears the mark for the node's Bro process having terminated
         unexpectedly."""
         key = "%s-crashed" % self.name
-        self._config._setState(key, False)
+        self._config.set_state(key, False)
 
     # Returns true if node has terminated unexpectedly.
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
-        t = "%s-crashed" % self.name.lower()
-        return self._config._getState(t)
+        key = "%s-crashed" % self.name.lower()
+        return self._config.get_state(key)
 
     def getExpectRunning(self):
         key = "%s-expect-running" % self.name.lower()
-        val = self._config._getState(key)
+        val = self._config.get_state(key)
         if val is None:
             val = False
         return val
 
     def setExpectRunning(self, val):
         key = "%s-expect-running" % self.name.lower()
-        self._config._setState(key, val)
+        self._config.set_state(key, val)
 
     # Set the Bro port this node is using.
     def setPort(self, port):
-        t = "%s-port" % self.name
-        self._config._setState(t, port)
+        key = "%s-port" % self.name
+        self._config.set_state(key, port)
 
     # Get the Bro port this node is using.
     @doc.api
@@ -220,8 +220,8 @@ class Node:
         system is listening on for incoming connections, or -1 if no such port
         has been set yet.
         """
-        t = "%s-port" % self.name.lower()
-        return self._config._getState(t) or -1
+        key = "%s-port" % self.name.lower()
+        return self._config.get_state(key) or -1
 
     @staticmethod
     def addKey(kw):

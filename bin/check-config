@@ -22,13 +22,13 @@ print_loaded_scripts=$2
 tmp_node_dir=$3
 shift 3
 
-if [ ! -f "${bro}" ]; then
-    echo "check-config: file not found: ${bro}"
+source "${scriptsdir}"/set-bro-path
+if [ $? -ne 0 ]; then
     exit 1
 fi
 
-source "${scriptsdir}"/set-bro-path
-if [ $? -ne 0 ]; then
+if [ ! -f "${bro}" ]; then
+    echo "check-config: file not found: ${bro}"
     exit 1
 fi
 

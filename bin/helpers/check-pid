@@ -1,6 +1,13 @@
 #! /usr/bin/env bash
 #
+# Given a PID, check if it corresponds to a running Bro process.
+#
 #  check-pid <pid>
 
 ps -p $1 -o args | grep -q bro
 
+if [ $? -eq 0 ]; then
+    echo "running"
+else
+    echo "not running"
+fi

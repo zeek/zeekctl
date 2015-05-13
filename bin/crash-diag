@@ -11,12 +11,17 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-(
+if [ ! -d "$1" ]; then
+    echo "No work dir found"
+    exit 0
+fi
 
 cd "$1"
 if [ $? -ne 0 ]; then
     exit 1
 fi
+
+(
 
 echo
 

@@ -11,7 +11,7 @@ class SqliteState:
 
     def setup(self):
         # Create table
-        try :
+        try:
             self.c.execute('''CREATE TABLE state (
                 key text,
                 value text
@@ -41,7 +41,7 @@ class SqliteState:
     def setdefault(self, key, value):
         key = key.lower()
         value = json.dumps(value)
-        try :
+        try:
             self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
             return True
         except sqlite3.IntegrityError:
@@ -49,4 +49,4 @@ class SqliteState:
 
     def items(self):
         self.c.execute("select key, value from state")
-        return [(k, json.loads(v)) for (k,v) in self.c.fetchall()]
+        return [(k, json.loads(v)) for (k, v) in self.c.fetchall()]

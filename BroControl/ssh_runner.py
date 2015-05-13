@@ -93,18 +93,16 @@ class SSHMaster:
         self.host = host
         self.base_cmd = [
             "ssh",
+            "-o", "BatchMode=yes",
             host,
         ]
         self.need_connect = True
         self.master = None
         self.localaddrs = localaddrs
 
-    def islocal(self, addr):
-        return addr == "localhost" or addr in self.localaddrs
-
     def connect(self):
         if self.need_connect:
-            if self.islocal(self.host):
+            if self.host in self.localaddrs:
                 cmd = ["sh"]
             else:
                 cmd = self.base_cmd + ["sh"]
@@ -197,7 +195,7 @@ class HostHandler(Thread):
             return False
 
     def connect_and_ping(self):
-        if self.alive is not True:
+        if self.alive != True:
             self.connect()
         self.alive = self.ping()
 
@@ -285,7 +283,8 @@ class MultiMasterManager:
 
     def host_status(self):
         for h, o in self.masters.items():
-            yield h, o.alive
+            if h not in self.localaddrs:
+                yield h, o.alive
 
     def shutdown(self, host):
         self.masters[host].shutdown()

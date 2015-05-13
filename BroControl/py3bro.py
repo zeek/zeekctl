@@ -1,4 +1,4 @@
-# This module provides a compatibility layer for Python 2.6/2.7 and 3.
+# This module provides a compatibility layer between Python 2 and 3.
 
 import sys
 
@@ -8,7 +8,7 @@ else:
     using_py3 = False
 
 ####################
-# Built-in functions that were renamed
+# Built-in functions that were renamed in Python 3
 
 if using_py3:
     input = input
@@ -17,7 +17,7 @@ else:
 
 
 ####################
-# Standard modules that were renamed
+# Standard modules that were renamed in Python 3
 
 if using_py3:
     import configparser

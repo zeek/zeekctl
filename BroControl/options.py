@@ -1,8 +1,6 @@
 # Configuration options.
 #
 
-import sys
-
 class Option:
     # Options category.
     USER = 1       # Standard user-configurable option.
@@ -13,9 +11,10 @@ class Option:
         self.name = name
         self.default = default
         self.type = type
-        self.dontinit = dontinit
         self.category = category
+        self.dontinit = dontinit
         self.description = description
+
 
 options = [
     # User options.
@@ -98,6 +97,9 @@ options = [
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for all Bro instances."),
 
+    Option("StatusCmdShowAll", "1", "bool", Option.USER, False,
+           "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),
+
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 
@@ -176,7 +178,7 @@ options = [
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
            "File defining the local networks."),
-    Option("StateFile", "${SpoolDir}/broctl.dat", "string", Option.AUTOMATIC, False,
+    Option("StateFile", "${SpoolDir}/state.db", "string", Option.AUTOMATIC, False,
            "File storing the current broctl state."),
     Option("LockFile", "${SpoolDir}/lock", "string", Option.AUTOMATIC, False,
            "Lock file preventing concurrent shell operations."),
@@ -210,13 +212,13 @@ options = [
            CMakeLists.txt must be adapted as well."""),
 ]
 
-def printOptions(cat):
+def print_options(category):
     out = ""
     err = ""
 
     for opt in sorted(options, key=lambda o: o.name):
 
-        if opt.category != cat:
+        if opt.category != category:
             continue
 
         default = ""

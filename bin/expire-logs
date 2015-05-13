@@ -83,16 +83,10 @@ function expire_log()
 }
 
 if [ -n "${logexpireinterval}" ]; then
-    expire_log
-    ret=$?
-    if [ $ret -ne 0 ]; then
-        exit $ret
-    fi
+    expire_log || exit 1
 fi
 
 if [ -n "${statslogexpireinterval}" ]; then
-    expire_statslog
-    ret=$?
+    expire_statslog || exit 1
 fi
 
-exit $ret

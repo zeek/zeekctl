@@ -29,9 +29,9 @@ class PluginRegistry:
             return False
 
         # Init options.
-        for plugin in self._plugins:
-            plugin.executor = executor
-            plugin._registerOptions()
+        for p in self._plugins:
+            p.executor = executor
+            p._registerOptions()
 
         return True
 
@@ -53,20 +53,20 @@ class PluginRegistry:
 
     def finishPlugins(self):
         """Shuts all plugins down."""
-        for plugin in self._plugins:
-            plugin.done()
+        for p in self._plugins:
+            p.done()
 
     def hostStatusChanged(self, host, status):
         """Calls all plugins Plugin.hostStatusChanged_ methods; see there for
         parameter semantics."""
-        for plugin in self._plugins:
-            plugin.hostStatusChanged(host, status)
+        for p in self._plugins:
+            p.hostStatusChanged(host, status)
 
     def broProcessDied(self, node):
         """Calls all plugins Plugin.broProcessDied_ methods; see there for
         parameter semantics."""
-        for plugin in self._plugins:
-            plugin.broProcessDied(node)
+        for p in self._plugins:
+            p.broProcessDied(node)
 
     def cmdPreWithNodes(self, cmd, nodes, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command taking a list
@@ -134,16 +134,16 @@ class PluginRegistry:
         """Runs a custom command *cmd* with string *args* as argument. Returns
         False if no such command is known."""
         try:
-            (plugin, usage, descr) = self._cmds[cmd]
+            (myplugin, usage, descr) = self._cmds[cmd]
         except LookupError:
             return False
 
-        prefix = plugin.prefix()
+        prefix = myplugin.prefix()
 
         if cmd.startswith("%s." % prefix):
-            cmd = cmd[len(prefix) + 1:]
+            cmd = cmd[len(prefix)+1:]
 
-        plugin.cmd_custom(cmd, args, cmdout)
+        myplugin.cmd_custom(cmd, args, cmdout)
         return True
 
     def allCustomCommands(self):
@@ -153,7 +153,7 @@ class PluginRegistry:
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            (plugin, args, descr) = self._cmds[cmd]
+            (myplugin, args, descr) = self._cmds[cmd]
             cmds += [(cmd, args, descr)]
 
         return cmds

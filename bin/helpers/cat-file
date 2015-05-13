@@ -1,11 +1,9 @@
 #! /usr/bin/env bash
 #
+# Given a filename, output the contents of the file and return 0.  Upon error,
+# return nonzero.
+#
 # cat-file <file>
 
-if [ -f $1 ]; then
-   cat $1
-   exit 0
-else
-   exit 1
-fi   
+[ -f "$1" ] && cat "$1"
 

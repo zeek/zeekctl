@@ -2,6 +2,7 @@
 # BroControl Plugin API.
 #
 
+from __future__ import print_function
 import logging
 
 from BroControl import config
@@ -63,7 +64,7 @@ class Plugin(object):
         attribute *name*. If the user has not set the options, its default
         value is returned. See the output of ``broctl config`` for a complete
         list."""
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             raise KeyError
 
         return config.Config.__getattr__(name)
@@ -79,7 +80,7 @@ class Plugin(object):
         """
         name = "%s.%s" % (self.prefix().lower(), name.lower())
 
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             raise KeyError
 
         return config.Config.__getattr__(name)
@@ -97,7 +98,7 @@ class Plugin(object):
         """
         name = "%s.state.%s" % (self.prefix().lower(), name.lower())
 
-        if not config.Config.hasAttr(name):
+        if not config.Config.has_attr(name):
             return ""
 
         return config.Config.__getattr__(name)
@@ -118,7 +119,7 @@ class Plugin(object):
             self.error("plugin state variable names must not contain dots or spaces")
 
         name = "%s.state.%s" % (self.prefix(), name)
-        config.Config._setState(name, value)
+        config.Config.set_state(name, value)
 
     @doc.api
     def parseNodes(self, names):
@@ -131,9 +132,9 @@ class Plugin(object):
         notnodes = []
 
         for arg in names.split():
-            h = config.Config.nodes(arg, True)
-            if h:
-                nodes += h
+            nodelist = config.Config.nodes(arg, True)
+            if nodelist:
+                nodes += nodelist
             else:
                 notnodes.append(arg)
 
@@ -142,7 +143,7 @@ class Plugin(object):
     @doc.api
     def message(self, msg):
         """Reports a message to the user."""
-        print "%s" % msg
+        print("%s" % msg)
 
     @doc.api
     def debug(self, msg):
@@ -152,7 +153,7 @@ class Plugin(object):
     @doc.api
     def error(self, msg):
         """Reports an error to the user."""
-        print "error: %s" % msg
+        print("error: %s" % msg)
 
     @doc.api
     def execute(self, node, cmd):
@@ -160,7 +161,7 @@ class Plugin(object):
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
         True if the command ran successfully and ``output`` is the combined
         stdout/stderr output (or None if we couldn't connect to the host)."""
-        result = self.executor.runShellCmdsParallel([(node, cmd)])[0]
+        result = self.executor.run_shell_cmds([(node, cmd)])[0]
         return (result[1], result[2])
 
     @doc.api
@@ -197,7 +198,7 @@ class Plugin(object):
         ``success`` is True if the command ran successfully and ``output`` is
         the combined stdout/stderr output (or None if we couldn't connect to
         the host) for the corresponding ``node``."""
-        return self.executor.runShellCmdsParallel(cmds)
+        return self.executor.run_shell_cmds(cmds)
 
     ### Methods that must be overridden by plugins.
 
@@ -876,4 +877,4 @@ class Plugin(object):
             if not isinstance(default, str):
                 self.error("plugin option default must be a string")
 
-            config.Config._setOption("%s.%s" % (self.prefix(), name), default)
+            config.Config._set_option("%s.%s" % (self.prefix(), name), default)

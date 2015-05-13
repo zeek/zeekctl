@@ -10,7 +10,6 @@ from BroControl import py3bro
 class CronUI:
     def __init__(self):
         self.buffer = None
-        pass
 
     def output(self, txt):
         if self.buffer:
@@ -22,10 +21,10 @@ class CronUI:
     error = output
     warn = output
 
-    def bufferOutput(self):
+    def buffer_output(self):
         self.buffer = py3bro.io.StringIO()
 
-    def getBufferedOutput(self):
+    def get_buffered_output(self):
         buf = self.buffer.getvalue()
         self.buffer.close()
         self.buffer = None
@@ -33,23 +32,25 @@ class CronUI:
 
 
 class CronTasks:
-    def __init__(self, ui, config, controller):
+    def __init__(self, ui, config, controller, executor, pluginregistry):
         self.ui = ui
         self.config = config
         self.controller = controller
+        self.executor = executor
+        self.pluginregistry = pluginregistry
 
-    def logStats(self, interval):
+    def log_stats(self, interval):
         if self.config.statslogenable == "0":
             return
 
         nodes = self.config.nodes()
-        top = self.controller.getTopOutput(nodes)
+        top = self.controller.get_top_output(nodes)
 
         have_capstats = self.config.capstatspath
         capstats = []
 
         if have_capstats:
-            capstats = self.controller.getCapstatsOutput(nodes, interval)
+            capstats = self.controller.get_capstats_output(nodes, interval)
 
         t = time.time()
 
@@ -62,10 +63,10 @@ class CronTasks:
         for (node, error, vals) in top:
             if not error:
                 for proc in vals:
-                    type = proc["proc"]
+                    parentchild = proc["proc"]
                     for (val, key) in proc.items():
                         if val != "proc":
-                            out.write("%s %s %s %s %s\n" % (t, node, type, val, key))
+                            out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
             else:
                 out.write("%s %s error error %s\n" % (t, node, error))
 
@@ -92,11 +93,11 @@ class CronTasks:
                     if float(val) != 0.0 and last == 0.0:
                         self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
-                    self.config._setState(tag, val)
+                    self.config.set_state(tag, val)
 
         out.close()
 
-    def checkDiskSpace(self):
+    def check_disk_space(self):
         minspace = float(self.config.mindiskspace)
         if minspace == 0.0:
             return
@@ -123,42 +124,35 @@ class CronTasks:
 
                     self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
-                self.config._setState(key, "%.1f" % perc)
+                self.config.set_state(key, "%.1f" % perc)
 
-    def expireLogs(self):
-        i = int(self.config.logexpireinterval)
-        i2 = int(self.config.statslogexpireinterval)
-
-        if i == 0 and i2 == 0:
+    def expire_logs(self):
+        if self.config.logexpireinterval == "0" and self.config.statslogexpireinterval == "0":
             return
 
-        (success, output) = execute.runLocalCmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+        (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
         if not success:
             self.ui.error("expire-logs failed\n")
             for line in output:
                 self.ui.error(line)
 
-    def checkHosts(self):
-        for node in self.config.hosts(nolocal=True):
-            tag = "alive-%s" % node.host.lower()
-            # TODO: fix
-            #alive = execute.isAlive(node.addr) and "1" or "0"
-            alive = "1"
+    def check_hosts(self):
+        for host, status in self.executor.host_status():
+            tag = "alive-%s" % host
+            alive = status and "1" or "0"
 
             if tag in self.config.state:
                 previous = self.config.state[tag]
 
                 if alive != previous:
-                    # TODO: fix
-                    #plugin.Registry.hostStatusChanged(node.host, alive == "1")
+                    self.pluginregistry.hostStatusChanged(host, alive == "1")
                     if self.config.mailhostupdown != "0":
-                        self.ui.info("host %s %s" % (node.host, alive == "1" and "up" or "down"))
+                        self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
 
-            self.config._setState(tag, alive)
+            self.config.set_state(tag, alive)
 
-
-    def updateHTTPStats(self):
+    def update_http_stats(self):
         if self.config.statslogenable == "0":
             return
 
@@ -186,12 +180,12 @@ class CronTasks:
         meta.write("version %s\n" % self.config.version)
 
         try:
-            meta.write("os %s\n" % execute.runLocalCmd("uname -a")[1][0])
+            meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
         except IndexError:
             meta.write("os <error>\n")
 
         try:
-            meta.write("host %s\n" % execute.runLocalCmd("hostname")[1][0])
+            meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
         except IndexError:
             meta.write("host <error>\n")
 
@@ -208,7 +202,7 @@ class CronTasks:
         # Update the WWW data
         statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
 
-        (success, output) = execute.runLocalCmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        (success, output) = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
         if success:
             shutil.copy(metadat, wwwdir)
         else:
@@ -238,10 +232,10 @@ class CronTasks:
         os.unlink(self.config.statslog)
 
 
-    def runCronCmd(self):
+    def run_cron_cmd(self):
         # Run external command if we have one.
         if self.config.croncmd:
-            (success, output) = execute.runLocalCmd(self.config.croncmd)
+            (success, output) = execute.run_localcmd(self.config.croncmd)
             if not success:
                 self.ui.error("failure running croncmd: %s" % self.config.croncmd)
 

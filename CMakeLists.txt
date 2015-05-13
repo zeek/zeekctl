@@ -77,6 +77,9 @@ include(InstallShellScript)
 
 set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 
+# If a script may need to be configured by CMake and also have its hashbang
+# transformed to use an absolute path to an interpreter, use the
+# InstallShellScript macro.
 InstallShellScript(bin bin/broctl.in broctl)
 InstallShellScript(bin bin/broctld.in broctld)
 InstallShellScript(bin bin/dbroctld.in dbroctld)
@@ -99,7 +102,6 @@ InstallShellScript(share/broctl/scripts/helpers bin/helpers/get-childs)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/run-cmd)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/to-bytes.awk)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
 InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
@@ -107,6 +109,10 @@ install(DIRECTORY BroControl
         DESTINATION lib/broctl
         PATTERN "options.py" EXCLUDE
         PATTERN "version.py" EXCLUDE
+        PATTERN "broctld.py" EXCLUDE
+        PATTERN "ser.py" EXCLUDE
+        PATTERN "test_cli.py" EXCLUDE
+        PATTERN "web.py" EXCLUDE
         PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
@@ -125,7 +131,22 @@ install(DIRECTORY bin/
                         OWNER_READ OWNER_WRITE OWNER_EXECUTE
                         GROUP_READ GROUP_EXECUTE
                         WORLD_READ WORLD_EXECUTE
-        PATTERN "broctl.in" EXCLUDE)
+        PATTERN "broctl.in" EXCLUDE
+        PATTERN "set-bro-path" EXCLUDE
+        PATTERN "to-bytes.awk" EXCLUDE)
+
+# Special cases where execute permission isn't applicable.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/helpers/to-bytes.awk
+        DESTINATION share/broctl/scripts/helpers)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/set-bro-path
+        DESTINATION share/broctl/scripts)
+
+if ( NOT BRO_MAN_INSTALL_PATH )
+    set(BRO_MAN_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/man)
+endif ()
+
+install(FILES man/broctl.8 DESTINATION ${BRO_MAN_INSTALL_PATH}/man8)
+
 install(DIRECTORY scripts/
         DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
