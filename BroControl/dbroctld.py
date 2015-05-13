@@ -96,28 +96,40 @@ class DBroCtld(Thread):
 
         if msg["type"] == "command":
             self.handleCommand(msg)
+
+        elif msg["type"] == "ack":
+            logging.debug("Acknowledgement received")
+
+        elif msg["type"] == "result":
+            self.handleResult(msg)
+
         else:
             logging.debug("handleMessage: unknown message type received")
             raise RuntimeError("message type unknown")
 
     def handleCommand(self, msg):
         cmd = msg['payload']
-        logging.debug("received command " + str(cmd))
 
         # Distinguish between command and its parameters
         args= cmd.split(" ")
         cmd = args[0]
         args.remove(cmd)
 
-        logging.debug("issuing cmd " + str(cmd) + " with args " + str(args))
+        logging.debug("executing cmd " + str(cmd) + " with args " + str(args))
         # Execute command...
         func = getattr(self.broctl, cmd, self.noop)
+        logging.debug("func " + str(func))
 
         if hasattr(func,  'api_exposed'):
+            res = None
+
             try:
                 res = func(*args)
-            except Exception as e:
+            except Exception:
                 res = traceback.format_exc()
+
+            if res:
+                logging.debug("result of cmd " + str(cmd) + " is " + str(res.get_node_output()))
 
             # Forward command ...
             self.forwardCommand(cmd)
@@ -130,6 +142,9 @@ class DBroCtld(Thread):
 
         else:
             logging.debug("handleCommand: unknown command, ignoring it")
+
+    def handleResult(self, res):
+        logging.debug("result received: " + str(res))
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)
@@ -229,8 +244,9 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
                     self.server.receive_data(data)
 
                     # Send a reply
-                    reply = {'type': 'Ack', 'payload':'Ack'}
-                    self.request.sendto(json.dumps(reply), self.client_address)
+                    if 'type' in data.keys() and data['type'] != 'ack':
+                        reply = {'type': 'ack', 'payload':'ack'}
+                        self.request.sendto(json.dumps(reply), self.client_address)
 
                     # Stop the handler if we receive a shutdown command
                     if 'type' in data.keys() and data['type'] == 'command' and data['payload'] == 'shutdown':
@@ -275,6 +291,12 @@ class BClient():
                 if data:
                     self.cqueue.put(("msg", data))
                     counter = 0
+
+                    # Send a reply
+                    if 'type' in data.keys() and data['type'] != 'ack':
+                        reply = {'type': 'ack', 'payload':'ack'}
+                        self.socket.sendto(json.dumps(reply), self.server_address)
+
                 else:
                     counter += 1
 

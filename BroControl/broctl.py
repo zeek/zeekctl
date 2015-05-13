@@ -467,6 +467,7 @@ class BroCtl(object):
 
         return results
 
+    @expose
     def df(self, node_list=None):
         """- [<nodes>]
 
@@ -513,22 +514,21 @@ class BroCtl(object):
 
         return results
 
+    @expose
     def netstats(self, node_list=None):
         """- [<nodes>]
 
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
+        nodes = None
         if not node_list:
             if self.config.nodes("standalone"):
                 node_list = "standalone"
             elif self.config.nodes("workers"):
                 node_list = "workers"
-            elif self.config.nodes("peers"):
-                node_list = "peers"
-            #FIXME will not work like that for peers when workers are present
 
-        nodes = self.nodeArgs(node_list)
+        nodes =  self.nodeArgs(node_list)
         nodes = self.plugins.cmdPreWithNodes("netstats", nodes)
         results = self.controller.netStats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
