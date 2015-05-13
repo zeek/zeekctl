@@ -20,8 +20,6 @@ def get_syncs():
     syncs = [
     ("${brobase}", True),
     ("${brobase}/share", True),
-    # FIXME just a hack for testing
-    ("${brobase}/../bro-build", True),
     ("${cfgdir}", True),
     ("${libdir}", True),
     ("${bindir}", True),

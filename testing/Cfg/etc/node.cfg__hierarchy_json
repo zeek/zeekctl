@@ -9,7 +9,7 @@
 		{	
 				"id": "icsi-1",
 				"type": "peer",
-				"host": "192.168.4.239",
+				"host": "192.168.6.226",
 				"policy": "policy 1"
 		},
 
