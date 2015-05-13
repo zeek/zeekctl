@@ -3,6 +3,7 @@
 import os
 import socket
 import re
+import zlib
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -579,7 +580,11 @@ class Configuration:
 
     # Return a hash value (as a string) of the current broctl configuration.
     def _get_broctlcfg_hash(self):
-        return str(hash(tuple(sorted(self.config.items()))))
+        data = str(sorted(self.config.items()))
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl configuration.
     def update_broctlcfg_hash(self):
@@ -591,7 +596,11 @@ class Configuration:
         nn = []
         for n in self.nodes():
             nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
-        return str(hash(tuple(nn)))
+        data = str(nn)
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl node config.
     def update_nodecfg_hash(self):
