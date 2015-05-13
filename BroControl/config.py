@@ -132,7 +132,7 @@ class Configuration:
         # Set the standalone config option.
         standalone = "0"
         for node in self.nodes("all"):
-            if node.type == "standalone" or node.type == "peer":
+            if node.type == "standalone":
                 standalone = "1"
 
         self._set_option("standalone", standalone)

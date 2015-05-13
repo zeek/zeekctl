@@ -101,8 +101,7 @@ def make_layout(path, cmdout, silent=False):
 
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
-    #if config.Config.nodes("standalone"):
-    if config.Config.standalone:
+    if config.Config.nodes("standalone"):
         if os.access(filename, os.W_OK):
             os.unlink(filename)
         # We do need to establish the port for the manager.
