@@ -251,8 +251,8 @@ def makeNodeConfigs(path, peers, cmdout, silent=False):
     if not silent:
         cmdout.info("generating node.cfg per peer ...")
 
-    localNode = config.Config.getLocalNode()
-    logging.debug(str(localNode.name) + "@" + str(config.Config.localaddrs[0]) + " :: create node configuration")
+    localNode = config.Config.get_local()
+    logging.debug(str(config.Config.get_local_id()) + "@" + str(config.Config.localaddrs[0]) + " :: create node configuration")
 
     for p in peers:
         if p != localNode:
@@ -262,8 +262,8 @@ def makeNodeConfigs(path, peers, cmdout, silent=False):
 # Write individual node.cfg file for node
 def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
-    head = config.Config.getHead()
-    localNode = config.Config.getLocalNode()
+    head = config.Config.get_head()
+    localNode = config.Config.get_local()
 
     npath = os.path.join (path, "node.cfg_" + str(node.name))
     logging.debug(str(localNode.name) + " write node.cfg for " + str(node.name) + " to path " + str(npath))
