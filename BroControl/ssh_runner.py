@@ -1,3 +1,4 @@
+import ast
 import collections
 import json
 import subprocess
@@ -23,7 +24,7 @@ import os,sys,subprocess,signal,select,json
 TIMEOUT=120
 
 def w(s):
-	sys.stdout.write(json.dumps(s) + "\n")
+	sys.stdout.write(repr(s) + "\n")
 	sys.stdout.flush()
 
 def exec_cmds(cmds):
@@ -59,7 +60,7 @@ while fds:
 	for fd in r:
 		output=os.read(fd.fileno(),1024)
 		if output:
-			fd_map[fd].append(output.decode())
+			fd_map[fd].append(output)
 			continue
 
 		cmd=cmd_map[fd]
@@ -69,10 +70,10 @@ while fds:
 			continue
 
 		proc=cmd["proc"]
-		res=proc.wait()
-		out="".join(cmd["stdout"])
-		err="".join(cmd["stderr"])
-		w((cmd["idx"],(res,out,err)))
+		status=proc.wait()
+		out=b"".join(cmd["stdout"])
+		err=b"".join(cmd["stderr"])
+		w((cmd["idx"],(status,out,err)))
 
 w("done")
 """
@@ -84,9 +85,6 @@ w("done")
 
     if py3bro.using_py3:
         muxer = muxer.encode()
-    else:
-        # Remove code that is only needed for Py3
-        muxer = muxer.replace(".decode()", "")
 
     muxer = base64.b64encode(zlib.compress(muxer))
 
@@ -169,11 +167,17 @@ class SSHMaster:
                 logging.debug("Command timeout on host %s", self.host)
                 self.close()
                 break
-            resp = json.loads(line)
+            resp = ast.literal_eval(line)
             if resp == "done":
                 break
-            idx, out = resp
-            outputs[idx] = CmdResult(*out)
+            idx, result = resp
+            status, out, err = result
+
+            if py3bro.using_py3:
+                out = out.decode(errors="replace")
+                err = err.decode(errors="replace")
+
+            outputs[idx] = CmdResult(status, out, err)
         return outputs
 
     def ping(self, timeout=10):
