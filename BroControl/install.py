@@ -12,6 +12,15 @@ from BroControl import config
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
 
+class Port:
+    def __init__(self, startport):
+        self.p = startport
+
+    def next_port(self, node):
+        self.p += 1
+        node.setPort(self.p)
+        return self.p
+
 # Directories/files in form (path, mirror) which are synced from the manager to
 # all nodes.
 # If 'mirror' is true, the path is fully mirrored recursively, otherwise the
@@ -79,22 +88,13 @@ def make_broctl_config_sh(cmdout):
 
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
-    class Port:
-        def __init__(self, startport):
-            self.p = startport
-
-        def next_port(self, node):
-            self.p += 1
-            node.setPort(self.p)
-            return self.p
-
     manager = config.Config.manager()
+    logging.debug("make_layout, manager is " + str(manager.name))
 
     if not manager:
         return
 
     broport = Port(int(config.Config.broport) - 1)
-
     filename = os.path.join(path, "cluster-layout.bro")
 
     # If there is a standalone node, delete any cluster-layout file to
@@ -117,49 +117,86 @@ def make_layout(path, cmdout, silent=False):
         out.close()
 
     else:
-        if not silent:
-            cmdout.info("generating cluster-layout.bro ...")
+        make_broccoli_layout(path, cmdout, silent)
 
-        out = open(filename, "w")
+def make_broccoli_layout(path, cmdout, silent = False):
+    #print "make broccoli cluster layout"
+    manager = config.Config.manager()
 
-        workers = config.Config.nodes("workers")
-        proxies = config.Config.nodes("proxies")
+    if not manager:
+        return
 
-        out.write("# Automatically generated. Do not edit.\n")
-        out.write("redef Cluster::nodes = {\n")
+    broport = Port(int(config.Config.broport) - 1)
+    filename = os.path.join(path, "cluster-layout.bro")
+    if not silent:
+        cmdout.info("generating cluster-layout.bro ...")
 
-        # Control definition.  For now just reuse the manager information.
-        out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
+    out = open(filename, "w")
 
-        # Manager definition
-        out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
+    workers = config.Config.nodes("workers")
+    proxies = config.Config.nodes("proxies")
+
+    out.write("# Automatically generated. Do not edit.\n")
+    out.write("redef Cluster::nodes = {\n")
+
+    # Control definition.  For now just reuse the manager information.
+    out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
+
+    # Manager definition
+    out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
+    for s in workers:
+        out.write("\"%s\"" % s.name)
+        if s != workers[-1]:
+            out.write(", ")
+    out.write(")],\n")
+
+    # Proxies definition
+    for p in proxies:
+        out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
         for s in workers:
             out.write("\"%s\"" % s.name)
             if s != workers[-1]:
                 out.write(", ")
         out.write(")],\n")
 
-        # Proxies definition
-        for p in proxies:
-            out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
-            for s in workers:
-                out.write("\"%s\"" % s.name)
-                if s != workers[-1]:
-                    out.write(", ")
-            out.write(")],\n")
+    # Workers definition
+    for w in workers:
+        p = w.count % len(proxies)
+        out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
 
-        # Workers definition
-        for w in workers:
-            p = w.count % len(proxies)
-            out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
+    # Activate time-machine support if configured.
+    if config.Config.timemachinehost:
+        out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
 
-        # Activate time-machine support if configured.
-        if config.Config.timemachinehost:
-            out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
+    out.write("};\n")
 
-        out.write("};\n")
+    out.close()
 
-        out.close()
+def make_broker_layout(path, cmdout, silent=False):
+    #print "make broker cluster layout"
+    manager = config.Config.manager()
+
+    if not manager:
+        return
+
+    broport = Port(int(config.Config.broport) - 1)
+    filename = os.path.join(path, "cluster-layout.bro")
+    if not silent:
+        cmdout.info("generating cluster-layout.bro ...")
+
+    out = open(filename, "w")
+
+    workers = config.Config.nodes("workers")
+    proxies = config.Config.nodes("proxies")
+    out.write("redef Cluster::nodes = {\n")
+
+    out.write("# Automatically generated. Do not edit.\n")
+
+    #TODO add broker configuration
+
+    out.write("};\n")
+
+    out.close()
 
 # Reads in a list of networks from file.
 def read_networks(fname):

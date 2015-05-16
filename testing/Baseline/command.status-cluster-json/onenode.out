@@ -1,0 +1,5 @@
+   worker-2
+1431736117.723582 peer= host=127.0.0.1 events_in=354 events_out=354 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736117.723582 peer=manager host=127.0.0.1 events_in=354 events_out=354 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736117.723582 peer=proxy-1 host=127.0.0.1 events_in=354 events_out=354 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+

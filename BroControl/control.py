@@ -16,6 +16,8 @@ from BroControl import cron
 from BroControl import node as node_mod
 from BroControl import cmdresult
 
+#TODO needs to be move to options.py
+USE_BROKER = False
 
 # Waits for the nodes' Bro processes to reach the given status.
 # Build the Bro parameters for the given node. Include
@@ -63,20 +65,24 @@ def _make_bro_params(node, live):
     #    but overrided by broctl.cfg)
     args += config.Config.sitepolicystandalone.split()
     args += ["broctl"]
+
     if node.type == "standalone":
         args += ["broctl/standalone"]
+
     else:
-        args += ["base/frameworks/cluster"]
+        if USE_BROKER:  # use broker
+            args += ["base/frameworks/broker"]
+
+        else:  # use broccoli
+            args += ["base/frameworks/cluster"]
+
         if node.type == "manager":
             args += config.Config.sitepolicymanager.split()
         elif node.type == "proxy":
             args += ["local-proxy"]
         elif node.type == "worker":
             args += config.Config.sitepolicyworker.split()
-        elif node.type == "peer":
-            # FIXME do nothing
-            print "peer " + str(node.name) + ", do nothing here"
-        else:
+        elif node.type != "peer":
             raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
 
     args += ["broctl/auto"]
@@ -130,10 +136,12 @@ class Controller:
             elif n.type == "standalone":
                 manager += [n]
 
-        if not manager:
-            local = config.Config.get_local()
+        if not manager and config.Config.get_local_id() != "unknown":
             # If there is no manager defined explicitely,
             # the local node of type peer is the manager
+            local = config.Config.get_local()
+            if not hasattr(local, "addr"):
+                raise RuntimeError("local node without addr")
             manager += [local]
 
         # Start nodes. Do it in the order manager, proxies, workers.
@@ -206,11 +214,11 @@ class Controller:
             if not isrunning:
                 filtered += [node]
                 if node.hasCrashed():
-                    self.ui.info(str(self.config.get_local_id()) + " :: starting node %s (was crashed) ..." % node.name)
+                    self.ui.info("starting %s (was crashed) ..." % node.name)
                 else:
-                    self.ui.info(str(self.config.get_local_id()) + " :: starting node %s ..." % node.name)
+                    self.ui.info("starting %s ..." % node.name)
             else:
-                self.ui.info(str(self.config.get_local_id()) + " :: node %s still running" % node.name)
+                self.ui.info("%s still running" % node.name)
 
         nodes = filtered
 

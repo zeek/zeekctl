@@ -214,6 +214,7 @@ class Executor:
 
         dd = {}
         for nodecmd in cmds:
+            logging.debug("run_cmds: recvd: " + str(nodecmd[0].name))
             host = nodecmd[0].addr
             if host not in dd:
                 dd[host] = []

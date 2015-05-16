@@ -1,4 +1,3 @@
-
 # Test that the netstats command can get status of all nodes, or just
 # a specified node.
 #
@@ -10,8 +9,8 @@
 . broctl-test-setup
 
 while read line; do installcfgfile "$line"; done << EOF
-etc/broctl.cfg__debug
-etc/node.cfg__json
+etc/broctl.cfg__no_email
+etc/node.cfg__multiple_clusters_no_netifs_json
 EOF
 
 ret=0
@@ -19,14 +18,16 @@ ret=0
 broctl install
 broctl start
 
+# get status of all nodes
 broctl netstats > all.out 2>&1
+
 # get status of one node
-broctl netstats icsi-1 > onenode.out 2>&1
+broctl netstats icsi-cluster-1::worker-1 > onenode.out 2>&1
 
 broctl stop
 
 # no nodes are running, so no status exists
-#broctl netstats > stopped.out 2>&1
+broctl netstats > stopped.out 2>&1
 # the file size should be zero
 test ! -s stopped.out || ret=1
 

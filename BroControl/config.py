@@ -70,13 +70,6 @@ class Configuration:
         self._set_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
         self._set_option("mailalarmsto", self.config["mailto"])
 
-        # Create a directory for the debuglog per individual host
-        # TODO hostname should be replaced by unique identifier per node/peer
-        dlpath = os.path.join(self.spooldir, str(socket.gethostname()))
-        if not os.path.exists(dlpath):
-            os.makedirs(dlpath)
-        self.debuglog = os.path.join(dlpath, "debug.log")
-
         # One directory per node.cfg per peer
         # TODO hostname should be replaced by unique identifier per node/peer
         nodecfgpath = os.path.join(self.cfgdir, str(socket.gethostname()))
@@ -204,25 +197,24 @@ class Configuration:
             nodetype = "peer"
 
         for n in self.nodestore.values():
-            if nodetype == "peer" and nodetype == n.type and self.get_local() != n:
+            if nodetype == n.type:
+                if nodetype == "peer" and n.type == "peer" and self.get_local() == n:
+                    continue
                 nodes += [n]
-            elif nodetype:
-                if nodetype == n.type:
-                    nodes += [n]
+
             elif tag == n.name:
                 nodes += [n]
+
             elif tag == "cluster" and (n.type != "peer"):
                 nodes += [n]
+
             elif tag == "all" or not tag:
                 nodes += [n]
 
         nodes.sort(key=lambda n: (n.type, n.name))
 
         if not nodes and tag == "manager":
-            if len(self.nodestore) > 1 or self.local_node != self.head:
-                nodes += [self.local_node]
-            else:
-                nodes = self.nodes("standalone")
+            nodes = self.nodes("standalone")
 
         return nodes
 
@@ -482,8 +474,8 @@ class Configuration:
                     raise ConfigurationError("Only one manager can be defined")
                 manager = True
 
-                if n.addr in ("127.0.0.1", "::1"):
-                    manageronlocalhost = True
+ #               if n.addr in ("127.0.0.1", "::1"):
+ #                   manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("Must run broctl only on manager node")
@@ -507,11 +499,10 @@ class Configuration:
                 raise ConfigurationError("No proxy defined in node config")
 
         # If manager is on localhost, then all other nodes must be on localhost
-        if manageronlocalhost:
-            for n in nodestore.values():
-                if n.type != "manager" and n.type != "standalone" and n.type != "peer":
-                    if n.addr not in ("127.0.0.1", "::1"):
-                        raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
+        #if manageronlocalhost:
+        #    for n in nodestore.values():
+        #        if n.type != "manager" and n.addr not in ("127.0.0.1", "::1"):
+        #            raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
 
     # Parse node.cfg in Json-Format
     def _read_nodes_json(self):
@@ -620,22 +611,28 @@ class Configuration:
 
         # root/head of the tree
         root = self.overlay.getRoot()
+        logging.debug("_read_nodes_json: root is " + str(root))
 
         # The local node is the manager of its subtree
-        local_node = nodestore[root]
-        if local_node.type == "peer":
-            local_node.type = "standalone"
-            nodestore[root] = local_node
+        if root in nodestore.keys():
+            local_n = nodestore[root]
+            if local_n.type == "peer":
+                local_n.type = "standalone"
+                nodestore[root] = local_n
 
+        local_node = None
         # The direct successors of the root
         peer_list = self.overlay.getSuccessors(root)
 
         for key, node in nodestore.iteritems():
             if key == root:
                 scopelist[key] = node
+                local_node = node
 
             elif hasattr(node, "cluster") and node.cluster == root:
                 scopelist[key] = node
+                if node.type in ("manager", "standalone"):
+                    local_node = node
 
             elif key in peer_list:  # and key != headId:
                 node.type = "peer"
@@ -645,10 +642,13 @@ class Configuration:
                 node.type = "peer"
                 scopelist[node.cluster] = node
 
+        if not local_node:
+            raise RuntimeError("No node configuration for local node found")
+
         # Check if nodestore is valid
         self._check_nodestore(scopelist)
 
-        logging.debug("local node is " + str(local_node) + " and head is " + str(head))
+        logging.debug("local node is " + root + " and head is " + str(head))
 
         return scopelist, local_node, head
 

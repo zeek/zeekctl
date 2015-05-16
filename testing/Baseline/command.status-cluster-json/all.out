@@ -1,0 +1,22 @@
+    manager
+1431736115.792230 peer= host=127.0.0.1 events_in=349 events_out=349 ops_in=0 ops_out=112 bytes_in=? bytes_out=?
+1431736115.792230 peer=proxy-1 host=127.0.0.1 events_in=349 events_out=349 ops_in=0 ops_out=112 bytes_in=? bytes_out=?
+1431736115.792230 peer=worker-2 host=127.0.0.1 events_in=349 events_out=349 ops_in=0 ops_out=112 bytes_in=? bytes_out=?
+1431736115.792230 peer=worker-1 host=127.0.0.1 events_in=349 events_out=349 ops_in=0 ops_out=112 bytes_in=? bytes_out=?
+
+    proxy-1
+1431736115.992471 peer= host=127.0.0.1 events_in=346 events_out=346 ops_in=0 ops_out=16 bytes_in=? bytes_out=?
+1431736115.992471 peer=worker-2 host=127.0.0.1 events_in=346 events_out=346 ops_in=0 ops_out=16 bytes_in=? bytes_out=?
+1431736115.992471 peer=worker-1 host=127.0.0.1 events_in=346 events_out=346 ops_in=0 ops_out=16 bytes_in=? bytes_out=?
+1431736115.992471 peer=manager host=127.0.0.1 events_in=346 events_out=346 ops_in=0 ops_out=16 bytes_in=? bytes_out=?
+
+   worker-1
+1431736116.191790 peer=proxy-1 host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736116.191790 peer=manager host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736116.191790 peer= host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+
+   worker-2
+1431736116.392176 peer= host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736116.392176 peer=manager host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1431736116.392176 peer=proxy-1 host=127.0.0.1 events_in=341 events_out=341 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+
