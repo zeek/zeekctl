@@ -27,8 +27,6 @@ class ConfigurationError(Exception):
 
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
-        from BroControl import execute
-
         self.ui = ui
         self.localaddrs = localaddrs
         global Config
@@ -41,20 +39,27 @@ class Configuration:
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
 
-        # Set defaults for options we get passed in.
-        self._set_option("brobase", basedir)
-        self._set_option("broscriptdir", broscriptdir)
-        self._set_option("version", VERSION)
-
-        # Initialize options.
-        for opt in options.options:
-            if not opt.dontinit:
-                self._set_option(opt.name, opt.default)
+        self._initialize_options(basedir, broscriptdir)
+        self._check_options()
 
         if state:
             self.state_store = state
         else:
             self.state_store = SqliteState(self.statefile)
+
+
+    def _initialize_options(self, basedir, broscriptdir):
+        from BroControl import execute
+
+        # Set defaults for options we get passed in.
+        self._set_option("brobase", basedir)
+        self._set_option("broscriptdir", broscriptdir)
+        self._set_option("version", VERSION)
+
+        # Initialize options that are not already set.
+        for opt in options.options:
+            if not opt.dontinit:
+                self._set_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
         self._set_option("mailto", "%s" % os.getenv("USER"))
@@ -80,6 +85,22 @@ class Configuration:
             self._set_option("time", output[0].lower().strip())
         else:
             self._set_option("time", "")
+
+
+    # Do a basic sanity check on some critical options.
+    def _check_options(self):
+        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
+        files = ("makearchivename", )
+
+        for d in dirs:
+            v = self.config[d]
+            if not os.path.isdir(v):
+                raise ConfigurationError('broctl option "%s" directory not found: %s' % (d, v))
+
+        for f in files:
+            v = self.config[f]
+            if not os.path.isfile(v):
+                raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
 
     def initPostPlugins(self):
         self.read_state()
@@ -271,10 +292,11 @@ class Configuration:
                 except ValueError:
                     raise ConfigurationError("missing '=' in env_vars")
 
-                if not key.strip():
+                key = key.strip()
+                if not key:
                     raise ConfigurationError("missing environment variable name in env_vars")
 
-                env_vars[key.strip()] = val.strip()
+                env_vars[key] = val.strip()
 
         return env_vars
 
