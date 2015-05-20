@@ -88,6 +88,7 @@ dest_dir=`dirname "$dest"`
 
 mkdir -p "$dest_dir" # Makes sure all parent directories exist.
 if [ $? -ne 0 ]; then
+    echo "archive-log: failed to create log archive directory: $dest_dir" >&2
     exit 1
 fi
 
@@ -109,12 +110,14 @@ if [ ! -f $file_name ]; then
 fi
 
 if [ "${compresslogs}" = "1" -a "$writer" = "ascii" -a -n "${compresscmd}" ]; then
-    nice ${compresscmd} < $file_name > "$dest.${compressextension}"
+    dest="$dest.${compressextension}"
+    nice ${compresscmd} < $file_name > "$dest"
 else
     nice cp $file_name "$dest"
 fi
 
 if [ $? -ne 0 ]; then
+    echo "archive-log: possibly failed to archive log file $file_name to $dest" >&2
     exit 1
 fi
 
