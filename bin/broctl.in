@@ -51,6 +51,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         if not self.broctl.plugins.runCustomCommand(strlist[0], " ".join(strlist[1:]), self):
             self.error("unknown command '%s'" % strlist[0])
+            if not self.interactive:
+                self.do_help(None)
 
         return True
 
