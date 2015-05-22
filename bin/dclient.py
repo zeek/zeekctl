@@ -32,7 +32,6 @@ class BClient(cmd.Cmd):
             return
 
         self.send(data)
-
         while data:
             try:
                 data = json.loads(self.sock.recv(1024).strip())
@@ -74,17 +73,17 @@ class BClient(cmd.Cmd):
     def do_start(self, line):
         """ start the bro instances in the deep cluster """
         print "starting bro instances of deep cluster..."
-        self.send_receive("start")
+        self.send("start")
 
     def do_stop(self, line):
         """ stop the bro instances in the deep cluster """
         print "stopping bro instances of deep cluster..."
-        self.send_receive("stop")
+        self.send("stop")
 
     def do_shutdown(self, line):
         """ shutdown the deep cluster """
         print "shutting down deep cluster..."
-        self.send_receive("shutdown")
+        self.send("shutdown")
 
     def do_disconnect(self, line):
         """ shutdown the deep cluster and disconnect """

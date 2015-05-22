@@ -15,6 +15,8 @@ from .version import VERSION
 
 from BroControl import graph
 
+# TODO move in options.py
+USE_BROKER = False
 
 # Class storing the broctl configuration.
 #
@@ -839,3 +841,6 @@ class Configuration:
 
     def writeJson(self, peer, data):
         print "write Json configuration file for peer " + str(peer)
+
+    def use_broker(self):
+        return USE_BROKER

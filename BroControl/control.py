@@ -16,9 +16,6 @@ from BroControl import cron
 from BroControl import node as node_mod
 from BroControl import cmdresult
 
-#TODO needs to be move to options.py
-USE_BROKER = False
-
 # Waits for the nodes' Bro processes to reach the given status.
 # Build the Bro parameters for the given node. Include
 # script for live operation if live is true.
@@ -63,19 +60,51 @@ def _make_bro_params(node, live):
     #    settings that override the previously loaded node-specific scripts.
     #    (e.g. Log::default_rotation_interval is set in manager.bro,
     #    but overrided by broctl.cfg)
+
     args += config.Config.sitepolicystandalone.split()
     args += ["broctl"]
 
     if node.type == "standalone":
-        args += ["broctl/standalone"]
 
-    else:
-        if USE_BROKER:  # use broker
-            args += ["base/frameworks/broker"]
+        if not config.Config.use_broker():
+            args += ["broctl/standalone"]
 
-        else:  # use broccoli
-            args += ["base/frameworks/cluster"]
+        else:  # use broker
+            logging.debug("writing bro configuration for broker")
+            if config.Config.head == config.Config.get_local():
+                logging.debug("  - local node is clone store")
+                args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
+                args += [config.Config.policydir + "/base/frameworks/broker-test/clone.bro"]
+                args += ["broker_port=9999/tcp"]
+                args += ["broker_host=" + config.Config.get_local().addr]
+            else:
+                logging.debug("  - local node is master store")
+                args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
+                args += [config.Config.policydir + "/base/frameworks/broker-test/master.bro"]
+                args += ["broker_port=9999/tcp"]
+                args += ["broker_host=" + config.Config.get_head().addr]
 
+    elif config.Config.use_broker():  # use broker
+        #args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
+
+        if node.type == "manager":
+            #args += config.Config.sitepolicymanager.split()
+            args += [config.Config.policydir + "/base/frameworks/broker-test/logs-connector.bro"]
+            args += ["broker_port=9999/tcp"]
+        elif node.type == "proxy":
+            #args += ["local-proxy"]
+            args += [config.Config.policydir + "/base/frameworks/broker-test/logs-listener.bro"]
+            args += ["broker_port=9999/tcp"]
+        elif node.type == "worker":
+            #args += config.Config.sitepolicyworker.split()
+            args += [config.Config.policydir + "/base/frameworks/broker-test/logs-connector.bro"]
+            args += ["broker_port=9999/tcp"]
+        elif node.type != "peer":
+            raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
+
+    else:  # use broccoli
+
+        args += ["base/frameworks/cluster"]
         if node.type == "manager":
             args += config.Config.sitepolicymanager.split()
         elif node.type == "proxy":
@@ -84,6 +113,7 @@ def _make_bro_params(node, live):
             args += config.Config.sitepolicyworker.split()
         elif node.type != "peer":
             raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
+
 
     args += ["broctl/auto"]
 
@@ -99,7 +129,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if node.type != "standalone" and node.type != "peer":
+    if node.type != "standalone" and node.type != "peer" and not config.Config.use_broker():
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -182,7 +212,6 @@ class Controller:
         # Start dbroctld and keep connection
         cmds = []
         for peer in peers:
-            #cmds += [(peer, os.path.join(self.config.scriptsdir, "run-broctl"), [])]
             logging.debug(str(self.config.get_local_id()) + " - Starting dbroctld on peer " + str(peer.name))
             cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
 
@@ -293,8 +322,6 @@ class Controller:
 
         return results
 
-    # Copies all configuration files to peers
-    # and starts dbroctld on them
     def _isrunning(self, nodes, setcrashed=True):
 
         results = []
@@ -318,11 +345,11 @@ class Controller:
             # the process might actually still be running but we can't tell.
             if output == None:
                 if self.config.cron == "0":
+                    logging.debug("here and we cannot connect")
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
 
             running = output[0] == "running" and True or False
-
             results += [(node, running)]
 
             if not running:

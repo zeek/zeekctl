@@ -116,11 +116,11 @@ def make_layout(path, cmdout, silent=False):
         out.write("};\n")
         out.close()
 
-    else:
+    elif not config.Config.use_broker():
         make_broccoli_layout(path, cmdout, silent)
 
 def make_broccoli_layout(path, cmdout, silent = False):
-    #print "make broccoli cluster layout"
+    logging.debug("create cluster layout based on broccoli")
     manager = config.Config.manager()
 
     if not manager:
@@ -172,31 +172,9 @@ def make_broccoli_layout(path, cmdout, silent = False):
 
     out.close()
 
-def make_broker_layout(path, cmdout, silent=False):
+#TODO add broker configuration
+#def make_broker_layout(path, cmdout, silent=False):
     #print "make broker cluster layout"
-    manager = config.Config.manager()
-
-    if not manager:
-        return
-
-    broport = Port(int(config.Config.broport) - 1)
-    filename = os.path.join(path, "cluster-layout.bro")
-    if not silent:
-        cmdout.info("generating cluster-layout.bro ...")
-
-    out = open(filename, "w")
-
-    workers = config.Config.nodes("workers")
-    proxies = config.Config.nodes("proxies")
-    out.write("redef Cluster::nodes = {\n")
-
-    out.write("# Automatically generated. Do not edit.\n")
-
-    #TODO add broker configuration
-
-    out.write("};\n")
-
-    out.close()
 
 # Reads in a list of networks from file.
 def read_networks(fname):
