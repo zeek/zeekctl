@@ -281,20 +281,15 @@ class Configuration:
         env_vars = {}
 
         if text:
-            # If the entire string is quoted, then remove only those quotes.
-            if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-                text = text[1:-1]
-
-        if text:
             for keyval in text.split(","):
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' in env_vars")
+                    raise ConfigurationError("missing '=' in env_vars option: %s" % keyval)
 
                 key = key.strip()
                 if not key:
-                    raise ConfigurationError("missing environment variable name in env_vars")
+                    raise ConfigurationError("missing environment variable name in env_vars option: %s" % keyval)
 
                 env_vars[key] = val.strip()
 
