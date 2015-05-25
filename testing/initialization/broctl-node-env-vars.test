@@ -15,13 +15,12 @@ EOF
 
 broctl install
 
-# verify that the env_vars option has global (and not node-specific) value
+# verify that the env_vars option has global (and not node-specific) values
 broctl config 2>&1 | grep -i env_vars > out
 
-# verify that the env. vars. are passed to Bro
+# verify that the correct (global vs. node) env. vars. are passed to Bro
 rm $BROCTL_INSTALL_PREFIX/spool/debug.log
 broctl start
 grep -i myvar $BROCTL_INSTALL_PREFIX/spool/debug.log > debug.log
-
 broctl stop
 

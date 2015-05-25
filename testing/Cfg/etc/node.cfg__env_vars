@@ -12,7 +12,7 @@ host=localhost
 type=worker
 host=localhost
 interface=eth0
-env_vars=myvar1=someNodeval,MYVAR3=nodeval3
+env_vars=myVar1="some Node val",MYVAR3=nodeval3, Myvar4 = "one;value",myvar6='$PATH'
 
 [worker-2]
 type=worker
