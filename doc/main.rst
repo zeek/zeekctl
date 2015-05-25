@@ -80,12 +80,16 @@ Installation
 
 Follow the directions to install Bro and BroControl according to
 the instructions in the :doc:`Installing Bro <../../install/install>`
-documentation.
+documentation.  Depending on how you install Bro and BroControl, the files
+and directories that get installed might be owned by the "root" user.
+If you want to run BroControl as an ordinary user, then you will need
+to make sure that the user has write permissions to the "logs" and "spool"
+directories (and all subdirectories of these directories).
 
 Note that if you are planning to run Bro in a cluster
 configuration, then you need to install Bro and BroControl only on the
-manager host (the BroControl install_ command will install Bro and all
-required scripts to the other hosts in your cluster).
+manager host (the BroControl install_ or deploy_ commands will install Bro
+and all required scripts to the other hosts in your cluster).
 
 For more details on how to configure BroControl in a cluster configuration,
 see the examples in the
@@ -158,12 +162,32 @@ scripts or upgrading to a new version of Bro, deploy_ must
 be run (deploy will check all policy scripts, install all needed files, and
 restart Bro). No changes will take effect until deploy_ is run.
 
+Log Files
+---------
+
 On the manager system (and on the stand-alone system), you find the
 current set of (aggregated) logs in ``logs/current`` (which is a
 symlink to the corresponding spool directory).
 The logs are archived in ``logs/``, by default
 once per hour. Log files of workers and proxies are discarded at the
 same rotation interval.
+
+If, for some reason, log files are not able to be archived (you would notice
+this by seeing a gap in the set of logs in the ``logs/`` directory), you can
+search for unarchived logs with a command like this::
+
+    find spool -name "*.log"
+
+If you see any logs in a subdirectory of ``spool/tmp/``, then those were moved
+there when Bro previously stopped or crashed.  If Bro is still running,
+then there might be rotated logs (i.e., logs with filenames containing a
+timestamp) in Bro's working directory.
+
+Additionally, when broctl starts Bro, it creates two files "stdout.log"
+and "stderr.log".  These files are sometimes useful to debug problems,
+because they might contain error messages from Bro or from the script
+which archives log files.
+
 
 Site-specific Customization
 ---------------------------
