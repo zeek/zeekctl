@@ -39,7 +39,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         logging.info(text)
 
     def warn(self, text):
-        self.info("warning: %s" % text)
+        self.info("Warning: %s" % text)
 
     def error(self, text):
         print("Error: %s" % text, file=sys.stderr)
@@ -50,7 +50,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         strlist = line.split()
 
         if not self.broctl.plugins.runCustomCommand(strlist[0], " ".join(strlist[1:]), self):
-            self.error("unknown command '%s'" % strlist[0])
+            if strlist[0] != "--help":
+                self.error("unknown command '%s'" % strlist[0])
+
             if not self.interactive:
                 self.do_help(None)
 

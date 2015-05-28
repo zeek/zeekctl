@@ -546,7 +546,7 @@ class Configuration:
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
         if freshinstall:
-            self.ui.warn("Run the broctl \"deploy\" command to get started.")
+            self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
             return
 
         # Check if Bro version is different from the previously-installed

@@ -1,11 +1,15 @@
 
+1.4-beta-20 | 2015-05-28 12:15:28 -0700
+
+  * Slight output tweaks. (Robin Sommer)
+
 1.4-beta-19 | 2015-05-28 11:59:39 -0700
 
   * Improve documentation on site-specific customization. (Daniel
     Thayer)
 
   * Don't use daemon threads in ssh_runner. (Daniel Thayer)
-    
+
   * Improve broctl documentation. (Daniel Thayer)
 
   * Fix minor error with restart clean. (Daniel Thayer)
@@ -21,9 +25,9 @@
     Thayer)
 
   * Improve visibility of archive-log error messages. (Daniel Thayer)
-    
+
   * Add sanity checks on broctl options. (Daniel Thayer)
-    
+
   * Improve error messages involving the state database file.
     Addresses BIT-1397 (Daniel Thayer)
 
@@ -31,12 +35,12 @@
     Thayer)
 
   * Fix the config change warnings on Python 3. (Daniel Thayer)
-    
+
   * Fix an issue with the ps plugin where the "run-bro" script would
     appear in the output on some systems. (Daniel Thayer)
 
   * Inform user to run broctl deploy to get started. (Daniel Thayer)
-    
+
   * Fix communication with muxer for newer Python versions. (Daniel
     Thayer)
 
