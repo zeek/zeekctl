@@ -8,11 +8,14 @@ class SqliteState:
         try:
             self.db = sqlite3.connect(self.path)
         except sqlite3.Error as err:
-            raise sqlite3.Error("%s: %s" % (err, path))
+            raise sqlite3.Error("%s: %s\nCheck if the user running BroControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself." % (err, path))
 
         self.c = self.db.cursor()
 
-        self.setup()
+        try:
+            self.setup()
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s" % (err, path))
 
     def setup(self):
         # Create table
@@ -34,7 +37,11 @@ class SqliteState:
     def set(self, key, value):
         key = key.lower()
         value = json.dumps(value)
-        self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])
+        try:
+            self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s" % (err, self.path))
+
         self.db.commit()
 
     def items(self):

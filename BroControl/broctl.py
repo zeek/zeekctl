@@ -210,7 +210,7 @@ class BroCtl(object):
 
         if clean:
             self.ui.info("cleaning up ...")
-            results = self.cleanup(node_list)
+            results = self.cleanup(node_list=node_list)
             if not results.ok:
                 return results
 

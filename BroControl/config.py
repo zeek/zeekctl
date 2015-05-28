@@ -3,6 +3,7 @@
 import os
 import socket
 import re
+import zlib
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -26,8 +27,6 @@ class ConfigurationError(Exception):
 
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
-        from BroControl import execute
-
         self.ui = ui
         self.localaddrs = localaddrs
         global Config
@@ -40,20 +39,27 @@ class Configuration:
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
 
-        # Set defaults for options we get passed in.
-        self._set_option("brobase", basedir)
-        self._set_option("broscriptdir", broscriptdir)
-        self._set_option("version", VERSION)
-
-        # Initialize options.
-        for opt in options.options:
-            if not opt.dontinit:
-                self._set_option(opt.name, opt.default)
+        self._initialize_options(basedir, broscriptdir)
+        self._check_options()
 
         if state:
             self.state_store = state
         else:
             self.state_store = SqliteState(self.statefile)
+
+
+    def _initialize_options(self, basedir, broscriptdir):
+        from BroControl import execute
+
+        # Set defaults for options we get passed in.
+        self._set_option("brobase", basedir)
+        self._set_option("broscriptdir", broscriptdir)
+        self._set_option("version", VERSION)
+
+        # Initialize options that are not already set.
+        for opt in options.options:
+            if not opt.dontinit:
+                self._set_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
         self._set_option("mailto", "%s" % os.getenv("USER"))
@@ -79,6 +85,22 @@ class Configuration:
             self._set_option("time", output[0].lower().strip())
         else:
             self._set_option("time", "")
+
+
+    # Do a basic sanity check on some critical options.
+    def _check_options(self):
+        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
+        files = ("makearchivename", )
+
+        for d in dirs:
+            v = self.config[d]
+            if not os.path.isdir(v):
+                raise ConfigurationError('broctl option "%s" directory not found: %s' % (d, v))
+
+        for f in files:
+            v = self.config[f]
+            if not os.path.isfile(v):
+                raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
 
     def initPostPlugins(self):
         self.read_state()
@@ -259,21 +281,17 @@ class Configuration:
         env_vars = {}
 
         if text:
-            # If the entire string is quoted, then remove only those quotes.
-            if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-                text = text[1:-1]
-
-        if text:
             for keyval in text.split(","):
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' in env_vars")
+                    raise ConfigurationError("missing '=' in env_vars option: %s" % keyval)
 
-                if not key.strip():
-                    raise ConfigurationError("missing environment variable name in env_vars")
+                key = key.strip()
+                if not key:
+                    raise ConfigurationError("missing environment variable name in env_vars option: %s" % keyval)
 
-                env_vars[key.strip()] = val.strip()
+                env_vars[key] = val.strip()
 
         return env_vars
 
@@ -523,6 +541,14 @@ class Configuration:
         if isinstall:
             return
 
+        freshinstall = not os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh"))
+
+        # If this is a fresh install (i.e., broctl install not yet run), then
+        # inform the user what to do.
+        if freshinstall:
+            self.ui.warn("Run the broctl \"deploy\" command to get started.")
+            return
+
         # Check if Bro version is different from the previously-installed
         # version.
         if "broversion" in self.state:
@@ -549,10 +575,7 @@ class Configuration:
         # (this would most likely indicate an upgrade install was performed
         # over an old version that didn't have the state.db file).
         if missingstate:
-            # Don't show warning if we've never run broctl install, because
-            # nothing will work anyway without doing an initial install.
-            if os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh")):
-                self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
+            self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
@@ -574,7 +597,11 @@ class Configuration:
 
     # Return a hash value (as a string) of the current broctl configuration.
     def _get_broctlcfg_hash(self):
-        return str(hash(tuple(sorted(self.config.items()))))
+        data = str(sorted(self.config.items()))
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl configuration.
     def update_broctlcfg_hash(self):
@@ -586,7 +613,11 @@ class Configuration:
         nn = []
         for n in self.nodes():
             nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
-        return str(hash(tuple(nn)))
+        data = str(nn)
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl node config.
     def update_nodecfg_hash(self):

@@ -1,3 +1,4 @@
+import ast
 import collections
 import json
 import subprocess
@@ -15,12 +16,15 @@ Empty = py3bro.Empty
 
 
 def get_muxer(shell):
+    # The full path of the Python interpreter.  Configured by CMake.
+    pythonpath = "@PYTHON_EXECUTABLE@"
+
     muxer = r"""
 import os,sys,subprocess,signal,select,json
 TIMEOUT=120
 
 def w(s):
-	sys.stdout.write(json.dumps(s) + "\n")
+	sys.stdout.write(repr(s) + "\n")
 	sys.stdout.flush()
 
 def exec_cmds(cmds):
@@ -56,7 +60,7 @@ while fds:
 	for fd in r:
 		output=os.read(fd.fileno(),1024)
 		if output:
-			fd_map[fd].append(output.decode())
+			fd_map[fd].append(output)
 			continue
 
 		cmd=cmd_map[fd]
@@ -66,10 +70,10 @@ while fds:
 			continue
 
 		proc=cmd["proc"]
-		res=proc.wait()
-		out="".join(cmd["stdout"])
-		err="".join(cmd["stderr"])
-		w((cmd["idx"],(res,out,err)))
+		status=proc.wait()
+		out=b"".join(cmd["stdout"])
+		err=b"".join(cmd["stderr"])
+		w((cmd["idx"],(status,out,err)))
 
 w("done")
 """
@@ -81,9 +85,6 @@ w("done")
 
     if py3bro.using_py3:
         muxer = muxer.encode()
-    else:
-        # Remove code that is only needed for Py3
-        muxer = muxer.replace(".decode()", "")
 
     muxer = base64.b64encode(zlib.compress(muxer))
 
@@ -91,7 +92,7 @@ w("done")
         muxer = muxer.decode()
 
     # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
-    muxer = "python -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % muxer
+    muxer = "%s -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % (pythonpath, muxer)
 
     if py3bro.using_py3:
         muxer = muxer.encode()
@@ -121,7 +122,7 @@ class SSHMaster:
                 cmd = ["sh"]
             else:
                 cmd = self.base_cmd + ["sh"]
-            self.master = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, close_fds=True, preexec_fn=os.setsid)
+            self.master = subprocess.Popen(cmd, bufsize=0, stdout=subprocess.PIPE, stdin=subprocess.PIPE, close_fds=True, preexec_fn=os.setsid)
             self.need_connect = False
 
     def readline_with_timeout(self, timeout):
@@ -166,11 +167,17 @@ class SSHMaster:
                 logging.debug("Command timeout on host %s", self.host)
                 self.close()
                 break
-            resp = json.loads(line)
+            resp = ast.literal_eval(line)
             if resp == "done":
                 break
-            idx, out = resp
-            outputs[idx] = CmdResult(*out)
+            idx, result = resp
+            status, out, err = result
+
+            if py3bro.using_py3:
+                out = out.decode(errors="replace")
+                err = err.decode(errors="replace")
+
+            outputs[idx] = CmdResult(status, out, err)
         return outputs
 
     def ping(self, timeout=10):
@@ -202,8 +209,6 @@ class HostHandler(Thread):
         self.alive = "Unknown"
         self.master = None
         Thread.__init__(self)
-        if self.host not in self.localaddrs:
-            self.daemon = True
 
     def shutdown(self):
         self.q.put((STOP_RUNNING, None, None))

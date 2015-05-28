@@ -1,4 +1,47 @@
 
+1.4-beta-19 | 2015-05-28 11:59:39 -0700
+
+  * Improve documentation on site-specific customization. (Daniel
+    Thayer)
+
+  * Don't use daemon threads in ssh_runner. (Daniel Thayer)
+    
+  * Improve broctl documentation. (Daniel Thayer)
+
+  * Fix minor error with restart clean. (Daniel Thayer)
+
+  * Improve and extend tests. (Daniel Thayer)
+
+  * Improve error messages related to the env_vars option.
+
+  * Remove code that was automatically removing quoted values of the
+    env_vars option. (Daniel Thayer)
+
+  * Show help when user runs broctl with unknown command. (Daniel
+    Thayer)
+
+  * Improve visibility of archive-log error messages. (Daniel Thayer)
+    
+  * Add sanity checks on broctl options. (Daniel Thayer)
+    
+  * Improve error messages involving the state database file.
+    Addresses BIT-1397 (Daniel Thayer)
+
+  * Fixed error when a broctl command outputs binary data. (Daniel
+    Thayer)
+
+  * Fix the config change warnings on Python 3. (Daniel Thayer)
+    
+  * Fix an issue with the ps plugin where the "run-bro" script would
+    appear in the output on some systems. (Daniel Thayer)
+
+  * Inform user to run broctl deploy to get started. (Daniel Thayer)
+    
+  * Fix communication with muxer for newer Python versions. (Daniel
+    Thayer)
+
+  * Set correct Python path in Python scripts. (Daniel Thayer)
+
 1.4-beta | 2015-05-07 20:26:22 -0700
 
   * Release 1.4-beta.
