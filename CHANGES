@@ -1,4 +1,11 @@
 
+1.4-beta-22 | 2015-06-02 10:34:44 -0500
+
+  * Update broctl man page for deploy command (Daniel Thayer)
+
+  * Updating baselines. (Robin Sommer)
+
+
 1.4-beta-20 | 2015-05-28 12:15:28 -0700
 
   * Slight output tweaks. (Robin Sommer)
