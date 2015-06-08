@@ -1,4 +1,8 @@
 
+1.4 | 2015-06-05 09:17:35 -0500
+
+  * Release 1.4.
+
 1.4-beta-22 | 2015-06-02 10:34:44 -0500
 
   * Update broctl man page for deploy command (Daniel Thayer)
