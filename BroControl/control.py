@@ -349,7 +349,7 @@ class Controller:
 
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
-        cmds = [(node, postterminate, [node.cwd(), "crash"]) for node in nodes]
+        cmds = [(node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
@@ -509,7 +509,7 @@ class Controller:
             if node in kill:
                 crashflag = "killed"
 
-            cmds += [(node, postterminate, [node.cwd(), crashflag])]
+            cmds += [(node, postterminate, [node.type, node.cwd(), crashflag])]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:

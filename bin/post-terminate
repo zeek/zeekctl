@@ -7,8 +7,9 @@
 # finally (if the node didn't crash) remove the tmp dir if it doesn't contain
 # any rotated log files.
 #
-# post-terminate <dir> [<crashflag>]
+# post-terminate <type> <dir> [<crashflag>]
 #
+# <type> is the node's type ("proxy", "worker", etc.).
 # <dir> is the node's working directory.
 #
 # If <crashflag> is not set, then BroControl has stopped Bro normally.
@@ -18,12 +19,13 @@
 # BroControl terminated Bro forcefully (but intentionally) by SIGKILL while
 # trying to stop Bro.
 
-if [ $# -lt 1 -o $# -gt 2 ]; then
+if [ $# -lt 2 -o $# -gt 3 ]; then
     echo "post-terminate: wrong usage"
     exit 1
 fi
 
-dir=$1
+ntype=$1
+dir=$2
 
 if [ ! -d "$dir" ]; then
     echo "post-terminate: directory not found: $dir"
@@ -32,9 +34,9 @@ fi
 
 crash=0
 killed=0
-if [ "$2" = "crash" ]; then
+if [ "$3" = "crash" ]; then
     crash=1
-elif [ "$2" = "killed" ]; then
+elif [ "$3" = "killed" ]; then
     killed=1
 fi
 
@@ -53,7 +55,7 @@ if [ ! -d "${tmpdir}" ]; then
     mkdir "${tmpdir}"
 fi
 
-tmp=${tmpdir}/post-terminate-$timestamp-$$
+tmp=${tmpdir}/post-terminate-$ntype-$timestamp-$$
 
 if [ $crash -eq 1 ]; then
     tmp=$tmp-crash
