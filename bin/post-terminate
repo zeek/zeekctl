@@ -91,7 +91,8 @@ if [ ! -f .startup ]; then
 fi
 
 # Execute the remaining part of this script in the background so that broctl
-# doesn't need to wait for it to finish.
+# doesn't need to wait for it to finish.  Stdout/stderr is redirected to a
+# file to capture error messages.
 (
 
 # Gather list of all archive-log PID files.
@@ -181,5 +182,5 @@ if [ -z "$(find . -maxdepth 1 -type f -name '*.*.log')" ]; then
     rm -rf "$tmp"
 fi
 
-) >/dev/null 2>&1 &
+) >post-terminate.out 2>&1 &
 
