@@ -10,7 +10,7 @@ except ImportError:
     broccoli = None
 
 
-# Broccoli communication with running nodes.
+# Broccoli/Broker communication with running nodes.
 
 # Sends event to a set of nodes in parallel.
 #
@@ -29,7 +29,16 @@ except ImportError:
 #   If success is False, results_args is a string with an error message.
 
 def send_events_parallel(events):
+    if config.Config.use_broker():
+        return send_events_parallel_broker(events)
+    else:
+        return send_events_parallel_broccoli(events)
 
+def send_events_parallel_broker(events):
+    logging.debug("send_events_parallel: use broker, do nothing for now")
+    return None
+
+def send_events_parallel_broccoli(events):
     results = []
     sent = []
 
@@ -52,12 +61,11 @@ def send_events_parallel(events):
     return results
 
 def _send_event_init(node, event, args, result_event):
-
     host = util.scope_addr(node.addr)
 
     try:
         bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
-                           flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
+                        flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
         bc.subscribe(result_event, _event_callback(bc))
         bc.got_result = False
         bc.connect()
@@ -67,6 +75,7 @@ def _send_event_init(node, event, args, result_event):
 
     logging.debug("broccoli: %s(%s) to node %s" % (event, ", ".join(args), node.name))
     bc.send(event, *args)
+
     return (True, bc)
 
 def _send_event_wait(node, result_event, bc):
