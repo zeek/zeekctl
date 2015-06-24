@@ -16,7 +16,7 @@ from .version import VERSION
 from BroControl import graph
 
 # TODO move in options.py
-USE_BROKER = True
+USE_BROKER = False
 
 # Class storing the broctl configuration.
 #
