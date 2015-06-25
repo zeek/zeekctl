@@ -74,9 +74,11 @@ class BroCtl(object):
                 self.plugins.addDir(pdir)
 
         self.plugins.loadPlugins(self.ui, self.executor)
+        self.plugins.initPluginOptions()
         self.plugins.addNodeKeys()
         self.config.initPostPlugins()
         self.plugins.initPlugins(self.ui)
+        self.plugins.initPluginCmds()
         util.enable_signals()
         os.chdir(self.config.brobase)
 

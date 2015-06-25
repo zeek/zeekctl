@@ -28,6 +28,8 @@ class ConfigurationError(Exception):
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
         self.ui = ui
+        self.basedir = basedir
+        self.broscriptdir = broscriptdir
         self.localaddrs = localaddrs
         global Config
         Config = self
@@ -39,7 +41,7 @@ class Configuration:
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
 
-        self._initialize_options(basedir, broscriptdir)
+        self._initialize_options()
         self._check_options()
 
         if state:
@@ -48,12 +50,12 @@ class Configuration:
             self.state_store = SqliteState(self.statefile)
 
 
-    def _initialize_options(self, basedir, broscriptdir):
+    def _initialize_options(self):
         from BroControl import execute
 
         # Set defaults for options we get passed in.
-        self._set_option("brobase", basedir)
-        self._set_option("broscriptdir", broscriptdir)
+        self._set_option("brobase", self.basedir)
+        self._set_option("broscriptdir", self.broscriptdir)
         self._set_option("version", VERSION)
 
         # Initialize options that are not already set.

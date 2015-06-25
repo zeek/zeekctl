@@ -27,9 +27,12 @@ class PluginRegistry:
         """Loads all plugins found in any of the added directories."""
         self._loadPlugins(cmdout)
 
-        # Init options.
         for p in self._plugins:
             p.executor = executor
+
+    def initPluginOptions(self):
+        """Initialize options for all loaded plugins."""
+        for p in self._plugins:
             p._registerOptions()
 
     def initPlugins(self, cmdout):
@@ -49,10 +52,13 @@ class PluginRegistry:
 
             plugins += [p]
 
+        self._plugins = plugins
+
+    def initPluginCmds(self):
+        """Initialize commands provided by all loaded plugins."""
+        for p in self._plugins:
             for (cmd, args, descr) in p.commands():
                 self._cmds["%s.%s" % (p.prefix(), cmd)] = (p, args, descr)
-
-        self._plugins = plugins
 
     def finishPlugins(self):
         """Shuts all plugins down."""
@@ -219,6 +225,12 @@ class PluginRegistry:
                     cmdout.warn("plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
+
+                if not p.prefix():
+                    cmdout.warn("plugin %s disabled because prefix is empty" % p.name())
+
+                if "." in p.prefix() or " " in p.prefix():
+                    cmdout.warn("plugin %s disabled because prefix contains dots or spaces" % p.name())
 
                 pluginprefix = p.prefix().lower()
                 sameprefix = False
