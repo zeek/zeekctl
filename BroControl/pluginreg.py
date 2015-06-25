@@ -18,6 +18,9 @@ class PluginRegistry:
         self._dirs = []
         self._cmds = {}
 
+    def _activeplugins(self):
+        return filter(lambda p: p.activated, self._plugins)
+
     def addDir(self, dir):
         """Adds a directory to search for plugins."""
         if dir not in self._dirs:
@@ -37,44 +40,43 @@ class PluginRegistry:
 
     def initPlugins(self, cmdout):
         """Initialize all loaded plugins."""
-        plugins = []
-
         for p in self._plugins:
+            p.activated = False
+
             try:
                 init = p.init()
             except Exception as err:
-                cmdout.warn("Plugin '%s' disabled because its init() method raised exception: %s" % (p.name(), err))
+                cmdout.warn("Plugin '%s' not activated because its init() method raised exception: %s" % (p.name(), err))
                 continue
 
             if not init:
-                logging.debug("Plugin '%s' disabled because its init() returned False", p.name())
+                logging.debug("Plugin '%s' not activated because its init() returned False", p.name())
                 continue
 
-            plugins += [p]
-
-        self._plugins = plugins
+            p.activated = True
 
     def initPluginCmds(self):
-        """Initialize commands provided by all loaded plugins."""
-        for p in self._plugins:
+        """Initialize commands provided by all activated plugins."""
+        self._cmds = {}
+        for p in self._activeplugins():
             for (cmd, args, descr) in p.commands():
                 self._cmds["%s.%s" % (p.prefix(), cmd)] = (p, args, descr)
 
     def finishPlugins(self):
         """Shuts all plugins down."""
-        for p in self._plugins:
+        for p in self._activeplugins():
             p.done()
 
     def hostStatusChanged(self, host, status):
         """Calls all plugins Plugin.hostStatusChanged_ methods; see there for
         parameter semantics."""
-        for p in self._plugins:
+        for p in self._activeplugins():
             p.hostStatusChanged(host, status)
 
     def broProcessDied(self, node):
         """Calls all plugins Plugin.broProcessDied_ methods; see there for
         parameter semantics."""
-        for p in self._plugins:
+        for p in self._activeplugins():
             p.broProcessDied(node)
 
     def cmdPreWithNodes(self, cmd, nodes, *args):
@@ -85,7 +87,7 @@ class PluginRegistry:
 
         method = "cmd_%s_pre" % cmd
 
-        for p in self._plugins:
+        for p in self._activeplugins():
             func = getattr(p, method)
             new_nodes = func(nodes, *args)
             if new_nodes != None:
@@ -101,7 +103,7 @@ class PluginRegistry:
         method = "cmd_%s_pre" % cmd
         result = True
 
-        for p in self._plugins:
+        for p in self._activeplugins():
             func = getattr(p, method)
             if func(*args) == False:
                 result = False
@@ -114,7 +116,7 @@ class PluginRegistry:
         """
         method = "cmd_%s_post" % cmd
 
-        for p in self._plugins:
+        for p in self._activeplugins():
             func = getattr(p, method)
             func(nodes, *args)
 
@@ -125,7 +127,7 @@ class PluginRegistry:
         """
         method = "cmd_%s_post" % cmd
 
-        for p in self._plugins:
+        for p in self._activeplugins():
             func = getattr(p, method)
             func(results, *args)
 
@@ -135,7 +137,7 @@ class PluginRegistry:
         """
         method = "cmd_%s_post" % cmd
 
-        for p in self._plugins:
+        for p in self._activeplugins():
             func = getattr(p, method)
             func(*args)
 
@@ -215,29 +217,29 @@ class PluginRegistry:
 
                 # verify that the plugin overrides all required methods
                 try:
-                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)",
+                    logging.debug("Found plugin %s from %s (version %d, prefix %s)",
                                p.name(), module.__file__, p.pluginVersion(), p.prefix())
                 except NotImplementedError:
-                    cmdout.warn("plugin at %s disabled because it doesn't override required methods" % path)
+                    cmdout.warn("failed to load plugin at %s because it doesn't override required methods" % path)
                     continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
-                    cmdout.warn("plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
+                    cmdout.warn("failed to load plugin %s due to incompatible API version (uses %d, but current is %s)"
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
                 if not p.prefix():
-                    cmdout.warn("plugin %s disabled because prefix is empty" % p.name())
+                    cmdout.warn("failed to load plugin %s because prefix is empty" % p.name())
 
                 if "." in p.prefix() or " " in p.prefix():
-                    cmdout.warn("plugin %s disabled because prefix contains dots or spaces" % p.name())
+                    cmdout.warn("failed to load plugin %s because prefix contains dots or spaces" % p.name())
 
                 pluginprefix = p.prefix().lower()
                 sameprefix = False
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("failed to load plugin %s due to another plugin having the same plugin prefix" % p.name())
                         break
 
                 if not sameprefix:

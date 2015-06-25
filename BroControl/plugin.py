@@ -53,6 +53,7 @@ class Plugin(object):
         """Must be called by the plugin with the plugin API version it
         expects to use. The version currently documented here is 1."""
         self._apiversion = apiversion
+        self.activated = False
 
     def apiVersion(self):
         """Returns the plugin API that the plugin expects to use."""
