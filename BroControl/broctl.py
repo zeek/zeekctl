@@ -16,10 +16,8 @@ class InvalidNodeError(Exception):
     pass
 
 class TermUI:
-    def output(self, txt):
+    def info(self, txt):
         print(txt)
-    info = output
-    debug = output
 
     def error(self, txt):
         print(txt, file=sys.stderr)
@@ -50,12 +48,12 @@ def lock_required_silent(func):
     return wrapper
 
 class BroCtl(object):
-    def __init__(self, basedir=version.BROBASE, ui=TermUI(), state=None):
+    def __init__(self, basedir=version.BROBASE, cfgfile=version.CFGFILE, broscriptdir=version.BROSCRIPTDIR, ui=TermUI(), state=None):
         self.ui = ui
         self.brobase = basedir
 
         self.localaddrs = execute.get_local_addrs(self.ui)
-        self.config = config.Configuration(self.brobase, self.ui, self.localaddrs, state)
+        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, self.localaddrs, state)
 
         if self.config.debug != "0":
             # clear the log handlers (set by previous calls to logging.*)
@@ -65,7 +63,7 @@ class BroCtl(object):
                                 datefmt=self.config.timefmt,
                                 level=logging.DEBUG)
 
-        self.executor = execute.Executor(self.ui, self.localaddrs, self.config.helperdir)
+        self.executor = execute.Executor(self.localaddrs, self.config.helperdir, int(self.config.commandtimeout))
         self.plugins = pluginreg.PluginRegistry()
         self.setup()
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
@@ -79,15 +77,21 @@ class BroCtl(object):
         self.plugins.loadPlugins(self.ui, self.executor)
         self.plugins.addNodeKeys()
         self.config.initPostPlugins()
-        self.plugins.initPlugins()
+        self.plugins.initPlugins(self.ui)
         util.enable_signals()
         os.chdir(self.config.brobase)
 
-    def warn_broctl_install(self):
-        self.config.warn_broctl_install()
+    def finish(self):
+        self.executor.finish()
+        self.plugins.finishPlugins()
 
-    # Turns nodes arguments into a list of node names.
-    def node_args(self, args=None):
+    def warn_broctl_install(self, isinstall):
+        self.config.warn_broctl_install(isinstall)
+
+    # Turns node name arguments into a list of nodes.  If "get_hosts" is True,
+    # then only one node per host is chosen.  If "get_types" is True, then
+    # only one node per node type (manager, proxy, etc.) is chosen.
+    def node_args(self, args=None, get_hosts=False, get_types=False):
         if not args:
             args = "all"
 
@@ -100,38 +104,36 @@ class BroCtl(object):
 
             nodes += nodelist
 
-        return nodes
+        if args != "all":
+            # Remove duplicate nodes
+            newlist = list(set(nodes))
+            if len(newlist) != len(nodes):
+                nodes = newlist
 
-    # Turns node name arguments into a list of nodes.  The result is a subset
-    # of a similar call to node_args() but here only one node is chosen for
-    # each host.
-    def node_host_args(self, args=None):
-        if not args:
-            args = "all"
+        # Sort the list so that it doesn't depend on initial order of arguments
+        nodes.sort(key=lambda n: (n.type, n.name))
 
-        hosts = {}
-        nodes = []
-
-        for arg in args.split():
-            nodelist = self.config.hosts(arg)
-            if not nodelist and arg != "all":
-                raise InvalidNodeError("unknown node '%s'" % arg)
-
-            for node in nodelist:
+        if get_hosts:
+            hosts = {}
+            hostnodes = []
+            for node in nodes:
                 if node.host not in hosts:
                     hosts[node.host] = 1
-                    nodes.append(node)
+                    hostnodes.append(node)
+
+            nodes = hostnodes
+
+        if get_types:
+            types = {}
+            typenodes = []
+            for node in nodes:
+                if node.type not in types:
+                    types[node.type] = 1
+                    typenodes.append(node)
+
+            nodes = typenodes
 
         return nodes
-
-    def output(self, text):
-        self.ui.info(text)
-
-    def error(self, text):
-        self.ui.error(text)
-
-    def syntax(self, args):
-        self.error("Syntax error: %s" % args)
 
     def lock(self, showwait=True):
         lockstatus = util.lock(self.ui, showwait)
@@ -142,6 +144,9 @@ class BroCtl(object):
 
     def unlock(self):
         util.unlock(self.ui)
+
+    def node_names(self):
+        return [ n.name for n in self.config.nodes() ]
 
     @expose
     def nodes(self):
@@ -223,31 +228,70 @@ class BroCtl(object):
         nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
         args = " ".join([ str(n) for n in nodes ])
 
-        self.output("stopping ...")
+        self.ui.info("stopping ...")
         results = self.stop(node_list)
         if not results.ok:
             return results
 
         if clean:
-            self.output("cleaning up ...")
-            results = self.cleanup(node_list)
+            self.ui.info("cleaning up ...")
+            results = self.cleanup(node_list=node_list)
             if not results.ok:
                 return results
 
-            self.output("checking configurations ...")
+            self.ui.info("checking configurations ...")
             results = self.check(node_list)
             if not results.ok:
                 return results
 
-            self.output("installing ...")
+            self.ui.info("installing ...")
             results = self.install()
             if not results.ok:
                 return results
 
-        self.output("starting ...")
+        self.ui.info("starting ...")
         results = self.start(node_list)
 
         self.plugins.cmdPostWithNodes("restart", nodes)
+        return results
+
+    @expose
+    @lock_required
+    def deploy(self):
+        results = None
+        if not self.plugins.cmdPre("deploy"):
+            return results
+
+        # Make sure broctl-config.sh exists, otherwise "check" will fail
+        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+            results = self.install(local=True)
+            if not results.ok:
+                return results
+
+        self.ui.info("checking configurations ...")
+        results = self.check(check_node_types=True)
+        if not results.ok:
+            for (node, success, output) in results.get_node_output():
+                if not success:
+                    self.ui.info("%s scripts failed." % node)
+                    self.ui.info("\n".join(output))
+
+            return results
+
+        self.ui.info("installing ...")
+        results = self.install()
+        if not results.ok:
+            return results
+
+        self.ui.info("stopping ...")
+        results = self.stop()
+        if not results.ok:
+            return results
+
+        self.ui.info("starting ...")
+        results = self.start()
+
+        self.plugins.cmdPost("deploy")
         return results
 
     @expose
@@ -308,20 +352,20 @@ class BroCtl(object):
         if enable:
             if self.plugins.cmdPre("cron", "enable", False):
                 self.config.set_state("cronenabled", True)
-                self.output("cron enabled")
+                self.ui.info("cron enabled")
             self.plugins.cmdPost("cron", "enable", False)
         else:
             if self.plugins.cmdPre("cron", "disable", False):
                 self.config.set_state("cronenabled", False)
-                self.output("cron disabled")
+                self.ui.info("cron disabled")
             self.plugins.cmdPost("cron", "disable", False)
 
         return True
 
     @expose
     @lock_required
-    def check(self, node_list=None):
-        nodes = self.node_args(node_list)
+    def check(self, node_list=None, check_node_types=False):
+        nodes = self.node_args(node_list, get_types=check_node_types)
 
         nodes = self.plugins.cmdPreWithNodes("check", nodes)
         results = self.controller.check(nodes)
@@ -363,7 +407,7 @@ class BroCtl(object):
     @expose
     @lock_required
     def df(self, node_list=None):
-        nodes = self.node_host_args(node_list)
+        nodes = self.node_args(node_list, get_hosts=True)
         nodes = self.plugins.cmdPreWithNodes("df", nodes)
         results = self.controller.df(nodes)
         self.plugins.cmdPostWithNodes("df", nodes)
@@ -414,9 +458,11 @@ class BroCtl(object):
 
     @expose
     def execute(self, cmd):
+        nodes = self.node_args(get_hosts=True)
+
         results = None
         if self.plugins.cmdPre("exec", cmd):
-            results = self.controller.execute_cmd(self.config.hosts(), cmd)
+            results = self.controller.execute_cmd(nodes, cmd)
         self.plugins.cmdPost("exec", cmd)
 
         return results

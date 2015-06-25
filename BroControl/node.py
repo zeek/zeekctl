@@ -28,8 +28,8 @@ class Node:
         ``env_vars`` (string)
             A comma-separated list of environment variables to set when
             running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``). These
-            node-specific values override global values (specified in
-            the ``broctl.cfg`` file).
+            node-specific values override any global values specified in
+            the ``broctl.cfg`` file.
 
         ``host`` (string)
             The hostname of the system the node is running on.

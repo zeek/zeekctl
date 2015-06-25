@@ -26,10 +26,9 @@ local to the monitored environment (see the examples
 in the file for the format to use).
 
 When running \fBbroctl\fR for the first time, you must run the \fBbroctl\fR
-\fBinstall\fR command before running any other commands in order to apply the
-configuration settings.  You must also run \fBbroctl install\fR each time
-you change the configuration or upgrade Bro (in addition, some
-configuration changes require a restart of all running Bro instances).
+\fBdeploy\fR command before running any other commands in order to apply the
+configuration settings.  You must also run \fBbroctl deploy\fR each time
+you change the configuration (including any Bro scripts) or upgrade Bro.
 .SH OPTIONS
 .TP
 \fBcapstats\fR [<nodes>] [<secs>]
@@ -49,6 +48,9 @@ Perform jobs intended to run from cron
 .TP
 \fBcron\fR enable|disable|?
 Enable/disable "cron" jobs
+.TP
+\fBdeploy\fR
+Check, install, and restart
 .TP
 \fBdf\fR [<nodes>]
 Print nodes' current disk usage

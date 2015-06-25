@@ -180,22 +180,24 @@ class Controller:
 
         # Start nodes. Do it in the order manager, proxies, workers.
         logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + "** Cluster ** start " + str(len(manager)) + " manager, " + str(len(proxies)) + " proxies, " + str(len(workers)) + " workers, ")
+        if manager:
+            self._start_nodes(manager, results)
 
-        self._start_nodes(manager, results)
+            if not results.ok:
+                for n in (proxies + workers):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + workers):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._start_nodes(proxies, results)
 
-        self._start_nodes(proxies, results)
+            if not results.ok:
+                for n in workers:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in workers:
-                results.set_node_fail(n)
-            return results
-
-        self._start_nodes(workers, results)
+        if workers:
+            self._start_nodes(workers, results)
 
         return results
 
@@ -293,8 +295,7 @@ class Controller:
                 self.ui.error(str(self.config.get_local_id()) + " :: cannot start %s; check output of \"diag\"" % node.name)
                 results.set_node_fail(node)
                 if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
+                    self.ui.error("\n".join(output))
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -313,7 +314,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.error("%s terminated immediately after starting; check output with \"diag\"" % node.name)
+                self.ui.info("%s terminated immediately after starting; check output with \"diag\"" % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
@@ -343,11 +344,6 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                continue
-
-            # If we cannot connect to the host at all, we filter it out because
-            # the process might actually still be running but we can't tell.
-            if output == None:
                 if self.config.cron == "0":
                     logging.debug("here and we cannot connect")
                     self.ui.error("cannot connect to %s" % node.name)
@@ -389,20 +385,22 @@ class Controller:
             # Check nodes' .status file
             cmds = []
             for node in todo.values():
-                cmds += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
-                if success:
-                    try:
-                        (stat, loc) = output[0].split()
-                        if status in stat:
-                            # Status reached. Cool.
-                            del todo[node.name]
-                            results += [(node, True)]
-                    except IndexError:
-                        # Something's wrong. We give up on that node.
+                if not success or not output[0]:
+                    continue
+
+                fields = output[0].split()
+                if len(fields) == 2:
+                    if status in fields[0]:
+                        # Status reached. Cool.
                         del todo[node.name]
-                        results += [(node, False)]
+                        results += [(node, True)]
+                else:
+                    # Something's wrong. We give up on that node.
+                    del todo[node.name]
+                    results += [(node, False)]
 
             for (node, isrunning) in running:
                 if node.name in todo and not isrunning:
@@ -422,14 +420,14 @@ class Controller:
             if timeout <= 0:
                 break
 
-            logging.debug("Waiting for %d node(s)..." % len(todo))
+            logging.debug("Waiting for %d node(s)...", len(todo))
 
         for node in todo.values():
             # These did time-out.
             results += [(node, False)]
 
         if todo:
-            logging.debug("Timeout while waiting for %d node(s)" % len(todo))
+            logging.debug("Timeout while waiting for %d node(s)", len(todo))
 
         return results
 
@@ -437,9 +435,8 @@ class Controller:
         if self.config.statslogenable == "0":
             return
         t = time.time()
-        out = open(self.config.statslog, "a")
-        out.write("%s %s action %s\n" % (t, node, action))
-        out.close()
+        with open(self.config.statslog, "a") as out:
+            out.write("%s %s action %s\n" % (t, node, action))
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
@@ -447,11 +444,10 @@ class Controller:
             self.pluginregistry.broProcessDied(n)
 
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
-        cmds = []
-        for node in nodes:
-            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), "crash"])]
+        postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
+        cmds = [(node, postterminate, [node.cwd(), "crash"]) for node in nodes]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
                 msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg + "\n".join(output))
                 if not msuccess:
@@ -489,22 +485,24 @@ class Controller:
 
         # Stop nodes. Do it in the order workers, proxies, manager
         # (the reverse of "start").
+        if workers:
+            self._stop_nodes(workers, results)
 
-        self._stop_nodes(workers, results)
+            if not results.ok:
+                for n in (proxies + manager):
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in (proxies + manager):
-                results.set_node_fail(n)
-            return results
+        if proxies:
+            self._stop_nodes(proxies, results)
 
-        self._stop_nodes(proxies, results)
+            if not results.ok:
+                for n in manager:
+                    results.set_node_fail(n)
+                return results
 
-        if not results.ok:
-            for n in manager:
-                results.set_node_fail(n)
-            return results
-
-        self._stop_nodes(manager, results)
+        if manager:
+            self._stop_nodes(manager, results)
 
         return results
 
@@ -601,14 +599,15 @@ class Controller:
         cleanup = [node for node in terminated if not node.hasCrashed()]
 
         cmds = []
+        postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         for node in cleanup:
             crashflag = ""
             if node in kill:
                 crashflag = "killed"
 
-            cmds += [(node, "run-cmd", [os.path.join(self.config.scriptsdir, "post-terminate"), node.cwd(), crashflag])]
+            cmds += [(node, postterminate, [node.cwd(), crashflag])]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
                 self._log_action(node, "stopped")
             else:
@@ -633,19 +632,17 @@ class Controller:
         nodestatus = self._isrunning(nodes)
         running = []
 
-        cmds1 = []
-        cmds2 = []
+        cmds = []
         for (node, isrunning) in nodestatus:
             if isrunning:
                 running += [node]
-                cmds1 += [(node, "cat-file", ["%s/.startup" % node.cwd()])]
-                cmds2 += [(node, "cat-file", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
 
-        startups = self.executor.run_helper(cmds1)
-        statuses = self.executor.run_helper(cmds2)
-
-        startups = dict([(n.name, success and util.fmttime(output[0]) or "???") for (n, success, output) in startups])
-        statuses = dict([(n.name, success and output[0].split()[0].lower() or "???") for (n, success, output) in statuses])
+        startups = {}
+        statuses = {}
+        for (n, success, output) in self.executor.run_helper(cmds):
+            startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
+            statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
 
         if showall:
             self.ui.info("Getting peer status ...")
@@ -721,7 +718,7 @@ class Controller:
             try:
                 os.makedirs(cwd)
             except OSError as err:
-                self.ui.error("cannot create directory: %s" % err)
+                self.ui.error("cannot create temporary directory: %s" % err)
                 results.ok = False
                 return results
 
@@ -736,7 +733,10 @@ class Controller:
             print_scripts = list_scripts and "1" or "0"
 
             install.make_layout(cwd, self.ui, True)
-            install.make_local_networks(cwd, self.ui, True)
+            if not install.make_local_networks(cwd, self.ui, True):
+                results.ok = False
+                return results
+
             install.make_broctl_config_policy(cwd, self.ui, True)
 
             cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_make_bro_params(node, False)))
@@ -822,13 +822,12 @@ class Controller:
         results = cmdresult.CmdResult()
 
         crashdiag = os.path.join(self.config.scriptsdir, "crash-diag")
-        cmds = [(node, "run-cmd", [crashdiag, node.cwd()]) for node in nodes]
+        cmds = [(node, crashdiag, [node.cwd()]) for node in nodes]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
                 errmsgs = ["error running crash-diag for %s" % node.name]
-                if output:
-                    errmsgs += output
+                errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
 
@@ -863,6 +862,9 @@ class Controller:
     def get_capstats_output(self, nodes, interval):
         results = []
 
+        # Construct a list of (node, interface) tuples, one tuple for each
+        # unique (host, interface) pair.
+        nodenetifs = []
         hosts = {}
         for node in nodes:
             if not node.interface:
@@ -870,24 +872,13 @@ class Controller:
 
             netif = self._capstats_interface(node)
 
-            try:
-                hosts[(node.addr, netif)] = node
-            except AttributeError:
-                continue
+            if hosts.setdefault((node.addr, netif), node) == node:
+                nodenetifs.append((node, netif))
 
-        cmds = []
+        capstats = self.config.capstatspath
+        cmds = [(node, capstats, ["-I", str(interval), "-n", "1", "-i", interface]) for (node, interface) in nodenetifs]
 
-        for (addr, interface) in hosts.keys():
-            node = hosts[addr, interface]
-
-            # Interface name needs to be quoted because the eval command
-            # is used (this prevents any metacharacters in name from being
-            # interpreted by the shell).
-            capstats = [self.config.capstatspath, "-I", str(interval), "-n", "1", "-i", "'%s'" % interface]
-
-            cmds += [(node, "run-cmd", capstats)]
-
-        outputs = self.executor.run_helper(cmds)
+        outputs = self.executor.run_cmds(cmds)
 
         totals = {}
 
@@ -1010,7 +1001,7 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.error("could not update %s: %s" % (tag, output[0]))
+                self.ui.info("failed to update %s: %s" % (tag, output[0]))
                 results.set_node_fail(node)
             else:
                 self.ui.info("%s: %s" % (tag, output[0]))
@@ -1034,43 +1025,43 @@ class Controller:
         for node in nodes:
             df[node.name] = {}
 
-        for key in dirs:
-            path = self.config.config[key]
-
-            cmds = []
-            for node in nodes:
+        cmds = []
+        for node in nodes:
+            for key in dirs:
                 if key == "logdir" and node.type not in ("manager", "standalone"):
                     # Don't need this on the workers/proxies.
                     continue
 
+                path = self.config.config[key]
+
                 cmds += [(node, "df", [path])]
 
-            res = self.executor.run_helper(cmds)
+        res = self.executor.run_helper(cmds)
 
-            for (node, success, output) in res:
-                if success:
-                    if not output:
-                        df[node.name]["FAIL"] = "no output from df helper"
-                        continue
+        for (node, success, output) in res:
+            if success:
+                if not output:
+                    df[node.name]["FAIL"] = "no output from df helper"
+                    continue
 
-                    fields = output[0].split()
+                fields = output[0].split()
 
-                    fs = fields[0]
-                    # Ignore NFS mounted volumes.
-                    if ":" in fs:
-                        continue
+                fs = fields[0]
+                # Ignore NFS mounted volumes.
+                if ":" in fs:
+                    continue
 
-                    total = float(fields[1])
-                    used = float(fields[2])
-                    avail = float(fields[3])
-                    perc = used * 100.0 / (used + avail)
-                    df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+                total = float(fields[1])
+                used = float(fields[2])
+                avail = float(fields[3])
+                perc = used * 100.0 / (used + avail)
+                df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
+            else:
+                if output:
+                    msg = output[0]
                 else:
-                    if output:
-                        msg = output[0]
-                    else:
-                        msg = "unknown failure"
-                    df[node.name]["FAIL"] = msg
+                    msg = "unknown failure"
+                df[node.name]["FAIL"] = msg
 
         for node in nodes:
             success = "FAIL" not in df[node.name]
@@ -1313,8 +1304,10 @@ class Controller:
 
         localNode = self.config.get_local()
         logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " :: *** Install nodes")
-
-        if not self.config.record_bro_version():
+        try:
+            self.config.record_bro_version()
+        except config.ConfigurationError as err:
+            self.ui.error("%s" % err)
             results.ok = False
             return results
 
@@ -1329,14 +1322,18 @@ class Controller:
                 try:
                     shutil.rmtree(dirpath)
                 except OSError as err:
+                    self.ui.error("failed to remove directory: %s" % err)
                     results.ok = False
+                    return results
 
         self.ui.info("creating policy directories ...")
         for dirpath in policies:
             try:
                 os.makedirs(dirpath)
-            except OSError:
+            except OSError as err:
+                self.ui.error("failed to create directory: %s" % err)
                 results.ok = False
+                return results
 
         # Install local site policy.
         if self.config.sitepolicypath:
@@ -1347,10 +1344,16 @@ class Controller:
                 for pathname in glob.glob(os.path.join(dirpath, "*")):
                     if not execute.install(pathname, dst, self.ui):
                         results.ok = False
+                        return results
 
         install.make_layout(self.config.policydirsiteinstallauto, self.ui)
+
+        self.ui.info("generating local-networks.bro ...")
         if not install.make_local_networks(self.config.policydirsiteinstallauto, self.ui):
             results.ok = False
+            return results
+
+        self.ui.info("generating broctl-config.bro ...")
         install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui)
 
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
@@ -1358,9 +1361,10 @@ class Controller:
             util.force_symlink(manager.cwd(), current)
         except (IOError, OSError) as err:
             results.ok = False
-            self.ui.error("failed to update current log symlink")
+            self.ui.error("failed to update symlink '%s': %s" % (current, err))
             return results
 
+        self.ui.info("generating broctl-config.sh ...")
         if not install.make_broctl_config_sh(self.ui):
             results.ok = False
             return results
@@ -1382,56 +1386,35 @@ class Controller:
         # Sync to clients.
         self.ui.info("updating nodes ...")
 
+        dirs = []
+
         if self.config.havenfs != "1":
             # Non-NFS, need to explicitly synchronize.
-            dirs = []
             syncs = install.get_syncs()
-            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-                dirs += [(n, dir) for n in nodes]
-
-            for (node, success) in self.executor.mkdirs(dirs):
-                if not success:
-                    self.ui.error("cannot create directory %s on %s" % (dir, node.name))
-                    results.ok = False
-
-            # An error at this point means the entire install failed.
-            if not results.ok:
-                return results
-
-            paths = [os.path.normpath(self.config.subst(dir)) for (dir, mirror) in syncs if mirror]
-            if not execute.sync(nodes, paths, self.ui):
-                results.ok = False
-                return results
-
         else:
             # NFS. We only need to take care of the spool/log directories.
-            paths = [self.config.spooldir]
-            paths += [self.config.tmpdir]
-
-            dirs = []
-            syncs = install.get_nfssyncs()
-            for dir in paths:
-                dirs += [(n, dir) for n in nodes]
-
-            for dir in [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]:
-                dirs += [(n, dir) for n in nodes]
 
             # We need this only on the manager.
-            dirs += [(manager, self.config.logdir)]
+            dirs.append((manager, self.config.logdir))
 
-            for (node, success) in self.executor.mkdirs(dirs):
-                if not success:
-                    self.ui.error("cannot create (some of the) directories %s on %s" % (",".join(paths), node.name))
-                    results.ok = False
+            syncs = install.get_nfssyncs()
 
-            # An error at this point means the entire install failed.
-            if not results.ok:
-                return results
+        createdirs = [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]
+        for n in nodes:
+            for dir in createdirs:
+                dirs.append((n, dir))
 
-            paths = [self.config.subst(dir) for (dir, mirror) in syncs if mirror]
-            if not execute.sync(nodes, paths, self.ui):
+        for (node, success) in self.executor.mkdirs(dirs):
+            if not success:
+                self.ui.error("cannot create (some of the) directories %s on node %s" % (",".join(createdirs), node.name))
                 results.ok = False
                 return results
+
+        paths = [os.path.normpath(self.config.subst(dir)) for (dir, mirror) in syncs if mirror]
+        logging.debug("paths is " + str(paths))
+        if not execute.sync(nodes, paths, self.ui):
+            results.ok = False
+            return results
 
         if peers:  # Make working directories and copy node.cfg configuration
             results = self.install_peers(peers, results)
@@ -1444,8 +1427,8 @@ class Controller:
 
         return results
 
-
     def install_peers(self, peers, results):
+        logging.debug("install node configuration for peers")
         # Make working directories.
         dirs = [(peer, peer.cwd()) for peer in peers]
         peers = []

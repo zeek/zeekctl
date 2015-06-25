@@ -14,6 +14,9 @@ class CmdResult:
         # List of results for each node
         self.nodes = []
 
+        # Results in the "nodes" list have been sorted (True), or not (False)
+        self._sorted = False
+
     def to_dict(self):
         return {
             "success_count": self.success_count,
@@ -31,7 +34,13 @@ class CmdResult:
         Bro node, success is a boolean, and data is a dictionary.
         """
 
-        return self.nodes
+        results = self.nodes
+
+        if not self._sorted:
+            results.sort(key=lambda n: (n[0].type, n[0].name))
+            self._sorted = True
+
+        return results
 
     def get_node_output(self):
         """Return a list of tuples (node, success, output), where node is a
@@ -42,6 +51,11 @@ class CmdResult:
         for node, success, out in self.nodes:
             output = out.get("_output", [])
             results.append((node, success, output))
+
+        if not self._sorted:
+            results.sort(key=lambda n: (n[0].type, n[0].name))
+            self._sorted = True
+
         return results
 
     def set_node_fail(self, node):

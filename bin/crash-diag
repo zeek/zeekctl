@@ -26,7 +26,7 @@ fi
 echo
 
 if [ -f "${bro}" ];then
-    bro_version=`"${bro}" -v 2>&1 | awk '{print $3}'`
+    bro_version=`"${bro}" -v 2>&1 >/dev/null | awk '{print $3}'`
 else
     bro_version="(file not found: ${bro})"
 fi

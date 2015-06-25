@@ -1,0 +1,40 @@
+# Test that the deploy command can start all nodes before any other broctl
+# command is run.  Test that the deploy command works when there is a mix of
+# running and stopped nodes.  Test that the deploy command returns exit status
+# of zero when all nodes started successfully.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff deploy1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff deploy2.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status3.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+ret=0
+
+# test that deploy works without first running any other broctl command
+broctl deploy > deploy1.out 2>&1
+test $? -eq 0 || ret=1
+
+broctl status > status1.out
+
+# stop one node
+broctl stop worker-1
+broctl status > status2.out
+
+# test that deploy works when there is a mix of running/stopped nodes
+broctl deploy > deploy2.out 2>&1
+test $? -eq 0 || ret=1
+broctl status > status3.out
+
+broctl stop
+exit $ret
+

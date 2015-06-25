@@ -30,6 +30,8 @@ options = [
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", "10", "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
+    Option("CommandTimeout", "60", "int", Option.USER, False,
+           "The number of seconds to wait for a command to return results."),
     Option("BroPort", "47760", "int", Option.USER, False,
            "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", "3600", "int", Option.USER, False,
@@ -82,7 +84,7 @@ options = [
     Option("MemLimit", "unlimited", "string", Option.USER, False,
            "Maximum amount of memory for Bro processes to use (in KB, or the string 'unlimited')."),
     Option("Env_Vars", "", "string", Option.USER, False,
-           "A comma-separated list of environment variables (e.g. 'VAR1=123, VAR2=456') to pass to Bro on the command-line.  Node-specific values (specified in the node configuration file) override these global values."),
+           "A comma-separated list of environment variables (e.g. env_vars=VAR1=123, VAR2=456) to set on all nodes immediately before starting Bro.  Node-specific values (specified in the node configuration file) override these global values."),
 
     Option("TimeFmt", "%d %b %H:%M:%S", "string", Option.USER, False,
            "Format string to print date/time specifications (see 'man strftime')."),
@@ -189,13 +191,13 @@ options = [
            "Log file for statistics."),
 
     Option("SitePolicyPath", "${PolicyDir}/site", "string", Option.USER, False,
-           "Directories to search for local policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during 'broctl install' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),
+           "Directories to search for local (i.e., site-specific) policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during broctl 'install' or 'deploy' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),
     Option("SitePluginPath", "", "string", Option.USER, False,
-           "Directories to search for custom plugins, separated by colons."),
+           "Directories to search for custom plugins (i.e., plugins that are not included with broctl), separated by colons."),
 
 
     Option("PolicyDirSiteInstall", "${SpoolDir}/installed-scripts-do-not-touch/site", "string", Option.AUTOMATIC, False,
-           "Directory where the shell copies local policy scripts when installing."),
+           "Directory where the shell copies local (i.e., site-specific) policy scripts when installing."),
     Option("PolicyDirSiteInstallAuto", "${SpoolDir}/installed-scripts-do-not-touch/auto", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 

@@ -1,0 +1,3 @@
+myVar1=some Global;val
+MyVar2=anotherglobal
+myvar5=/home/repo/bro/aux/broctl/testing/../build/testing/test.21301/bin:/home/repo/bro/aux/broctl/testing/Scripts:/home/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/mydir

@@ -20,9 +20,9 @@ class TermUI:
     def __init__(self):
         pass
 
-    def output(self, msg):
+    def info(self, msg):
         print(msg)
-    warn = info = output
+    warn = info
 
     def error(self, msg):
         print("ERROR", msg)

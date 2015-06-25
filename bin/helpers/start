@@ -5,7 +5,7 @@
 #
 #  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <bro_args>
 #
-# -v var=value...:  environment variables to set.
+# -v var=value...:  environment variables to set (optional).
 # cwd:  the node's working directory.
 # pin_cpu:  the CPU number to use, or -1 to not use CPU pinning.
 # bro_args:  Bro cmd-line arguments.
@@ -14,14 +14,20 @@
 
 while getopts 'v:' flag; do
     case "$flag" in
-        v) eval export "$OPTARG" ;;
+        v) export "$OPTARG"
+           if [ $? -ne 0 ]; then
+               echo "start: unable to set env. variable \"$OPTARG\" (check the env_vars broctl option)" >&2
+               exit 1
+           fi
+           ;;
     esac
 done
 
+origopts="$@"
 shift $((OPTIND-1))
 
 if [ $# -lt 3 ]; then
-    echo "start: missing cmd-line options" >&2
+    echo "start: too few cmd-line options received: \"$origopts\" (this is usually caused by shell metacharacters in the env_vars broctl option)" >&2
     exit 1
 fi
 

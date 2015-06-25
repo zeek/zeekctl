@@ -22,15 +22,15 @@ def createloadedscriptslog(thisnode):
 
 livemode = False
 statusfile = None
-brotestcfg = { "crash" : "", "crashshutdown" : "", "slowstart" : "",
-   "slowstop" : "" }
+brotestcfg = {"crash": "", "crashshutdown": "", "slowstart": "",
+              "slowstop": "", "envvars": "" }
 
 # Parse cmd-line args (most of them can be ignored).
 optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:K:LOPR:ST:U:WZ")
 for (opt, val) in optlist:
     if opt == "-v":
         # broctl doesn't care which version bro reports
-        print("bro version 2.2-1")
+        print("bro version 2.2-1", file=sys.stderr)
         sys.exit(0)
     elif opt == "-U":
         statusfile = val
@@ -90,6 +90,14 @@ if livemode:
     # Create loaded_scripts.log (only the broctl "scripts" and "diag" commands
     # check for this file).
     createloadedscriptslog(nodename)
+
+    # This is for testing if broctl can set env. vars. correctly
+    envvars = brotestcfg["envvars"]
+    if envvars:
+        for envvar in envvars.split():
+            envval = os.getenv(envvar, "")
+            # output for testing purposes (Bro doesn't do this)
+            print("%s=%s" % (envvar, envval), file=sys.stderr)
 
     # Unlike bro, just wait long enough so that the slowest test case has time
     # to finish, and then just exit to avoid having unwanted processes

@@ -10,26 +10,41 @@ def fmttime(t):
 
 lockCount = 0
 
+# Return: 0 if no lock, >0 for PID of lock, or -1 on error
 def _break_lock(cmdout):
     from BroControl import execute
 
     try:
         # Check whether lock is stale.
-        pid = open(config.Config.lockfile, "r").readline().strip()
-        (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
-        if success and output[0] == "running":
-            # Process still exists.
-            return False
+        with open(config.Config.lockfile, "r") as f:
+            pid = f.readline().strip()
 
+    except (OSError, IOError) as err:
+        cmdout.error("failed to read lock file: %s" % err)
+        return -1
+
+    (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
+    if success and output[0] == "running":
+        # Process still exists.
+        try:
+            return int(pid)
+        except ValueError:
+            return -1
+
+    cmdout.info("removing stale lock")
+    try:
         # Break lock.
-        cmdout.info("removing stale lock")
         os.unlink(config.Config.lockfile)
-        return True
+    except (OSError, IOError) as err:
+        cmdout.error("failed to remove lock file: %s" % err)
+        return -1
 
-    except (OSError, IOError):
-        return False
+    return 0
 
+# Return: 0 if lock is acquired, or if failed to acquire lock return >0 for
+# PID of lock, or -1 on error
 def _acquire_lock(cmdout):
+    lockpid = -1
     pid = str(os.getpid())
     tmpfile = config.Config.lockfile + "." + pid
 
@@ -41,29 +56,30 @@ def _acquire_lock(cmdout):
     try:
         try:
             # This should be NFS-safe.
-            f = open(tmpfile, "w")
-            f.write("%s\n" % pid)
-            f.close()
+            with open(tmpfile, "w") as f:
+                f.write("%s\n" % pid)
 
             n = os.stat(tmpfile)[3]
             os.link(tmpfile, config.Config.lockfile)
             m = os.stat(tmpfile)[3]
 
             if n == m-1:
-                return True
+                return 0
 
             # File is locked.
-            if _break_lock(cmdout):
+            lockpid = _break_lock(cmdout)
+            if lockpid == 0:
                 return _acquire_lock(cmdout)
 
-        except OSError as e:
+        except OSError:
             # File is already locked.
-            if _break_lock(cmdout):
+            lockpid = _break_lock(cmdout)
+            if lockpid == 0:
                 return _acquire_lock(cmdout)
 
         except IOError as e:
             cmdout.error("cannot acquire lock: %s" % e)
-            return False
+            return lockpid
 
     finally:
         try:
@@ -71,7 +87,7 @@ def _acquire_lock(cmdout):
         except (OSError, IOError):
             pass
 
-    return False
+    return lockpid
 
 def _release_lock(cmdout):
     try:
@@ -87,13 +103,16 @@ def lock(cmdout, showwait=True):
         lockCount += 1
         return True
 
-    if not _acquire_lock(cmdout):
+    lockpid = _acquire_lock(cmdout)
+    if lockpid < 0:
+        return False
 
+    if lockpid:
         if showwait:
-            cmdout.info("waiting for lock ...")
+            cmdout.info("waiting for lock (owned by PID %d) ..." % lockpid)
 
         count = 0
-        while not _acquire_lock(cmdout):
+        while _acquire_lock(cmdout) != 0:
             time.sleep(1)
 
             count += 1
@@ -140,6 +159,8 @@ def force_symlink(src, dst):
         if e.errno == errno.EEXIST:
             os.remove(dst)
             os.symlink(src, dst)
+        else:
+            raise
 
 # Returns an IP address string suitable for embedding in a Bro script,
 # for IPv6 colon-hexadecimal address strings, that means surrounding it

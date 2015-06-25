@@ -70,10 +70,10 @@ def _send_event_init(node, event, args, result_event):
         bc.got_result = False
         bc.connect()
     except IOError as e:
-        logging.debug("broccoli: cannot connect to node %s" % node.name)
+        logging.debug("broccoli: cannot connect to node %s", node.name)
         return (False, str(e))
 
-    logging.debug("broccoli: %s(%s) to node %s" % (event, ", ".join(args), node.name))
+    logging.debug("broccoli: %s(%s) to node %s", event, ", ".join(args), node.name)
     bc.send(event, *args)
 
     return (True, bc)
@@ -86,7 +86,7 @@ def _send_event_wait(node, result_event, bc):
 
         cnt += 1
         if cnt > int(config.Config.commtimeout):
-            logging.debug("broccoli: timeout during send to node %s" % node.name)
+            logging.debug("broccoli: timeout during send to node %s", node.name)
             return (False, "time-out")
 
     if not result_event:
@@ -101,10 +101,10 @@ def _send_event_wait(node, result_event, bc):
 
         cnt += 1
         if cnt > int(config.Config.commtimeout):
-            logging.debug("broccoli: timeout during receive from node %s" % node.name)
+            logging.debug("broccoli: timeout during receive from node %s", node.name)
             return (False, "time-out")
 
-    logging.debug("broccoli: %s(%s) from node %s" % (result_event, ", ".join(bc.result_args), node.name))
+    logging.debug("broccoli: %s(%s) from node %s", result_event, ", ".join(bc.result_args), node.name)
     return (True, bc.result_args)
 
 def _event_callback(bc):

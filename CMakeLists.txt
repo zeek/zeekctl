@@ -58,6 +58,14 @@ if (MISSING_PREREQS)
     message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
 endif ()
 
+execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
+                RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
+
+if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
+    message(FATAL_ERROR "The sqlite3 python module is required to use "
+            "BroControl, but was not found.  Configuration aborted.")
+endif ()
+
 if (NOT BRO_ROOT_DIR)
     message(WARNING "A Bro installation was not found, your BroControl "
                     " installation may not work.  Please review the install "
@@ -92,14 +100,15 @@ InstallShellScript(share/broctl/scripts bin/expire-logs)
 InstallShellScript(share/broctl/scripts bin/make-archive-name)
 InstallShellScript(share/broctl/scripts bin/post-terminate)
 InstallShellScript(share/broctl/scripts bin/run-bro)
+InstallShellScript(share/broctl/scripts bin/run-bro-on-trace)
+InstallShellScript(share/broctl/scripts bin/run-dbroctld)
 InstallShellScript(share/broctl/scripts bin/send-mail)
 InstallShellScript(share/broctl/scripts bin/stats-to-csv)
 InstallShellScript(share/broctl/scripts bin/update)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/cat-file)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/check-pid)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/df)
+InstallShellScript(share/broctl/scripts/helpers bin/helpers/first-line)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/get-childs)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/run-cmd)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
 InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
@@ -108,6 +117,7 @@ InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summar
 install(DIRECTORY BroControl
         DESTINATION lib/broctl
         PATTERN "options.py" EXCLUDE
+        PATTERN "ssh_runner.py" EXCLUDE
         PATTERN "version.py" EXCLUDE
         PATTERN "broctld.py" EXCLUDE
         PATTERN "ser.py" EXCLUDE
@@ -116,24 +126,18 @@ install(DIRECTORY BroControl
         PATTERN "plugins*" EXCLUDE)
 configure_file(BroControl/options.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
+configure_file(BroControl/ssh_runner.py
+               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/ssh_runner.py @ONLY)
 configure_file(BroControl/version.py
                ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py
+        DESTINATION lib/broctl/BroControl)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/ssh_runner.py
         DESTINATION lib/broctl/BroControl)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py
         DESTINATION lib/broctl/BroControl)
 install(DIRECTORY BroControl/plugins
         DESTINATION lib/broctl)
-install(DIRECTORY bin/
-        DESTINATION share/broctl/scripts
-        FILES_MATCHING
-        PATTERN "*" PERMISSIONS
-                        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                        GROUP_READ GROUP_EXECUTE
-                        WORLD_READ WORLD_EXECUTE
-        PATTERN "broctl.in" EXCLUDE
-        PATTERN "set-bro-path" EXCLUDE
-        PATTERN "to-bytes.awk" EXCLUDE)
 
 # Special cases where execute permission isn't applicable.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/helpers/to-bytes.awk

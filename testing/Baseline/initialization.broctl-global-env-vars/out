@@ -1,1 +1,1 @@
-env_vars = myvar1=someGlobal,MyVar2=anotherglobal
+env_vars = myVar1 = "some Global;val",MyVar2=anotherglobal, myvar5=$PATH:/mydir

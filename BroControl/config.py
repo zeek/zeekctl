@@ -6,6 +6,7 @@ import re
 import json
 import logging
 import shutil
+import zlib
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -32,12 +33,7 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, ui, localaddrs=[], state=None):
-        from BroControl import execute
-
-        config_file = os.path.join(basedir, "etc/broctl.cfg")
-        broscriptdir = os.path.join(basedir, "share/bro")
-
+    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
         self.ui = ui
         self.localaddrs = localaddrs
         logging.debug("localaddrs:", localaddrs)
@@ -50,22 +46,29 @@ class Configuration:
         self.nodestore = {}
 
         # Read broctl.cfg.
-        self.config = self._read_config(config_file)
+        self.config = self._read_config(cfgfile)
+
+        self._initialize_options(basedir, broscriptdir)
+        self._check_options()
+
+        if state:
+            self.state_store = state
+        else:
+            self.state_store = SqliteState(self.statefile)
+
+
+    def _initialize_options(self, basedir, broscriptdir):
+        from BroControl import execute
 
         # Set defaults for options we get passed in.
         self._set_option("brobase", basedir)
         self._set_option("broscriptdir", broscriptdir)
         self._set_option("version", VERSION)
 
-        # Initialize options.
+        # Initialize options that are not already set.
         for opt in options.options:
             if not opt.dontinit:
                 self._set_option(opt.name, opt.default)
-
-        if state:
-            self.state_store = state
-        else:
-            self.state_store = SqliteState(self.statefile)
 
         # Set defaults for options we derive dynamically.
         self._set_option("mailto", "%s" % os.getenv("USER"))
@@ -103,6 +106,21 @@ class Configuration:
         # Hierarchy overlay
         self.overlay = graph.BGraph()
 
+    # Do a basic sanity check on some critical options.
+    def _check_options(self):
+        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
+        files = ("makearchivename", )
+
+        for d in dirs:
+            v = self.config[d]
+            if not os.path.isdir(v):
+                raise ConfigurationError('broctl option "%s" directory not found: %s' % (d, v))
+
+        for f in files:
+            v = self.config[f]
+            if not os.path.isfile(v):
+                raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
+
     def initPostPlugins(self):
         self.read_state()
 
@@ -117,7 +135,7 @@ class Configuration:
             try:
                 global_env_vars = self._get_env_var_dict(varlist)
             except ConfigurationError as err:
-                raise ConfigurationError("env_vars option in broctl.cfg: %s" % err)
+                raise ConfigurationError("broctl config: %s" % err)
 
             for node in self.nodes("all"):
                 for (key, val) in global_env_vars.items():
@@ -143,7 +161,7 @@ class Configuration:
             return self.config[attr]
         if attr in self.state:
             return self.state[attr]
-        raise AttributeError(attr)
+        raise AttributeError("unknown config attribute %s" % attr)
 
     # Returns True if attribute is defined.
     def has_attr(self, attr):
@@ -308,21 +326,17 @@ class Configuration:
         env_vars = {}
 
         if text:
-            # If the entire string is quoted, then remove only those quotes.
-            if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-                text = text[1:-1]
-
-        if text:
             for keyval in text.split(","):
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' in env_vars")
+                    raise ConfigurationError("missing '=' in env_vars option: %s" % keyval)
 
-                if not key.strip():
-                    raise ConfigurationError("missing environment variable name in env_vars")
+                key = key.strip()
+                if not key:
+                    raise ConfigurationError("missing environment variable name in env_vars option: %s" % keyval)
 
-                env_vars[key.strip()] = val.strip()
+                env_vars[key] = val.strip()
 
         return env_vars
 
@@ -358,7 +372,7 @@ class Configuration:
             self._check_node(node, nodestore, counts)
 
             if node.name in nodestore:
-                raise ConfigurationError("Duplicate node name '%s'" % node.name)
+                raise ConfigurationError("duplicate node name '%s'" % node.name)
             nodestore[node.name] = node
 
         self._check_nodestore(nodestore)
@@ -367,18 +381,18 @@ class Configuration:
 
     def _check_node(self, node, nodestore, counts):
         if not node.type:
-            raise ConfigurationError("No type given for node %s" % node.name)
+            raise ConfigurationError("no type given for node %s" % node.name)
 
         if node.type not in ("manager", "proxy", "worker", "standalone", "peer"):
             raise ConfigurationError("Unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
-            raise ConfigurationError("No host given for node '%s'" % node.name)
+            raise ConfigurationError("no host given for node '%s'" % node.name)
 
         try:
             addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
         except socket.gaierror as e:
-            raise ConfigurationError("Unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
+            raise ConfigurationError("unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
 
         addr_str = addrinfo[0][4][0]
         # zone_id is handled manually, so strip it if it's there
@@ -388,7 +402,7 @@ class Configuration:
         try:
             node.env_vars = self._get_env_var_dict(node.env_vars)
         except ConfigurationError as err:
-            raise ConfigurationError("Node '%s' config: %s" % (node.name, err))
+            raise ConfigurationError("node '%s' config: %s" % (node.name, err))
 
         # Each node gets a number unique across its type.
         try:
@@ -402,40 +416,40 @@ class Configuration:
 
         if node.lb_procs:
             if node.type != "worker":
-                raise ConfigurationError("Load balancing node config options are only for worker nodes")
+                raise ConfigurationError("load balancing node config options are only for worker nodes")
             try:
                 numprocs = int(node.lb_procs)
             except ValueError:
-                raise ConfigurationError("Number of load-balanced processes must be an integer for node '%s'" % node.name)
+                raise ConfigurationError("number of load-balanced processes must be an integer for node '%s'" % node.name)
             if numprocs < 2:
-                raise ConfigurationError("Number of load-balanced processes must be at least 2 for node '%s'" % node.name)
+                raise ConfigurationError("number of load-balanced processes must be at least 2 for node '%s'" % node.name)
         elif node.lb_method:
-            raise ConfigurationError("Number of load-balanced processes not specified for node '%s'" % node.name)
+            raise ConfigurationError("number of load-balanced processes not specified for node '%s'" % node.name)
 
         try:
             pin_cpus = self._get_pin_cpu_list(node.pin_cpus, numprocs)
         except ValueError:
-            raise ConfigurationError("Pin cpus list must contain only non-negative integers for node '%s'" % node.name)
+            raise ConfigurationError("pin cpus list must contain only non-negative integers for node '%s'" % node.name)
 
         if pin_cpus:
             node.pin_cpus = pin_cpus[0]
 
         if node.lb_procs:
             if not node.lb_method:
-                raise ConfigurationError("No load balancing method given for node '%s'" % node.name)
+                raise ConfigurationError("no load balancing method given for node '%s'" % node.name)
 
             if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
-                raise ConfigurationError("Unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
+                raise ConfigurationError("unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
 
             if node.lb_method == "interfaces":
                 if not node.lb_interfaces:
-                    raise ConfigurationError("List of load-balanced interfaces not specified for node '%s'" % node.name)
+                    raise ConfigurationError("list of load-balanced interfaces not specified for node '%s'" % node.name)
 
                 # get list of interfaces to use, and assign one to each node
                 netifs = node.lb_interfaces.split(",")
 
                 if len(netifs) != numprocs:
-                    raise ConfigurationError("Number of load-balanced interfaces is not same as number of load-balanced processes for node '%s'" % node.name)
+                    raise ConfigurationError("number of load-balanced interfaces is not same as number of load-balanced processes for node '%s'" % node.name)
 
                 node.interface = netifs.pop().strip()
 
@@ -449,7 +463,7 @@ class Configuration:
                 newname = "%s-%d" % (origname, num)
                 newnode.name = newname
                 if newname in nodestore:
-                    raise ConfigurationError("Duplicate node name '%s'" % newname)
+                    raise ConfigurationError("duplicate node name '%s'" % newname)
                 nodestore[newname] = newnode
                 counts[node.type] += 1
                 newnode.count = counts[node.type]
@@ -461,7 +475,7 @@ class Configuration:
 
     def _check_nodestore(self, nodestore):
         if not nodestore:
-            raise ConfigurationError("No nodes found")
+            raise ConfigurationError("no nodes found in node config")
 
         standalone = False
         manager = False
@@ -473,14 +487,14 @@ class Configuration:
         for n in nodestore.values():
             if n.type == "manager":
                 if manager:
-                    raise ConfigurationError("Only one manager can be defined")
+                    raise ConfigurationError("only one manager can be defined")
                 manager = True
 
  #               if n.addr in ("127.0.0.1", "::1"):
  #                   manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("Must run broctl only on manager node")
+                    raise ConfigurationError("must run broctl only on manager node")
 
             elif n.type == "proxy":
                 proxy = True
@@ -496,9 +510,9 @@ class Configuration:
                 raise ConfigurationError("More than one node defined in standalone node config")
         else:
             if not manager:
-                raise ConfigurationError("No manager defined in node config")
+                raise ConfigurationError("no manager defined in node config")
             elif not proxy:
-                raise ConfigurationError("No proxy defined in node config")
+                raise ConfigurationError("no proxy defined in node config")
 
         # If manager is on localhost, then all other nodes must be on localhost
         #if manageronlocalhost:
@@ -677,21 +691,21 @@ class Configuration:
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
         config = {}
-        for line in open(fname):
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
 
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+                args = line.split("=", 1)
+                if len(args) != 2:
+                    raise ConfigurationError("broctl config syntax error: %s" % line)
 
-            args = line.split("=", 1)
-            if len(args) != 2:
-                raise ConfigurationError("%s: syntax error '%s'" % (fname, line))
+                (key, val) = args
+                key = key.strip().lower()
 
-            (key, val) = args
-            key = key.strip().lower()
-
-            # if the key already exists, just overwrite with new value
-            config[key] = val.strip()
+                # if the key already exists, just overwrite with new value
+                config[key] = val.strip()
 
         return config
 
@@ -718,41 +732,54 @@ class Configuration:
 
     # Record the Bro version.
     def record_bro_version(self):
-        try:
-            version = self._get_bro_version()
-        except ConfigurationError:
-            return False
-
+        version = self._get_bro_version()
         self.set_state("broversion", version)
         self.set_state("bro", self.subst("${bindir}/bro"))
-        return True
 
 
     # Warn user to run broctl install if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
-    # are missing.
-    def warn_broctl_install(self):
+    # are missing.  If the "isinstall" parameter is True, then we're running
+    # the install or deploy command, so some of the warnings are skipped.
+    def warn_broctl_install(self, isinstall):
         missingstate = False
-
-        # Check if Bro version is different from previously-installed version.
-        if "broversion" in self.state:
-            oldversion = self.state["broversion"]
-
-            version = self._get_bro_version()
-
-            if version != oldversion:
-                self.ui.warn("new bro version detected (run the broctl \"restart --clean\" or \"install\" command)")
-                return
-        else:
-            missingstate = True
 
         # Check if node config has changed since last install.
         if "hash-nodecfg" in self.state:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                self.ui.warn("broctl node config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                # If running the install/deploy cmd, then skip this warning
+                if not isinstall:
+                    self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+
                 self._warn_dangling_bro()
+                return
+        else:
+            missingstate = True
+
+        # If we're running the install or deploy commands, then skip the
+        # rest of the checks.
+        if isinstall:
+            return
+
+        freshinstall = not os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh"))
+
+        # If this is a fresh install (i.e., broctl install not yet run), then
+        # inform the user what to do.
+        if freshinstall:
+            self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
+            return
+
+        # Check if Bro version is different from the previously-installed
+        # version.
+        if "broversion" in self.state:
+            oldversion = self.state["broversion"]
+
+            version = self._get_bro_version()
+
+            if version != oldversion:
+                self.ui.warn("new bro version detected (run the broctl \"deploy\" command)")
                 return
         else:
             missingstate = True
@@ -761,7 +788,7 @@ class Configuration:
         if "hash-broctlcfg" in self.state:
             cfghash = self._get_broctlcfg_hash()
             if cfghash != self.state["hash-broctlcfg"]:
-                self.ui.warn("broctl config has changed (run the broctl \"restart --clean\" or \"install\" command)")
+                self.ui.warn("broctl config has changed (run the broctl \"deploy\" command)")
                 return
         else:
             missingstate = True
@@ -770,10 +797,7 @@ class Configuration:
         # (this would most likely indicate an upgrade install was performed
         # over an old version that didn't have the state.db file).
         if missingstate:
-            # Don't show warning if we've never run broctl install, because
-            # nothing will work anyway without doing an initial install.
-            if os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh")):
-                self.ui.warn("state database needs updating (run the broctl \"install\" command)")
+            self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
@@ -795,7 +819,11 @@ class Configuration:
 
     # Return a hash value (as a string) of the current broctl configuration.
     def _get_broctlcfg_hash(self):
-        return str(hash(tuple(sorted(self.config.items()))))
+        data = str(sorted(self.config.items()))
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl configuration.
     def update_broctlcfg_hash(self):
@@ -807,7 +835,11 @@ class Configuration:
         nn = []
         for n in self.nodes():
             nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
-        return str(hash(tuple(nn)))
+        data = str(nn)
+        if py3bro.using_py3:
+            data = data.encode()
+        # The "bitwise AND" ensures the same result on any python version.
+        return str(zlib.crc32(data) & 0xffffffff)
 
     # Update the stored hash value of the current broctl node config.
     def update_nodecfg_hash(self):
@@ -818,14 +850,19 @@ class Configuration:
     def _get_bro_version(self):
         from BroControl import execute
 
-        version = ""
         bro = self.subst("${bindir}/bro")
-        if os.path.lexists(bro):
-            (success, output) = execute.run_localcmd("%s -v" % bro)
-            if success and output:
-                version = output[-1]
+        if not os.path.lexists(bro):
+            raise ConfigurationError("cannot find Bro binary: %s" % bro)
+
+        version = ""
+        (success, output) = execute.run_localcmd("%s -v" % bro)
+        if success and output:
+            version = output[-1]
         else:
-            raise ConfigurationError("cannot find Bro binary to determine version")
+            msg = ""
+            if output:
+                msg = " with output:\n%s" % "\n".join(output)
+            raise ConfigurationError("running \"bro -v\" failed%s" % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:

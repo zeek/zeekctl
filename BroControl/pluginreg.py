@@ -25,23 +25,26 @@ class PluginRegistry:
 
     def loadPlugins(self, cmdout, executor):
         """Loads all plugins found in any of the added directories."""
-        if not self._loadPlugins(cmdout):
-            return False
+        self._loadPlugins(cmdout)
 
         # Init options.
         for p in self._plugins:
             p.executor = executor
             p._registerOptions()
 
-        return True
-
-    def initPlugins(self):
+    def initPlugins(self, cmdout):
         """Initialize all loaded plugins."""
         plugins = []
 
         for p in self._plugins:
-            if not p.init():
-                p.debug("Plugin disabled (plugin's init returned False)")
+            try:
+                init = p.init()
+            except Exception as err:
+                cmdout.warn("Plugin '%s' disabled because its init() method raised exception: %s" % (p.name(), err))
+                continue
+
+            if not init:
+                logging.debug("Plugin '%s' disabled because its init() returned False", p.name())
                 continue
 
             plugins += [p]
@@ -165,38 +168,15 @@ class PluginRegistry:
         for p in self._plugins:
             for key in p.nodeKeys():
                 key = "%s_%s" % (p.prefix(), key)
-                p.debug("adding node key %s for plugin %s" % (key, p.name()))
+                logging.debug("adding node key %s for plugin %s", key, p.name())
                 node.Node.addKey(key)
 
-    def addAnalyses(self, analysis):
-        """Adds all plugins' analyses specification to an ``Analysis``
-        instance."""
-        for p in self._plugins:
-            for (name, descr, mechanism) in p.analyses():
-
-                name = "%s.%s" % (p.prefix(), name)
-
-                # Convert 2-tuple(s) to analysis.dat format.
-                if not isinstance(mechanism, list):
-                    mechanism = [mechanism]
-
-                mechanism = ["%s:%s" % (m[0], m[1]) for m in mechanism]
-                mechanism = ",".join(mechanism)
-
-                p.debug("adding analysis %s for plugin %s (%s)" % (name, p.name(), mechanism))
-                analysis.addAnalysis(name, mechanism, descr)
-
     def _loadPlugins(self, cmdout):
-        sys.path.append(config.Config.libdirinternal)
-
         for path in self._dirs:
             for root, dirs, files in os.walk(os.path.abspath(path)):
                 for name in files:
                     if name.endswith(".py") and not name.startswith("__"):
-                        if not self._importPlugin(os.path.join(root, name[:-3]), cmdout):
-                            return False
-
-        return True
+                        self._importPlugin(os.path.join(root, name[:-3]), cmdout)
 
     def _importPlugin(self, path, cmdout):
         sys.path = [os.path.dirname(path)] + sys.path
@@ -204,10 +184,10 @@ class PluginRegistry:
         try:
             module = __import__(os.path.basename(path))
         except Exception as e:
-            cmdout.error("cannot import plugin %s: %s" % (path, e))
-            return False
-
-        sys.path = sys.path[1:]
+            cmdout.warn("cannot import plugin %s: %s" % (path, e))
+            return
+        finally:
+            sys.path = sys.path[1:]
 
         found = False
 
@@ -224,19 +204,19 @@ class PluginRegistry:
                 try:
                     p = cls()
                 except Exception as e:
-                    cmdout.error("plugin class %s __init__ failed: %s" % (cls.__name__, str(e)))
+                    cmdout.warn("plugin class %s __init__ failed: %s" % (cls.__name__, e))
                     break
 
                 # verify that the plugin overrides all required methods
                 try:
-                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)"
-                               % (p.name(), module.__file__, p.pluginVersion(), p.prefix()))
+                    logging.debug("Loaded plugin %s from %s (version %d, prefix %s)",
+                               p.name(), module.__file__, p.pluginVersion(), p.prefix())
                 except NotImplementedError:
-                    cmdout.error("plugin at %s does not override required methods" % path)
+                    cmdout.warn("plugin at %s disabled because it doesn't override required methods" % path)
                     continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
-                    cmdout.warn("Plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
+                    cmdout.warn("plugin %s disabled due to incompatible API version (uses %d, but current is %s)"
                                   % (p.name(), p.apiVersion(), _CurrentAPIVersion))
                     continue
 
@@ -245,14 +225,12 @@ class PluginRegistry:
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("Plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("plugin %s disabled due to another plugin having the same plugin prefix" % p.name())
                         break
 
                 if not sameprefix:
                     self._plugins += [p]
 
         if not found:
-            cmdout.warn("No plugin found in %s" % module.__file__)
-
-        return True
+            cmdout.warn("no plugin found in %s" % module.__file__)
 

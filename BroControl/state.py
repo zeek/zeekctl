@@ -4,27 +4,31 @@ import sqlite3
 class SqliteState:
     def __init__(self, path):
         self.path = path
-        self.db = sqlite3.connect(self.path)
+
+        try:
+            self.db = sqlite3.connect(self.path)
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s\nCheck if the user running BroControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself." % (err, path))
+
         self.c = self.db.cursor()
 
-        self.setup()
+        try:
+            self.setup()
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s" % (err, path))
 
     def setup(self):
         # Create table
-        try:
-            self.c.execute('''CREATE TABLE state (
-                key text,
-                value text
-            )''')
+        self.c.execute('''CREATE TABLE IF NOT EXISTS state (
+            key   TEXT  PRIMARY KEY  NOT NULL,
+            value TEXT
+        )''')
 
-            self.c.execute('''Create unique index if not exists idx_key on state(key)''')
-            self.db.commit()
-        except sqlite3.OperationalError:
-            pass
+        self.db.commit()
 
     def get(self, key):
         key = key.lower()
-        self.c.execute("select value from state where key=?", [key])
+        self.c.execute("SELECT value FROM state WHERE key=?", [key])
         records = self.c.fetchall()
         if records:
             return json.loads(records[0][0])
@@ -33,20 +37,13 @@ class SqliteState:
     def set(self, key, value):
         key = key.lower()
         value = json.dumps(value)
-        self.c.execute("update state set value=? where key=?", [value, key])
-        if not self.c.rowcount:
-            self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
+        try:
+            self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])
+        except sqlite3.Error as err:
+            raise sqlite3.Error("%s: %s" % (err, self.path))
+
         self.db.commit()
 
-    def setdefault(self, key, value):
-        key = key.lower()
-        value = json.dumps(value)
-        try:
-            self.c.execute("insert into state (key, value) VALUES (?,?)", [key, value])
-            return True
-        except sqlite3.IntegrityError:
-            return False
-
     def items(self):
-        self.c.execute("select key, value from state")
+        self.c.execute("SELECT key, value FROM state")
         return [(k, json.loads(v)) for (k, v) in self.c.fetchall()]

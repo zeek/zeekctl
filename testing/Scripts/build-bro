@@ -14,8 +14,7 @@
 # This function builds Bro using a build directory specifically for broctl
 # tests (if BROCTL_TEST_USEBUILD is defined, then the default Bro build
 # directory is used instead).
-function build_bro
-{
+build_bro() {
     # Choose a build directory
     if [ -n "${BROCTL_TEST_USEBUILD}" ]; then
         # Use the default Bro build directory
@@ -27,9 +26,17 @@ function build_bro
 
     cd "${BROSRCDIR}"
     ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" ${BROCTL_TEST_BUILDARGS}
-    test $? -ne 0 && exit 1
+    test $? -ne 0 && return 1
     cd ${BUILDPREFIX} && make && make install
-    test $? -ne 0 && exit 1
+}
+
+replaceprefix() {
+    for i in etc/broctl.cfg bin/broctl lib/broctl/BroControl/version.py ; do
+        sed "s#${INSTALLPREFIX}#@PREFIX@#" $i > $i.new && cp $i.new $i && rm $i.new
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    done
 }
 
 BROCTLSRCDIR=`dirname "$0"`/../..
@@ -83,10 +90,15 @@ fi
 # Build and install Bro in a temporary directory.
 echo "Building Bro (log in $LOG) ..."
 build_bro >>$LOG 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: Bro build failed:"
+    tail -n 20 $LOG
+    exit 1
+fi
 
 # Create a tar file of the installation so each test case can use its own
 # install prefix without needing to rebuild Bro.
-(cd "${INSTALLPREFIX}" && sed "s#${INSTALLPREFIX}#@PREFIX@#" etc/broctl.cfg > etc/broctl.cfg.new && mv etc/broctl.cfg.new etc/broctl.cfg && tar cf "${TARFILE}" * )
+(cd "${INSTALLPREFIX}" && replaceprefix && tar cf "${TARFILE}" * )
 if [ $? -ne 0 ]; then
     rm -rf "${INSTALLPREFIX}"
     exit 1

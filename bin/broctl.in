@@ -2,29 +2,13 @@
 #
 # The BroControl interactive shell.
 
-import os
+from __future__ import print_function
 import sys
 import time
 import logging
 
-brobase = "@PREFIX@"
-
-# Allow user to override default broctl install directory
-tmpbrobase = os.getenv("BROCTL_INSTALL_PREFIX")
-if tmpbrobase and os.path.isdir(tmpbrobase):
-    brobase = tmpbrobase
-
-# Hidden command to print the documentation.
-broctlprintdoc = False
-if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
-    broctlprintdoc = True
-    sys.path = [brobase] + sys.path
-
-cronrunning = False
-if len(sys.argv) == 2 and sys.argv[1] == "cron":
-    cronrunning = True
-
-sys.path = [os.path.join(brobase, "lib/broctl")] + sys.path
+# This is needed so that we can import BroControl.
+sys.path.insert(0, "@PREFIX@/lib/broctl")
 
 from BroControl.broctl import BroCtl
 from BroControl import brocmd
@@ -36,33 +20,41 @@ from BroControl import version
 class BroCtlCmdLoop(brocmd.ExitValueCmd):
     prompt = '[BroControl] > '
 
-    def __init__(self, broctl_class=BroCtl):
+    def __init__(self, broctl_class=BroCtl, interactive=False, cmd=""):
         brocmd.ExitValueCmd.__init__(self)
-        self.broctl = broctl_class(brobase, ui=self)
+        self.broctl = broctl_class(ui=self)
+        self.node_names = self.broctl.node_names()
+        self.interactive = interactive
+
         # Warn user to do broctl install, if needed.  Skip this check when
         # running cron to avoid receiving annoying emails.
-        if not cronrunning:
-            self.broctl.warn_broctl_install()
+        if cmd != "cron":
+            self.broctl.warn_broctl_install(cmd in ("install", "deploy"))
 
-    def output(self, text):
-        self.stdout.write(text)
-        self.stdout.write("\n")
+    def finish(self):
+        self.broctl.finish()
+
+    def info(self, text):
+        print(text)
         logging.info(text)
 
-    info = output
-
     def warn(self, text):
-        self.output("warning: %s" % text)
+        self.info("Warning: %s" % text)
 
     def error(self, text):
-        self.output("Error: %s" % text)
+        print("Error: %s" % text, file=sys.stderr)
+        logging.info(text)
         self.exit_code = 1
 
     def default(self, line):
         strlist = line.split()
 
         if not self.broctl.plugins.runCustomCommand(strlist[0], " ".join(strlist[1:]), self):
-            self.error("unknown command '%s'" % strlist[0])
+            if strlist[0] != "--help":
+                self.error("unknown command '%s'" % strlist[0])
+
+            if not self.interactive:
+                self.do_help(None)
 
         return True
 
@@ -97,7 +89,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             raise SyntaxError("nodes does not take any arguments")
 
         for node in self.broctl.nodes():
-            self.output(node)
+            self.info(node)
 
         return True
 
@@ -107,7 +99,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             raise SyntaxError("config does not take any arguments")
 
         for (key, val) in self.broctl.get_config():
-            self.output("%s = %s" % (key, val))
+            self.info("%s = %s" % (key, val))
 
         return True
 
@@ -163,10 +155,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         Restarts the given nodes, or all nodes if none are specified. The
         effect is the same as first executing stop_ followed
         by a start_, giving the same nodes in both cases.
-        This command is most useful to activate any changes made to Bro policy
-        scripts (after running install_ first). Note that a
-        subset of policy changes can also be installed on the fly via
-        update_, without requiring a restart.
 
         If ``--clean`` is given, the installation is reset into a clean state
         before restarting. More precisely, a ``restart --clean`` turns into
@@ -179,6 +167,23 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             clean = True
 
         results = self.broctl.restart(clean=clean, node_list=args)
+        return results.ok
+
+    def do_deploy(self, args):
+        """
+        Checks for errors in Bro policy scripts, then does an install followed
+        by a restart on all nodes.  This command should be run after any
+        changes to Bro policy scripts or the broctl configuration, and after
+        Bro is upgraded or even just recompiled.
+
+        This command is equivalent to running the check_, install_, and
+        restart_ commands, in that order.
+        """
+        if args:
+            raise SyntaxError("deploy does not take any arguments")
+
+        results = self.broctl.deploy()
+
         return results.ok
 
     def do_status(self, args):
@@ -205,7 +210,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         hdrlist = ["name", "type", "host", "status", "pid", "peers", "started"]
         header = dict((x, x.title()) for x in hdrlist)
-        self.output(colfmt.format(typewidth, hostwidth, **header))
+        self.info(colfmt.format(typewidth, hostwidth, **header))
 
         colfmtstopped = "{name:<12} {type:<{0}} {host:<{1}} {status}"
 
@@ -216,7 +221,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             else:
                 mycolfmt = colfmtstopped
 
-            self.output(mycolfmt.format(typewidth, hostwidth, **node_info))
+            self.info(mycolfmt.format(typewidth, hostwidth, **node_info))
 
             # Return status code of True only if all nodes are running
             if node_info["status"] != "running":
@@ -269,10 +274,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         until key ``q`` is pressed. If invoked non-interactively, the
         status is printed only once."""
 
-        if not interactive:
+        if not self.interactive:
             success, lines = self._do_top_once(args)
             for line in lines:
-                self.output(line)
+                self.info(line)
 
             return success
 
@@ -308,9 +313,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.diag(node_list=args)
 
         for (node, success, output) in results.get_node_output():
-            self.output("[%s]" % node)
+            self.info("[%s]" % node)
             for line in output:
-                self.output(line)
+                self.info(line)
 
         return results.ok
 
@@ -348,7 +353,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.broctl.setcronenabled(False)
             elif args == "?":
                 results = self.broctl.cronenabled()
-                self.output("cron " + (results and "enabled" or "disabled"))
+                self.info("cron " + (results and "enabled" or "disabled"))
             else:
                 self.error("invalid cron argument")
                 return False
@@ -378,11 +383,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, output) in results.get_node_output():
             if success:
-                self.output("%s scripts are ok." % node)
+                self.info("%s scripts are ok." % node)
             else:
-                self.error("%s scripts failed." % node)
-                for line in output:
-                    self.error("   %s" % line)
+                self.info("%s scripts failed." % node)
+                self.info("\n".join(output))
 
         return results.ok
 
@@ -405,7 +409,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             args = args[5:]
             cleantmp = True
 
-        self.output("cleaning up nodes ...")
+        self.info("cleaning up nodes ...")
 
         results = self.broctl.cleanup(cleantmp=cleantmp, node_list=args)
 
@@ -436,26 +440,26 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             def output_one(tag, vals):
                 return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
 
-            self.output("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
+            self.info("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
 
             totals = None
 
-            for (node, success, vals) in sorted(data):
+            for (node, success, vals) in data:
 
                 if not success:
-                    self.error(vals["output"])
+                    self.info(vals["output"])
                     continue
 
                 if str(node) != "$total":
                     hostnetif = "%s/%s" % (node.host, node.interface)
-                    self.output(output_one(hostnetif, vals))
+                    self.info(output_one(hostnetif, vals))
                 else:
                     totals = vals
 
             if totals:
-                self.output("")
-                self.output(output_one("Total", totals))
-                self.output("")
+                self.info("")
+                self.info(output_one("Total", totals))
+                self.info("")
 
         results = self.broctl.capstats(interval=interval, node_list=args)
 
@@ -492,14 +496,14 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.df(node_list=args)
 
-        self.output("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
+        self.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
         for (node, success, dfs) in results.get_node_data():
             for key, diskinfo in dfs.items():
                 if key == "FAIL":
-                    self.error("df helper failed on %s: %s" % (node, diskinfo))
+                    self.info("df helper failed on %s: %s" % (node, diskinfo))
                     continue
                 nodehost = "%s/%s" % (node.name, node.host)
-                self.output("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
+                self.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
                     diskinfo.fs, util.number_unit_str(diskinfo.total),
                     util.number_unit_str(diskinfo.available), diskinfo.percent))
 
@@ -528,9 +532,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, args) in results.get_node_output():
             if success:
-                self.output("%12s   %s = %s" % (node, args[0], args[1]))
+                self.info("%12s   %s = %s" % (node, args[0], args[1]))
             else:
-                self.error("%12s   <error: %s>" % (node, args))
+                self.info("%12s   <error: %s>" % (node, args))
 
         return results.ok
 
@@ -545,9 +549,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, msg) in results.get_node_output():
             if success:
-                self.output("%11s\n%s" % (node, msg))
+                self.info("%11s\n%s" % (node, msg))
             else:
-                self.error("%11s   <error: %s>" % (node, msg))
+                self.info("%11s   <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -561,9 +565,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, msg) in results.get_node_output():
             if success:
-                self.output("%11s: %s" % (node, msg))
+                self.info("%11s: %s" % (node, msg))
             else:
-                self.error("%11s: <error: %s>" % (node, msg))
+                self.info("%11s: <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -577,8 +581,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            out = output and "\n> ".join(output) or ""
-            self.output("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
+            out = "\n> ".join(output)
+            self.info("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
 
         return results.ok
 
@@ -619,13 +623,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, output) in results.get_node_output():
             if success:
-                self.output("%s scripts are ok." % node)
+                self.info("%s scripts are ok." % node)
                 for line in output:
-                    self.output("  %s" % line)
+                    self.info("  %s" % line)
             else:
-                self.error("%s scripts failed." % node)
-                for line in output:
-                    self.error("   %s" % line)
+                self.info("%s scripts failed." % node)
+                self.info("\n".join(output))
 
         return results.ok
 
@@ -688,7 +691,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not args or args[0] not in nodes_cmds:
             return []
 
-        nodes = ["manager", "workers", "proxies", "all"] + [n.name for n in Config.nodes()]
+        nodes = ["manager", "workers", "proxies", "all"] + self.node_names
 
         return [n for n in nodes if n.startswith(text)]
 
@@ -706,7 +709,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             plugin_help += "  %-32s - %s\n" % (cmd, descr)
 
-        self.output(
+        self.info(
 """
 BroControl Version %s
 
@@ -716,6 +719,7 @@ BroControl Version %s
   config                           - Print broctl configuration
   cron [--no-watch]                - Perform jobs intended to run from cron
   cron enable|disable|?            - Enable/disable \"cron\" jobs
+  deploy                           - Check, install, and restart
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
   exec <shell cmd>                 - Execute shell command on all hosts
@@ -736,22 +740,49 @@ BroControl Version %s
   update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (version.VERSION, plugin_help))
 
-# Hidden command to print the documentation.
-if broctlprintdoc:
-    from BroControl import printdoc
-    printdoc.print_broctl_docs(sys.argv[2], BroCtlCmdLoop)
-    sys.exit(0)
+def main():
+    # Undocumented option to print the documentation.
+    if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
+        from BroControl import printdoc
+        printdoc.print_broctl_docs(sys.argv[2], BroCtlCmdLoop)
+        return 0
 
-loop = BroCtlCmdLoop(BroCtl)
-
-if len(sys.argv) > 1:
-    interactive = False
-    cmdline = " ".join(sys.argv[1:])
-    loop.precmd(cmdline)
-    cmdsuccess = loop.onecmd(cmdline)
-    loop.postcmd(False, cmdline)
-else:
     interactive = True
-    cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+    if len(sys.argv) > 1:
+        interactive = False
 
-sys.exit(not cmdsuccess)
+    cmd = ""
+    if len(sys.argv) == 2:
+        cmd = sys.argv[1]
+
+    try:
+        loop = BroCtlCmdLoop(BroCtl, interactive, cmd)
+    except Exception as e:
+        print("Error: %s" % e, file=sys.stderr)
+        return 1
+
+    if len(sys.argv) > 1:
+        cmdline = " ".join(sys.argv[1:])
+        loop.precmd(cmdline)
+        try:
+            cmdsuccess = loop.onecmd(cmdline)
+        except Exception as e:
+            cmdsuccess = False
+            print("Error: %s" % e, file=sys.stderr)
+        except KeyboardInterrupt:
+            cmdsuccess = False
+
+        loop.postcmd(False, cmdline)
+    else:
+        try:
+            cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        except KeyboardInterrupt:
+            cmdsuccess = False
+
+    loop.finish()
+
+    return not cmdsuccess
+
+if __name__ == "__main__":
+    sys.exit(main())
+
