@@ -140,7 +140,8 @@ def unlock(cmdout):
 
 # Keyboard interrupt handler.
 def sigint_handler(signum, frame):
-    config.Config.config["sigint"] = "1"
+    pass
+    #config.Config.config["sigint"] = "1"
 
 def enable_signals():
     pass

@@ -248,8 +248,7 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                if self.config.cron == "0":
-                    self.ui.error("cannot connect to %s" % node.name)
+                self.ui.error("cannot connect to %s" % node.name)
                 continue
 
             running = output[0] == "running" and True or False
@@ -1328,9 +1327,6 @@ class Controller:
             # emails before the user has a chance to do "broctl install".
             return
 
-        # Flag to indicate that we're running from cron.
-        self.config.config["cron"] = "1"
-
         cronui = cron.CronUI()
         tasks = cron.CronTasks(cronui, self.config, self, self.executor, self.pluginregistry)
 
@@ -1380,6 +1376,5 @@ class Controller:
                 self.ui.error("broctl cron failed to send mail: %s" % out[0])
                 self.ui.info("\nOutput of broctl cron:\n%s" % output)
 
-        self.config.config["cron"] = "0"
         logging.debug("cron done")
 

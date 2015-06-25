@@ -143,6 +143,8 @@ options = [
 
     Option("BinDir", "${BroBase}/bin", "string", Option.AUTOMATIC, False,
            "Directory for executable files."),
+    Option("Bro", "${BinDir}/bro", "string", Option.AUTOMATIC, False,
+           "Path to Bro binary."),
     Option("ScriptsDir", "${BroBase}/share/broctl/scripts", "string", Option.AUTOMATIC, False,
            "Directory for executable scripts shipping as part of broctl."),
     Option("PostProcDir", "${BroBase}/share/broctl/scripts/postprocessors", "string", Option.AUTOMATIC, False,
@@ -202,12 +204,6 @@ options = [
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
     # Internal, not documented.
-    Option("SigInt", "0", "bool", Option.INTERNAL, False,
-           "True if SIGINT has been received."),
-
-    Option("Cron", "0", "bool", Option.INTERNAL, False,
-           "True if we are running from the cron command."),
-
     Option("BroCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
            """Directory where the shell copies the broctl-config.sh
            configuration file. If this is changed, the symlink created in

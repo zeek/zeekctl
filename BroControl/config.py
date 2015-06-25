@@ -128,9 +128,6 @@ class Configuration:
 
         self._set_option("standalone", standalone)
 
-        # Make sure cron flag is cleared.
-        self.config["cron"] = "0"
-
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
     # variables.
@@ -512,7 +509,6 @@ class Configuration:
     def record_bro_version(self):
         version = self._get_bro_version()
         self.set_state("broversion", version)
-        self.set_state("bro", self.subst("${bindir}/bro"))
 
 
     # Warn user to run broctl install if any changes are detected to broctl
@@ -628,7 +624,7 @@ class Configuration:
     def _get_bro_version(self):
         from BroControl import execute
 
-        bro = self.subst("${bindir}/bro")
+        bro = self.config["bro"]
         if not os.path.lexists(bro):
             raise ConfigurationError("cannot find Bro binary: %s" % bro)
 
