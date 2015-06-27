@@ -664,7 +664,7 @@ class Configuration:
         # Check if nodestore is valid
         self._check_nodestore(scopelist)
 
-        logging.debug("local node is " + root + " and head is " + str(head))
+        logging.debug("local node is " + str(local_node) + " and head is " + str(head))
 
         return scopelist, local_node, head
 

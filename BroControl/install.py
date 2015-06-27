@@ -93,40 +93,43 @@ def make_broctl_config_sh(cmdout):
 
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
+
+    if config.Config.nodes("standalone"):
+        make_standalone_layout(path, cmdout, silent)
+    elif config.Config.use_broker():
+        make_broker_layout(path, cmdout, silent)
+    else:
+        make_broccoli_layout(path, cmdout, silent)
+
+def make_standalone_layout(path, cmdout, silent):
     manager = config.Config.manager()
-    logging.debug("make_layout, manager is " + str(manager.name))
-
-    if not manager:
-        return
-
+    logging.debug("make_standalone_layout, manager is " + str(manager.name))
     broport = Port(int(config.Config.broport) - 1)
-    filename = os.path.join(path, "cluster-layout.bro")
 
     # If there is a standalone node, delete any cluster-layout file to
     # avoid the cluster framework from activating and get out of here.
-    if config.Config.nodes("standalone"):
-        if os.access(filename, os.W_OK):
-            os.unlink(filename)
-        # We do need to establish the port for the manager.
-        if not silent:
-            cmdout.info("generating standalone-layout.bro ...")
+    filename = os.path.join(path, "cluster-layout.bro")
+    if os.access(filename, os.W_OK):
+        os.unlink(filename)
 
-        filename = os.path.join(path, "standalone-layout.bro")
-        with open(filename, "w") as out:
-            out.write("# Automatically generated. Do not edit.\n")
-            # This is the port that standalone nodes listen on for remote
-            # control by default.
-            out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
-            out.write("redef Communication::nodes += {\n")
-            out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
-            out.write("};\n")
+    # We do need to establish the port for the manager.
+    if not silent:
+        cmdout.info("generating standalone-layout.bro ...")
 
-    elif not config.Config.use_broker():
-        make_broccoli_layout(path, cmdout, silent)
+    filename = os.path.join(path, "standalone-layout.bro")
+    with open(filename, "w") as out:
+        out.write("# Automatically generated. Do not edit.\n")
+        # This is the port that standalone nodes listen on for remote
+        # control by default.
+        out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
+        out.write("redef Communication::nodes += {\n")
+        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+        out.write("};\n")
 
-def make_broccoli_layout(path, cmdout, silent = False):
-    logging.debug("create cluster layout based on broccoli")
+def make_broccoli_layout(path, cmdout, silent):
     manager = config.Config.manager()
+
+    logging.debug("make_broccoli_layout, manager is " + str(manager.name))
     broport = Port(int(config.Config.broport) - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
@@ -175,8 +178,9 @@ def make_broccoli_layout(path, cmdout, silent = False):
     out.close()
 
 #TODO add broker configuration
-#def make_broker_layout(path, cmdout, silent=False):
-    #print "make broker cluster layout"
+def make_broker_layout(path, cmdout, silent):
+    manager = config.Config.manager()
+    logging.debug("make_broker_layout, manager is " + str(manager.name) + ", do nothing for now")
 
 # Reads in a list of networks from file.
 def read_networks(fname):

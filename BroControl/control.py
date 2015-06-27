@@ -62,41 +62,22 @@ def _make_bro_params(node, live):
     #    settings that override the previously loaded node-specific scripts.
     #    (e.g. Log::default_rotation_interval is set in manager.bro,
     #    but overrided by broctl.cfg)
+    #TODO update description
+
+    args += ["broctl"]
 
     if node.type == "standalone":
-
-        if not config.Config.use_broker():
-            args += config.Config.sitepolicystandalone.split()
-            args += ["broctl"]
-            args += ["broctl/standalone"]
-
-        else:  # use broker
-            logging.debug("writing bro configuration for standalone broker")
-            #args += config.Config.sitepolicystandalone.split()
-            #args += ["broctl"]
-
-            args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
-            if config.Config.head == config.Config.get_local():
-                logging.debug("  - local node is clone store")
-                args += [config.Config.policydir + "/base/frameworks/broker-test/clone.bro"]
-            else:
-                logging.debug("  - local node is master store")
-                args += [config.Config.policydir + "/base/frameworks/broker-test/master.bro"]
-
-            args += ["broker_port=9999/tcp"]
-            args += ["broker_host=" + config.Config.get_head().addr]
+        args += config.Config.sitepolicystandalone.split()
+        args += ["broctl/standalone"]
 
     elif config.Config.use_broker():  # use broker
         logging.debug("writing bro configuration for cluster-broker")
-        #args += ["broctl"]
         #args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
 
         if node.type == "manager" or node.type == "worker":
             args += [config.Config.policydir + "/base/frameworks/broker-test/logs-connector.bro"]
-            #args += ["/home/mathias/workspace/bro/doc/frameworks/broker/logs-connector.bro"]
         elif node.type == "proxy":
             args += [config.Config.policydir + "/base/frameworks/broker-test/logs-listener.bro"]
-            #args += ["/home/mathias/workspace/bro/doc/frameworks/broker/logs-listener.bro"]
         elif node.type != "peer":
             raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
 
@@ -105,7 +86,6 @@ def _make_bro_params(node, live):
     else:  # use broccoli
         logging.debug("writing bro configuration for broccoli")
         args += config.Config.sitepolicystandalone.split()
-        args += ["broctl"]
 
         args += ["base/frameworks/cluster"]
         if node.type == "manager":
@@ -117,9 +97,7 @@ def _make_bro_params(node, live):
         elif node.type != "peer":
             raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
 
-        args += ["broctl/auto"]
-
-    #args += ["broctl/auto"]
+    args += ["broctl/auto"]
 
     if getattr(node, "aux_scripts", None):
         args += [node.aux_scripts]
@@ -202,6 +180,7 @@ class Controller:
         return results
 
     def start_peers(self, peers):
+        logging.debug(" * start peers")
         localNode = self.config.get_local()
 
         results = cmdresult.CmdResult()
@@ -328,15 +307,17 @@ class Controller:
         return results
 
     def _isrunning(self, nodes, setcrashed=True):
-
         results = []
         cmds = []
 
         for node in nodes:
             pid = node.getPID()
             if not pid:
+                logging.debug("no pid for " + str(node.name))
                 results += [(node, False)]
                 continue
+            else:
+                logging.debug("pid for " + str(node.name))
 
             cmds += [(node, "check-pid", [str(pid)])]
 
@@ -345,7 +326,6 @@ class Controller:
             # because the process might actually be running but we can't tell.
             if not success:
                 if self.config.cron == "0":
-                    logging.debug("here and we cannot connect")
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
 
@@ -508,6 +488,7 @@ class Controller:
 
     def _stop_nodes(self, nodes, results):
 
+        logging.debug(" * stop nodes")
         running = []
 
         # Check for crashed nodes.
@@ -528,6 +509,7 @@ class Controller:
         def stop(nodes, signal):
             cmds = []
             for node in nodes:
+                logging.debug("   - stopping " + str(node.name) + " with signal " + str(signal))
                 cmds += [(node, "stop", [str(node.getPID()), str(signal)])]
 
             return self.executor.run_helper(cmds)
@@ -550,10 +532,12 @@ class Controller:
                 for (node, isrunning) in result:
                     if isrunning:
                         self.ui.info("%s did not terminate ... killing ..." % node.name)
+                        logging.debug("%s did not terminate ... killing ..." % node.name)
                         kill += [node]
                     else:
                         # crashed flag is set by _isrunning().
                         self.ui.info("%s crashed during shutdown" % node.name)
+                        logging.debug("%s crashed during shutdown" % node.name)
 
         if kill:
             # Kill those which did not terminate gracefully.

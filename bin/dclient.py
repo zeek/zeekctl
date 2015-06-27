@@ -21,10 +21,15 @@ class BClient(cmd.Cmd):
             self.host = host
             self.port = port
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((self.host, self.port))
-            self.sock.setblocking(False)
+            try:
+                self.sock.connect((self.host, self.port))
+            except socket.error, msg:
+                print "Couldnt connect to ", str(host), (port), " check parameters"
+                return
+            print "connected..."
         else:
-            raise RuntimeError("connect not possible")
+            raise RuntimeError("connect: no host or no port specified")
+
 
     def send_receive(self, data):
         if not self.sock:
@@ -66,9 +71,13 @@ class BClient(cmd.Cmd):
     # cmdloop handlers
     def do_connect(self, line):
         """ connect [hostname] [port] """
-        host, port = line.split()
+        linelist = line.split()
+        if len(linelist) != 2:
+            print("required: connect [hostname] [port]")
+            return
+
+        host, port = linelist
         self.connect(host, int(port))
-        print "connected..."
 
     def do_start(self, line):
         """ start the bro instances in the deep cluster """
