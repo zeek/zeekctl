@@ -29,6 +29,7 @@ class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
         self.ui = ui
         self.basedir = basedir
+        self.cfgfile = cfgfile
         self.broscriptdir = broscriptdir
         self.localaddrs = localaddrs
         global Config
@@ -49,6 +50,13 @@ class Configuration:
         else:
             self.state_store = SqliteState(self.statefile)
 
+        self._update_cfg_state()
+
+    def reload_cfg(self):
+        self.config = self._read_config(self.cfgfile)
+        self._initialize_options()
+        self._check_options()
+        self._update_cfg_state()
 
     def _initialize_options(self):
         from BroControl import execute
@@ -512,6 +520,22 @@ class Configuration:
         version = self._get_bro_version()
         self.set_state("broversion", version)
 
+    # Record the state of the broctl config files.
+    def _update_cfg_state(self):
+        self.set_state("configchksum", os.path.getmtime(self.cfgfile))
+        self.set_state("confignodechksum", os.path.getmtime(self.nodecfg))
+
+    # Returns True if the broctl config files have changed since last reload.
+    def is_cfg_changed(self):
+        if "configchksum" in self.state:
+            if self.state["configchksum"] != os.path.getmtime(self.cfgfile):
+                return True
+
+        if "confignodechksum" in self.state:
+            if self.state["confignodechksum"] != os.path.getmtime(self.nodecfg):
+                return True
+
+        return False
 
     # Warn user to run broctl install if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
