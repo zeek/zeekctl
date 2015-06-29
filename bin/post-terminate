@@ -19,6 +19,11 @@
 # BroControl terminated Bro forcefully (but intentionally) by SIGKILL while
 # trying to stop Bro.
 
+function mailerror
+{
+    $scriptdir/send-mail "failure to archive log files"
+}
+
 if [ $# -lt 2 -o $# -gt 3 ]; then
     echo "post-terminate: wrong usage"
     exit 1
@@ -44,7 +49,8 @@ fi
 timestamp=`date +%Y-%m-%d-%H-%M-%S`
 archivelogtime=`date +%y-%m-%d_%H.%M.%S`
 
-. `dirname $0`/broctl-config.sh
+scriptdir=`dirname $0`
+. $scriptdir/broctl-config.sh
 
 if [ -z "${tmpdir}" ]; then
     echo "post-terminate: broctl option tmpdir not set"
@@ -147,6 +153,8 @@ if [ $crash -eq 1 -o $killed -eq 1 ]; then
     # Note: this assumes the user is using the default ".log" file extension.
     unrotated_logs=$($find_cmd . -maxdepth 1 -type f -regex '\./[^.]+\.log')
 
+    failed=0
+
     for i in $unrotated_logs; do
         # Strip off the leading "./"
         logname=`echo $i | sed 's#^\./##'`
@@ -163,17 +171,25 @@ if [ $crash -eq 1 -o $killed -eq 1 ]; then
         end=$archivelogtime
 
         # Note: here we assume the log is ascii
-        "${scriptsdir}"/archive-log $flags $logname $basename $strt $end 1 ascii &
+        "${scriptsdir}"/archive-log $flags $logname $basename $strt $end 1 ascii
+        if [ $? -ne 0 ]; then
+            failed=1
+        fi
     done
+
+    if [ $failed -ne 0 ]; then
+        mailerror <<_EOF_
+Unable to archive one or more logs in directory:
+${tmp}
+See the post-terminate.out file for error messages.
+_EOF_
+    fi
 
     # If Bro crashed, then we don't need to do anything else, because we don't
     # want to remove the tmp directory.
     if [ $crash -eq 1 ]; then
         exit 0
     fi
-
-    # Wait for all the archive-log processes started here to finish.
-    wait
 fi 
 
 # If no rotated log files remain, then remove the directory.
