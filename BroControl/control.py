@@ -703,6 +703,7 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
+            self.ui.info("cleaning %s ..." % self.config.tmpdir)
             results3 = self.executor.rmdirs([(n, self.config.tmpdir) for n in running + notrunning])
             results4 = self.executor.mkdirs([(n, self.config.tmpdir) for n in running + notrunning])
             failed = addfailed(failed, results3)

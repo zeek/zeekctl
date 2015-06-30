@@ -43,7 +43,7 @@ fi
 
 # Make sure all parameters are supplied.
 if [ $# -ne 6 ]; then
-    echo "archive-log: wrong usage" >&2
+    echo "archive-log: wrong usage: $@" >&2
     exit 1
 fi
 
