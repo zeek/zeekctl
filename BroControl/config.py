@@ -1,9 +1,9 @@
 # Functions to read and access the broctl configuration.
 
+import hashlib
 import os
 import socket
 import re
-import zlib
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -522,17 +522,17 @@ class Configuration:
 
     # Record the state of the broctl config files.
     def _update_cfg_state(self):
-        self.set_state("configchksum", os.path.getmtime(self.cfgfile))
-        self.set_state("confignodechksum", os.path.getmtime(self.nodecfg))
+        self.set_state("configchksum", self._get_broctlcfg_hash(filehash=True))
+        self.set_state("confignodechksum", self._get_nodecfg_hash(filehash=True))
 
     # Returns True if the broctl config files have changed since last reload.
     def is_cfg_changed(self):
         if "configchksum" in self.state:
-            if self.state["configchksum"] != os.path.getmtime(self.cfgfile):
+            if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
                 return True
 
         if "confignodechksum" in self.state:
-            if self.state["confignodechksum"] != os.path.getmtime(self.nodecfg):
+            if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
                 return True
 
         return False
@@ -618,12 +618,19 @@ class Configuration:
                         self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nn, hname, self.get_state(key)))
 
     # Return a hash value (as a string) of the current broctl configuration.
-    def _get_broctlcfg_hash(self):
-        data = str(sorted(self.config.items()))
+    def _get_broctlcfg_hash(self, filehash=False):
+        if filehash:
+            with open(self.cfgfile, "r") as ff:
+                data = ff.read()
+        else:
+            data = str(sorted(self.config.items()))
+
         if py3bro.using_py3:
             data = data.encode()
-        # The "bitwise AND" ensures the same result on any python version.
-        return str(zlib.crc32(data) & 0xffffffff)
+
+        hh = hashlib.md5()
+        hh.update(data)
+        return hh.hexdigest()
 
     # Update the stored hash value of the current broctl configuration.
     def update_broctlcfg_hash(self):
@@ -631,15 +638,22 @@ class Configuration:
         self.set_state("hash-broctlcfg", cfghash)
 
     # Return a hash value (as a string) of the current broctl node config.
-    def _get_nodecfg_hash(self):
-        nn = []
-        for n in self.nodes():
-            nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
-        data = str(nn)
+    def _get_nodecfg_hash(self, filehash=False):
+        if filehash:
+            with open(self.nodecfg, "r") as ff:
+                data = ff.read()
+        else:
+            nn = []
+            for n in self.nodes():
+                nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
+            data = str(nn)
+
         if py3bro.using_py3:
             data = data.encode()
-        # The "bitwise AND" ensures the same result on any python version.
-        return str(zlib.crc32(data) & 0xffffffff)
+
+        hh = hashlib.md5()
+        hh.update(data)
+        return hh.hexdigest()
 
     # Update the stored hash value of the current broctl node config.
     def update_nodecfg_hash(self):
