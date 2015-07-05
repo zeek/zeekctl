@@ -38,7 +38,7 @@ class CronTasks:
         self.pluginregistry = pluginregistry
 
     def log_stats(self, interval):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
 
         nodes = self.config.nodes()
@@ -93,8 +93,8 @@ class CronTasks:
             return
 
     def check_disk_space(self):
-        minspace = float(self.config.mindiskspace)
-        if minspace == 0.0:
+        minspace = self.config.mindiskspace
+        if minspace == 0:
             return
 
         results = self.controller.df(self.config.hosts())
@@ -122,7 +122,7 @@ class CronTasks:
                 self.config.set_state(key, "%.1f" % perc)
 
     def expire_logs(self):
-        if self.config.logexpireinterval == "0" and self.config.statslogexpireinterval == "0":
+        if self.config.logexpireinterval == 0 and self.config.statslogexpireinterval == 0:
             return
 
         (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
@@ -142,13 +142,13 @@ class CronTasks:
 
                 if alive != previous:
                     self.pluginregistry.hostStatusChanged(host, alive == "1")
-                    if self.config.mailhostupdown != "0":
+                    if self.config.mailhostupdown:
                         self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
 
             self.config.set_state(tag, alive)
 
     def update_http_stats(self):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
 
         # Create meta file.

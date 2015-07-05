@@ -15,7 +15,7 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
-        cluster_id = int(BroControl.config.Config.pfringclusterid)
+        cluster_id = BroControl.config.Config.pfringclusterid
         if cluster_id == 0:
             return False
 
@@ -34,7 +34,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
         useplugin = False
-        first_app_instance = int(BroControl.config.Config.pfringfirstappinstance)
+        first_app_instance = BroControl.config.Config.pfringfirstappinstance
         app_instance = first_app_instance
 
         dd = {}

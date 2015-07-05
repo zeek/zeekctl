@@ -31,7 +31,7 @@ def _make_bro_params(node, live):
         except AttributeError:
             pass
 
-        if config.Config.savetraces == "1":
+        if config.Config.savetraces:
             args += ["-w", "trace.pcap"]
 
     args += ["-U", ".status"]
@@ -335,7 +335,7 @@ class Controller:
         return results
 
     def _log_action(self, node, action):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
         t = time.time()
         with open(self.config.statslog, "a") as out:
@@ -446,7 +446,7 @@ class Controller:
         # Check whether they terminated.
         terminated = []
         kill = []
-        for (node, success) in self._waitforbros(running, "TERMINATED", int(self.config.stoptimeout), False):
+        for (node, success) in self._waitforbros(running, "TERMINATED", self.config.stoptimeout, False):
             if not success:
                 # Check whether it crashed during shutdown ...
                 result = self._isrunning([node])
@@ -527,7 +527,7 @@ class Controller:
     def status(self, nodes):
         results = cmdresult.CmdResult()
 
-        showall = self.config.statuscmdshowall != "0"
+        showall = self.config.statuscmdshowall
 
         if showall:
             self.ui.info("Getting process status ...")
@@ -1148,8 +1148,7 @@ class Controller:
             results.ok = False
             return results
 
-        standalone = (self.config.standalone == "1")
-        if standalone:
+        if self.config.standalone:
             tag = "standalone"
         else:
             tag = "workers"
@@ -1277,7 +1276,7 @@ class Controller:
 
         dirs = []
 
-        if self.config.havenfs != "1":
+        if not self.config.havenfs:
             # Non-NFS, need to explicitly synchronize.
             syncs = install.get_syncs()
         else:

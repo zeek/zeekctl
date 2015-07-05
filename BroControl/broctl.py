@@ -69,7 +69,7 @@ class BroCtl(object):
                             format="%(asctime)s [%(module)s] %(message)s",
                             datefmt=self.config.timefmt,
                             level=logging.DEBUG)
-        if self.config.debug == "0":
+        if not self.config.debug:
             logging.getLogger().setLevel(100)
 
         self.executor = execute.Executor(self.localaddrs, self.config)
@@ -94,7 +94,7 @@ class BroCtl(object):
     def reload_cfg(self):
         self.config.reload_cfg()
 
-        if self.config.debug == "0":
+        if not self.config.debug:
             logging.getLogger().setLevel(100)
         else:
             logging.getLogger().setLevel(logging.NOTSET)

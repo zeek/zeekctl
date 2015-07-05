@@ -132,9 +132,9 @@ class Configuration:
                     node.env_vars.setdefault(key, val)
 
         # Set the standalone config option.
-        standalone = "0"
+        standalone = 0
         if len(self.nodestore) == 1:
-            standalone = "1"
+            standalone = 1
 
         self._set_option("standalone", standalone)
 
@@ -493,13 +493,26 @@ class Configuration:
                 # if the key already exists, just overwrite with new value
                 config[key] = val.strip()
 
+        # Convert option values to correct data type
+        for opt in options.options:
+            key = opt.name.lower()
+            if key in config:
+                if opt.type != "string":
+                    try:
+                        config[key] = int(config[key])
+                    except ValueError:
+                        raise ConfigurationError("broctl option '%s' has invalid value" % key)
+
         return config
 
     # Initialize a global option if not already set.
     def _set_option(self, key, val):
         key = key.lower()
         if key not in self.config:
-            self.config[key] = self.subst(val)
+            if isinstance(val, str):
+                self.config[key] = self.subst(val)
+            else:
+                self.config[key] = val
 
     # Set a dynamic state variable.
     def set_state(self, key, val):

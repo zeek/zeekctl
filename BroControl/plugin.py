@@ -72,8 +72,7 @@ class Plugin(object):
 
     @doc.api
     def getOption(self, name):
-        """Returns the value of one of the plugin's options, *name*. The
-        returned value will always be a string.
+        """Returns the value of one of the plugin's options, *name*.
 
         An option has a default value (see *options()*), which can be
         overridden by a user in ``broctl.cfg``. An option's value cannot be
@@ -258,10 +257,8 @@ class Plugin(object):
                 ``"bool"``, ``"string"``, or ``"int"``.
 
             ``default``
-                A string with the option's default value. Note that this must
-                always be a string, even for non-string types. For booleans,
-                use ``"0"`` for False and ``"1"`` for True. For integers, give
-                the value as a string ``"42"``.
+                The option's default value. For booleans, use ``0`` for False
+                and ``1`` for True.
 
             ``description``
                 A string with a description of the option semantics.
@@ -890,7 +887,23 @@ class Plugin(object):
             if "." in name or " " in name:
                 self.error("plugin option names must not contain dots or spaces")
 
-            if not isinstance(default, str):
-                self.error("plugin option default must be a string")
+            optname = "%s.%s" % (self.prefix(), name)
 
-            config.Config._set_option("%s.%s" % (self.prefix(), name), default)
+            if ty == "string":
+                if not isinstance(default, str):
+                    self.error("plugin option %s default must be a string" % optname)
+            else:
+                if not isinstance(default, int):
+                    self.error("plugin option %s default must be an int" % optname)
+
+            # Convert to correct data type (for options specified in broctl.cfg)
+            if ty != "string":
+                optname = optname.lower()
+                if optname in config.Config.config:
+                    val = config.Config.config[optname]
+                    try:
+                        config.Config.config[optname] = int(val)
+                    except ValueError:
+                        self.error("broctl option '%s' has invalid value" % optname)
+
+            config.Config._set_option(optname, default)

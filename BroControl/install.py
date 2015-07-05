@@ -89,7 +89,7 @@ def make_layout(path, cmdout, silent=False):
             return self.p
 
     manager = config.Config.manager()
-    broport = Port(int(config.Config.broport) - 1)
+    broport = Port(config.Config.broport - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
 
@@ -221,7 +221,7 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         if manager.type != "standalone":
             out.write("@endif\n")
 
-        if config.Config.ipv6comm == "1":
+        if config.Config.ipv6comm:
             out.write("redef Communication::listen_ipv6 = T ;\n")
         else:
             out.write("redef Communication::listen_ipv6 = F ;\n")

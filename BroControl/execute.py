@@ -240,7 +240,7 @@ class Executor:
                 nodecmdlist.append((bronode.addr, cmdargs))
                 logging.debug("%s: %s", bronode.host, " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, int(self.config.commandtimeout)):
+        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.config.commandtimeout):
             nodecmd = dd[host].pop(0)
             bronode = nodecmd[0]
             if not isinstance(result, Exception):
