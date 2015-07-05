@@ -987,7 +987,7 @@ class Controller:
             if isrunning:
                 pid = node.getPID()
                 pids[node.name] = [pid]
-                parents[node.name] = str(pid)
+                parents[node.name] = pid
 
                 cmds += [(node, "get-childs", [str(pid)])]
             else:
@@ -1054,8 +1054,9 @@ class Controller:
             try:
                 for p in procs:
                     d = {}
-                    d["pid"] = int(p[0])
-                    d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                    pid = int(p[0])
+                    d["pid"] = pid
+                    d["proc"] = (pid == parents[node.name] and "parent" or "child")
                     d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
                     d["rss"] = int(float(p[2]))
                     d["cpu"] = p[3]

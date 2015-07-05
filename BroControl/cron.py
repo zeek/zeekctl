@@ -78,12 +78,12 @@ class CronTasks:
 
                             last = -1.0
                             if tag in self.config.state:
-                                last = float(self.config.state[tag])
+                                last = self.config.state[tag]
 
-                            if float(val) == 0.0 and last != 0.0:
+                            if val == 0.0 and last != 0.0:
                                 self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
-                            if float(val) != 0.0 and last == 0.0:
+                            if val != 0.0 and last == 0.0:
                                 self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
                             self.config.set_state(tag, val)
@@ -113,13 +113,13 @@ class CronTasks:
 
                 if perc > 100 - minspace:
                     if key in self.config.state:
-                        if float(self.config.state[key]) > 100 - minspace:
+                        if self.config.state[key] > 100 - minspace:
                             # Already reported.
                             continue
 
                     self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
-                self.config.set_state(key, "%.1f" % perc)
+                self.config.set_state(key, perc)
 
     def expire_logs(self):
         if self.config.logexpireinterval == 0 and self.config.statslogexpireinterval == 0:
@@ -135,15 +135,15 @@ class CronTasks:
     def check_hosts(self):
         for host, status in self.executor.host_status():
             tag = "alive-%s" % host
-            alive = status and "1" or "0"
+            alive = status
 
             if tag in self.config.state:
                 previous = self.config.state[tag]
 
                 if alive != previous:
-                    self.pluginregistry.hostStatusChanged(host, alive == "1")
+                    self.pluginregistry.hostStatusChanged(host, alive)
                     if self.config.mailhostupdown:
-                        self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
+                        self.ui.info("host %s %s" % (host, alive and "up" or "down"))
 
             self.config.set_state(tag, alive)
 
