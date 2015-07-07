@@ -187,7 +187,7 @@ class BroCtl(object):
         peers = config.Config.nodes("peers")
         logging.debug(str(config.Config.get_local_id()) +  " create overlay with " + str(len(peers)) + " successors")
 
-        results = self.controller.start_peers(peers)
+        results = self.controller._start_peers(peers)
 
         return results
 

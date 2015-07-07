@@ -179,8 +179,8 @@ class Controller:
 
         return results
 
-    def start_peers(self, peers):
-        logging.debug(" * start peers")
+    def _start_peers(self, peers):
+        logging.debug("*** start peers")
         localNode = self.config.get_local()
 
         results = cmdresult.CmdResult()
@@ -192,6 +192,20 @@ class Controller:
         logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " start " + str(len(peers)) + " peers")
 
         # TODO Ignore peers which are still running.
+        # Ignore nodes which are still running.
+        #filtered = []
+        #for (peer, isrunning) in self._isrunning(peers):
+        #    if not isrunning:
+        #        filtered += [peer]
+        #        if peer.hasCrashed():
+        #            self.ui.info("starting %s (was crashed) ..." % peer.name)
+        #        else:
+        #            self.ui.info("starting dbroctld at %s ..." % peer.name)
+        #    else:
+        #        self.ui.info("%s still running" % peer.name)
+        #
+        #peers = filtered
+
         # TODO Generate crash report for any crashed nodes.
 
         # Start dbroctld and keep connection
@@ -200,22 +214,19 @@ class Controller:
             logging.debug(str(self.config.get_local_id()) + " - Starting dbroctld on peer " + str(peer.name))
             cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
 
+
         peers = []
-        for (peer, success, output) in self.executor.run_cmds(cmds, shell=True, helper=False):
-            logging.debug("command to " + str(peer.name) + " success: " + str(success) + " output: " + str(output))
+        # Note: the shell is used to interpret the command
+        for (peer, success, output) in self.executor.run_helper(cmds, shell=True):
             if success:
                 peers += [peer]
-                if (output and isinstance(output, int)):
-                    logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " setting PID to " + str(output[0]))
-                    peer.setPID(int(output[0]))
-                else:
-                    logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " no PID value could be obtained for " + str(peer.name))
+                peer.setPID(int(output[0]))
             else:
-                self.ui.error(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % str(peer.name))
+                self.ui.error(str(self.config.get_local_id()) + " :: cannot start %s; check output of \"diag\"" % peer.name)
                 results.set_node_fail(peer)
+                logging.debug(" --- result is" + str(results))
                 if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
+                    self.ui.error("\n".join(output))
 
         return results
 
@@ -317,7 +328,7 @@ class Controller:
                 results += [(node, False)]
                 continue
             else:
-                logging.debug("pid for " + str(node.name))
+                logging.debug("pid for " + str(node.name) + " is " + str(pid))
 
             cmds += [(node, "check-pid", [str(pid)])]
 
@@ -325,12 +336,14 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
+                logging.debug("check-pid " + str(output))
                 if self.config.cron == "0":
                     self.ui.error("cannot connect to %s" % node.name)
                 continue
 
             running = output[0] == "running" and True or False
             results += [(node, running)]
+            logging.debug("_isrunning: " + str(output))
 
             if not running:
                 if setcrashed:
@@ -420,6 +433,7 @@ class Controller:
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
+        logging.debug("make_crash_reports")
         for n in nodes:
             self.pluginregistry.broProcessDied(n)
 
@@ -459,9 +473,8 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            else:
+            elif n.type != "peer":
                 manager += [n]
-
 
         # Stop nodes. Do it in the order workers, proxies, manager
         # (the reverse of "start").

@@ -10,15 +10,17 @@ import json
 from collections import defaultdict
 from Queue import Queue
 from threading import Thread
-
 from BroControl.broctl import BroCtl
+import pybroker
+
 
 # Global options
 # TODO need to be moved to options.py
-server_port = 10043
+server_port = 9999
 peer_timeout = 50
 polling_interval = 0.2
 
+BROKER_COM = True
 
 class DBroCtld(Thread):
     def __init__(self, logs, basedir):
@@ -174,6 +176,7 @@ class DBroCtld(Thread):
 
     def stop(self):
         print "exit dbroctld..."
+        logging.debug("exit dbroctld")
 
         # Shutting down the local bro instances
         self.broctl.stop()
