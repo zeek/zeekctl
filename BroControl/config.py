@@ -614,21 +614,39 @@ class Configuration:
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
-    # no longer part of the current node configuration, but that are still
-    # running).
+    # still running but are either no longer part of the current node
+    # configuration or have moved to a new host).
     def _warn_dangling_bro(self):
-        nodes = [ n.name for n in self.nodes() ]
+        nodes = {}
+        for n in self.nodes():
+            nodes[n.name] = n.host
 
         for key in self.state.keys():
-            # Check if a PID is defined for a Bro node
-            if key.endswith("-pid") and self.get_state(key):
-                nn = key[:-4]
-                # Check if node name is in list of all known nodes
-                if nn not in nodes:
-                    hostkey = key.replace("-pid", "-host")
-                    hname = self.get_state(hostkey)
-                    if hname:
-                        self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nn, hname, self.get_state(key)))
+            # Look for a PID associated with a Bro node
+            if not key.endswith("-pid"):
+                continue
+
+            pid = self.get_state(key)
+            if not pid:
+                continue
+
+            # Get node name and host name for this node
+            nname = key[:-4]
+            hostkey = key.replace("-pid", "-host")
+            hname = self.get_state(hostkey)
+            if not hname:
+                continue
+
+            # If node is not a known node or if host has changed, then
+            # we must warn about dangling Bro node.
+            if nname not in nodes or hname != nodes[nname]:
+                self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nname, hname, pid))
+                # Set the "expected running" flag to False so cron doesn't try
+                # to start this node.
+                expectkey = key.replace("-pid", "-expect-running")
+                self.set_state(expectkey, False)
+                # Clear the PID so we don't keep getting warnings.
+                self.set_state(key, None)
 
     # Return a hash value (as a string) of the current broctl configuration.
     def _get_broctlcfg_hash(self, filehash=False):
