@@ -99,6 +99,7 @@ class BroCtl(object):
         else:
             logging.getLogger().setLevel(logging.NOTSET)
 
+        self.executor.finish()
         self.plugins.initPluginOptions()
         self.config.initPostPlugins()
         self.plugins.initPlugins(self.ui)
