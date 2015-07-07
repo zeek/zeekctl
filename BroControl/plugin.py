@@ -112,11 +112,10 @@ class Plugin(object):
         Note that a plugin cannot change any global BroControl state
         variables.
         """
-        if not isinstance(value, str):
-            self.error("values for a plugin state variable must be strings")
-
         if "." in name or " " in name:
-            self.error("plugin state variable names must not contain dots or spaces")
+            self.error("plugin state variable name must not contain dots or spaces")
+        if not isinstance(value, str):
+            self.error("value for a plugin state variable must be a string")
 
         name = "%s.state.%s" % (self.prefix(), name)
         config.Config.set_state(name, value)
