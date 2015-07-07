@@ -131,6 +131,10 @@ class Configuration:
                     # Values from node.cfg take precedence over broctl.cfg
                     node.env_vars.setdefault(key, val)
 
+        # Check state store for any running nodes that are no longer in the
+        # current node config.
+        self._warn_dangling_bro()
+
         # Set the standalone config option.
         standalone = 0
         if len(self.nodestore) == 1:
@@ -550,7 +554,7 @@ class Configuration:
 
         return False
 
-    # Warn user to run broctl install if any changes are detected to broctl
+    # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
     # are missing.  If the "isinstall" parameter is True, then we're running
     # the install or deploy command, so some of the warnings are skipped.
@@ -566,7 +570,6 @@ class Configuration:
                 if not isinstall:
                     self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
 
-                self._warn_dangling_bro()
                 return
         else:
             missingstate = True
