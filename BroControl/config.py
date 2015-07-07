@@ -3,6 +3,7 @@
 import hashlib
 import os
 import socket
+import subprocess
 import re
 
 from BroControl import py3bro
@@ -26,18 +27,19 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
+    def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
         self.ui = ui
         self.basedir = basedir
         self.cfgfile = cfgfile
         self.broscriptdir = broscriptdir
-        self.localaddrs = localaddrs
         global Config
         Config = self
 
         self.config = {}
         self.state = {}
         self.nodestore = {}
+
+        self.localaddrs = self._get_local_addrs()
 
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
@@ -444,23 +446,27 @@ class Configuration:
         proxy = False
 
         manageronlocalhost = False
+        # Note: this is a subset of localaddrs
+        localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
             if n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
-                if n.addr in ("127.0.0.1", "::1"):
+                if n.addr in localhostaddrs:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl only on manager node")
+                    raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
             elif n.type == "proxy":
                 proxy = True
 
             elif n.type == "standalone":
                 standalone = True
+                if n.addr not in self.localaddrs:
+                    raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
         if standalone:
             if len(nodestore) > 1:
@@ -474,8 +480,8 @@ class Configuration:
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.addr not in ("127.0.0.1", "::1"):
-                    raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in node config")
+                if n.type != "manager" and n.addr not in localhostaddrs:
+                    raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 
     # Parses broctl.cfg and returns a dictionary of all entries.
@@ -531,6 +537,55 @@ class Configuration:
     # Read dynamic state variables.
     def read_state(self):
         self.state = dict(self.state_store.items())
+
+    # Returns a list of the IP addresses associated with local interfaces.
+    # For IPv6 addresses, zone_id and prefix length are removed if present.
+    def _get_local_addrs(self):
+        try:
+            # On Linux, ifconfig is often not in the user's standard PATH.
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, err = proc.communicate()
+            success = proc.returncode == 0
+        except OSError:
+            success = False
+
+        if success:
+            localaddrs = []
+            if py3bro.using_py3:
+                out = out.decode()
+            for line in out.splitlines():
+                fields = line.split()
+                if "inet" in fields or "inet6" in fields:
+                    addrfield = False
+                    for field in fields:
+                        if field == "inet" or field == "inet6":
+                            addrfield = True
+                        elif addrfield and field != "addr:":
+                            locaddr = field
+                            # remove "addr:" prefix (if any)
+                            if field.startswith("addr:"):
+                                locaddr = field[5:]
+                            # remove everything after "/" or "%" (if any)
+                            locaddr = locaddr.split("/")[0]
+                            locaddr = locaddr.split("%")[0]
+                            localaddrs.append(locaddr)
+                            break
+
+            if not localaddrs:
+                raise ConfigurationError("ifconfig does not show any local IP addresses")
+        else:
+            localaddrs = ["127.0.0.1", "::1"]
+            try:
+                addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
+            except Exception:
+                addrinfo = []
+
+            for ai in addrinfo:
+                localaddrs.append(ai[4][0])
+
+            self.ui.error("ifconfig failed (local IP addrs are: %s)" % ", ".join(localaddrs))
+
+        return localaddrs
 
     # Record the Bro version.
     def record_bro_version(self):

@@ -60,8 +60,7 @@ class BroCtl(object):
         self.ui = ui
         self.brobase = basedir
 
-        self.localaddrs = execute.get_local_addrs(self.ui)
-        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, self.localaddrs, state)
+        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, state)
 
         # clear the log handlers (set by previous calls to logging.*)
         logging.getLogger().handlers = []
@@ -72,7 +71,7 @@ class BroCtl(object):
         if not self.config.debug:
             logging.getLogger().setLevel(100)
 
-        self.executor = execute.Executor(self.localaddrs, self.config)
+        self.executor = execute.Executor(self.config)
         self.plugins = pluginreg.PluginRegistry()
         self.setup()
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
