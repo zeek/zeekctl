@@ -207,6 +207,7 @@ class BroCtl(object):
         results = self.controller.start(nodes)
         self.plugins.cmdPostWithResults("start", results.get_node_data())
 
+        logging.debug("broctl: start, results " + str(results))
         return results
 
     @expose
@@ -454,7 +455,8 @@ class BroCtl(object):
         results = self.controller.netstats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
 
-        return results
+        logging.debug("broctl:netstats " + str(results))
+        return results.get_node_output()
 
     @expose
     def execute(self, cmd):

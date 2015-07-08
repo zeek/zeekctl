@@ -193,18 +193,18 @@ class Controller:
 
         # TODO Ignore peers which are still running.
         # Ignore nodes which are still running.
-        #filtered = []
-        #for (peer, isrunning) in self._isrunning(peers):
-        #    if not isrunning:
-        #        filtered += [peer]
-        #        if peer.hasCrashed():
-        #            self.ui.info("starting %s (was crashed) ..." % peer.name)
-        #        else:
-        #            self.ui.info("starting dbroctld at %s ..." % peer.name)
-        #    else:
-        #        self.ui.info("%s still running" % peer.name)
-        #
-        #peers = filtered
+        filtered = []
+        for (peer, isrunning) in self._isrunning(peers):
+            if not isrunning:
+                filtered += [peer]
+                if peer.hasCrashed():
+                    self.ui.info("starting %s (was crashed) ..." % peer.name)
+                else:
+                    self.ui.info("starting dbroctld at %s ..." % peer.name)
+            else:
+                self.ui.info("%s still running" % peer.name)
+
+        peers = filtered
 
         # TODO Generate crash report for any crashed nodes.
 

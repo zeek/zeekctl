@@ -11,7 +11,7 @@ from collections import defaultdict
 from Queue import Queue
 from threading import Thread
 from BroControl.broctl import BroCtl
-import pybroker
+from BroControl import cmdresult
 
 
 # Global options
@@ -73,44 +73,48 @@ class DBroCtld(Thread):
             self.recv()
 
     def recv(self):
-        (dtype, data) = self.squeue.get()
-        logging.debug("dtype: " + str(dtype) + " with data: " + str(data))
+        (dtype, peer, data) = self.squeue.get()
+        (addr, port) = peer
+        logging.debug("dtype: " + str(dtype) + " with data: " + str(data) + " from peer " + str(addr))
 
         if dtype not in ["msg", "peer-connect", "peer-disconnect"]:
             logging.debug("DBroctlD: malformed data type", dtype, "received")
             raise RuntimeError("DBroctlD: malformed data type", dtype, "received")
 
         if dtype == "msg":
-            self.handleMessage(data)
+            self.handleMessage(peer, data)
 
         elif dtype == "peer-connect":
-            self.handlePeerConnect(data)
+            self.handlePeerConnect(peer)
 
         elif dtype == "peer-disconnect":
-            self.handlePeerDisconnect(data)
+            self.handlePeerDisconnect(peer)
 
-    def handleMessage(self, msg):
-        logging.debug("handleMessage: msg received: " +  str(msg))
+    def handleMessage(self, peer, msg):
+        (addr, port) = peer
+        logging.debug("handleMessage: msg " +  str(msg) + " from peer " + str(addr) + " received")
 
         if 'type' not in msg.keys():
             logging.debug("Error: received a msg with no type")
             raise RuntimeError("malformed message received")
 
         if msg["type"] == "command":
-            self.handleCommand(msg)
+            self.handleCommand(peer, msg)
 
         elif msg["type"] == "ack":
             logging.debug("Acknowledgement received")
 
         elif msg["type"] == "result":
-            self.handleResult(msg)
+            self.handleResult(peer, msg)
 
         else:
             logging.debug("handleMessage: unknown message type received")
             raise RuntimeError("message type unknown")
 
-    def handleCommand(self, msg):
+    def handleCommand(self, peer, msg):
         cmd = msg['payload']
+        if peer != self.parent_address:
+            logging.debug("cmd from peer other than parent received")
 
         # Distinguish between command and its parameters
         args= cmd.split(" ")
@@ -130,8 +134,8 @@ class DBroCtld(Thread):
             except Exception:
                 res = traceback.format_exc()
 
-            if res:
-                logging.debug("result of cmd " + str(cmd) + " is " + str(res.get_node_output()))
+            # handle the result of the command
+            self.processResult(peer, cmd, res)
 
             # Forward command ...
             self.forwardCommand(cmd)
@@ -145,8 +149,28 @@ class DBroCtld(Thread):
         else:
             logging.debug("handleCommand: unknown command, ignoring it")
 
-    def handleResult(self, res):
-        logging.debug("result received: " + str(res))
+    def processResult(self, peer, cmd, res):
+        if res:
+            logging.debug("result of cmd " + str(cmd) + " is " + str(res))
+        else:
+            logging.debug("no result for cmd " + str(cmd))
+
+        if cmd == "netstats":
+            self.processResult_netstat(peer, res)
+
+    def processResult_netstat(self, peer, res):
+        (addr, port) = peer
+        logging.debug("rcvd netstats result from peer " + str(addr))
+        nlist = []
+        for (n, v, r) in res:
+            logging.debug(" - " + str(n) + ":" + str(r))
+            nlist.append((addr, r))
+
+        if self.bclient:
+            self.bclient.sendResult("netstats", nlist)
+
+    def handleResult(self, peer, res):
+        logging.debug("Recvd result from peer " + str(peer) +  ":" + str(res))
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)
@@ -170,6 +194,10 @@ class DBroCtld(Thread):
     def sendCommand(self, peer, cmd):
         msg = {'type':'command', 'payload':cmd}
         self.bserver.send(peer, msg)
+
+    def sendResult(self, peer, res):
+        msg = {'type':'result', 'payload':res}
+        self.bclient.send(peer, msg)
 
     def noop(self, *args, **kwargs):
         return True
@@ -210,15 +238,15 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
         logging.debug("Peer connected: " + str(peer))
 
         self.outbound[peer] = handler
-        self.squeue.put(("peer-connect", peer))
+        self.squeue.put(("peer-connect", peer, None))
 
     def peer_disconnected(self, peer):
         logging.debug("Peer disconnected: " + str(peer))
         self.outbound.pop(peer)
-        self.squeue.put(("peer-disconnect", peer))
+        self.squeue.put(("peer-disconnect", peer, None))
 
-    def receive_data(self, data):
-        self.squeue.put(("msg", data))
+    def receive_data(self, peer, data):
+        self.squeue.put(("msg", peer, data))
 
     def send(self, peer, data):
         if peer in self.outbound:
@@ -244,7 +272,7 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
                     data = json.loads(data)
                     counter = 0
                     logging.debug("Handler for peer " + str(self.client_address) + " received data: " + str(data))
-                    self.server.receive_data(data)
+                    self.server.receive_data(self.client_address, data)
 
                     # Send a reply
                     if 'type' in data.keys() and data['type'] != 'ack':
@@ -292,13 +320,14 @@ class BClient():
             while self.running:
                 data = json.loads(self.socket.recv(1024).strip())
                 if data:
-                    self.cqueue.put(("msg", data))
+                    self.cqueue.put(("msg", self.server_address, data))
                     counter = 0
 
                     # Send a reply
                     if 'type' in data.keys() and data['type'] != 'ack':
                         reply = {'type': 'ack', 'payload':'ack'}
-                        self.socket.sendto(json.dumps(reply), self.server_address)
+                        self.send(reply)
+                        #self.socket.sendto(json.dumps(reply), self.server_address)
 
                 else:
                     counter += 1
@@ -311,6 +340,13 @@ class BClient():
 
         finally:
             self.finish()
+
+    def sendResult(self, cmd, data):
+        msg = {'type': 'result', 'for': cmd, 'payload': data}
+        self.send(msg)
+
+    def send(self, msg):
+        self.socket.sendto(json.dumps(msg), self.server_address)
 
     def finish(self):
         self.socket.close()

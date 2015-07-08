@@ -17,6 +17,8 @@ class BClient(cmd.Cmd):
         self.sock = None
 
     def connect(self, host, port):
+        #if self.sock:
+        #    print ("we are already connected to " + str(self.host) + ":" + str(self.port))
         if host and port:
             self.host = host
             self.port = port
@@ -28,8 +30,7 @@ class BClient(cmd.Cmd):
                 return
             print "connected..."
         else:
-            raise RuntimeError("connect: no host or no port specified")
-
+            print ("no host or no port specified")
 
     def send_receive(self, data):
         if not self.sock:
@@ -81,36 +82,54 @@ class BClient(cmd.Cmd):
 
     def do_start(self, line):
         """ start the bro instances in the deep cluster """
-        print "starting bro instances of deep cluster..."
-        self.send("start")
+        if self.sock:
+            print "starting bro instances of deep cluster..."
+            self.send("start")
+        else:
+            print ("not connected yet")
 
     def do_stop(self, line):
         """ stop the bro instances in the deep cluster """
-        print "stopping bro instances of deep cluster..."
-        self.send("stop")
+        if self.sock:
+            print "stopping bro instances of deep cluster..."
+            self.send("stop")
+        else:
+            print ("not connected yet")
 
     def do_shutdown(self, line):
         """ shutdown the deep cluster """
-        print "shutting down deep cluster..."
-        self.send("shutdown")
+        if self.sock:
+            print "shutting down deep cluster..."
+            self.send("shutdown")
+        else:
+            print ("not connected yet")
 
     def do_disconnect(self, line):
         """ shutdown the deep cluster and disconnect """
         if self.sock:
-            self.do_shutdown()
-        self.finish()
+            self.sock.close()
 
     def do_exit(self, line):
         """ exit client """
+        if self.sock:
+            self.do_shutdown()
         self.finish()
-        sys.exit()
 
     def do_status(self, line):
         """ gives status """
         if self.sock:
             print "connected to host " + str(self.host) + "::" + str(self.port)
         else:
-            print "not connected yet"
+            print ("not connected yet")
+
+    def do_netstats(self, line):
+        """ sends out the netstats command """
+        if self.sock:
+            self.send("netstats")
+        else:
+            print ("not connected yet")
+
+
 
 
 

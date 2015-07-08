@@ -2,16 +2,12 @@
 
 child=""
 
-# Make sure that a ".pid" file exists when this script terminates so that
-# the "start" helper script doesn't hang.
 . `dirname $0`/broctl-config.sh
+dbroctld=${bindir}/dbroctld 
 . ${brobase}/how_to_run_broctl
 
-dbroctld=${bindir}/dbroctld 
+nohup $dbroctld 0<&- &> nohup.out &
 
-screen -S dbroctld -dms "${dbroctld}" &
-#child= screen -list | grep dbroctld | cut -f1 -d'.' | sed 's/\W//g'
 child=$!
-child=$((child + 1))
 echo $child >.pid
 echo $child
