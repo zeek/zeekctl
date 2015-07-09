@@ -79,6 +79,7 @@ class BClient(cmd.Cmd):
 
         host, port = linelist
         self.connect(host, int(port))
+        #self.send("dclient")
 
     def do_start(self, line):
         """ start the bro instances in the deep cluster """
@@ -101,6 +102,8 @@ class BClient(cmd.Cmd):
         if self.sock:
             print "shutting down deep cluster..."
             self.send("shutdown")
+            time.sleep(1)
+            self.sock.close()
         else:
             print ("not connected yet")
 
@@ -126,12 +129,9 @@ class BClient(cmd.Cmd):
         """ sends out the netstats command """
         if self.sock:
             self.send("netstats")
+            print "obtaining netstats information from all bros"
         else:
             print ("not connected yet")
-
-
-
-
 
 def main(argv):
     client = BClient(None, None)
