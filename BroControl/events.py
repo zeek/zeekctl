@@ -9,6 +9,12 @@ try:
 except ImportError:
     broccoli = None
 
+try:
+    import pybroker
+    broker = True
+except ImportError:
+    broker = False
+
 
 # Broccoli/Broker communication with running nodes.
 
@@ -34,10 +40,6 @@ def send_events_parallel(events):
     else:
         return send_events_parallel_broccoli(events)
 
-def send_events_parallel_broker(events):
-    logging.debug("send_events_parallel: use broker, do nothing for now")
-    return None
-
 def send_events_parallel_broccoli(events):
     results = []
     sent = []
@@ -48,19 +50,19 @@ def send_events_parallel_broccoli(events):
             results += [(node, False, "no Python bindings for Broccoli installed")]
             continue
 
-        (success, bc) = _send_event_init(node, event, args, result_event)
+        (success, bc) = _send_event_init_broccoli(node, event, args, result_event)
         if success and result_event:
             sent += [(node, result_event, bc)]
         else:
             results += [(node, success, bc)]
 
     for (node, result_event, bc) in sent:
-        (success, result_args) = _send_event_wait(node, result_event, bc)
+        (success, result_args) = _send_event_wait_broccoli(node, result_event, bc)
         results += [(node, success, result_args)]
 
     return results
 
-def _send_event_init(node, event, args, result_event):
+def _send_event_init_broccoli(node, event, args, result_event):
     host = util.scope_addr(node.addr)
 
     try:
@@ -78,7 +80,70 @@ def _send_event_init(node, event, args, result_event):
 
     return (True, bc)
 
-def _send_event_wait(node, result_event, bc):
+def send_events_parallel_broker(events):
+    logging.debug("send_events_parallel: use broker")
+    results = []
+    sent = []
+
+    logging.debug("here we are")
+    for (node, event, args, result_event) in events:
+        logging.debug("check event " + str(event))
+        if not broker:
+            logging.debug("send_events_parallel_broker: no Python bindings for Broker installed")
+            results += [(node, False, "no Python bindings for Broker installed")]
+            continue
+
+        (success, result_args) = _send_event_broker(node, event, args, result_event)
+        if success and result_args:
+            results += [(node, success, result_args)]
+
+    return results
+
+def _send_event_broker(node, event, args, result_event):
+    host = util.scope_addr(node.addr)
+
+    logging.debug("connect to broker on host " + str(host) + " and port " + str(node.getPort()))
+
+    try:
+        ep = pybroker.endpoint("broctl", pybroker.AUTO_PUBLISH)
+        ep2 = ep.peer(host, node.getPort(), 1)
+        ep.advertise("/bro/event/response")
+    except IOError as e:
+        logging.debug("broker: cannot connect to node %s", node.name)
+        return (False, str(e))
+
+    logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
+    time.sleep(1)
+    oq = ep.outgoing_connection_status()
+    inter = oq.want_pop()
+    if not inter:
+        logging.debug("no broker connection could be established")
+        return(False, "no broker connection could be established")
+
+    rqueue = pybroker.message_queue("/bro/event/response", ep)
+    ep.publish("/bro/event/request")
+
+    vec = pybroker.vector_of_data(1, pybroker.data(event))
+    ep.send("/bro/event/request", vec)
+
+    resp = None
+    for c in range(0,3):
+        msg = rqueue.want_pop()
+        if msg:
+            for i in pybroker.deque_of_message(msg):
+                for j in i:
+                 resp = str(j)
+        time.sleep(1)
+
+    resp = resp.strip()
+    logging.debug("event broker: " + str(event) + " resp " + str(resp))
+
+    if resp:
+        return (True, resp)
+    else:
+        return (False, "no response obtained")
+
+def _send_event_wait_broccoli(node, result_event, bc):
     # Wait until we have sent the event out.
     cnt = 0
     while bc.processInput():
@@ -106,6 +171,7 @@ def _send_event_wait(node, result_event, bc):
 
     logging.debug("broccoli: %s(%s) from node %s", result_event, ", ".join(bc.result_args), node.name)
     return (True, bc.result_args)
+
 
 def _event_callback(bc):
     def save_results(*args):

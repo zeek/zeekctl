@@ -67,6 +67,8 @@ def _make_bro_params(node, live):
     args += ["broctl"]
 
     if node.type == "standalone":
+        logging.debug("policydir: " + config.Config.policydir)
+        #args += [config.Config.policydir + "policy/frameworks/control/controllee-broker.bro"]
         args += config.Config.sitepolicystandalone.split()
         args += ["broctl/standalone"]
 
@@ -1212,6 +1214,7 @@ class Controller:
 
         eventlist = []
         for (node, isrunning) in running:
+            logging.debug("query netstats for node" + str(node.name))
             if isrunning:
                 eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
@@ -1235,7 +1238,11 @@ class Controller:
                 out = args[0].strip()
             else:
                 out = args
-            results.set_node_output(node, success, out)
+
+            if config.Config.use_broker():
+                results.set_node_output(node, success, args)
+            else:
+                results.set_node_output(node, success, out)
 
         return results
 

@@ -176,7 +176,7 @@ class DBroCtld(Thread):
         self.commands['netstats'] = []
 
         for (n, v, r) in res:
-            logging.debug(" - " + str(n) + " : " + str(r))
+            logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
             self.commands['netstats'].append((str(self.server_address), str(n), str(r)))
 
         if self.bclient and not self.outbound:

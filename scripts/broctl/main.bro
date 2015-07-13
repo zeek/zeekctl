@@ -6,7 +6,7 @@
 #       communications framework to hold open a port which can cause
 #       high CPU usage on lightly loaded links due to the core packet
 #       extraction loop.
-@load frameworks/control/controllee
+@load frameworks/control/controllee-broker
 
 ## All nodes allow remote control from loopback.  This solves an occasional
 ## problem in some all-local installations.
