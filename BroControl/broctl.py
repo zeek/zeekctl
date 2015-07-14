@@ -418,22 +418,38 @@ class BroCtl(object):
     @expose
     @lock_required
     def print_id(self, id, node_list=None):
+        nodes = None
+        if not node_list:
+            if self.config.nodes("standalone"):
+                node_list = "standalone"
+            elif self.config.nodes("workers"):
+                node_list = "workers"
+
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("print", nodes, id)
         results = self.controller.print_id(nodes, id)
         self.plugins.cmdPostWithNodes("print", nodes, id)
 
-        return results
+        #return results
+        return results.get_node_output()
 
     @expose
     @lock_required
     def peerstatus(self, node_list=None):
+
+        if not node_list:
+            if self.config.nodes("standalone"):
+                node_list = "standalone"
+            elif self.config.nodes("workers"):
+                node_list = "workers"
+
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
         results = self.controller.peerstatus(nodes)
         self.plugins.cmdPostWithNodes("peerstatus", nodes)
 
-        return results
+        #return results
+        return results.get_node_output()
 
     @expose
     @lock_required
@@ -443,7 +459,6 @@ class BroCtl(object):
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
-        nodes = None
         if not node_list:
             if self.config.nodes("standalone"):
                 node_list = "standalone"
@@ -455,7 +470,7 @@ class BroCtl(object):
         results = self.controller.netstats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
 
-        logging.debug("broctl:netstats " + str(results))
+        #return results
         return results.get_node_output()
 
     @expose

@@ -85,35 +85,31 @@ def send_events_parallel_broker(events):
     results = []
     sent = []
 
-    logging.debug("here we are")
     for (node, event, args, result_event) in events:
         logging.debug("check event " + str(event))
         if not broker:
-            logging.debug("send_events_parallel_broker: no Python bindings for Broker installed")
+            logging.debug("send_events_parallel_broker: no Python bindings for Broker")
             results += [(node, False, "no Python bindings for Broker installed")]
             continue
 
         (success, result_args) = _send_event_broker(node, event, args, result_event)
         if success and result_args:
             results += [(node, success, result_args)]
+        else:
+            logging.debug("local cmd failed")
+            results += [(node, success, "cmd failed")]
 
     return results
 
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)
-
-    logging.debug("connect to broker on host " + str(host) + " and port " + str(node.getPort()))
-
-    try:
-        ep = pybroker.endpoint("broctl", pybroker.AUTO_PUBLISH)
-        ep2 = ep.peer(host, node.getPort(), 1)
-        ep.advertise("/bro/event/response")
-    except IOError as e:
-        logging.debug("broker: cannot connect to node %s", node.name)
-        return (False, str(e))
+    ep = pybroker.endpoint("broctl", pybroker.AUTO_PUBLISH)
+    ep.peer(host, node.getPort(), 1)
+    ep.advertise("/bro/event/response")
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
     time.sleep(1)
+
     oq = ep.outgoing_connection_status()
     inter = oq.want_pop()
     if not inter:
@@ -126,21 +122,25 @@ def _send_event_broker(node, event, args, result_event):
     vec = pybroker.vector_of_data(1, pybroker.data(event))
     ep.send("/bro/event/request", vec)
 
+    msg = None
     resp = None
-    for c in range(0,3):
+    # timeout of at most 3 seconds
+    time.sleep(1)
+    for c in range(0,2):
         msg = rqueue.want_pop()
         if msg:
             for i in pybroker.deque_of_message(msg):
                 for j in i:
-                 resp = str(j)
+                    resp = str(j).strip()
+        if resp:
+            break
         time.sleep(1)
 
-    resp = resp.strip()
-    logging.debug("event broker: " + str(event) + " resp " + str(resp))
-
-    if resp:
+    if msg:
+        logging.debug("broker: " + str(event) + " resp " + str(resp))
         return (True, resp)
     else:
+        logging.debug("broker: no response obtained")
         return (False, "no response obtained")
 
 def _send_event_wait_broccoli(node, result_event, bc):

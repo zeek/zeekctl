@@ -1224,10 +1224,14 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_peerstatus(nodes):
             if success:
-                out = args[0]
+                out = args[0].strip()
             else:
                 out = args
-            results.set_node_output(node, success, out)
+
+            if config.Config.use_broker():
+                results.set_node_output(node, success, args)
+            else:
+                results.set_node_output(node, success, out)
 
         return results
 

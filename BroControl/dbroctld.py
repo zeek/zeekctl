@@ -114,14 +114,14 @@ class DBroCtld(Thread):
             raise RuntimeError("message type unknown")
 
     def handleCommand(self, peer, msg):
-        cmd = msg['payload']
+        ocmd = msg['payload']
         if peer != self.parent_address:
             logging.debug("cmd from peer " + str(peer) + " received that is not our parent " + str(self.parent_address))
         else:
             logging.debug("cmd from our parent " + str(peer) + " received")
 
         # Distinguish between command and its parameters
-        args= cmd.split(" ")
+        args= ocmd.split(" ")
         cmd = args[0]
         args.remove(cmd)
 
@@ -146,7 +146,7 @@ class DBroCtld(Thread):
             self.processResult(cmd, res)
 
             # Forward command ...
-            self.forwardCommand(cmd)
+            self.forwardCommand(ocmd)
 
         elif cmd == 'shutdown':
             # Forward command ...
@@ -163,29 +163,32 @@ class DBroCtld(Thread):
             logging.debug("result of cmd " + str(cmd) + " is " + str(res))
         else:
             logging.debug("no result for cmd " + str(cmd))
+            return
 
-        if cmd == "netstats":
-            self.processResult_netstat(res)
+        if cmd in ["netstats", "peerstatus", "print_id"]:
+            self.processResultHierarchy(cmd, res)
 
-    def processResult_netstat(self, res):
-        logging.debug("rcvd local netstats results")
-
-        if 'netstats' in self.commands:
-            logging.debug("netstats already in result list")
+    def processResultHierarchy(self, cmd, res):
+        if cmd in self.commands:
+            logging.debug( "cmd " + str(cmd) + " already in result list")
             raise RuntimeError("old netstats results available!")
-        self.commands['netstats'] = []
+        logging.debug(" result for cmd " + str(cmd) + " obtained: " + str(res))
+
+        self.commands[cmd] = []
+        if not res:
+            res = [(None, None, None)]
 
         for (n, v, r) in res:
             logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
-            self.commands['netstats'].append((str(self.server_address), str(n), str(r)))
+            self.commands[cmd].append((str(self.server_address), str(n), str(r)))
 
         if self.bclient and not self.outbound:
-            rlist = self.commands['netstats']
-            logging.debug("send results in processResult_netstat " + str(rlist))
-            self.sendResult("netstats", rlist)
-            del self.commands['netstats']
+            rlist = self.commands[cmd]
+            logging.debug("send results for cmd " + str(cmd) + " : " + str(rlist))
+            self.sendResult(cmd, rlist)
+            del self.commands[cmd]
         else:
-            logging.debug("we wait for netstat results from our successors")
+            logging.debug("we wait for " + str(cmd) + " results from our successors")
 
     # handle result messages from subsequent dbroctld-peers
     def handleResult(self, peer, res):
@@ -193,24 +196,23 @@ class DBroCtld(Thread):
 
         if not 'for' in res.keys():
             raise RuntimeError("Received result message with invalid format")
-        if res['for'] == "netstats":
-            self.handleResult_netstat(peer, res['payload'])
+        self.handleResult_hierarchy(res['for'], peer, res['payload'])
 
-    def handleResult_netstat(self, peer, res):
-        if not 'netstats' in self.commands:
-            raise RuntimeError("netstats should be contained in command list")
+    def handleResult_hierarchy(self, cmd, peer, res):
+        if not cmd in self.commands:
+            raise RuntimeError(str(cmd) + " not contained in list of locally issued commands")
 
         for entry in res:
-            self.commands['netstats'].append(entry)
+            self.commands[cmd].append(entry)
 
         if not self.bclient:
-            print ("   netstat results:")
-            for (addr, n, r) in self.commands['netstats']:
+            print ("   " + str(cmd) + " results:")
+            for (addr, n, r) in self.commands[cmd]:
                 print("    - " + str(addr) +  " : " + str(n) + " : " + str(r))
         else:
-            self.sendResult("netstats", self.commands['netstats'])
+            self.sendResult(cmd, self.commands[cmd])
 
-        del self.commands['netstats']
+        del self.commands[cmd]
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)

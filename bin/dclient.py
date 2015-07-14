@@ -116,7 +116,7 @@ class BClient(cmd.Cmd):
         """ exit client """
         if self.sock:
             self.do_shutdown()
-        self.finish()
+        return True
 
     def do_status(self, line):
         """ gives status """
@@ -130,6 +130,27 @@ class BClient(cmd.Cmd):
         if self.sock:
             self.send("netstats")
             print "obtaining netstats information from all bros"
+        else:
+            print ("not connected yet")
+
+    def do_peerstatus(self, line):
+        """ sends out the peerstatus command """
+        if self.sock:
+            self.send("peerstatus")
+            print "obtaining peerstatus information from all bros"
+        else:
+            print ("not connected yet")
+
+    def do_print_id(self, line):
+        """ sends out the peerstatus command """
+        linelist = line.split()
+        if len(linelist) != 1:
+            print("required: print [id]")
+            return
+        id = linelist
+        if self.sock:
+            self.send("print_id " + str(id))
+            print "obtaining peer_id information from all bros"
         else:
             print ("not connected yet")
 
