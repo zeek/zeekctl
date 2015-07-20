@@ -63,7 +63,7 @@ def make_broctl_config_sh(cmdout):
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
     try:
-        if os.readlink(symlink) != cfg_path:
+        if not os.path.islink(symlink) or os.readlink(symlink) != cfg_path:
             # attempt to update the symlink
             try:
                 util.force_symlink(cfg_path, symlink)
