@@ -97,7 +97,7 @@ def make_layout(path, cmdout, silent=False):
     if config.Config.nodes("standalone"):
         make_standalone_layout(path, cmdout, silent)
     elif config.Config.use_broker():
-        make_broker_layout(path, cmdout, silent)
+        make_broccoli_layout(path, cmdout, silent)
     else:
         make_broccoli_layout(path, cmdout, silent)
 

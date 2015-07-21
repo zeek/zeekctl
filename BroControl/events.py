@@ -103,9 +103,10 @@ def send_events_parallel_broker(events):
 
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)
+
     ep = pybroker.endpoint("broctl", pybroker.AUTO_PUBLISH)
     ep.peer(host, node.getPort(), 1)
-    ep.advertise("/bro/event/response")
+    ep.advertise("/bro/event/cluster/control/response")
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
     time.sleep(1)
@@ -116,11 +117,11 @@ def _send_event_broker(node, event, args, result_event):
         logging.debug("no broker connection could be established")
         return(False, "no broker connection could be established")
 
-    rqueue = pybroker.message_queue("/bro/event/response", ep)
-    ep.publish("/bro/event/request")
+    rqueue = pybroker.message_queue("/bro/event/cluster/control/response", ep)
+    ep.publish("/bro/event/cluster/control/request")
 
     vec = pybroker.vector_of_data(1, pybroker.data(event))
-    ep.send("/bro/event/request", vec)
+    ep.send("/bro/event/cluster/control/request", vec)
 
     msg = None
     resp = None

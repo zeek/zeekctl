@@ -430,8 +430,7 @@ class BroCtl(object):
         results = self.controller.print_id(nodes, id)
         self.plugins.cmdPostWithNodes("print", nodes, id)
 
-        #return results
-        return results.get_node_output()
+        return results
 
     @expose
     @lock_required
@@ -448,8 +447,7 @@ class BroCtl(object):
         results = self.controller.peerstatus(nodes)
         self.plugins.cmdPostWithNodes("peerstatus", nodes)
 
-        #return results
-        return results.get_node_output()
+        return results
 
     @expose
     @lock_required
@@ -470,8 +468,7 @@ class BroCtl(object):
         results = self.controller.netstats(nodes)
         self.plugins.cmdPostWithNodes("netstats", nodes)
 
-        #return results
-        return results.get_node_output()
+        return results
 
     @expose
     def execute(self, cmd):

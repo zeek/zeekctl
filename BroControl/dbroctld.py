@@ -166,7 +166,7 @@ class DBroCtld(Thread):
             return
 
         if cmd in ["netstats", "peerstatus", "print_id"]:
-            self.processResultHierarchy(cmd, res)
+            self.processResultHierarchy(cmd, res.get_node_output())
 
     def processResultHierarchy(self, cmd, res):
         if cmd in self.commands:

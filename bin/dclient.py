@@ -104,6 +104,7 @@ class BClient(cmd.Cmd):
             self.send("shutdown")
             time.sleep(1)
             self.sock.close()
+            self.sock = None
         else:
             print ("not connected yet")
 

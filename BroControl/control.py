@@ -67,28 +67,14 @@ def _make_bro_params(node, live):
     args += ["broctl"]
 
     if node.type == "standalone":
-        logging.debug("policydir: " + config.Config.policydir)
-        #args += [config.Config.policydir + "policy/frameworks/control/controllee-broker.bro"]
         args += config.Config.sitepolicystandalone.split()
         args += ["broctl/standalone"]
 
-    elif config.Config.use_broker():  # use broker
+    else:
         logging.debug("writing bro configuration for cluster-broker")
-        #args += ["-p " + config.Config.policydir + "/base/frameworks/broker"]
-
-        if node.type == "manager" or node.type == "worker":
-            args += [config.Config.policydir + "/base/frameworks/broker-test/logs-connector.bro"]
-        elif node.type == "proxy":
-            args += [config.Config.policydir + "/base/frameworks/broker-test/logs-listener.bro"]
-        elif node.type != "peer":
-            raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
-
-        args += ["broker_port=9999/tcp"]
-
-    else:  # use broccoli
-        logging.debug("writing bro configuration for broccoli")
         args += config.Config.sitepolicystandalone.split()
 
+        # Broccoli part
         args += ["base/frameworks/cluster"]
         if node.type == "manager":
             args += config.Config.sitepolicymanager.split()
@@ -97,6 +83,7 @@ def _make_bro_params(node, live):
         elif node.type == "worker":
             args += config.Config.sitepolicyworker.split()
         elif node.type != "peer":
+            logging.debug("no configuration for node of type " + str(node.type) + " found")
             raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
 
     args += ["broctl/auto"]
@@ -113,7 +100,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if node.type != "standalone" and node.type != "peer" and not config.Config.use_broker():
+    if node.type != "standalone" and node.type != "peer":
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -393,6 +380,7 @@ class Controller:
                         del todo[node.name]
                         results += [(node, True)]
                 else:
+                    logging.debug("something is wrong")
                     # Something's wrong. We give up on that node.
                     del todo[node.name]
                     results += [(node, False)]

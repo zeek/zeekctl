@@ -175,9 +175,9 @@ fi
 
 # If no rotated log files remain, then remove the directory.
 # Note: this assumes the user is using the default ".log" file extension.
-if [ -z "$(find . -maxdepth 1 -type f -name '*.*.log')" ]; then
-    rm -rf "$tmp"
-fi
+#if [ -z "$(find . -maxdepth 1 -type f -name '*.*.log')" ]; then
+#    rm -rf "$tmp"
+#fi
 
 ) >/dev/null 2>&1 &
 

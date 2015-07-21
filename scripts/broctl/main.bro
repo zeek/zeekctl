@@ -6,7 +6,7 @@
 #       communications framework to hold open a port which can cause
 #       high CPU usage on lightly loaded links due to the core packet
 #       extraction loop.
-@load frameworks/control/controllee-broker
+@load frameworks/control/controllee
 
 ## Reconfigure the reporter framework to stop printing to STDERR
 ## because STDERR is redirected and not normally visible when through
