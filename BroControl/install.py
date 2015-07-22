@@ -39,7 +39,7 @@ def get_syncs():
     # ("${staticdir}", True),
     ("${logdir}", False),
     ("${spooldir}", False),
-    ("${spooldir}/broctl-config.sh", True),
+    #("${spooldir}/broctl-config.sh", False),
     ("${broctlconfigdir}/broctl-config.sh", True),
     ("${tmpdir}", False)
     ]
@@ -270,7 +270,6 @@ def makeNodeConfigs(path, peers, cmdout, silent=False):
 # Write individual node.cfg file for node
 def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
-    head = config.Config.get_head()
     localNode = config.Config.get_local()
 
     npath = os.path.join (path, "node.cfg_" + str(node.name))
@@ -290,13 +289,15 @@ def makeNodeConfig(path, node, cmdout, silent=False):
 
         # 1. head entry
         f.write("\"head\" : {\n")
-        f.write("\"id\": \"" + str(head.name) + "\",\n")
-        if hasattr(head, "type"):
-            f.write("\"type\": \"" + str(head.type) + "\",\n")
-        if hasattr(head, "cluster"):
-            f.write("\"cluster\": \"" + str(head.cluster) + "\",\n")
-        if hasattr(head, "addr"):
-            f.write("\"host\": \"" + str(head.addr) + "\"\n")
+        f.write("\"id\": \"" + str(localNode.name) + "\",\n")
+        if hasattr(localNode, "type"):
+            f.write("\"type\": \"" + str(localNode.type) + "\",\n")
+        if hasattr(localNode, "cluster"):
+            f.write("\"cluster\": \"" + str(localNode.cluster) + "\",\n")
+        if hasattr(localNode, "addr"):
+            f.write("\"host\": \"" + str(localNode.addr) + "\",\n")
+        if hasattr(localNode, "port"):
+            f.write("\"port\": \"" + str(localNode.port) + "\"\n")
         f.write("},\n\n")
 
         # 2. node entries
@@ -305,23 +306,13 @@ def makeNodeConfig(path, node, cmdout, silent=False):
         for n2 in g.nodes():
             counter += 1
             if nodeNum - counter == 0:
-                #f.write(json.JSONEncoder().encode(str(overlay.node_attr["json-data"][n2]) + "\n"))
-                #json.dump(overlay.node_attr["json-data"][n2], f)
                 f.write(json.dumps(overlay.node_attr["json-data"][n2]) + "\n")
             else:
-                #f.write(json.JSONEncoder().encode(str(overlay.node_attr["json-data"][n2]) + ",\n"))
-                #json.dump(overlay.node_attr["json-data"][n2], f)
                 f.write(json.dumps(overlay.node_attr["json-data"][n2]) + ",\n")
         f.write("],\n\n")
 
         # 3. connection entries
-
         f.write("\"connections\" : [\n")
-
-        #if edgeNum == 0:
-        #    f.write("{\"from\": \"" + str(head.name) + "\", \"to\": \"" + str(node.name) + "\"}\n")
-        #else:
-        #    f.write("{\"from\": \"" + str(head.name) + "\", \"to\": \"" + str(node.name) + "\"},\n")
 
         counter = 0
         for (u, v) in g.edges():

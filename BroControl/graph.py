@@ -114,10 +114,10 @@ class BGraph:
 
     def getPredecessor(self, node):
         predList = []
-        pred = ""
+        pred = None
         for (u, v) in self.edge_list:
             if v == node:
-                pred.append(u)
+                predList.append(u)
                 pred = u
 
         if (len(predList) > 1):

@@ -6,7 +6,7 @@ child=""
 dbroctld=${bindir}/dbroctld 
 . ${brobase}/how_to_run_broctl
 
-nohup $dbroctld 0<&- &> nohup.out &
+nohup $dbroctld $1 $2 0<&- &> nohup.out &
 
 child=$!
 echo $child >.pid

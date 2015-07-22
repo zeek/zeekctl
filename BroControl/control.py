@@ -201,8 +201,7 @@ class Controller:
         cmds = []
         for peer in peers:
             logging.debug(str(self.config.get_local_id()) + " - Starting dbroctld on peer " + str(peer.name))
-            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), [])]
-
+            cmds += [(peer, os.path.join(self.config.scriptsdir, "run-dbroctld"), ["--suffix " + str(peer.name)])]
 
         peers = []
         # Note: the shell is used to interpret the command
@@ -1437,22 +1436,22 @@ class Controller:
                 results.set_node_fail(peer)
 
         # Copy dbroctld node.cfg configuration.
-        cmds = []
-        targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
-        for peer in peers:
-            localcfg = os.path.join(self.config.cfgdir, "node.cfg_" + str(peer.name))
-            # FIXME this command should better be executed in the install function
-            cmds += [(peer, "mv", [localcfg, targetcfg])]
-
-        for (peer, success, output) in self.executor.run_cmds(cmds, shell=True, helper=False):
-            if success:
-                logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " command successful")
-            else:
-                self.ui.error(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % peer.name)
-                results.set_node_fail(peer)
-                if output:
-                    for line in output:
-                        self.ui.error("%s" % line)
+        #cmds = []
+        #targetcfg = os.path.join(self.config.cfgdir, "node.cfg")
+        #for peer in peers:
+        #    localcfg = os.path.join(self.config.cfgdir, "node.cfg_" + str(peer.name))
+        #    # FIXME this command should better be executed in the install function
+        #    cmds += [(peer, "mv", [localcfg, targetcfg])]
+        #
+        #for (peer, success, output) in self.executor.run_cmds(cmds, shell=True, helper=False):
+        #    if success:
+        #        logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " command successful")
+        #    else:
+        #        self.ui.error(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + " :: cannot start %s; check output of \"diag\"" % peer.name)
+        #        results.set_node_fail(peer)
+        #        if output:
+        #            for line in output:
+        #                self.ui.error("%s" % line)
 
         return results
 

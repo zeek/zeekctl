@@ -48,12 +48,12 @@ def lock_required_silent(func):
     return wrapper
 
 class BroCtl(object):
-    def __init__(self, basedir=version.BROBASE, cfgfile=version.CFGFILE, broscriptdir=version.BROSCRIPTDIR, ui=TermUI(), state=None):
+    def __init__(self, basedir=version.BROBASE, cfgfile=version.CFGFILE, broscriptdir=version.BROSCRIPTDIR, ui=TermUI(), state=None, suffix=None):
         self.ui = ui
         self.brobase = basedir
 
         self.localaddrs = execute.get_local_addrs(self.ui)
-        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, self.localaddrs, state)
+        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, self.localaddrs, state, suffix)
 
         if self.config.debug != "0":
             # clear the log handlers (set by previous calls to logging.*)

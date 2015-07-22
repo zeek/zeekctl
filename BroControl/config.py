@@ -33,7 +33,7 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
+    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None, suffix=None):
         self.ui = ui
         self.localaddrs = localaddrs
         logging.debug("localaddrs:", localaddrs)
@@ -44,6 +44,7 @@ class Configuration:
         self.config = {}
         self.state = {}
         self.nodestore = {}
+        self.suffix = suffix
 
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
@@ -75,14 +76,6 @@ class Configuration:
         self._set_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
         self._set_option("mailalarmsto", self.config["mailto"])
 
-        # One directory per node.cfg per peer
-        # TODO hostname should be replaced by unique identifier per node/peer
-        nodecfgpath = os.path.join(self.cfgdir, str(socket.gethostname()))
-        if not os.path.exists(nodecfgpath):
-            os.makedirs(nodecfgpath)
-            shutil.move(self.nodecfg, nodecfgpath)
-        self.nodecfg = os.path.join(nodecfgpath, "node.cfg")
-
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
@@ -105,6 +98,21 @@ class Configuration:
 
         # Hierarchy overlay
         self.overlay = graph.BGraph()
+
+        # Individual settings per peer for:
+        # - node.cfg
+        # - debug.log
+        # - PolicyDirSiteInstall
+        # - PolicyDirSiteInstallAuto
+        if self.suffix:
+            logging.debug("we have a new suffix " + str(self.suffix))
+            self.nodecfg = os.path.join(self.cfgdir, "node.cfg_" + str(self.suffix))
+        else:
+            self.suffix = "head"
+
+        self.debuglog =  str(self.debuglog) + "_" + str(self.suffix)
+        #self.policydirsiteinstall = os.path.join(self.policydirsiteinstall, str(suffix))
+        #self.policydirsiteinstallauto = os.path.join(self.policydirsiteinstallauto, str(suffix))
 
     # Do a basic sanity check on some critical options.
     def _check_options(self):
@@ -152,6 +160,12 @@ class Configuration:
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
+
+        if(self.get_local() and hasattr(self.get_local(), "port")):
+            self.broport = int(self.get_local().port) + 1
+            logging.debug("set broport to " + str(self.broport))
+        else:
+            logging.debug("do not set broport")
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -274,7 +288,10 @@ class Configuration:
 
     # Returns a Node entry for the local node
     def get_local(self):
-        return self.local_node
+        if hasattr(self, "local_node"):
+            return self.local_node
+        else:
+            return None
 
     # Returns a Node entry for our predecessor in the hierarchy
     def get_head(self):
@@ -525,6 +542,7 @@ class Configuration:
         file = self.nodecfg
         logging.debug(str(self.localaddrs[0]) + " :: read the node.cfg configuration from file " + str(file))
         if not os.path.exists(file):
+            logging.debug("No node.cfg file available")
             raise ConfigurationError("cannot read '%s'" % self.nodecfg)
 
         nodestore = {}

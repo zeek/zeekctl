@@ -6,23 +6,20 @@ import time
 import traceback
 import logging
 import json
+import os
 
 from collections import defaultdict
 from Queue import Queue
 from threading import Thread
 from BroControl.broctl import BroCtl
 
-
 # Global options
 # TODO need to be moved to options.py
-server_port = 9999
 peer_timeout = 50
 polling_interval = 0.2
 
-BROKER_COM = True
-
 class DBroCtld(Thread):
-    def __init__(self, logs, basedir):
+    def __init__(self, logs, basedir, suffix=None):
         Thread.__init__(self)
 
         self.logs = logs
@@ -30,35 +27,39 @@ class DBroCtld(Thread):
         self.squeue = Queue()
         self.outbound = []
         self.basedir = basedir
+        self.suffix = suffix
 
         # Stores intermediate results for commands
         self.commands = {}
+        logging.debug("DBroctld init with suffix " + str(suffix))
 
     def init_server(self):
         # BroCtl
-        self.broctl = BroCtl(self.basedir, ui=TermUI())
+        self.broctl = BroCtl(self.basedir, ui=TermUI(), suffix=self.suffix)
         self.parent_address = self.broctl.config.get_head().addr
+        self.parent_port = int(self.broctl.config.get_head().port)
         self.server_address = self.broctl.config.get_local().addr
+        self.server_port = int(self.broctl.config.get_local().port)
 
-        # Server
+        # SocketServer
         print "starting dbroctld... "
-        print "  -- dbroctld listens on", self.server_address, "::", server_port
-        self.bserver = BSocketServer(self.squeue, (self.server_address, server_port), BSocketHandler, bind_and_activate=True)
+        print "  -- dbroctld listens on", self.server_address, "::", self.server_port
+        self.bserver = BSocketServer(self.squeue, (self.server_address, self.server_port), BSocketHandler, bind_and_activate=True)
         self.server_thread = Thread(target=self.bserver.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.daemon_threads = True
         self.server_thread.start()
         logging.debug("DBroctlD SocketServer started")
 
-        self.bclient = None
         # Client only if we are not the root node of the hierarchy
-        if self.parent_address and self.parent_address != self.server_address:
-            print "  -- parent is", self.parent_address
-            self.bclient = BClient((self.parent_address, server_port), self.squeue)
+        self.bclient = None
+        if (self.parent_address != self.server_address or self.parent_port != self.server_port):
+            self.bclient = BClient((self.parent_address, self.parent_port), self.squeue)
             self.client_thread = Thread(target=self.bclient.run)
             self.client_thread.daemon = True
             self.client_thread.start()
-            logging.debug("DClient started")
+            logging.debug("DClient started, parent is " + str(self.parent_address) + ", " + str(self.parent_port))
+            print ("  -- dclient started, parent is " + str(self.parent_address) + ", " + str(self.parent_port))
         else:
             print "  -- we are the root node of the deep cluster"
 
@@ -115,7 +116,8 @@ class DBroCtld(Thread):
 
     def handleCommand(self, peer, msg):
         ocmd = msg['payload']
-        if peer != self.parent_address:
+        (paddr, pport) = peer
+        if paddr != self.parent_address or pport != self.server_port:
             logging.debug("cmd from peer " + str(peer) + " received that is not our parent " + str(self.parent_address))
         else:
             logging.debug("cmd from our parent " + str(peer) + " received")
@@ -228,6 +230,8 @@ class DBroCtld(Thread):
     def forwardCommand(self, cmd):
         if self.outbound:
             logging.debug("forward cmd \"" + str(cmd) + "\" to ")
+        else:
+            logging.debug("no successor to forward cmd to")
 
         for peer in self.outbound:
             logging.debug(" - " + str(peer))
@@ -369,13 +373,6 @@ class BClient():
                 if data:
                     self.cqueue.put(("msg", self.server_address, data))
                     counter = 0
-
-                    # Send a reply
-                    #if 'type' in data.keys() and data['type'] != 'ack':
-                    #    reply = {'type': 'ack', 'payload':'ack'}
-                    #    self.send(reply)
-                    #    #self.socket.sendto(json.dumps(reply), self.server_address)
-
                 else:
                     counter += 1
 
@@ -446,10 +443,10 @@ class BCommandMessage(BBaseMessage):
 ####################################
 
 
-def main(basedir='/bro'):
+def main(basedir='/bro', suffix=None):
     logs = Logs()
 
-    d = DBroCtld(logs, basedir)
+    d = DBroCtld(logs, basedir, suffix)
     d.start()
 
 if __name__ == "__main__":

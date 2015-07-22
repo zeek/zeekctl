@@ -16,13 +16,20 @@ sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
 from BroControl import dbroctld
 
-# Hidden command to print the documentation.
+
+arg = None
 broctlprintdoc = False
-if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
-    broctlprintdoc = True
-    sys.path = [BroBase] + sys.path
+if len(sys.argv) == 3:
+    # Hidden command to print the documentation.
+    if sys.argv[1] == "--print-doc":
+        broctlprintdoc = True
+        sys.path = [BroBase] + sys.path
+    # Adds a suffix to all paths that require to be distinct in between
+    # different dbroctld instances
+    elif sys.argv[1] == "--suffix":
+        arg = sys.argv[2]
 
 sys.path = [os.path.join(BroBase, "lib/broctl")] + sys.path
 
 if __name__ == "__main__":
-    dbroctld.main(BroBase)
+    dbroctld.main(BroBase, arg)
