@@ -1,4 +1,8 @@
 
+1.4-1 | 2015-07-22 13:20:49 -0500
+
+  * Fix test setup script to not overwrite LD_LIBRARY_PATH (Jon Siwek)
+
 1.4 | 2015-06-09 09:19:56 -0500
 
   * Release 1.4.
