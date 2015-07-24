@@ -896,13 +896,13 @@ class Plugin(object):
                     self.error("plugin option %s default must be an int" % optname)
 
             # Convert to correct data type (for options specified in broctl.cfg)
-            if ty != "string":
+            if ty in ("int", "bool"):
                 optname = optname.lower()
                 if optname in config.Config.config:
                     val = config.Config.config[optname]
                     try:
                         config.Config.config[optname] = int(val)
                     except ValueError:
-                        self.error("broctl option '%s' has invalid value" % optname)
+                        self.error("broctl option '%s' has invalid value '%s' for type %s" % (optname, val, ty))
 
             config.Config._set_option(optname, default)
