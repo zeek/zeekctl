@@ -507,11 +507,11 @@ class Configuration:
         for opt in options.options:
             key = opt.name.lower()
             if key in config:
-                if opt.type != "string":
+                if opt.type in ("int", "bool"):
                     try:
                         config[key] = int(config[key])
                     except ValueError:
-                        raise ConfigurationError("broctl option '%s' has invalid value" % key)
+                        raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
 
         return config
 
