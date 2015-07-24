@@ -727,7 +727,7 @@ User Options
 
 .. _PFRINGClusterID:
 
-*PFRINGClusterID* (int, default @PF_RING_CLUSTER_ID@)
+*PFRINGClusterID* (int, default 0)
     If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work.
 
 .. _PFRINGClusterType:
@@ -828,6 +828,11 @@ Internal Options
 
 *BinDir* (string, default "$\{BroBase}/bin")
     Directory for executable files.
+
+.. _Bro:
+
+*Bro* (string, default "$\{BinDir}/bro")
+    Path to Bro binary.
 
 .. _BroBase:
 
@@ -1091,8 +1096,7 @@ class **Plugin**
 
      **getOption** (self, name)
 
-         Returns the value of one of the plugin's options, *name*. The
-         returned value will always be a string.
+         Returns the value of one of the plugin's options, *name*.
          
          An option has a default value (see *options()*), which can be
          overridden by a user in ``broctl.cfg``. An option's value cannot be
@@ -1778,10 +1782,9 @@ class **Plugin**
                  ``"bool"``, ``"string"``, or ``"int"``.
          
              ``default``
-                 A string with the option's default value. Note that this must
-                 always be a string, even for non-string types. For booleans,
-                 use ``"0"`` for False and ``"1"`` for True. For integers, give
-                 the value as a string ``"42"``.
+                 The option's default value.  Note that this value must be
+                 enclosed in quotes if the type is "string", and must not be
+                 enclosed in quotes if the type is not "string".
          
              ``description``
                  A string with a description of the option semantics.
