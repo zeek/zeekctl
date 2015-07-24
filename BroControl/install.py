@@ -53,12 +53,19 @@ def make_broctl_config_sh(cmdout):
     with open(cfg_path, "w") as out:
         for (varname, value) in config.Config.options():
             # Don't write if variable name is an invalid bash variable name
-            if "-" not in varname:
+            if "-" in varname:
+                continue
+
+            if isinstance(value, bool):
+                # Convert bools to the string "1" or "0"
+                value = (value and "1" or "0")
+            else:
                 value = str(value)
-                # Don't write if the value contains any double quotes (this
-                # could happen for BroArgs, which we don't need in this file)
-                if '"' not in value:
-                    out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
+
+            # Don't write if the value contains any double quotes (this
+            # could happen for BroArgs, which we don't need in this file)
+            if '"' not in value:
+                out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 

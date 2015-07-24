@@ -42,7 +42,7 @@ class TestPlugin(BroControl.plugin.Plugin):
 
     def options(self):
         return [("foo", "int", 1, "Just a test option."),
-                ("enabled", "bool", 0, "Set to enable plugin")]
+                ("enabled", "bool", False, "Set to enable plugin")]
 
     def commands(self):
         return [("bar", "", "A test command from the Test plugin.")]

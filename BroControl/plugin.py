@@ -256,8 +256,9 @@ class Plugin(object):
                 ``"bool"``, ``"string"``, or ``"int"``.
 
             ``default``
-                The option's default value. For booleans, use ``0`` for False
-                and ``1`` for True.
+                The option's default value.  Note that this value must be
+                enclosed in quotes if the type is "string", and must not be
+                enclosed in quotes if the type is not "string".
 
             ``description``
                 A string with a description of the option semantics.
@@ -878,7 +879,18 @@ class Plugin(object):
 
     # Internal methods.
 
+    def _to_bool(self, val):
+        if val.lower() in ("1", "true"):
+            return True
+        if val.lower() in ("0", "false"):
+            return False
+        raise ValueError("invalid boolean: '%s'" % val)
+
+
     def _registerOptions(self):
+        type_converters = { "bool": self._to_bool, "int": int, "string": str }
+        pytype = { "bool": bool, "int": int, "string": str }
+
         for (name, ty, default, descr) in self.options():
             if not name:
                 self.error("plugin option names must not be empty")
@@ -888,21 +900,16 @@ class Plugin(object):
 
             optname = "%s.%s" % (self.prefix(), name)
 
-            if ty == "string":
-                if not isinstance(default, str):
-                    self.error("plugin option %s default must be a string" % optname)
-            else:
-                if not isinstance(default, int):
-                    self.error("plugin option %s default must be an int" % optname)
+            if not isinstance(default, pytype[ty]):
+                self.error("plugin option %s default must be type %s" % (optname, ty))
 
             # Convert to correct data type (for options specified in broctl.cfg)
-            if ty in ("int", "bool"):
-                optname = optname.lower()
-                if optname in config.Config.config:
-                    val = config.Config.config[optname]
-                    try:
-                        config.Config.config[optname] = int(val)
-                    except ValueError:
-                        self.error("broctl option '%s' has invalid value '%s' for type %s" % (optname, val, ty))
+            optname = optname.lower()
+            if optname in config.Config.config:
+                val = config.Config.config[optname]
+                try:
+                    config.Config.config[optname] = type_converters[ty](val)
+                except ValueError:
+                    self.error("broctl option '%s' has invalid value '%s' for type %s" % (optname, val, ty))
 
             config.Config._set_option(optname, default)

@@ -138,9 +138,9 @@ class Configuration:
         self._warn_dangling_bro()
 
         # Set the standalone config option.
-        standalone = 0
+        standalone = False
         if len(self.nodestore) == 1:
-            standalone = 1
+            standalone = True
 
         self._set_option("standalone", standalone)
 
@@ -484,9 +484,18 @@ class Configuration:
                     raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 
+    def _to_bool(self, val):
+        if val.lower() in ("1", "true"):
+            return True
+        if val.lower() in ("0", "false"):
+            return False
+        raise ValueError("invalid boolean: '%s'" % val)
+
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
+        type_converters = { "bool": self._to_bool, "int": int, "string": str }
         config = {}
+
         with open(fname, "r") as f:
             for line in f:
                 line = line.strip()
@@ -507,11 +516,10 @@ class Configuration:
         for opt in options.options:
             key = opt.name.lower()
             if key in config:
-                if opt.type in ("int", "bool"):
-                    try:
-                        config[key] = int(config[key])
-                    except ValueError:
-                        raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
+                try:
+                    config[key] = type_converters[opt.type](config[key])
+                except ValueError:
+                    raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
 
         return config
 
