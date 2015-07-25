@@ -385,8 +385,8 @@ class Configuration:
                 numprocs = int(node.lb_procs)
             except ValueError:
                 raise ConfigurationError("number of load-balanced processes must be an integer for node '%s'" % node.name)
-            if numprocs < 2:
-                raise ConfigurationError("number of load-balanced processes must be at least 2 for node '%s'" % node.name)
+            if numprocs < 1:
+                raise ConfigurationError("number of load-balanced processes must be greater than zero for node '%s'" % node.name)
         elif node.lb_method:
             raise ConfigurationError("number of load-balanced processes not specified for node '%s'" % node.name)
 
