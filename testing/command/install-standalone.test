@@ -11,7 +11,6 @@ while read line; do
     test ! -e $BROCTL_INSTALL_PREFIX/$line || ret=1
 done << EOF
 logs/current
-spool/broctl-config.sh
 spool/state.db
 spool/installed-scripts-do-not-touch/site/local.bro
 spool/installed-scripts-do-not-touch/auto/broctl-config.bro
@@ -26,7 +25,6 @@ test -h $BROCTL_INSTALL_PREFIX/logs/current || ret=1
 while read line; do
     test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
 done << EOF
-spool/broctl-config.sh
 spool/state.db
 spool/installed-scripts-do-not-touch/site/local.bro
 spool/installed-scripts-do-not-touch/auto/broctl-config.bro

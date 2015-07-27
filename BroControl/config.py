@@ -617,6 +617,10 @@ class Configuration:
 
         return False
 
+    # Check if the user has already run the "install" or "deploy" commands.
+    def is_broctl_installed(self):
+        return os.path.isfile(os.path.join(self.config["policydirsiteinstallauto"], "broctl-config.bro"))
+
     # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
     # are missing.  If the "isinstall" parameter is True, then we're running
@@ -642,11 +646,9 @@ class Configuration:
         if isinstall:
             return
 
-        freshinstall = not os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh"))
-
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
-        if freshinstall:
+        if not self.is_broctl_installed():
             self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
             return
 

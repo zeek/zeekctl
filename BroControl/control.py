@@ -106,6 +106,10 @@ class Controller:
         self.executor = executor
         self.pluginregistry = pluginregistry
 
+        # Create broctl-config.sh file so that shell script helpers have
+        # current config values.
+        install.make_broctl_config_sh(ui)
+
     def start(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
@@ -1322,7 +1326,7 @@ class Controller:
             return
 
         # Check if "broctl install" has been run.
-        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+        if not self.config.is_broctl_installed():
             # Don't output anything here, otherwise the cron job may generate
             # emails before the user has a chance to do "broctl install".
             return
