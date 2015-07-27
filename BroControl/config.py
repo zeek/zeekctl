@@ -1,9 +1,10 @@
 # Functions to read and access the broctl configuration.
 
+import hashlib
 import os
 import socket
+import subprocess
 import re
-import zlib
 
 from BroControl import py3bro
 from BroControl import node as node_mod
@@ -26,9 +27,11 @@ class ConfigurationError(Exception):
     pass
 
 class Configuration:
-    def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None):
+    def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
         self.ui = ui
-        self.localaddrs = localaddrs
+        self.basedir = basedir
+        self.cfgfile = cfgfile
+        self.broscriptdir = broscriptdir
         global Config
         Config = self
 
@@ -36,10 +39,12 @@ class Configuration:
         self.state = {}
         self.nodestore = {}
 
+        self.localaddrs = self._get_local_addrs()
+
         # Read broctl.cfg.
         self.config = self._read_config(cfgfile)
 
-        self._initialize_options(basedir, broscriptdir)
+        self._initialize_options()
         self._check_options()
 
         if state:
@@ -47,13 +52,20 @@ class Configuration:
         else:
             self.state_store = SqliteState(self.statefile)
 
+        self._update_cfg_state()
 
-    def _initialize_options(self, basedir, broscriptdir):
+    def reload_cfg(self):
+        self.config = self._read_config(self.cfgfile)
+        self._initialize_options()
+        self._check_options()
+        self._update_cfg_state()
+
+    def _initialize_options(self):
         from BroControl import execute
 
         # Set defaults for options we get passed in.
-        self._set_option("brobase", basedir)
-        self._set_option("broscriptdir", broscriptdir)
+        self._set_option("brobase", self.basedir)
+        self._set_option("broscriptdir", self.broscriptdir)
         self._set_option("version", VERSION)
 
         # Initialize options that are not already set.
@@ -121,15 +133,16 @@ class Configuration:
                     # Values from node.cfg take precedence over broctl.cfg
                     node.env_vars.setdefault(key, val)
 
+        # Check state store for any running nodes that are no longer in the
+        # current node config.
+        self._warn_dangling_bro()
+
         # Set the standalone config option.
-        standalone = "0"
+        standalone = 0
         if len(self.nodestore) == 1:
-            standalone = "1"
+            standalone = 1
 
         self._set_option("standalone", standalone)
-
-        # Make sure cron flag is cleared.
-        self.config["cron"] = "0"
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -433,23 +446,27 @@ class Configuration:
         proxy = False
 
         manageronlocalhost = False
+        # Note: this is a subset of localaddrs
+        localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
             if n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
-                if n.addr in ("127.0.0.1", "::1"):
+                if n.addr in localhostaddrs:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl only on manager node")
+                    raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
             elif n.type == "proxy":
                 proxy = True
 
             elif n.type == "standalone":
                 standalone = True
+                if n.addr not in self.localaddrs:
+                    raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
         if standalone:
             if len(nodestore) > 1:
@@ -463,8 +480,8 @@ class Configuration:
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.addr not in ("127.0.0.1", "::1"):
-                    raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in node config")
+                if n.type != "manager" and n.addr not in localhostaddrs:
+                    raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 
     # Parses broctl.cfg and returns a dictionary of all entries.
@@ -486,13 +503,26 @@ class Configuration:
                 # if the key already exists, just overwrite with new value
                 config[key] = val.strip()
 
+        # Convert option values to correct data type
+        for opt in options.options:
+            key = opt.name.lower()
+            if key in config:
+                if opt.type in ("int", "bool"):
+                    try:
+                        config[key] = int(config[key])
+                    except ValueError:
+                        raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
+
         return config
 
     # Initialize a global option if not already set.
     def _set_option(self, key, val):
         key = key.lower()
         if key not in self.config:
-            self.config[key] = self.subst(val)
+            if isinstance(val, str):
+                self.config[key] = self.subst(val)
+            else:
+                self.config[key] = val
 
     # Set a dynamic state variable.
     def set_state(self, key, val):
@@ -508,14 +538,78 @@ class Configuration:
     def read_state(self):
         self.state = dict(self.state_store.items())
 
+    # Returns a list of the IP addresses associated with local interfaces.
+    # For IPv6 addresses, zone_id and prefix length are removed if present.
+    def _get_local_addrs(self):
+        try:
+            # On Linux, ifconfig is often not in the user's standard PATH.
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, err = proc.communicate()
+            success = proc.returncode == 0
+        except OSError:
+            success = False
+
+        if success:
+            localaddrs = []
+            if py3bro.using_py3:
+                out = out.decode()
+            for line in out.splitlines():
+                fields = line.split()
+                if "inet" in fields or "inet6" in fields:
+                    addrfield = False
+                    for field in fields:
+                        if field == "inet" or field == "inet6":
+                            addrfield = True
+                        elif addrfield and field != "addr:":
+                            locaddr = field
+                            # remove "addr:" prefix (if any)
+                            if field.startswith("addr:"):
+                                locaddr = field[5:]
+                            # remove everything after "/" or "%" (if any)
+                            locaddr = locaddr.split("/")[0]
+                            locaddr = locaddr.split("%")[0]
+                            localaddrs.append(locaddr)
+                            break
+
+            if not localaddrs:
+                raise ConfigurationError("ifconfig does not show any local IP addresses")
+        else:
+            localaddrs = ["127.0.0.1", "::1"]
+            try:
+                addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
+            except Exception:
+                addrinfo = []
+
+            for ai in addrinfo:
+                localaddrs.append(ai[4][0])
+
+            self.ui.error("ifconfig failed (local IP addrs are: %s)" % ", ".join(localaddrs))
+
+        return localaddrs
+
     # Record the Bro version.
     def record_bro_version(self):
         version = self._get_bro_version()
         self.set_state("broversion", version)
-        self.set_state("bro", self.subst("${bindir}/bro"))
 
+    # Record the state of the broctl config files.
+    def _update_cfg_state(self):
+        self.set_state("configchksum", self._get_broctlcfg_hash(filehash=True))
+        self.set_state("confignodechksum", self._get_nodecfg_hash(filehash=True))
 
-    # Warn user to run broctl install if any changes are detected to broctl
+    # Returns True if the broctl config files have changed since last reload.
+    def is_cfg_changed(self):
+        if "configchksum" in self.state:
+            if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
+                return True
+
+        if "confignodechksum" in self.state:
+            if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
+                return True
+
+        return False
+
+    # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
     # are missing.  If the "isinstall" parameter is True, then we're running
     # the install or deploy command, so some of the warnings are skipped.
@@ -531,7 +625,6 @@ class Configuration:
                 if not isinstall:
                     self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
 
-                self._warn_dangling_bro()
                 return
         else:
             missingstate = True
@@ -579,29 +672,54 @@ class Configuration:
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
-    # no longer part of the current node configuration, but that are still
-    # running).
+    # still running but are either no longer part of the current node
+    # configuration or have moved to a new host).
     def _warn_dangling_bro(self):
-        nodes = [ n.name for n in self.nodes() ]
+        nodes = {}
+        for n in self.nodes():
+            nodes[n.name] = n.host
 
         for key in self.state.keys():
-            # Check if a PID is defined for a Bro node
-            if key.endswith("-pid") and self.get_state(key):
-                nn = key[:-4]
-                # Check if node name is in list of all known nodes
-                if nn not in nodes:
-                    hostkey = key.replace("-pid", "-host")
-                    hname = self.get_state(hostkey)
-                    if hname:
-                        self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nn, hname, self.get_state(key)))
+            # Look for a PID associated with a Bro node
+            if not key.endswith("-pid"):
+                continue
+
+            pid = self.get_state(key)
+            if not pid:
+                continue
+
+            # Get node name and host name for this node
+            nname = key[:-4]
+            hostkey = key.replace("-pid", "-host")
+            hname = self.get_state(hostkey)
+            if not hname:
+                continue
+
+            # If node is not a known node or if host has changed, then
+            # we must warn about dangling Bro node.
+            if nname not in nodes or hname != nodes[nname]:
+                self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nname, hname, pid))
+                # Set the "expected running" flag to False so cron doesn't try
+                # to start this node.
+                expectkey = key.replace("-pid", "-expect-running")
+                self.set_state(expectkey, False)
+                # Clear the PID so we don't keep getting warnings.
+                self.set_state(key, None)
 
     # Return a hash value (as a string) of the current broctl configuration.
-    def _get_broctlcfg_hash(self):
-        data = str(sorted(self.config.items()))
+    def _get_broctlcfg_hash(self, filehash=False):
+        if filehash:
+            with open(self.cfgfile, "r") as ff:
+                data = ff.read()
+        else:
+            data = str(sorted(self.config.items()))
+
         if py3bro.using_py3:
             data = data.encode()
-        # The "bitwise AND" ensures the same result on any python version.
-        return str(zlib.crc32(data) & 0xffffffff)
+
+        hh = hashlib.md5()
+        hh.update(data)
+        return hh.hexdigest()
 
     # Update the stored hash value of the current broctl configuration.
     def update_broctlcfg_hash(self):
@@ -609,15 +727,22 @@ class Configuration:
         self.set_state("hash-broctlcfg", cfghash)
 
     # Return a hash value (as a string) of the current broctl node config.
-    def _get_nodecfg_hash(self):
-        nn = []
-        for n in self.nodes():
-            nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
-        data = str(nn)
+    def _get_nodecfg_hash(self, filehash=False):
+        if filehash:
+            with open(self.nodecfg, "r") as ff:
+                data = ff.read()
+        else:
+            nn = []
+            for n in self.nodes():
+                nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
+            data = str(nn)
+
         if py3bro.using_py3:
             data = data.encode()
-        # The "bitwise AND" ensures the same result on any python version.
-        return str(zlib.crc32(data) & 0xffffffff)
+
+        hh = hashlib.md5()
+        hh.update(data)
+        return hh.hexdigest()
 
     # Update the stored hash value of the current broctl node config.
     def update_nodecfg_hash(self):
@@ -628,7 +753,7 @@ class Configuration:
     def _get_bro_version(self):
         from BroControl import execute
 
-        bro = self.subst("${bindir}/bro")
+        bro = self.config["bro"]
         if not os.path.lexists(bro):
             raise ConfigurationError("cannot find Bro binary: %s" % bro)
 

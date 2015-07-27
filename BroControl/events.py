@@ -76,7 +76,7 @@ def _send_event_wait(node, result_event, bc):
         time.sleep(1)
 
         cnt += 1
-        if cnt > int(config.Config.commtimeout):
+        if cnt > config.Config.commtimeout:
             logging.debug("broccoli: timeout during send to node %s", node.name)
             return (False, "time-out")
 
@@ -91,7 +91,7 @@ def _send_event_wait(node, result_event, bc):
         bc.processInput()
 
         cnt += 1
-        if cnt > int(config.Config.commtimeout):
+        if cnt > config.Config.commtimeout:
             logging.debug("broccoli: timeout during receive from node %s", node.name)
             return (False, "time-out")
 

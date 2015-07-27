@@ -47,23 +47,31 @@ def lock_required_silent(func):
     wrapper.lock_required = True
     return wrapper
 
+def check_config(func):
+    def wrapper(self, *args, **kwargs):
+        if config.Config.is_cfg_changed():
+            self.ui.warn('Configuration has changed. Run the "deploy" command.')
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
 class BroCtl(object):
     def __init__(self, basedir=version.BROBASE, cfgfile=version.CFGFILE, broscriptdir=version.BROSCRIPTDIR, ui=TermUI(), state=None):
         self.ui = ui
         self.brobase = basedir
 
-        self.localaddrs = execute.get_local_addrs(self.ui)
-        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, self.localaddrs, state)
+        self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, state)
 
-        if self.config.debug != "0":
-            # clear the log handlers (set by previous calls to logging.*)
-            logging.getLogger().handlers = []
-            logging.basicConfig(filename=self.config.debuglog,
-                                format="%(asctime)s [%(module)s] %(message)s",
-                                datefmt=self.config.timefmt,
-                                level=logging.DEBUG)
+        # clear the log handlers (set by previous calls to logging.*)
+        logging.getLogger().handlers = []
+        logging.basicConfig(filename=self.config.debuglog,
+                            format="%(asctime)s [%(module)s] %(message)s",
+                            datefmt=self.config.timefmt,
+                            level=logging.DEBUG)
+        if not self.config.debug:
+            logging.getLogger().setLevel(100)
 
-        self.executor = execute.Executor(self.localaddrs, self.config.helperdir, int(self.config.commandtimeout))
+        self.executor = execute.Executor(self.config)
         self.plugins = pluginreg.PluginRegistry()
         self.setup()
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
@@ -74,11 +82,27 @@ class BroCtl(object):
                 self.plugins.addDir(pdir)
 
         self.plugins.loadPlugins(self.ui, self.executor)
+        self.plugins.initPluginOptions()
         self.plugins.addNodeKeys()
         self.config.initPostPlugins()
         self.plugins.initPlugins(self.ui)
+        self.plugins.initPluginCmds()
         util.enable_signals()
         os.chdir(self.config.brobase)
+
+    def reload_cfg(self):
+        self.config.reload_cfg()
+
+        if not self.config.debug:
+            logging.getLogger().setLevel(100)
+        else:
+            logging.getLogger().setLevel(logging.NOTSET)
+
+        self.executor.finish()
+        self.plugins.initPluginOptions()
+        self.config.initPostPlugins()
+        self.plugins.initPlugins(self.ui)
+        self.plugins.initPluginCmds()
 
     def finish(self):
         self.executor.finish()
@@ -148,6 +172,7 @@ class BroCtl(object):
         return [ n.name for n in self.config.nodes() ]
 
     @expose
+    @check_config
     def nodes(self):
         nodes = []
         if self.plugins.cmdPre("nodes"):
@@ -156,6 +181,7 @@ class BroCtl(object):
         return nodes
 
     @expose
+    @check_config
     def get_config(self):
         configlist = []
         if self.plugins.cmdPre("config"):
@@ -164,6 +190,7 @@ class BroCtl(object):
         return configlist
 
     @expose
+    @check_config
     @lock_required
     def install(self, local=False):
         results = None
@@ -174,6 +201,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def start(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -185,6 +213,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def stop(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -196,6 +225,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def restart(self, clean=False, node_list=None):
         nodes = self.node_args(node_list)
@@ -237,6 +267,10 @@ class BroCtl(object):
         if not self.plugins.cmdPre("deploy"):
             return results
 
+        if self.config.is_cfg_changed():
+            self.ui.info("Reloading broctl configuration ...")
+            self.reload_cfg()
+
         # Make sure broctl-config.sh exists, otherwise "check" will fail
         if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
             results = self.install(local=True)
@@ -270,6 +304,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def status(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -291,6 +326,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def diag(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -311,6 +347,7 @@ class BroCtl(object):
         return True
 
     @expose
+    @check_config
     @lock_required
     def cronenabled(self):
         results = False
@@ -322,6 +359,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def setcronenabled(self, enable=True):
         if enable:
@@ -338,6 +376,7 @@ class BroCtl(object):
         return True
 
     @expose
+    @check_config
     @lock_required
     def check(self, node_list=None, check_node_types=False):
         nodes = self.node_args(node_list, get_types=check_node_types)
@@ -349,6 +388,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def cleanup(self, cleantmp=False, node_list=None):
         nodes = self.node_args(node_list)
@@ -360,6 +400,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def capstats(self, interval=10, node_list=None):
         nodes = self.node_args(node_list)
@@ -370,6 +411,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def update(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -380,6 +422,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def df(self, node_list=None):
         nodes = self.node_args(node_list, get_hosts=True)
@@ -390,6 +433,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def print_id(self, id, node_list=None):
         nodes = self.node_args(node_list)
@@ -400,6 +444,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def peerstatus(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -410,6 +455,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def netstats(self, node_list=None):
         if not node_list:
@@ -426,6 +472,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     def execute(self, cmd):
         nodes = self.node_args(get_hosts=True)
 
@@ -437,6 +484,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def scripts(self, check=False, node_list=None):
         nodes = self.node_args(node_list)
@@ -448,6 +496,7 @@ class BroCtl(object):
         return results
 
     @expose
+    @check_config
     @lock_required
     def process(self, trace, options, scripts):
         results = None

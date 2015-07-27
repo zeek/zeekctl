@@ -1,4 +1,49 @@
 
+1.4-18 | 2015-07-27 09:03:22 -0400
+
+  * Merge branch 'topic/dnthayer/cfg-reload' (Justin Azoff)
+
+  * Improve error message for invalid broctl plugin config values (Daniel Thayer)
+
+  * Improve error message for invalid broctl config values (Daniel Thayer)
+
+  * Improve error checking for local IP addresses (Daniel Thayer)
+
+  * Cleanup some error msgs and source code comments (Daniel Thayer)
+
+  * Close ssh connections upon config reload (Daniel Thayer)
+
+  * Check for dangling Bro nodes every time node.cfg is loaded (Daniel Thayer)
+
+  * Improve check for dangling Bro nodes (Daniel Thayer)
+
+  * Remove unnecessary state variable type conversions (Daniel Thayer)
+
+  * Convert config option values to correct data type (Daniel Thayer)
+
+  * Check config file contents rather than timestamp (Daniel Thayer)
+
+  * Add ability for broctl to reload its configuration (Daniel Thayer)
+
+    Added the ability for broctl to reload its configuration (both
+    broctl.cfg and node.cfg).  Each time a user runs a broctl command
+    a check of the broctl config files is performed to determine if the
+    config has changed since the last time the config was loaded.  If a
+    change is detected, then before doing anything else, broctl will either
+    reload the config (for the "deploy" command) or warn the user to run
+    the "deploy" command (for any other command).
+
+  * Avoid caching config values because config might change (Daniel Thayer)
+
+  * Update a broctl test file (Daniel Thayer)
+
+  * Keep track of both loaded plugins and active plugins (Daniel Thayer)
+
+  * Reorganize some code (no changes in functionality) (Daniel Thayer)
+
+  * Remove some config options and add a new one (Daniel Thayer)
+
+
 1.4-1 | 2015-07-22 13:20:49 -0500
 
   * Fix test setup script to not overwrite LD_LIBRARY_PATH (Jon Siwek)
