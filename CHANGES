@@ -3,13 +3,7 @@
 
   * Merge remote-tracking branch 'origin/topic/dnthayer/ticket1434' (Justin Azoff)
 
-  * Improve the broctl top helper script for FreeBSD
-
-    On FreeBSD, the output of "top -u -b all" does not always contain a
-    constant number of fields on each line.  In order to account for this,
-    the awk command in the broctl top helper script must check the number
-    of fields on every line and adjust the fields it prints accordingly. (Daniel Thayer)
-
+  * Improve the broctl top helper script for FreeBSD (Daniel Thayer)
 
 1.4-18 | 2015-07-27 09:03:22 -0400
 
