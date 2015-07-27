@@ -1,4 +1,16 @@
 
+1.4-26 | 2015-07-27 14:13:43 -0400
+
+  * Merge branch 'topic/dnthayer/cfg-reload' (Justin Azoff)
+
+  * Create broctl-config.sh automatically (Daniel Thayer)
+
+  * Undo a previous change for lb_procs error checking (Daniel Thayer)
+
+  * Update broctl.rst by running "make doc" (Daniel Thayer)
+
+  * Convert boolean config values to python bool type (Daniel Thayer)
+
 1.4-20 | 2015-07-27 09:12:44 -0400
 
   * Merge remote-tracking branch 'origin/topic/dnthayer/ticket1434' (Justin Azoff)

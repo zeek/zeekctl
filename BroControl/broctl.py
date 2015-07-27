@@ -271,12 +271,6 @@ class BroCtl(object):
             self.ui.info("Reloading broctl configuration ...")
             self.reload_cfg()
 
-        # Make sure broctl-config.sh exists, otherwise "check" will fail
-        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
-            results = self.install(local=True)
-            if not results.ok:
-                return results
-
         self.ui.info("checking configurations ...")
         results = self.check(check_node_types=True)
         if not results.ok:

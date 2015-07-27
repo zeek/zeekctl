@@ -138,9 +138,9 @@ class Configuration:
         self._warn_dangling_bro()
 
         # Set the standalone config option.
-        standalone = 0
+        standalone = False
         if len(self.nodestore) == 1:
-            standalone = 1
+            standalone = True
 
         self._set_option("standalone", standalone)
 
@@ -385,8 +385,8 @@ class Configuration:
                 numprocs = int(node.lb_procs)
             except ValueError:
                 raise ConfigurationError("number of load-balanced processes must be an integer for node '%s'" % node.name)
-            if numprocs < 2:
-                raise ConfigurationError("number of load-balanced processes must be at least 2 for node '%s'" % node.name)
+            if numprocs < 1:
+                raise ConfigurationError("number of load-balanced processes must be greater than zero for node '%s'" % node.name)
         elif node.lb_method:
             raise ConfigurationError("number of load-balanced processes not specified for node '%s'" % node.name)
 
@@ -484,9 +484,18 @@ class Configuration:
                     raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 
+    def _to_bool(self, val):
+        if val.lower() in ("1", "true"):
+            return True
+        if val.lower() in ("0", "false"):
+            return False
+        raise ValueError("invalid boolean: '%s'" % val)
+
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
+        type_converters = { "bool": self._to_bool, "int": int, "string": str }
         config = {}
+
         with open(fname, "r") as f:
             for line in f:
                 line = line.strip()
@@ -507,11 +516,10 @@ class Configuration:
         for opt in options.options:
             key = opt.name.lower()
             if key in config:
-                if opt.type in ("int", "bool"):
-                    try:
-                        config[key] = int(config[key])
-                    except ValueError:
-                        raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
+                try:
+                    config[key] = type_converters[opt.type](config[key])
+                except ValueError:
+                    raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
 
         return config
 
@@ -609,6 +617,10 @@ class Configuration:
 
         return False
 
+    # Check if the user has already run the "install" or "deploy" commands.
+    def is_broctl_installed(self):
+        return os.path.isfile(os.path.join(self.config["policydirsiteinstallauto"], "broctl-config.bro"))
+
     # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
     # are missing.  If the "isinstall" parameter is True, then we're running
@@ -634,11 +646,9 @@ class Configuration:
         if isinstall:
             return
 
-        freshinstall = not os.path.exists(os.path.join(self.config["scriptsdir"], "broctl-config.sh"))
-
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
-        if freshinstall:
+        if not self.is_broctl_installed():
             self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
             return
 

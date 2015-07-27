@@ -38,7 +38,8 @@ class Node:
             The network interface for Bro to use; empty if not set.
 
         ``lb_procs`` (integer)
-            The number of clustered Bro workers you'd like to start up.
+            The number of clustered Bro workers you'd like to start up (this
+            number must be greater than zero).
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
