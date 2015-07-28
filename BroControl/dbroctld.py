@@ -28,9 +28,11 @@ class DBroCtld(Thread):
         self.outbound = []
         self.basedir = basedir
         self.suffix = suffix
+        self.head = False
 
         # Stores intermediate results for commands
         self.commands = {}
+        self.command_replies = {}
         logging.debug("DBroctld init with suffix " + str(suffix))
 
     def init_server(self):
@@ -62,6 +64,7 @@ class DBroCtld(Thread):
             print ("  -- dclient started, parent is " + str(self.parent_address) + ", " + str(self.parent_port))
         else:
             print "  -- we are the root node of the deep cluster"
+            self.head = True
 
     def init_overlay(self):
         # Install the local node, its cluster nodes, and its peers
@@ -177,6 +180,9 @@ class DBroCtld(Thread):
         logging.debug(" result for cmd " + str(cmd) + " obtained: " + str(res))
 
         self.commands[cmd] = []
+        self.command_replies[cmd] = len(self.outbound)
+        if self.head:
+            self.command_replies[cmd] -= 1
         if not res:
             res = [(None, None, None)]
 
@@ -201,11 +207,19 @@ class DBroCtld(Thread):
         self.handleResult_hierarchy(res['for'], peer, res['payload'])
 
     def handleResult_hierarchy(self, cmd, peer, res):
+        logging.debug("received reply for cmd " + str(cmd) + "from peer " + str(peer) + " with res " + str(res))
+
         if not cmd in self.commands:
             raise RuntimeError(str(cmd) + " not contained in list of locally issued commands")
 
+        # TODO we need a timeout mechanism in case peers fail
+        self.command_replies[cmd] -= 1
         for entry in res:
             self.commands[cmd].append(entry)
+
+        if self.command_replies[cmd] > 0:
+            logging.debug("  - we do nothing yet, as we still wait for " + str(self.command_replies[cmd]) + " replies")
+            return
 
         if not self.bclient:
             print ("   " + str(cmd) + " results:")
@@ -215,6 +229,7 @@ class DBroCtld(Thread):
             self.sendResult(cmd, self.commands[cmd])
 
         del self.commands[cmd]
+
 
     def handlePeerConnect(self, peer):
         self.outbound.append(peer)

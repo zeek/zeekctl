@@ -161,11 +161,11 @@ class Configuration:
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
 
-        if(self.get_local() and hasattr(self.get_local(), "port")):
-            self.broport = int(self.get_local().port) + 1
-            logging.debug("set broport to " + str(self.broport))
-        else:
-            logging.debug("do not set broport")
+        #if(self.get_local() and hasattr(self.get_local(), "port")):
+        #    self.broport = int(self.get_local().port) + 1
+        #    logging.debug("set broport to " + str(self.broport))
+        #else:
+        #    logging.debug("do not set broport")
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state

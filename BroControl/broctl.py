@@ -439,8 +439,8 @@ class BroCtl(object):
         if not node_list:
             if self.config.nodes("standalone"):
                 node_list = "standalone"
-            elif self.config.nodes("workers"):
-                node_list = "workers"
+            elif self.config.nodes("cluster"):
+                node_list = "cluster"
 
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)

@@ -1,7 +1,6 @@
 # Functions to install files on all nodes.
 
 import os
-import re
 import json
 import logging
 
@@ -90,16 +89,13 @@ def make_broctl_config_sh(cmdout):
 
     return True
 
-
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
 
     if config.Config.nodes("standalone"):
         make_standalone_layout(path, cmdout, silent)
-    elif config.Config.use_broker():
-        make_broccoli_layout(path, cmdout, silent)
     else:
-        make_broccoli_layout(path, cmdout, silent)
+        make_cluster_layout(path, cmdout, silent)
 
 def make_standalone_layout(path, cmdout, silent):
     manager = config.Config.manager()
@@ -126,10 +122,10 @@ def make_standalone_layout(path, cmdout, silent):
         out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
 
-def make_broccoli_layout(path, cmdout, silent):
+def make_cluster_layout(path, cmdout, silent=False):
     manager = config.Config.manager()
 
-    logging.debug("make_broccoli_layout, manager is " + str(manager.name))
+    logging.debug("make_cluster_layout, manager is " + str(manager.name))
     broport = Port(int(config.Config.broport) - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
@@ -176,11 +172,6 @@ def make_broccoli_layout(path, cmdout, silent):
     out.write("};\n")
 
     out.close()
-
-#TODO add broker configuration
-def make_broker_layout(path, cmdout, silent):
-    manager = config.Config.manager()
-    logging.debug("make_broker_layout, manager is " + str(manager.name) + ", do nothing for now")
 
 # Reads in a list of networks from file.
 def read_networks(fname):
