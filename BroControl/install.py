@@ -69,17 +69,13 @@ def make_broctl_config_sh(cmdout):
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
-    try:
-        if os.readlink(symlink) != cfg_path:
-            # attempt to update the symlink
-            try:
-                util.force_symlink(cfg_path, symlink)
-            except OSError as e:
-                cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
-                return False
-    except OSError as e:
-        cmdout.error("failed to resolve symlink '%s': %s" % (symlink, e.strerror))
-        return False
+    if not os.path.islink(symlink) or os.readlink(symlink) != cfg_path:
+        # attempt to update the symlink
+        try:
+            util.force_symlink(cfg_path, symlink)
+        except OSError as e:
+            cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+            return False
 
     return True
 

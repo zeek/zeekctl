@@ -1,7 +1,9 @@
 
-1.4-26 | 2015-07-27 14:13:43 -0400
+1.4-28 | 2015-07-29 15:33:37 -0500
 
-  * Merge branch 'topic/dnthayer/cfg-reload' (Justin Azoff)
+  * Handle a missing broctl-config.sh symlink (Justin Azoff)
+
+1.4-26 | 2015-07-27 14:13:43 -0400
 
   * Create broctl-config.sh automatically (Daniel Thayer)
 
@@ -18,8 +20,6 @@
   * Improve the broctl top helper script for FreeBSD (Daniel Thayer)
 
 1.4-18 | 2015-07-27 09:03:22 -0400
-
-  * Merge branch 'topic/dnthayer/cfg-reload' (Justin Azoff)
 
   * Improve error message for invalid broctl plugin config values (Daniel Thayer)
 
