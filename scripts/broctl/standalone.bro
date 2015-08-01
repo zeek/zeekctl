@@ -1,8 +1,5 @@
 ##! Configuration for a standalone system used with BroControl.
-
 @load standalone-layout
-@load frameworks/control/controllee
-@load policy/frameworks/communication/listen
 
 # Log rotation support.
 redef Log::default_rotation_interval = 1 hrs;

@@ -6,7 +6,6 @@ import time
 import traceback
 import logging
 import json
-import os
 
 from collections import defaultdict
 from Queue import Queue
@@ -17,6 +16,9 @@ from BroControl.broctl import BroCtl
 # TODO need to be moved to options.py
 peer_timeout = 50
 polling_interval = 0.2
+# source port of the dclient connecting to dbroctld
+control_port = 4242
+
 
 class DBroCtld(Thread):
     def __init__(self, logs, basedir, suffix=None):
@@ -96,9 +98,10 @@ class DBroCtld(Thread):
         elif dtype == "peer-disconnect":
             self.handlePeerDisconnect(peer)
 
+    # Handle a received message
     def handleMessage(self, peer, msg):
         (addr, port) = peer
-        logging.debug("handleMessage: msg " +  str(msg) + " from peer " + str(addr) + " received")
+        logging.debug("handleMessage: msg " + str(msg) + " from peer " + str(addr) + " received")
 
         if 'type' not in msg.keys():
             logging.debug("Error: received a msg with no type")
@@ -117,27 +120,29 @@ class DBroCtld(Thread):
             logging.debug("handleMessage: unknown message type received")
             raise RuntimeError("message type unknown")
 
+    # Handle a command message received from the control console or a
+    # predecessor
     def handleCommand(self, peer, msg):
         ocmd = msg['payload']
         (paddr, pport) = peer
+        logging.debug("msg " + str(msg) + ", ocmd " + str(ocmd))
         if paddr != self.parent_address or pport != self.server_port:
             logging.debug("cmd from peer " + str(peer) + " received that is not our parent " + str(self.parent_address))
         else:
             logging.debug("cmd from our parent " + str(peer) + " received")
 
         # Distinguish between command and its parameters
-        args= ocmd.split(" ")
+        args = ocmd.split(" ")
         cmd = args[0]
         args.remove(cmd)
 
         logging.debug("executing cmd " + str(cmd) + " with args " + str(args))
         if args:
-            print("execute cmd "  + str(cmd) + " with args " + str(args))
+            print("execute cmd " + str(cmd) + " with args " + str(args))
         else:
-            print("execute cmd "  + str(cmd))
+            print("execute cmd " + str(cmd))
         # Execute command...
         func = getattr(self.broctl, cmd, self.noop)
-        logging.debug("func " + str(func))
 
         if hasattr(func,  'api_exposed'):
             res = None
@@ -148,7 +153,7 @@ class DBroCtld(Thread):
                 res = traceback.format_exc()
 
             # handle the result of the command
-            self.processResult(cmd, res)
+            self.processLocalResult(cmd, res)
 
             # Forward command ...
             self.forwardCommand(ocmd)
@@ -163,58 +168,63 @@ class DBroCtld(Thread):
             logging.debug("handleCommand: unknown command, ignoring it")
 
     # process the results returned from broctl
-    def processResult(self, cmd, res):
+    def processLocalResult(self, cmd, res):
         if res:
             logging.debug("result of cmd " + str(cmd) + " is " + str(res))
         else:
             logging.debug("no result for cmd " + str(cmd))
             return
 
-        if cmd in ["netstats", "peerstatus", "print_id"]:
-            self.processResultHierarchy(cmd, res.get_node_output())
+        result = res.get_node_output()
 
-    def processResultHierarchy(self, cmd, res):
+        if cmd not in ["netstats", "peerstatus", "print_id", "status"]:
+            logging.debug("unknown command " + str(cmd) + " with result " + str(result))
+            return
+
         if cmd in self.commands:
-            logging.debug( "cmd " + str(cmd) + " already in result list")
             raise RuntimeError("old netstats results available!")
-        logging.debug(" result for cmd " + str(cmd) + " obtained: " + str(res))
+
+        logging.debug(" result for cmd " + str(cmd) + " obtained: " + str(result))
 
         self.commands[cmd] = []
         self.command_replies[cmd] = len(self.outbound)
-        if self.head:
-            self.command_replies[cmd] -= 1
         if not res:
-            res = [(None, None, None)]
+            result = [(None, None, None)]
 
-        for (n, v, r) in res:
+        for (n, v, r) in result:
             logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
             self.commands[cmd].append((str(self.server_address), str(n), str(r)))
 
-        if self.bclient and not self.outbound:
+        if not self.bclient:
+            self.output_result(cmd, result)
+
+        elif not self.outbound:
             rlist = self.commands[cmd]
             logging.debug("send results for cmd " + str(cmd) + " : " + str(rlist))
             self.sendResult(cmd, rlist)
             del self.commands[cmd]
+
         else:
             logging.debug("we wait for " + str(cmd) + " results from our successors")
 
-    # handle result messages from subsequent dbroctld-peers
+    # Handle result message from a successor
     def handleResult(self, peer, res):
-        logging.debug("Recvd result from peer " + str(peer) +  ":" + str(res))
 
-        if not 'for' in res.keys():
+        if 'for' not in res.keys():
             raise RuntimeError("Received result message with invalid format")
         self.handleResult_hierarchy(res['for'], peer, res['payload'])
 
-    def handleResult_hierarchy(self, cmd, peer, res):
-        logging.debug("received reply for cmd " + str(cmd) + "from peer " + str(peer) + " with res " + str(res))
+        cmd = res['for']
+        result = res['payload']
 
-        if not cmd in self.commands:
+        logging.debug("received reply for cmd " + str(cmd) + "from peer " + str(peer) + " with result " + str(result))
+
+        if cmd not in self.commands:
             raise RuntimeError(str(cmd) + " not contained in list of locally issued commands")
 
         # TODO we need a timeout mechanism in case peers fail
         self.command_replies[cmd] -= 1
-        for entry in res:
+        for entry in result:
             self.commands[cmd].append(entry)
 
         if self.command_replies[cmd] > 0:
@@ -222,26 +232,41 @@ class DBroCtld(Thread):
             return
 
         if not self.bclient:
-            print ("   " + str(cmd) + " results:")
-            for (addr, n, r) in self.commands[cmd]:
-                print("    - " + str(addr) +  " : " + str(n) + " : " + str(r))
+            self.output_results(cmd, result)
         else:
             self.sendResult(cmd, self.commands[cmd])
 
+    def output_result(self, cmd, res):
+        print ("   " + str(cmd) + " results:")
+        for (addr, n, r) in self.commands[cmd]:
+            print("    - " + str(addr) + " : " + str(n) + " : " + str(r))
+        # when we have a control connection we need to send the results
+        self.sendResultToControl(cmd, res)
         del self.commands[cmd]
 
-
     def handlePeerConnect(self, peer):
-        self.outbound.append(peer)
-        logging.debug("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
-        print ("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
+        (paddr, pport) = peer
+        if(pport != control_port):
+            self.outbound.append(peer)
+            logging.debug("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
+            print ("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
+        else:
+            self.control_peer = peer
+            logging.debug("node" + str(peer) + " established control connection to us")
+            print "node" + str(peer) + " established control connection to us"
 
     def handlePeerDisconnect(self, peer):
-        print "peer", peer, "disconnected"
-        if peer in self.outbound:
-            logging.debug(" outbound peer " + str(peer) + " disconnected")
-            self.outbound.remove(peer)
+        (paddr, pport) = peer
+        if(pport != control_port):
+            print "peer", peer, "disconnected"
+            if peer in self.outbound:
+                logging.debug(" outbound peer " + str(peer) + " disconnected")
+                self.outbound.remove(peer)
+        else:
+            logging.debug(" we lost our control connection to peer " + str(peer))
+            print "control peer", peer, "disconnected"
 
+    # Forward command to all successors
     def forwardCommand(self, cmd):
         if self.outbound:
             logging.debug("forward cmd \"" + str(cmd) + "\" to ")
@@ -250,19 +275,26 @@ class DBroCtld(Thread):
 
         for peer in self.outbound:
             logging.debug(" - " + str(peer))
-            print("  - forward \"" + str(cmd) +  "\" to peer" + str(peer))
+            print("  - forward \"" + str(cmd) + "\" to peer" + str(peer))
             self.sendCommand(peer, cmd)
 
+    # Send a command to a peer
     def sendCommand(self, peer, cmd):
-        msg = {'type':'command', 'payload':cmd}
+        msg = BCmdMsg(cmd)
         self.bserver.send(peer, msg)
 
+    # Send a result to the control console
+    def sendResultToControl(self, cmd, res):
+        msg = BResMsg(cmd, str(res))
+        self.bserver.send(self.control_peer, msg)
+
+    # Send a result to our predecessor
     def sendResult(self, cmd, res):
         if not self.bclient:
             logging.debug("no inbound connection to send to")
             raise RuntimeError("no inbound connection to send to")
 
-        msg = {'type': 'result', 'for': cmd, 'payload': res}
+        msg = BResMsg(cmd, str(res))
         self.bclient.send(msg)
 
     def noop(self, *args, **kwargs):
@@ -302,7 +334,6 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
 
     def peer_connected(self, peer, handler):
         logging.debug("Peer connected: " + str(peer))
-
         self.outbound[peer] = handler
         self.squeue.put(("peer-connect", peer, None))
 
@@ -314,9 +345,9 @@ class BSocketServer(SocketServer.ThreadingMixIn, SocketServer.ThreadingTCPServer
     def receive_data(self, peer, data):
         self.squeue.put(("msg", peer, data))
 
-    def send(self, peer, data):
+    def send(self, peer, msg):
         if peer in self.outbound:
-            self.outbound[peer].send(data)
+            self.outbound[peer].send(msg)
 
     def stop(self):
         self.socket.close()
@@ -338,16 +369,18 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
                     data = json.loads(data)
                     counter = 0
                     logging.debug("Handler for peer " + str(self.client_address) + " received data: " + str(data))
-                    self.server.receive_data(self.client_address, data)
 
                     # Send a reply
                     if 'type' in data.keys() and data['type'] != 'ack':
-                        reply = {'type': 'ack', 'payload':'ack'}
+                        reply = {'type': 'ack', 'payload': 'ack'}
                         self.request.sendto(json.dumps(reply), self.client_address)
 
+                    self.server.receive_data(self.client_address, data)
+
                     # Stop the handler if we receive a shutdown command
-                    if 'type' in data.keys() and data['type'] == 'command' and data['payload'] == 'shutdown':
-                        self.stop()
+                    if 'type' in data.keys() and data['type'] == 'command':
+                        if data['payload'] == 'shutdown':
+                            self.stop()
 
                 else:
                     counter += 1
@@ -361,8 +394,8 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
         finally:
             self.stop()
 
-    def send(self, data):
-        self.request.sendto(json.dumps(data), self.client_address)
+    def send(self, msg):
+        self.request.sendto(msg.dump(), self.client_address)
 
     def finish(self):
         logging.debug("Handler for peer " + str(self.client_address) + " terminates")
@@ -402,7 +435,7 @@ class BClient():
 
     def send(self, msg):
         logging.debug("bclient send msg to " + str(self.server_address))
-        self.socket.sendto(json.dumps(msg), self.server_address)
+        self.socket.sendto(msg.dump(), self.server_address)
 
     def finish(self):
         self.socket.close()
@@ -438,10 +471,10 @@ class Logs:
         return msgs[since:]
 
 ####################################
+# Message declarations
 
 
-#TODO not used yet
-class BBaseMessage:
+class BBaseMsg(object):
     def __init__(self, mtype):
         self.message = {}
         self.message['type'] = mtype
@@ -450,11 +483,17 @@ class BBaseMessage:
         return json.dumps(self.message)
 
 
-class BCommandMessage(BBaseMessage):
-    def __init__(self, mtype, payload):
-        super(BCommandMessage, self).__init__(mtype)
+class BCmdMsg(BBaseMsg):
+    def __init__(self, payload):
+        super(BCmdMsg, self).__init__("command")
         self.message['payload'] = payload
 
+
+class BResMsg(BBaseMsg):
+    def __init__(self, cmd, payload):
+        super(BResMsg, self).__init__(mtype="result")
+        self.message['for'] = cmd
+        self.message['payload'] = payload
 ####################################
 
 

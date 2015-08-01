@@ -119,59 +119,60 @@ def make_standalone_layout(path, cmdout, silent):
         # control by default.
         out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
         out.write("redef Communication::nodes += {\n")
-        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
 
 def make_cluster_layout(path, cmdout, silent=False):
-    manager = config.Config.manager()
+    manager=config.Config.manager()
 
     logging.debug("make_cluster_layout, manager is " + str(manager.name))
     broport = Port(int(config.Config.broport) - 1)
 
-    filename = os.path.join(path, "cluster-layout.bro")
     if not silent:
         cmdout.info("generating cluster-layout.bro ...")
-
-    out = open(filename, "w")
 
     workers = config.Config.nodes("workers")
     proxies = config.Config.nodes("proxies")
 
-    out.write("# Automatically generated. Do not edit.\n")
-    out.write("redef Cluster::nodes = {\n")
-
-    # Control definition.  For now just reuse the manager information.
-    out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
+    out = ""
+    out += "# Automatically generated. Do not edit.\n"
+    out += "redef Cluster::nodes = {\n"
+    out += "\t[\"control\"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager))
 
     # Manager definition
-    out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
+    out += "\t[\"%s\"] = [$node_roles=set(Cluster::MANAGER), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager))
     for s in workers:
-        out.write("\"%s\"" % s.name)
+        out += "\"%s\"" % s.name
         if s != workers[-1]:
-            out.write(", ")
-    out.write(")],\n")
+            out += ", "
+    out += ")],\n"
 
     # Proxies definition
     for p in proxies:
-        out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
+        out += "\t[\"%s\"] = [$node_roles=set(Cluster::DATANODE), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name)
         for s in workers:
-            out.write("\"%s\"" % s.name)
+            out += "\"%s\"" % s.name
             if s != workers[-1]:
-                out.write(", ")
-        out.write(")],\n")
+                out += ", "
+        out += ")],\n"
 
     # Workers definition
     for w in workers:
         p = w.count % len(proxies)
-        out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
+        out += "\t[\"%s\"] = [$node_roles=set(Cluster::WORKER), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name)
 
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:
-        out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
+        out += "\t[\"time-machine\"] = [$node_roles=set(Cluster::TIME_MACHINE), $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport)
 
-    out.write("};\n")
+    out += "};\n"
 
-    out.close()
+    filename = os.path.join(path, "cluster-layout.bro")
+    file_out = open(filename, "w")
+    file_out.write(out)
+    file_out.close()
+
+    logging.debug("out:" + str(out))
 
 # Reads in a list of networks from file.
 def read_networks(fname):
@@ -233,7 +234,7 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
         out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
         if manager.type != "standalone":
-            out.write("@if ( Cluster::local_node_type() == Cluster::MANAGER )\n")
+            out.write("@if ( Cluster::has_local_role(Cluster::MANAGER) )\n")
         out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
         out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
         if manager.type != "standalone":

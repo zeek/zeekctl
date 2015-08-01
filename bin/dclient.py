@@ -7,6 +7,10 @@ import cmd
 import errno
 import json
 
+control_port=4242
+d_host="localhost"
+d_port=9990
+
 class BClient(cmd.Cmd):
     prompt = '[BClient] > '
 
@@ -16,16 +20,18 @@ class BClient(cmd.Cmd):
             self.connect(host, port)
         self.sock = None
 
+    def con(self):
+        self.connect(d_host, d_port)
+
     def connect(self, host, port):
-        #if self.sock:
-        #    print ("we are already connected to " + str(self.host) + ":" + str(self.port))
         if host and port:
             self.host = host
             self.port = port
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
+                self.sock.bind(("127.0.0.1", control_port))
                 self.sock.connect((self.host, self.port))
-            except socket.error, msg:
+            except socket.error:
                 print "Couldnt connect to ", str(host), (port), " check parameters"
                 return
             print "connected..."
@@ -40,11 +46,13 @@ class BClient(cmd.Cmd):
         self.send(data)
         while data:
             try:
-                data = json.loads(self.sock.recv(1024).strip())
-                if "payload" in data.keys():
-                    print "response: " + str(data["payload"])
-                else:
-                    print "weird response: " + str(data)
+                data_r = self.sock.recv(1024).strip()
+                if data_r:
+                    data = json.loads(data_r)
+                    if "payload" in data.keys():
+                        print "response: " + str(data["payload"])
+                    else:
+                        print "weird response: " + str(data)
             except socket.error, e:
                 err = e.args[0]
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
@@ -59,9 +67,9 @@ class BClient(cmd.Cmd):
             print "not connected to a dbroctld daemon yet"
             return
 
-        data = {'type': 'command', 'payload': data}
+        sdata = {'type': 'command', 'payload': data}
         try:
-            self.sock.sendall(json.dumps(data))
+            self.sock.sendall(json.dumps(sdata))
         finally:
             pass
 
@@ -79,7 +87,6 @@ class BClient(cmd.Cmd):
 
         host, port = linelist
         self.connect(host, int(port))
-        #self.send("dclient")
 
     def do_start(self, line):
         """ start the bro instances in the deep cluster """
@@ -119,38 +126,44 @@ class BClient(cmd.Cmd):
             self.do_shutdown()
         return True
 
-    def do_status(self, line):
-        """ gives status """
+    def do_dstatus(self, line):
+        """ gives local status """
         if self.sock:
             print "connected to host " + str(self.host) + "::" + str(self.port)
         else:
             print ("not connected yet")
 
+    def do_status(self, line):
+        """ sends out status command to connected dbroctld"""
+        if self.sock:
+            print "send status command to dbroctld"
+        self.send("status")
+
     def do_netstats(self, line):
         """ sends out the netstats command """
         if self.sock:
-            self.send("netstats")
             print "obtaining netstats information from all bros"
-        else:
-            print ("not connected yet")
+        self.send("netstats")
 
     def do_peerstatus(self, line):
         """ sends out the peerstatus command """
         if self.sock:
-            self.send("peerstatus")
             print "obtaining peerstatus information from all bros"
-        else:
-            print ("not connected yet")
+        self.send("peerstatus")
 
     def do_print_id(self, line):
-        """ sends out the peerstatus command """
+        """ sends out the print_id command """
         linelist = line.split()
         if len(linelist) != 1:
             print("required: print [id]")
             return
-        id = linelist
+
+        args = ""
+        for i in linelist:
+            args += str(i) + " "
+
         if self.sock:
-            self.send("print_id " + str(id))
+            self.send("print_id " + args.strip())
             print "obtaining peer_id information from all bros"
         else:
             print ("not connected yet")

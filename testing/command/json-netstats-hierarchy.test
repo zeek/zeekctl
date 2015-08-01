@@ -11,7 +11,7 @@
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__debug
-etc/node.cfg__hierarchy_json
+etc/node.cfg__json
 EOF
 
 ret=0
@@ -21,7 +21,7 @@ broctl start
 #broctl status
 
 # get status of all nodes
-#broctl netstats > all.out 2>&1
+broctl netstats > all.out 2>&1
 
 # get status of one node
 broctl netstats icsi-1 > onenode.out 2>&1

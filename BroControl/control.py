@@ -1191,7 +1191,12 @@ class Controller:
 
         results = cmdresult.CmdResult()
         for (node, success, args) in events.send_events_parallel(eventlist):
-            results.set_node_output(node, success, args)
+            if success:
+                out = args[0]
+            else:
+                out = args
+
+            results.set_node_output(node, success, out)
 
         return results
 
@@ -1211,14 +1216,11 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_peerstatus(nodes):
             if success:
-                out = args[0].strip()
+                out = args[0]
             else:
                 out = args
 
-            if config.Config.use_broker():
-                results.set_node_output(node, success, args)
-            else:
-                results.set_node_output(node, success, out)
+            results.set_node_output(node, success, out)
 
         return results
 
@@ -1226,14 +1228,11 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_netstats(nodes):
             if success:
-                out = args[0].strip()
+                out = args[0]
             else:
                 out = args
 
-            if config.Config.use_broker():
-                results.set_node_output(node, success, args)
-            else:
-                results.set_node_output(node, success, out)
+            results.set_node_output(node, success, out)
 
         return results
 

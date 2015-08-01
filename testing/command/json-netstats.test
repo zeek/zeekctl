@@ -26,7 +26,7 @@ broctl netstats icsi-1 > onenode.out 2>&1
 broctl stop
 
 # no nodes are running, so no status exists
-#broctl netstats > stopped.out 2>&1
+broctl netstats > stopped.out 2>&1
 # the file size should be zero
 test ! -s stopped.out || ret=1
 

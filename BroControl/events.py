@@ -83,7 +83,6 @@ def _send_event_init_broccoli(node, event, args, result_event):
 def send_events_parallel_broker(events):
     logging.debug("send_events_parallel: use broker")
     results = []
-    sent = []
 
     for (node, event, args, result_event) in events:
         logging.debug("check event " + str(event))
@@ -108,6 +107,7 @@ def _send_event_broker(node, event, args, result_event):
     ep.peer(host, node.getPort(), 1)
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
+    logging.debug("args is " + str(args))
     time.sleep(1)
 
     oq = ep.outgoing_connection_status()
@@ -119,42 +119,45 @@ def _send_event_broker(node, event, args, result_event):
         for i in inter:
             logging.debug("connected to broker-peer " + str(i.peer_name))
 
-    ep.advertise("/bro/event/cluster/control/response")
-    rqueue = pybroker.message_queue("/bro/event/cluster/control/response", ep)
+    ep.advertise("/bro/event/control/response")
+    rqueue = pybroker.message_queue("/bro/event/control/response", ep)
     logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
-    ep.publish("/bro/event/cluster/control/request")
+    ep.publish("/bro/event/control/request")
 
-    # Send the event to the broker endpoint
+    # Construct the broker event to send
     vec = pybroker.vector_of_data(1, pybroker.data(event))
-    ep.send("/bro/event/cluster/control/request", vec)
+    for a in args:
+        vec.append(pybroker.data(str(a)))
+    # Send the event to the broker endpoint
+    ep.send("/bro/event/control/request", vec)
 
-    msg = None
-    resp_event= None
-    resp = None
-    # timeout of at most 4 seconds
+    resp_event = None
+    res = []
+    # timeout of at most 4 seconds for retrieving the reply
     for c in range(0,3):
         time.sleep(1)
         logging.debug("broker counter " + str(c))
         msg = rqueue.want_pop()
         if msg:
             for i in pybroker.deque_of_message(msg):
-                count = 0
                 for j in i:
-                    if count == 0:
+                    if not resp_event:
                         resp_event = j
                     else:
-                        resp = j
-                    count += 1
-                    logging.debug("broker data is " + str(resp))
-        if resp:
+                        logging.debug("val is " + str(j))
+                        res.append(str(j).strip())
+                        logging.debug("res is then " + str(res))
+                    logging.debug("broker data is " + str(j))
+
+        if resp_event:
             break
 
     if resp_event:
-        if not resp:
+        if not res:
             logging.debug("broker event " + str(resp_event) + " without payload received")
         else:
-            logging.debug("broker event " + str(resp_event) + " received with payload " + str(resp).strip())
-        return (True, str(resp).strip())
+            logging.debug("broker event " + str(resp_event) + " received with payload " + str(res))
+        return (True, res)
     else:
         logging.debug("broker: no response obtained")
         return (False, "no response obtained")

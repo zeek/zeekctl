@@ -24,6 +24,11 @@
 		{	"id": "worker-1",
 			"type": "worker",
 			"host": "localhost",
+			"policy": "policy 5"},
+
+		{	"id": "worker-2",
+			"type": "worker",
+			"host": "localhost",
 			"policy": "policy 5"}
 	]}
 	
