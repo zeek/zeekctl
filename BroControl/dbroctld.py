@@ -195,13 +195,17 @@ class DBroCtld(Thread):
             logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
             self.commands[cmd].append((str(self.server_address), str(n), str(r)))
 
-        if not self.bclient:
+        if not self.bclient and not self.outbound:
+            logging.debug("no bclient, so output results")
             self.output_result(cmd, result)
+            del self.commands[cmd]
+            del self.command_replies[cmd]
 
         elif not self.outbound:
             rlist = self.commands[cmd]
             logging.debug("send results for cmd " + str(cmd) + " : " + str(rlist))
             self.sendResult(cmd, rlist)
+            logging.debug("deleting cmd from cache as we have not outbound peer: " + str(cmd))
             del self.commands[cmd]
 
         else:
@@ -209,22 +213,21 @@ class DBroCtld(Thread):
 
     # Handle result message from a successor
     def handleResult(self, peer, res):
-
-        if 'for' not in res.keys():
+        if 'for' not in res.keys() or 'payload' not in res.keys():
             raise RuntimeError("Received result message with invalid format")
-        self.handleResult_hierarchy(res['for'], peer, res['payload'])
 
         cmd = res['for']
         result = res['payload']
 
-        logging.debug("received reply for cmd " + str(cmd) + "from peer " + str(peer) + " with result " + str(result))
+        logging.debug("received reply for cmd " + str(cmd) + " from peer " + str(peer) + " with result " + str(result))
 
         if cmd not in self.commands:
             raise RuntimeError(str(cmd) + " not contained in list of locally issued commands")
 
         # TODO we need a timeout mechanism in case peers fail
         self.command_replies[cmd] -= 1
-        for entry in result:
+
+        for entry in res['payload']:
             self.commands[cmd].append(entry)
 
         if self.command_replies[cmd] > 0:
@@ -232,8 +235,9 @@ class DBroCtld(Thread):
             return
 
         if not self.bclient:
-            self.output_results(cmd, result)
+            self.output_result(cmd, result)
         else:
+            logging.debug("sending result to bclient")
             self.sendResult(cmd, self.commands[cmd])
 
     def output_result(self, cmd, res):
@@ -285,7 +289,7 @@ class DBroCtld(Thread):
 
     # Send a result to the control console
     def sendResultToControl(self, cmd, res):
-        msg = BResMsg(cmd, str(res))
+        msg = BResMsg(cmd, res)
         self.bserver.send(self.control_peer, msg)
 
     # Send a result to our predecessor
@@ -294,7 +298,7 @@ class DBroCtld(Thread):
             logging.debug("no inbound connection to send to")
             raise RuntimeError("no inbound connection to send to")
 
-        msg = BResMsg(cmd, str(res))
+        msg = BResMsg(cmd, res)
         self.bclient.send(msg)
 
     def noop(self, *args, **kwargs):
