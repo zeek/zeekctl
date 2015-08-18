@@ -119,24 +119,24 @@ def _send_event_broker(node, event, args, result_event):
         for i in inter:
             logging.debug("connected to broker-peer " + str(i.peer_name))
 
-    ep.advertise("/bro/event/control/response")
-    rqueue = pybroker.message_queue("/bro/event/control/response", ep)
+    ep.advertise("bro/event/control/response/")
+    rqueue = pybroker.message_queue("bro/event/control/response/", ep)
     logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
-    ep.publish("/bro/event/control/request")
+    ep.publish("bro/event/control/request/")
 
     # Construct the broker event to send
     vec = pybroker.vector_of_data(1, pybroker.data(event))
     for a in args:
         vec.append(pybroker.data(str(a)))
     # Send the event to the broker endpoint
-    ep.send("/bro/event/control/request", vec)
+    ep.send("bro/event/control/request/", vec)
 
     resp_event = None
     res = []
     # timeout of at most 4 seconds for retrieving the reply
-    for c in range(0,3):
-        time.sleep(1)
-        logging.debug("broker counter " + str(c))
+    for c in range(0, 6):
+        time.sleep(0.5)
+        logging.debug("receiving broker content, counter " + str(c))
         msg = rqueue.want_pop()
         if msg:
             for i in pybroker.deque_of_message(msg):
@@ -144,10 +144,8 @@ def _send_event_broker(node, event, args, result_event):
                     if not resp_event:
                         resp_event = j
                     else:
-                        logging.debug("val is " + str(j))
                         res.append(str(j).strip())
-                        logging.debug("res is then " + str(res))
-                    logging.debug("broker data is " + str(j))
+                    logging.debug("broker data is " + str(res))
 
         if resp_event:
             break

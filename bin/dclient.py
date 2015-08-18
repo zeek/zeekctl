@@ -13,10 +13,11 @@ from threading import Thread
 control_port = 4242
 d_host = "localhost"
 d_port = 9990
-delay_response = 4
+delay_response = 10
+
 
 class BClient(cmd.Cmd):
-    intro  = 'Deep Cluster Client'
+    intro = 'Deep Cluster Client'
     prompt = '[BClient] > '
     ruler = '-'
 
@@ -24,6 +25,9 @@ class BClient(cmd.Cmd):
         cmd.Cmd.__init__(self)
         if host and port:
             self.connect(host, port)
+
+        self.host = None
+        self.port = None
 
         self.sock = None
         self.cq = Queue()
@@ -38,7 +42,7 @@ class BClient(cmd.Cmd):
     def do_cl(self, line):
         """ connect to localhost on 9990 """
         print "connect to localhost on 9990"
-        self.bc.connect("localhost", 9990)
+        self.bc.connect("192.168.4.239", 9990)
 
     # cmdloop handlers
     def do_connect(self, line):
@@ -49,6 +53,8 @@ class BClient(cmd.Cmd):
             return
 
         host, port = linelist
+        self.host = host
+        self.port = port
         self.bc.connect(host, int(port))
 
     def do_start(self, line):
@@ -137,33 +143,43 @@ class BClient(cmd.Cmd):
         os.system('clear')
 
     def precmd(self, line):
-        #print "command " + line
         return line
 
     def postcmd(self, stop, line):
-        #print "line " + str(line) + " stop " + str(stop)
+        # print "line " + str(line) + " stop " + str(stop)
         if not self.bc.is_connected() or not line:
             return stop
-        for l in ["connect", "disconnect", "shutdown", "cl", "start", "stop"]:
+        for l in ["connect", "disconnect", "shutdown", "cl", "dstatus"]:
             if l in line:
                 return stop
 
         counter = 0
         data = None
-        while counter < (delay_response / 0.5):
-            time.sleep(0.5)
+        while counter < (delay_response / 0.25):
+            time.sleep(0.25)
             while not self.cq.empty():
                 data = self.cq.get()
-                print "-----------------------------------------------------------"
-                print "response | " + str(data)
-                print "-----------------------------------------------------------"
-                print ""
+                self.handleResult(data, line)
                 break
             if data:
                 break
-            #print "c " + str(counter)
             counter += 1
         return stop
+
+    def handleResult(self, data, line):
+        if "netstats" in line or "peerstatus" in line:
+            print ""
+            print "-----------------------------------------------------------"
+            print "response | "
+            for (n,v,w) in data:
+                print "         | " + str(n) + ", " + str(v) + ", " + str(w)
+            print "-----------------------------------------------------------"
+            print ""
+        else:
+            print "-----------------------------------------------------------"
+            print "response | " + str(data)
+            print "-----------------------------------------------------------"
+            print ""
 
 class BConnector():
     def __init__(self, cqueue):
@@ -208,8 +224,8 @@ class BConnector():
                         data = json.loads(data_socket)
                     if data:
                         if 'payload' in data.keys():
-                            #print "response: " + str(data["payload"])
-                            self.cq.put(str(data['payload']))
+                            # print "response: " + str(data["payload"])
+                            self.cq.put(data['payload'])
 
                 except socket.error, e:
                     err = e.args[0]

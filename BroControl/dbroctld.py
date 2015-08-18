@@ -31,6 +31,7 @@ class DBroCtld(Thread):
         self.basedir = basedir
         self.suffix = suffix
         self.head = False
+        self.control_peer = None
 
         # Stores intermediate results for commands
         self.commands = {}
@@ -155,6 +156,7 @@ class DBroCtld(Thread):
             # handle the result of the command
             self.processLocalResult(cmd, res)
 
+            logging.debug("here we are")
             # Forward command ...
             self.forwardCommand(ocmd)
 
@@ -170,7 +172,6 @@ class DBroCtld(Thread):
     # process the results returned from broctl
     def processLocalResult(self, cmd, res):
         if cmd not in ["netstats", "peerstatus", "print_id", "status"]:
-            logging.debug("unknown command " + str(cmd) + " with result " + str(res))
             self.sendResultToControl(cmd, "ack")
             return
 
@@ -194,6 +195,7 @@ class DBroCtld(Thread):
         for (n, v, r) in result:
             logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
             self.commands[cmd].append((str(self.server_address), str(n), str(r)))
+            logging.debug("commands length " + str(len(self.commands)))
 
         if not self.bclient and not self.outbound:
             logging.debug("no bclient, so output results")
@@ -231,6 +233,7 @@ class DBroCtld(Thread):
 
         for entry in res['payload']:
             self.commands[cmd].append(entry)
+            logging.debug("  - append entry " + str(entry) + " to results")
 
         if self.command_replies[cmd] > 0:
             logging.debug("  - we do nothing yet, as we still wait for " + str(self.command_replies[cmd]) + " replies")
@@ -238,18 +241,23 @@ class DBroCtld(Thread):
 
         if not self.bclient:
             self.output_result(cmd, result)
+            del self.commands[cmd]
+            del self.command_replies[cmd]
         else:
             logging.debug("sending result to bclient")
             self.sendResult(cmd, self.commands[cmd])
+            del self.commands[cmd]
+            del self.command_replies[cmd]
 
     def output_result(self, cmd, res):
+        logging.debug("we have gathered all input for cmd " + str(cmd) + ", thus output results")
         print ("   " + str(cmd) + " results:")
-        result = []
+        #result = []
         for (addr, n, r) in self.commands[cmd]:
             print("    - " + str(addr) + " : " + str(n) + " : " + str(r))
-            result += (addr, n, r)
+            #result += (addr, n, r)
         ## when we have a control connection we need to send the results
-        self.sendResultToControl(cmd, result)
+        self.sendResultToControl(cmd, self.commands[cmd])
 
     def handlePeerConnect(self, peer):
         (paddr, pport) = peer
@@ -445,8 +453,8 @@ class BClient():
         self.socket.close()
 
     def stop(self):
-        self.running = False
         self.finish()
+        self.running = False
 
 
 class TermUI:
