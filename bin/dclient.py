@@ -219,7 +219,7 @@ class BConnector():
             if self.sock:
                 try:
                     data = None
-                    data_socket = self.sock.recv(1024).strip()
+                    data_socket = self.sock.recv(4096).strip()
                     if data_socket:
                         data = json.loads(data_socket)
                     if data:

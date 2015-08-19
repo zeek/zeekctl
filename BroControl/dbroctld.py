@@ -381,7 +381,7 @@ class BSocketHandler(SocketServer.BaseRequestHandler):
         try:
             counter = 0
             while self.running:
-                data = self.request.recv(1024).strip()
+                data = self.request.recv(4096).strip()
                 if data != "":
                     data = json.loads(data)
                     counter = 0
