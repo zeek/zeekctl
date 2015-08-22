@@ -112,7 +112,7 @@ def make_layout(path, cmdout, silent=False):
             # control by default.
             out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
             out.write("redef Communication::nodes += {\n")
-            out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+            out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
             out.write("};\n")
 
     else:
@@ -139,7 +139,7 @@ def make_layout(path, cmdout, silent=False):
 
             # Proxies definition
             for p in proxies:
-                out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
+                out.write("\t[\"%s\"] = [$node_type=Cluster::DATANODE, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
                 for s in workers:
                     out.write("\"%s\"" % s.name)
                     if s != workers[-1]:
@@ -149,7 +149,7 @@ def make_layout(path, cmdout, silent=False):
             # Workers definition
             for w in workers:
                 p = w.count % len(proxies)
-                out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
+                out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
 
             # Activate time-machine support if configured.
             if config.Config.timemachinehost:
