@@ -1,0 +1,28 @@
+
+{
+"head": {
+			"id": "icsi-1"
+		},
+
+"nodes" : [
+
+		{	
+				"id": "icsi-1",
+				"roles": ["peer"],
+				"host": "192.168.4.239",
+				"port": "9990"
+		},
+
+		{	
+				"id": "icsi-2",
+				"roles": ["peer"],
+				"host": "172.17.0.2",
+				"port": "9990"
+		}
+],
+
+"connections":	[	
+					{"from": "icsi-1", "to": "icsi-2"}
+				]
+
+}

@@ -17,7 +17,7 @@ class LBMyricom(BroControl.plugin.Plugin):
         useplugin = False
 
         for nn in self.nodes():
-            if nn.type != "worker" or nn.lb_method != "myricom":
+            if "worker" not in nn.roles or nn.lb_method != "myricom":
                 continue
 
             useplugin = True
@@ -28,4 +28,3 @@ class LBMyricom(BroControl.plugin.Plugin):
             nn.env_vars.setdefault("SNF_FLAGS", "0x101")
 
         return useplugin
-

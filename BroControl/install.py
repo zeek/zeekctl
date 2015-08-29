@@ -122,6 +122,24 @@ def make_standalone_layout(path, cmdout, silent):
         out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
 
+def get_cluster_roles(rlist):
+    roles = ""
+    for r in rlist:
+        if roles != "":
+            roles += ", "
+        if r == "manager":
+            roles += "Cluster::MANAGER"
+        elif r == "datanode":
+            roles += "Cluster::DATANODE"
+        elif r == "lognode":
+            roles += "Cluster::LOGNODE"
+        elif r == "worker":
+            roles += "Cluster::WORKER"
+        else:
+            raise RuntimeError("node role not found")
+
+    return roles
+
 def make_cluster_layout(path, cmdout, silent=False):
     manager=config.Config.manager()
 
@@ -132,34 +150,36 @@ def make_cluster_layout(path, cmdout, silent=False):
         cmdout.info("generating cluster-layout.bro ...")
 
     workers = config.Config.nodes("workers")
-    proxies = config.Config.nodes("proxies")
+    datanodes = config.Config.nodes("datanodes")
 
     out = ""
     out += "# Automatically generated. Do not edit.\n"
     out += "redef Cluster::nodes = {\n"
     out += "\t[\"control\"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager))
 
-    # Manager definition
-    out += "\t[\"%s\"] = [$node_roles=set(Cluster::MANAGER), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager))
-    for s in workers:
-        out += "\"%s\"" % s.name
-        if s != workers[-1]:
-            out += ", "
-    out += ")],\n"
+    for n in config.Config.nodes():
+        # Manager definition
+        if n == manager:
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, get_cluster_roles(manager.roles), util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager))
+            for s in workers:
+                out += "\"%s\"" % s.name
+                if s != workers[-1]:
+                    out += ", "
+            out += ")],\n"
 
-    # Proxies definition
-    for p in proxies:
-        out += "\t[\"%s\"] = [$node_roles=set(Cluster::DATANODE), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name)
-        for s in workers:
-            out += "\"%s\"" % s.name
-            if s != workers[-1]:
-                out += ", "
-        out += ")],\n"
+        # Datanode definition
+        elif "datanode" in n.roles or "lognode" in n.roles:
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (n.name, get_cluster_roles(n.roles), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), manager.name)
+            for s in workers:
+                out += "\"%s\"" % s.name
+                if s != workers[-1]:
+                    out += ", "
+            out += ")],\n"
 
-    # Workers definition
-    for w in workers:
-        p = w.count % len(proxies)
-        out += "\t[\"%s\"] = [$node_roles=set(Cluster::WORKER), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name)
+        # Workers definition
+        elif "worker" in n.roles:
+            p = len(workers) % len(datanodes)
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (n.name, get_cluster_roles(n.roles), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), n.interface, manager.name, datanodes[p].name)
 
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:
@@ -233,11 +253,11 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         out.write("redef Notice::sendmail  = \"%s\";\n" % config.Config.sendmail)
         out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
         out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
-        if manager.type != "standalone":
+        if "standalone" not in manager.roles:
             out.write("@if ( Cluster::has_local_role(Cluster::MANAGER) )\n")
         out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
         out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
-        if manager.type != "standalone":
+        if "standalone" not in manager.roles:
             out.write("@endif\n")
 
         if config.Config.ipv6comm == "1":
@@ -264,8 +284,8 @@ def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
     localNode = config.Config.get_local()
 
-    npath = os.path.join (path, "node.cfg_" + str(node.name))
-    logging.debug(str(localNode.name) + " write node.cfg for " + str(node.name) + " to path " + str(npath))
+    npath = os.path.join (path, "node.son_" + str(node.name))
+    logging.debug(str(localNode.name) + " write node.son for " + str(node.name) + " to path " + str(npath))
 
     g = ""
     if hasattr(node, "cluster"):
@@ -282,8 +302,8 @@ def makeNodeConfig(path, node, cmdout, silent=False):
         # 1. head entry
         f.write("\"head\" : {\n")
         f.write("\"id\": \"" + str(localNode.name) + "\",\n")
-        if hasattr(localNode, "type"):
-            f.write("\"type\": \"" + str(localNode.type) + "\",\n")
+        if hasattr(localNode, "roles"):
+            f.write("\"roles\": \"" + str(localNode.roles) + "\",\n")
         if hasattr(localNode, "cluster"):
             f.write("\"cluster\": \"" + str(localNode.cluster) + "\",\n")
         if hasattr(localNode, "addr"):

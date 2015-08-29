@@ -5,7 +5,6 @@ import socket
 import re
 import json
 import logging
-import shutil
 import zlib
 
 from BroControl import py3bro
@@ -15,9 +14,6 @@ from .state import SqliteState
 from .version import VERSION
 
 from BroControl import graph
-
-# TODO move in options.py
-USE_BROKER = True
 
 # Class storing the broctl configuration.
 #
@@ -29,8 +25,13 @@ USE_BROKER = True
 
 Config = None  # Globally accessible instance of Configuration.
 
+# all possible node roles
+possible_roles = set(["manager", "datanode", "worker", "standalone", "peer"])
+
+
 class ConfigurationError(Exception):
     pass
+
 
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, localaddrs=[], state=None, suffix=None):
@@ -56,7 +57,6 @@ class Configuration:
             self.state_store = state
         else:
             self.state_store = SqliteState(self.statefile)
-
 
     def _initialize_options(self, basedir, broscriptdir):
         from BroControl import execute
@@ -100,19 +100,17 @@ class Configuration:
         self.overlay = graph.BGraph()
 
         # Individual settings per peer for:
-        # - node.cfg
+        # - node.son
         # - debug.log
         # - PolicyDirSiteInstall
         # - PolicyDirSiteInstallAuto
         if self.suffix:
             logging.debug("we have a new suffix " + str(self.suffix))
-            self.nodecfg = os.path.join(self.cfgdir, "node.cfg_" + str(self.suffix))
+            self.nodejson = os.path.join(self.cfgdir, "node.son_" + str(self.suffix))
         else:
             self.suffix = "head"
 
-        self.debuglog =  str(self.debuglog) + "_" + str(self.suffix)
-        #self.policydirsiteinstall = os.path.join(self.policydirsiteinstall, str(suffix))
-        #self.policydirsiteinstallauto = os.path.join(self.policydirsiteinstallauto, str(suffix))
+        self.debuglog = str(self.debuglog) + "_" + str(self.suffix)
 
     # Do a basic sanity check on some critical options.
     def _check_options(self):
@@ -133,7 +131,7 @@ class Configuration:
         self.read_state()
 
         # Read node.cfg
-        self.nodestore, self.local_node, self.head = self._read_nodes()
+        self.nodestore, self.local_node, self.head = self._read_nodes_json()
         if not self.nodestore:
             return False
 
@@ -153,19 +151,13 @@ class Configuration:
         # Set the standalone config option.
         standalone = "0"
         for node in self.nodes("all"):
-            if node.type == "standalone":
+            if "standalone" in node.roles:
                 standalone = "1"
 
         self._set_option("standalone", standalone)
 
         # Make sure cron flag is cleared.
         self.config["cron"] = "0"
-
-        #if(self.get_local() and hasattr(self.get_local(), "port")):
-        #    self.broport = int(self.get_local().port) + 1
-        #    logging.debug("set broport to " + str(self.broport))
-        #else:
-        #    logging.debug("do not set broport")
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -196,12 +188,12 @@ class Configuration:
         return optlist
 
     # Returns a list of Nodes (the list will be empty if no matching nodes
-    # are found).  The returned list is sorted by node type, and by node name
+    # are found).  The returned list is sorted by node roles, and by node name
     # for each type.
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "proxies", all proxy Nodes are returned.
+    # - If tag is "datanodes", all datanode Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
     #     the standalone Node is returned (standalone config).
@@ -221,8 +213,8 @@ class Configuration:
         elif tag == "manager":
             nodetype = "manager"
 
-        elif tag == "proxies":
-            nodetype = "proxy"
+        elif tag == "datanodes":
+            nodetype = "datanode"
 
         elif tag == "workers":
             nodetype = "worker"
@@ -231,21 +223,21 @@ class Configuration:
             nodetype = "peer"
 
         for n in self.nodestore.values():
-            if nodetype == n.type:
-                if nodetype == "peer" and n.type == "peer" and self.get_local() == n:
+            if nodetype in n.roles:
+                if nodetype == "peer" and "peer" in n.roles and self.get_local() == n:
                     continue
                 nodes += [n]
 
             elif tag == n.name:
                 nodes += [n]
 
-            elif tag == "cluster" and (n.type != "peer"):
+            elif tag == "cluster" and ("peer" not in n.roles):
                 nodes += [n]
 
             elif tag == "all" or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.roles, n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -317,7 +309,6 @@ class Configuration:
 
             text = text[0:match.start(1)] + value + text[match.end(1):]
 
-
     # Convert string into list of integers (ValueError is raised if any
     # item in the list is not a non-negative integer).
     def _get_pin_cpu_list(self, text, numprocs):
@@ -332,7 +323,7 @@ class Configuration:
         # Make sure list is at least as long as number of worker processes.
         cpulen = len(cpulist)
         if numprocs > cpulen:
-            cpulist = [ cpulist[i % cpulen] for i in range(numprocs) ]
+            cpulist = [cpulist[i % cpulen] for i in range(numprocs)]
 
         return cpulist
 
@@ -357,18 +348,13 @@ class Configuration:
 
         return env_vars
 
-
+    # Obsolete
     # Parse node.cfg.
     def _read_nodes(self):
         config = py3bro.configparser.SafeConfigParser()
         fname = self.nodecfg
-        try:
-            if not config.read(fname):
-                raise ConfigurationError("cannot read '%s'" % fname)
-            self.json = False
-        except py3bro.configparser.MissingSectionHeaderError:
-            self.json = True
-            return self._read_nodes_json()
+        if not config.read(fname):
+            raise ConfigurationError("cannot read '%s'" % fname)
 
         nodestore = {}
 
@@ -379,6 +365,14 @@ class Configuration:
             for (key, val) in config.items(sec):
 
                 key = key.replace(".", "_")
+
+                # hack to maintain compatibility with old configuration files
+                if key == "type":
+                    key = "roles"
+                    if val == "proxy":
+                        val = set(["datanode"])
+                    else:
+                        val = set([val])
 
                 if key not in node_mod.Node._keys:
                     self.ui.warn("ignoring unrecognized node config option '%s' given for node '%s'" % (key, sec))
@@ -397,11 +391,11 @@ class Configuration:
         return nodestore, node_mod.Node(self, "unknown"), None
 
     def _check_node(self, node, nodestore, counts):
-        if not node.type:
-            raise ConfigurationError("no type given for node %s" % node.name)
+        if not node.roles:
+            raise ConfigurationError("no roles given for node %s" % node.name)
 
-        if node.type not in ("manager", "proxy", "worker", "standalone", "peer"):
-            raise ConfigurationError("Unknown node type '%s' given for node '%s'" % (node.type, node.name))
+        if possible_roles.issubset(node.roles):
+            raise ConfigurationError("Unknown node role '%s' given for node '%s'" % (node.roles, node.name))
 
         if not node.host:
             raise ConfigurationError("no host given for node '%s'" % node.name)
@@ -421,18 +415,17 @@ class Configuration:
         except ConfigurationError as err:
             raise ConfigurationError("node '%s' config: %s" % (node.name, err))
 
-        # Each node gets a number unique across its type.
-        try:
-            counts[node.type] += 1
-        except KeyError:
-            counts[node.type] = 1
-
-        node.count = counts[node.type]
+        # Each node gets a number unique across its role.
+        for t in node.roles:
+            try:
+                counts[t] += 1
+            except KeyError:
+                counts[t] = 1
 
         numprocs = 0
 
         if node.lb_procs:
-            if node.type != "worker":
+            if "worker" not in node.roles:
                 raise ConfigurationError("load balancing node config options are only for worker nodes")
             try:
                 numprocs = int(node.lb_procs)
@@ -482,8 +475,6 @@ class Configuration:
                 if newname in nodestore:
                     raise ConfigurationError("duplicate node name '%s'" % newname)
                 nodestore[newname] = newnode
-                counts[node.type] += 1
-                newnode.count = counts[node.type]
                 if pin_cpus:
                     newnode.pin_cpus = pin_cpus[num-1]
 
@@ -496,30 +487,25 @@ class Configuration:
 
         standalone = False
         manager = False
-        proxy = False
+        datanode = False
         peer = False
 
-        manageronlocalhost = False
-
         for n in nodestore.values():
-            if n.type == "manager":
+            if "manager" in n.roles:
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
 
- #               if n.addr in ("127.0.0.1", "::1"):
- #                   manageronlocalhost = True
-
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl only on manager node")
 
-            elif n.type == "proxy":
-                proxy = True
+            elif "datanode" in n.roles:
+                datanode = True
 
-            elif n.type == "standalone":
+            elif "standalone" in n.roles:
                 standalone = True
 
-            elif n.type == "peer":
+            elif "peer" in n.roles:
                 peer = True
 
         if standalone:
@@ -528,22 +514,16 @@ class Configuration:
         else:
             if not manager:
                 raise ConfigurationError("no manager defined in node config")
-            elif not proxy:
-                raise ConfigurationError("no proxy defined in node config")
-
-        # If manager is on localhost, then all other nodes must be on localhost
-        #if manageronlocalhost:
-        #    for n in nodestore.values():
-        #        if n.type != "manager" and n.addr not in ("127.0.0.1", "::1"):
-        #            raise ConfigurationError("cannot use localhost/127.0.0.1/::1 for manager host in nodes configuration")
+            elif not datanode:
+                raise ConfigurationError("no datanode defined in node config")
 
     # Parse node.cfg in Json-Format
     def _read_nodes_json(self):
-        file = self.nodecfg
+        file = self.nodejson
         logging.debug(str(self.localaddrs[0]) + " :: read the node.cfg configuration from file " + str(file))
         if not os.path.exists(file):
             logging.debug("No node.cfg file available")
-            raise ConfigurationError("cannot read '%s'" % self.nodecfg)
+            raise ConfigurationError("cannot read '%s'" % self.nodejson)
 
         nodestore = {}
         counts = {}
@@ -569,31 +549,32 @@ class Configuration:
             # 1. Iterate over all node entries and create node objects for them
             #
             for entry in data["nodes"]:
-                if "id" not in entry.keys() or "type" not in entry.keys():
-                    raise ConfigurationError("Misconfigured configuration file")
+                if "id" not in entry.keys() or "roles" not in entry.keys():
+                    raise ConfigurationError("Misconfigured configuration file, wrong declaration of section \"nodes\"")
 
-                node = ""
+                node = None
                 # Node entry is a cluster
-                if entry["type"] == "cluster":
+                if "cluster" in entry["roles"]:
                     clusterId = entry["id"]
                     # Add cluster to the graph
                     self.overlay.addNodeAttr(clusterId, "json-data", entry)
 
+                    if len(entry["roles"]) != 1:
+                        raise ConfigurationError("Misconfigured configuration file, cluster can only have role of cluster")
+
                     for val in entry["members"]:
-                        if "id" not in val.keys() or "type" not in val.keys():
-                            raise ConfigurationError("Misconfigured configuration file")
+                        if "id" not in val.keys() or "roles" not in val.keys():
+                            raise ConfigurationError("Misconfigured configuration file, wrong cluster declaration")
 
                         nodeId = clusterId + "::" + val["id"]
-                        #node, nodestore, counts = self._get_node_json(val, nodeId, nodestore, counts)
                         node = self._get_node_json(val, nodeId, nodestore, counts)
                         node.__dict__["cluster"] = clusterId
 
                 # Node entry is ordinary node
                 else:
-                    nodeId= entry["id"]
+                    nodeId = entry["id"]
                     if "::" in nodeId:
                         raise ConfigurationError("Misconfigured ID entry of a node, id should not contain \"::\"")
-                    #node, nodestore, counts = self._get_node_json(entry, nodeId, nodestore, counts)
                     node = self._get_node_json(entry, nodeId, nodestore, counts)
                     # Add node to the graph
                     self.overlay.addNodeAttr(nodeId, "json-data", entry)
@@ -617,13 +598,12 @@ class Configuration:
             # we are not the head
             # (and thus the head entry was not included in the nodes section)
             if headId not in nodestore.keys():
-                #head, nodestore, counts = self._get_node_json(data["head"], headId, nodestore, counts)
                 head = self._get_node_json(data["head"], headId, nodestore, counts)
 
             else:  # we are the head
                 head = nodestore[headId]
 
-            if not hasattr(head, "host") and not hasattr(head, "type"):
+            if not hasattr(head, "host") and not hasattr(head, "roles"):
                 raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
 
             #
@@ -639,7 +619,7 @@ class Configuration:
 
         # Current scope of this peer:
         # 1. local node
-        # 2. its cluster (proxy and worker nodes)
+        # 2. its cluster (datanode and worker nodes)
         # 3. its peers (predecessor and successors in hierarchy)
         scopelist = {}
 
@@ -650,8 +630,8 @@ class Configuration:
         # The local node is the manager of its subtree
         if root in nodestore.keys():
             local_n = nodestore[root]
-            if local_n.type == "peer":
-                local_n.type = "standalone"
+            if "peer" in local_n.roles:
+                local_n.roles = ["standalone"]
                 nodestore[root] = local_n
 
         local_node = None
@@ -665,15 +645,15 @@ class Configuration:
 
             elif hasattr(node, "cluster") and node.cluster == root:
                 scopelist[key] = node
-                if node.type in ("manager", "standalone"):
+                if "manager" in node.roles or "standalone" in node.roles:
                     local_node = node
 
-            elif key in peer_list:  # and key != headId:
-                node.type = "peer"
+            elif key in peer_list:
+                node.roles = ["peer"]
                 scopelist[key] = node
 
-            elif hasattr(node, "cluster") and node.cluster in peer_list and node.type == "manager":
-                node.type = "peer"
+            elif hasattr(node, "cluster") and node.cluster in peer_list and "manager" in node.roles:
+                node.roles = ["peer"]
                 scopelist[node.cluster] = node
 
         if not local_node:
@@ -690,19 +670,19 @@ class Configuration:
         node = node_mod.Node(self, nodeId)
         node = self._extractNodeJson(val, node)
         nodestore[nodeId] = node
-        #node, nodestore, counts = self._check_node(node, nodestore, counts)
         self._check_node(node, nodestore, counts)
-
-        #return node, nodestore, counts
         return node
 
     # Parses a node entry in Json format
     def _extractNodeJson(self, entry, node):
         for key in entry:
-            node.__dict__[key] = entry[key]
+            if key == "roles":
+                node.__dict__[key] = set([x.encode('UTF8') for x in entry[key]])
+            else:
+                node.__dict__[key] = entry[key]
 
-        if hasattr(node, "type") and node.type not in ["manager", "proxy", "worker", "standalone", "peer"]:
-            raise ConfigurationError("strange node type detected, node " + node.name + " is " + str(node.type))
+        if hasattr(node, "roles") and possible_roles.issubset(node.roles):
+            raise ConfigurationError("strange node role detected, node " + node.name + " is " + str(node.roles))
 
         return node
 
@@ -822,7 +802,7 @@ class Configuration:
     # no longer part of the current node configuration, but that are still
     # running).
     def _warn_dangling_bro(self):
-        nodes = [ n.name for n in self.nodes() ]
+        nodes = [n.name for n in self.nodes()]
 
         for key in self.state.keys():
             # Check if a PID is defined for a Bro node
@@ -896,6 +876,3 @@ class Configuration:
 
     def writeJson(self, peer, data):
         print "write Json configuration file for peer " + str(peer)
-
-    def use_broker(self):
-        return USE_BROKER

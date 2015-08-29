@@ -1,0 +1,48 @@
+{
+"head": {
+			"id": "icsi-1"
+		},
+
+"nodes" : [
+
+		{	
+			"id": "icsi-1",
+			"roles": ["peer"],
+			"host": "192.168.4.239",
+			"port": "9990"
+		},
+
+		{	
+			"id": "icsi-2-cluster",
+			"roles": ["cluster"],
+			"members": 
+			[	
+				{	"id": "manager-1",
+					"roles": ["manager"],
+					"host": "172.17.0.6",
+					"port": "9990"},
+
+				{	"id": "datanode-1",
+					"roles": ["datanode"],
+					"host": "172.17.0.6"},
+
+				{	"id": "worker-1",
+					"roles": ["worker"],
+					"host": "172.17.0.6"}
+			]
+		},
+
+		{	
+				"id": "icsi-3",
+				"roles": ["peer"],
+				"host": "172.17.0.7",
+				"port": "9990",
+				"policy": "policy 1"
+		}
+],
+
+"connections":	[	
+					{"from": "icsi-1", "to": "icsi-2-cluster"},
+					{"from": "icsi-1", "to": "icsi-3"}
+				]
+}

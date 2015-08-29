@@ -41,7 +41,7 @@ def _make_bro_params(node, live):
     if live:
         args += ["-p", "broctl-live"]
 
-    if node.type == "standalone":
+    if "standalone" in node.roles:
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
@@ -62,11 +62,10 @@ def _make_bro_params(node, live):
     #    settings that override the previously loaded node-specific scripts.
     #    (e.g. Log::default_rotation_interval is set in manager.bro,
     #    but overrided by broctl.cfg)
-    #TODO update description
 
     args += ["broctl"]
 
-    if node.type == "standalone":
+    if "standalone" in node.roles:
         args += config.Config.sitepolicystandalone.split()
         args += ["broctl/standalone"]
 
@@ -74,17 +73,14 @@ def _make_bro_params(node, live):
         logging.debug("writing bro configuration for cluster-broker")
         args += config.Config.sitepolicystandalone.split()
 
-        # Broccoli part
         args += ["base/frameworks/cluster"]
-        if node.type == "manager":
+        if "manager" in node.roles:
             args += config.Config.sitepolicymanager.split()
-        elif node.type == "proxy":
-            args += ["local-proxy"]
-        elif node.type == "worker":
+        elif "worker" in node.roles:
             args += config.Config.sitepolicyworker.split()
-        elif node.type != "peer":
-            logging.debug("no configuration for node of type " + str(node.type) + " found")
-            raise RuntimeError("no configuration for node of type " + str(node.type) + " found")
+        elif "peer" not in node.roles and "datanode" not in node.roles:
+            logging.debug("no configuration for node of role " + str(node.roles) + " found")
+            raise RuntimeError("no configuration for node of role " + str(node.roles) + " found")
 
     args += ["broctl/auto"]
 
@@ -100,7 +96,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if node.type != "standalone" and node.type != "peer":
+    if "standalone" not in node.roles and "peer" not in node.roles:
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -121,42 +117,43 @@ class Controller:
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
-        manager = []
-        proxies = []
+        manager     = []
+        datanodes   = []
+        datanodes = []
         workers = []
 
         for n in nodes:
             n.setExpectRunning(True)
 
-            if n.type == "worker":
-                workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
-            elif n.type == "manager":
+            if "manager" in n.roles:
                 manager += [n]
-            elif n.type == "standalone":
+            elif "datanode" in n.roles:
+                datanodes += [n]
+            elif "worker" in n.roles:
+                workers += [n]
+            elif "standalone" in n.roles:
                 manager += [n]
 
         if not manager and config.Config.get_local_id() != "unknown":
             # If there is no manager defined explicitely,
-            # the local node of type peer is the manager
+            # the local node of role peer is the manager
             local = config.Config.get_local()
             if not hasattr(local, "addr"):
                 raise RuntimeError("local node without addr")
             manager += [local]
 
-        # Start nodes. Do it in the order manager, proxies, workers.
-        logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + "** Cluster ** start " + str(len(manager)) + " manager, " + str(len(proxies)) + " proxies, " + str(len(workers)) + " workers, ")
+        # Start nodes. Do it in the order manager, datanodes, workers.
+        logging.debug(str(self.config.get_local_id()) + "@" + str(self.config.localaddrs[0]) + "** Cluster ** start " + str(len(manager)) + " manager, " + str(len(datanodes)) + " datanodes, " + str(len(workers)) + " workers, ")
         if manager:
             self._start_nodes(manager, results)
 
             if not results.ok:
-                for n in (proxies + workers):
+                for n in (datanodes + workers):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._start_nodes(proxies, results)
+        if datanodes:
+            self._start_nodes(datanodes, results)
 
             if not results.ok:
                 for n in workers:
@@ -452,31 +449,31 @@ class Controller:
     def stop(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
-        proxies = []
+        datanodes = []
         workers = []
 
         for n in nodes:
             n.setExpectRunning(False)
 
-            if n.type == "worker":
+            if "worker" in n.roles:
                 workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
-            elif n.type != "peer":
+            elif "datanode" in n.roles:
+                datanodes += [n]
+            elif "peer" not in n.roles:
                 manager += [n]
 
-        # Stop nodes. Do it in the order workers, proxies, manager
+        # Stop nodes. Do it in the order workers, datanodes, manager
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager):
+                for n in (datanodes + manager):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._stop_nodes(proxies, results)
+        if datanodes:
+            self._stop_nodes(datanodes, results)
 
             if not results.ok:
                 for n in manager:
@@ -610,6 +607,8 @@ class Controller:
     def status(self, nodes):
         results = cmdresult.CmdResult()
 
+        logging.debug("control: status command for nodes " + str(nodes))
+
         showall = self.config.statuscmdshowall != "0"
 
         if showall:
@@ -621,14 +620,18 @@ class Controller:
         cmds = []
         for (node, isrunning) in nodestatus:
             if isrunning:
+                logging.debug("node " + str(node) + " is running")
                 running += [node]
                 cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
+            else:
+                logging.debug("problem, node " + str(node) + " is not running")
 
         startups = {}
         statuses = {}
         for (n, success, output) in self.executor.run_helper(cmds):
             startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
             statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
+            logging.debug("node " + str(n) + " output " + str(output[1]))
 
         if showall:
             self.ui.info("Getting peer status ...")
@@ -645,9 +648,10 @@ class Controller:
                                 peers[node.name] += [val]
 
         for (node, isrunning) in nodestatus:
+            logging.debug("set node_info")
             node_info = {
                 "name": node.name,
-                "type": node.type,
+                "roles": node.roles,
                 "host": node.host,
                 "status": "stopped",
                 "pid": None,
@@ -672,6 +676,7 @@ class Controller:
 
                 node_info["started"] = startups[node.name]
 
+            logging.debug("set data for node " + str(node) + ", " + str(node_info))
             results.set_node_data(node, True, node_info)
 
         return results
@@ -1014,8 +1019,8 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and node.type not in ("manager", "standalone"):
-                    # Don't need this on the workers/proxies.
+                if key == "logdir" and "manager" not in node.roles and "standalone" not in node. roles:
+                    # Don't need this on the workers/datanodes.
                     continue
 
                 path = self.config.config[key]
@@ -1162,7 +1167,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         for (node, error, vals) in self.get_top_output(nodes):
-            top_info = {"name": node.name, "type": node.type,
+            top_info = {"name": node.name, "roles": node.roles,
                         "host": node.host, "pid": None, "proc": None,
                         "vsize": None, "rss": None, "cpu": None,
                         "cmd": None, "error": None}
@@ -1191,15 +1196,15 @@ class Controller:
 
         results = cmdresult.CmdResult()
         for (node, success, args) in events.send_events_parallel(eventlist):
-            if success:
-                out = args[0]
-            else:
-                out = args
+            #if success:
+             #   out = args[0]
+            #else:
+            out = args
 
+            logging.debug("control:print_id, output " + str(out))
             results.set_node_output(node, success, out)
 
         return results
-
 
     def _query_netstats(self, nodes):
         running = self._isrunning(nodes)

@@ -156,7 +156,6 @@ class DBroCtld(Thread):
             # handle the result of the command
             self.processLocalResult(cmd, res)
 
-            logging.debug("here we are")
             # Forward command ...
             self.forwardCommand(ocmd)
 
@@ -184,22 +183,13 @@ class DBroCtld(Thread):
         if cmd in self.commands:
             raise RuntimeError("old netstats results available!")
 
-        result = res.get_node_output()
-        logging.debug(" result for cmd " + str(cmd) + " obtained: " + str(result))
-
-        self.commands[cmd] = []
+        # Do command specific formatting of results and store them
+        self.commands[cmd] = self.process_local_result_cmd(cmd, res)
         self.command_replies[cmd] = len(self.outbound)
-        if not res:
-            result = [(None, None, None)]
-
-        for (n, v, r) in result:
-            logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
-            self.commands[cmd].append((str(self.server_address), str(n), str(r)))
-            logging.debug("commands length " + str(len(self.commands)))
 
         if not self.bclient and not self.outbound:
             logging.debug("no bclient, so output results")
-            self.output_result(cmd, result)
+            self.output_result(cmd, self.commands[cmd])
             if cmd not in self.commands:
                 raise RuntimeError("cmd " + cmd + " is not part of command list")
             del self.commands[cmd]
@@ -214,6 +204,61 @@ class DBroCtld(Thread):
 
         else:
             logging.debug("we wait for " + str(cmd) + " results from our successors")
+
+    def process_local_result_cmd(self, cmd, res):
+        if not res:
+            return [(None, None, None)]
+        elif(cmd == "status"):
+            return self.process_local_result_cmd_status(res)
+        elif(cmd == "print_id"):
+            return self.process_local_result_cmd_printid(res)
+        else:
+            result = []
+            for (n, v, r) in res.get_node_output():
+                logging.debug(" - " + str(n) + " : " + str(v) + " : " + str(r))
+                result.append((str(self.server_address), str(n), str(r)))
+            return result
+
+    def process_local_result_cmd_status(self, res):
+        result = []
+        roleswidth = 20
+        hostwidth = 13
+        data = res.get_node_data()
+        showall = "peers" in data[0][2]
+        if showall:
+            colfmt = "{name:<12} {roles:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
+        else:
+            colfmt = "{name:<12} {roles:<{0}} {host:<{1}} {status:<9} {pid:<6} {started}"
+
+        hdrlist = ["name", "roles", "host", "status", "pid", "peers", "started"]
+        header = dict((x, x.title()) for x in hdrlist)
+        result.append(colfmt.format(roleswidth, hostwidth, **header))
+
+        colfmtstopped = "{name:<12} {roles:<{0}} {host:<{1}} {status}"
+
+        for r in res.get_node_data():
+            node_info = r[2]
+            if node_info["pid"]:
+                mycolfmt = colfmt
+            else:
+                mycolfmt = colfmtstopped
+
+            result.append(mycolfmt.format(roleswidth, hostwidth, **node_info))
+            # add an empty line
+            result.append("")
+
+        return result
+
+    def process_local_result_cmd_printid(self, res):
+        result = []
+        for (node, success, args) in res.get_node_output():
+            if success:
+                logging.debug("printid gave success, args " + str(args))
+                result.append("" + str(node) + ": " + str(args))
+                #result.append("%12s   %s = %s" % (node, args[0], args[1]))
+            else:
+                result.append("%12s   <error: %s>" % (node, args))
+        return result
 
     # Handle result message from a successor
     def handleResult(self, peer, res):
@@ -252,10 +297,9 @@ class DBroCtld(Thread):
     def output_result(self, cmd, res):
         logging.debug("we have gathered all input for cmd " + str(cmd) + ", thus output results")
         print ("   " + str(cmd) + " results:")
-        #result = []
-        for (addr, n, r) in self.commands[cmd]:
-            print("    - " + str(addr) + " : " + str(n) + " : " + str(r))
-            #result += (addr, n, r)
+
+        for e in self.commands[cmd]:
+            print("    - " + str(e))
         ## when we have a control connection we need to send the results
         self.sendResultToControl(cmd, self.commands[cmd])
 

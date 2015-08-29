@@ -8,26 +8,26 @@
 
 	{	
 		"id": "icsi-cluster",
-		"type": "cluster",
+		"roles": ["cluster"],
 		"members": [	
 
 		{	"id": "manager-1",
-			"type": "manager",
+			"roles": ["manager"],
 			"host": "localhost",
 			"policy": "policy 1"},
 
-		{	"id": "proxy-1",
-			"type": "proxy",
+		{	"id": "datanode-1",
+			"roles": ["datanode"],
 			"host": "localhost",
 			"policy": "policy 2"},
 
 		{	"id": "worker-1",
-			"type": "worker",
+			"roles": ["worker"],
 			"host": "localhost",
 			"policy": "policy 5"},
 
 		{	"id": "worker-2",
-			"type": "worker",
+			"roles": ["worker"],
 			"host": "localhost",
 			"policy": "policy 5"}
 	]}
@@ -35,6 +35,6 @@
 ],
 
 "connections":	[	
-				]
+								]
 
 }

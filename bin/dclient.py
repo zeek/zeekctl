@@ -13,7 +13,7 @@ from threading import Thread
 control_port = 4242
 d_host = "localhost"
 d_port = 9990
-delay_response = 10
+delay_response = 15
 
 
 class BClient(cmd.Cmd):
@@ -39,10 +39,15 @@ class BClient(cmd.Cmd):
     def con(self):
         self.bc.connect(d_host, d_port)
 
+    def do_connect_local(self, line):
+        """ connect to localhost on 9990 """
+        print "connect to localhost on 9990"
+        self.bc.connect("127.0.0.1", 9990)
+
     def do_cl(self, line):
         """ connect to localhost on 9990 """
         print "connect to localhost on 9990"
-        self.bc.connect("192.168.4.239", 9990)
+        self.bc.connect("127.0.0.1", 9990)
 
     # cmdloop handlers
     def do_connect(self, line):
@@ -146,10 +151,10 @@ class BClient(cmd.Cmd):
         return line
 
     def postcmd(self, stop, line):
-        # print "line " + str(line) + " stop " + str(stop)
+        #print "line " + str(line) + " stop " + str(stop)
         if not self.bc.is_connected() or not line:
             return stop
-        for l in ["connect", "disconnect", "shutdown", "cl", "dstatus"]:
+        for l in ["connect", "disconnect", "shutdown", "cl", "connect_local", "dstatus", "help", "exit"]:
             if l in line:
                 return stop
 
@@ -170,14 +175,28 @@ class BClient(cmd.Cmd):
         if "netstats" in line or "peerstatus" in line:
             print ""
             print "-----------------------------------------------------------"
-            print "response | "
             for (n,v,w) in data:
-                print "         | " + str(n) + ", " + str(v) + ", " + str(w)
+                print "" + str(n) + ", " + str(v) + ", " + str(w)
+            print "-----------------------------------------------------------"
+            print ""
+        elif "print_id" in line:
+            print ""
+            print "-----------------------------------------------------------"
+            for n in data:
+                print "" + str(n)
+            print "-----------------------------------------------------------"
+            print ""
+        elif "status" in line:
+            print ""
+            print "-----------------------------------------------------------"
+            for n in data:
+                print "" + str(n)
             print "-----------------------------------------------------------"
             print ""
         else:
+            print ""
             print "-----------------------------------------------------------"
-            print "response | " + str(data)
+            print str(data)
             print "-----------------------------------------------------------"
             print ""
 
@@ -224,7 +243,7 @@ class BConnector():
                         data = json.loads(data_socket)
                     if data:
                         if 'payload' in data.keys():
-                            # print "response: " + str(data["payload"])
+                            #print "response: " + str(data["payload"])
                             self.cq.put(data['payload'])
 
                 except socket.error, e:
