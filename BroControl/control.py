@@ -693,11 +693,13 @@ class Controller:
 
     def _check_config(self, nodes, installed, list_scripts):
         results = cmdresult.CmdResult()
+        logging.debug("_check_config ")
 
         nodetmpdirs = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
 
         nodes = []
         for (node, cwd) in nodetmpdirs:
+            logging.debug("_check_config for node " + str(node.name))
             if os.path.isdir(cwd):
                 try:
                     shutil.rmtree(cwd)
@@ -1232,6 +1234,7 @@ class Controller:
     def netstats(self, nodes):
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_netstats(nodes):
+            logging.debug
             if success:
                 out = args[0]
             else:

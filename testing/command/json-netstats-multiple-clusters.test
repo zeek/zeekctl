@@ -10,7 +10,7 @@
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
-etc/node.son__multiple_clusters_no_netifs
+etc/node.json__multiple_clusters_no_netifs
 EOF
 
 ret=0

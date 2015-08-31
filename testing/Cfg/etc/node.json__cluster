@@ -24,13 +24,11 @@
 		{	"id": "worker-1",
 			"roles": ["worker"],
 			"host": "localhost",
-			"interface": "eth0",
 			"policy": "policy 4"},
 
 		{	"id": "worker-2",
 			"roles": ["worker"],
 			"host": "localhost",
-			"interface": "eth1",
 			"policy": "policy 5"}
 	]}
 	

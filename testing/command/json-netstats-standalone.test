@@ -11,7 +11,7 @@
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__debug
-etc/node.son__standalone
+etc/node.json__standalone
 EOF
 
 ret=0

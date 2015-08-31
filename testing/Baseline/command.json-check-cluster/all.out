@@ -1,4 +1,4 @@
-icsi-cluster::manager-1 scripts are ok.
-icsi-cluster::proxy-1 scripts are ok.
-icsi-cluster::worker-1 scripts are ok.
+icsi-cluster::datanode-1 scripts are ok.
 icsi-cluster::worker-2 scripts are ok.
+icsi-cluster::manager-1 scripts are ok.
+icsi-cluster::worker-1 scripts are ok.

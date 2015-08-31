@@ -215,9 +215,9 @@ InstallPackageConfigFile(
     ${ETC}
     networks.cfg)
 InstallPackageConfigFile(
-    ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.son
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.json
     ${ETC}
-    node.son)
+    node.json)
 
 ########################################################################
 ## Packaging Setup

@@ -284,8 +284,8 @@ def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
     localNode = config.Config.get_local()
 
-    npath = os.path.join (path, "node.son_" + str(node.name))
-    logging.debug(str(localNode.name) + " write node.son for " + str(node.name) + " to path " + str(npath))
+    npath = os.path.join (path, "node.json_" + str(node.name))
+    logging.debug(str(localNode.name) + " write node.json for " + str(node.name) + " to path " + str(npath))
 
     g = ""
     if hasattr(node, "cluster"):

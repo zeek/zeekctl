@@ -178,7 +178,7 @@ options = [
 
     Option("NodeCfg", "${CfgDir}/node.cfg", "string", Option.AUTOMATIC, False,
            "Node configuration file."),
-    Option("NodeJson", "${CfgDir}/node.son", "string", Option.AUTOMATIC, False,
+    Option("NodeJson", "${CfgDir}/node.json", "string", Option.AUTOMATIC, False,
            "Node configuration file."),
     Option("LocalNetsCfg", "${CfgDir}/networks.cfg", "string", Option.AUTOMATIC, False,
            "File defining the local networks."),

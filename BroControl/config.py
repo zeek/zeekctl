@@ -100,13 +100,13 @@ class Configuration:
         self.overlay = graph.BGraph()
 
         # Individual settings per peer for:
-        # - node.son
+        # - node.json
         # - debug.log
         # - PolicyDirSiteInstall
         # - PolicyDirSiteInstallAuto
         if self.suffix:
             logging.debug("we have a new suffix " + str(self.suffix))
-            self.nodejson = os.path.join(self.cfgdir, "node.son_" + str(self.suffix))
+            self.nodejson = os.path.join(self.cfgdir, "node.json_" + str(self.suffix))
         else:
             self.suffix = "head"
 

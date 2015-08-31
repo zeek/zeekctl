@@ -11,7 +11,7 @@
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__debug
-etc/node.son__hierarchy
+etc/node.json__hierarchy
 EOF
 
 ret=0
