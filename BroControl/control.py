@@ -31,7 +31,7 @@ def _make_bro_params(node, live):
         except AttributeError:
             pass
 
-        if config.Config.savetraces == "1":
+        if config.Config.savetraces:
             args += ["-w", "trace.pcap"]
 
     args += ["-U", ".status"]
@@ -105,6 +105,10 @@ class Controller:
         self.ui = ui
         self.executor = executor
         self.pluginregistry = pluginregistry
+
+        # Create broctl-config.sh file so that shell script helpers have
+        # current config values.
+        install.make_broctl_config_sh(ui)
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
@@ -248,8 +252,7 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                if self.config.cron == "0":
-                    self.ui.error("cannot connect to %s" % node.name)
+                self.ui.error("cannot connect to %s" % node.name)
                 continue
 
             running = output[0] == "running" and True or False
@@ -336,7 +339,7 @@ class Controller:
         return results
 
     def _log_action(self, node, action):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
         t = time.time()
         with open(self.config.statslog, "a") as out:
@@ -447,7 +450,7 @@ class Controller:
         # Check whether they terminated.
         terminated = []
         kill = []
-        for (node, success) in self._waitforbros(running, "TERMINATED", int(self.config.stoptimeout), False):
+        for (node, success) in self._waitforbros(running, "TERMINATED", self.config.stoptimeout, False):
             if not success:
                 # Check whether it crashed during shutdown ...
                 result = self._isrunning([node])
@@ -528,7 +531,7 @@ class Controller:
     def status(self, nodes):
         results = cmdresult.CmdResult()
 
-        showall = self.config.statuscmdshowall != "0"
+        showall = self.config.statuscmdshowall
 
         if showall:
             self.ui.info("Getting process status ...")
@@ -989,7 +992,7 @@ class Controller:
             if isrunning:
                 pid = node.getPID()
                 pids[node.name] = [pid]
-                parents[node.name] = str(pid)
+                parents[node.name] = pid
 
                 cmds += [(node, "get-childs", [str(pid)])]
             else:
@@ -1056,8 +1059,9 @@ class Controller:
             try:
                 for p in procs:
                     d = {}
-                    d["pid"] = int(p[0])
-                    d["proc"] = (p[0] == parents[node.name] and "parent" or "child")
+                    pid = int(p[0])
+                    d["pid"] = pid
+                    d["proc"] = (pid == parents[node.name] and "parent" or "child")
                     d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
                     d["rss"] = int(float(p[2]))
                     d["cpu"] = p[3]
@@ -1150,8 +1154,7 @@ class Controller:
             results.ok = False
             return results
 
-        standalone = (self.config.standalone == "1")
-        if standalone:
+        if self.config.standalone:
             tag = "standalone"
         else:
             tag = "workers"
@@ -1279,7 +1282,7 @@ class Controller:
 
         dirs = []
 
-        if self.config.havenfs != "1":
+        if not self.config.havenfs:
             # Non-NFS, need to explicitly synchronize.
             syncs = install.get_syncs()
         else:
@@ -1324,13 +1327,10 @@ class Controller:
             return
 
         # Check if "broctl install" has been run.
-        if not os.path.exists(os.path.join(self.config.scriptsdir, "broctl-config.sh")):
+        if not self.config.is_broctl_installed():
             # Don't output anything here, otherwise the cron job may generate
             # emails before the user has a chance to do "broctl install".
             return
-
-        # Flag to indicate that we're running from cron.
-        self.config.config["cron"] = "1"
 
         cronui = cron.CronUI()
         tasks = cron.CronTasks(cronui, self.config, self, self.executor, self.pluginregistry)
@@ -1381,6 +1381,5 @@ class Controller:
                 self.ui.error("broctl cron failed to send mail: %s" % out[0])
                 self.ui.info("\nOutput of broctl cron:\n%s" % output)
 
-        self.config.config["cron"] = "0"
         logging.debug("cron done")
 

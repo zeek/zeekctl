@@ -144,7 +144,7 @@ installbro() {
     test $? -ne 0 && exit 1
 
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
-    export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib
+    export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
     # to help setup environment for running broctl manually.
@@ -152,7 +152,7 @@ installbro() {
         how2run=${BROCTL_INSTALL_PREFIX}/how_to_run_broctl
         echo "# In order to run broctl in this directory, first type '. how_to_run_broctl'" >> $how2run
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
-        echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib" >> $how2run
+        echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib:\$LD_LIBRARY_PATH" >> $how2run
     fi
 }
 

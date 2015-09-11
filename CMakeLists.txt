@@ -196,6 +196,9 @@ else ()
     install(DIRECTORY DESTINATION ${LOGS})
 endif ()
 
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
+     "# Automatically generated. Do not edit.\n")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh DESTINATION ${SPOOL})
 InstallSymlink(${SPOOL}/broctl-config.sh
                ${PREFIX}/share/broctl/scripts/broctl-config.sh)
 

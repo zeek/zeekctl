@@ -53,26 +53,29 @@ def make_broctl_config_sh(cmdout):
     with open(cfg_path, "w") as out:
         for (varname, value) in config.Config.options():
             # Don't write if variable name is an invalid bash variable name
-            if "-" not in varname:
+            if "-" in varname:
+                continue
+
+            if isinstance(value, bool):
+                # Convert bools to the string "1" or "0"
+                value = (value and "1" or "0")
+            else:
                 value = str(value)
-                # Don't write if the value contains any double quotes (this
-                # could happen for BroArgs, which we don't need in this file)
-                if '"' not in value:
-                    out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
+
+            # Don't write if the value contains any double quotes (this
+            # could happen for BroArgs, which we don't need in this file)
+            if '"' not in value:
+                out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
-    try:
-        if os.readlink(symlink) != cfg_path:
-            # attempt to update the symlink
-            try:
-                util.force_symlink(cfg_path, symlink)
-            except OSError as e:
-                cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
-                return False
-    except OSError as e:
-        cmdout.error("failed to resolve symlink '%s': %s" % (symlink, e.strerror))
-        return False
+    if not os.path.islink(symlink) or os.readlink(symlink) != cfg_path:
+        # attempt to update the symlink
+        try:
+            util.force_symlink(cfg_path, symlink)
+        except OSError as e:
+            cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+            return False
 
     return True
 
@@ -89,7 +92,7 @@ def make_layout(path, cmdout, silent=False):
             return self.p
 
     manager = config.Config.manager()
-    broport = Port(int(config.Config.broport) - 1)
+    broport = Port(config.Config.broport - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
 
@@ -221,7 +224,7 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         if manager.type != "standalone":
             out.write("@endif\n")
 
-        if config.Config.ipv6comm == "1":
+        if config.Config.ipv6comm:
             out.write("redef Communication::listen_ipv6 = T ;\n")
         else:
             out.write("redef Communication::listen_ipv6 = F ;\n")
