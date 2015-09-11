@@ -1,0 +1,23 @@
+# Test that Pcap::PacketFanoutEnable is set by the lb_packet_fanout plugin.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff broctl-config.bro
+
+. broctl-test-setup
+
+broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__packet_fanout
+EOF
+
+ret=0
+
+test ! -e ${broctlconfig} || ret=1
+
+broctl install
+
+cp ${broctlconfig} broctl-config.bro
+
+exit $ret
+
