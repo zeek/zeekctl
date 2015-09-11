@@ -229,3 +229,15 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         else:
             out.write("redef Communication::listen_ipv6 = F ;\n")
 
+        out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
+        out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)
+        if config.Config.packetfanoutenable:
+            out.write("redef Pcap::packet_fanout_enable = T;\n")
+        else:
+            out.write("redef Pcap::packet_fanout_enable = F;\n")
+        out.write("redef Pcap::packet_fanout_id = %s;\n" % config.Config.packetfanoutid)
+        if config.Config.packetfanoutdefrag:
+            out.write("redef Pcap::packet_fanout_defrag = T;\n")
+        else:
+            out.write("redef Pcap::packet_fanout_defrag = F;\n")
+

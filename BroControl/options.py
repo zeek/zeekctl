@@ -125,6 +125,17 @@ options = [
     Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,
            "The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work."),
 
+    Option("PcapSnaplen", 8192, "int", Option.AUTOMATIC, False,
+           "Number of bytes per packet to capture from live interfaces."),
+    Option("PcapBufsize", 128, "int", Option.AUTOMATIC, False,
+           "Number of Mbytes to provide as buffer space when capturing from live interfaces."),
+    Option("PacketFanoutEnable", 0, "bool", Option.INTERNAL, False,
+           "Indicates whether AF_PACKET's load balancing via PACKET_FANOUT flag is used. This value is set by the corresponding plugin."),
+    Option("PacketFanoutID", 0, "int", Option.USER, False,
+           "If PACKET_FANOUT load balancing is desired, this value specifies the packet socket's fanout group. Each network namespace can have up to 65536 independent groups."),
+    Option("PacketFanoutDefrag", 1, "bool", Option.USER, False,
+           "If PACKET_FANOUT load balancing is desired, this value indicates whether packets will be defragmented before fanout is applied. IP fragmentation causes packets from the same flow to have different flow hashes. If the flag is set,packets will be defragmented to preserve order even in this case."),
+
     Option("CFlowAddress", "", "string", Option.USER, False,
            "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
