@@ -99,8 +99,21 @@ class Configuration:
             self._set_option("time", "")
 
 
-    # Do a basic sanity check on some critical options.
+    # Do a basic sanity check on broctl options.
     def _check_options(self):
+        for key, value in self.config.items():
+            # Option names must be valid bash variable names because we will
+            # write them to broctl-config.sh
+            if "-" in key:
+                raise ConfigurationError('broctl option name "%s" cannot contain a \'-\' character' % key)
+
+            # No broctl option ever requires the entire value to be wrapped in
+            # quotes.
+            if isinstance(value, str):
+                if ( (value.startswith('"') and value.endswith('"')) or
+                     (value.startswith("'") and value.endswith("'")) ):
+                    raise ConfigurationError('value of broctl option "%s" cannot be wrapped in quotes' % key)
+
         dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
         files = ("makearchivename", )
 
