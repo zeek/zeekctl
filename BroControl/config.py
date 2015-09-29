@@ -477,7 +477,7 @@ class Configuration:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
             elif n.type == "proxy":
                 proxy = True
@@ -485,7 +485,7 @@ class Configuration:
             elif n.type == "standalone":
                 standalone = True
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the standalone node. The standalone node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
         if standalone:
             if len(nodestore) > 1:
@@ -599,7 +599,7 @@ class Configuration:
                             break
 
             if not localaddrs:
-                raise ConfigurationError("ifconfig does not show any local IP addresses")
+                raise ConfigurationError("ifconfig does not show any IP addresses")
         else:
             localaddrs = ["127.0.0.1", "::1"]
             try:
@@ -750,11 +750,6 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl configuration.
-    def update_broctlcfg_hash(self):
-        cfghash = self._get_broctlcfg_hash()
-        self.set_state("hash-broctlcfg", cfghash)
-
     # Return a hash value (as a string) of the current broctl node config.
     def _get_nodecfg_hash(self, filehash=False):
         if filehash:
@@ -773,9 +768,12 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl node config.
-    def update_nodecfg_hash(self):
+    # Update the stored hash value of the current broctl config.
+    def update_cfg_hash(self):
+        cfghash = self._get_broctlcfg_hash()
         nodehash = self._get_nodecfg_hash()
+
+        self.set_state("hash-broctlcfg", cfghash)
         self.set_state("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version number.

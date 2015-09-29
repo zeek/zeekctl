@@ -191,7 +191,7 @@ class Executor:
                     cmdargs += args
 
                 nodecmdlist.append((bronode.addr, cmdargs))
-                logging.debug("%s: %s", bronode.addr, " ".join(cmdargs))
+                logging.debug("%s: %s", bronode.host, " ".join(cmdargs))
 
         for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.config.commandtimeout):
             nodecmd = dd[host].pop(0)
@@ -201,7 +201,7 @@ class Executor:
                 out = result[1].splitlines()
                 err = result[2].splitlines()
                 results.append((bronode, res == 0, out + err))
-                logging.debug("%s: exit code %d", bronode.addr, res)
+                logging.debug("%s: exit code %d", bronode.host, res)
             else:
                 results.append((bronode, False, [str(result)]))
 

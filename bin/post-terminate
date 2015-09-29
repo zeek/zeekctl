@@ -28,7 +28,7 @@ function sendfailuremail
     $scriptdir/send-mail "archive log failure" <<_EOF_
 Unable to archive one or more logs in directory:
 ${tmp}
-Any error messages are in the post-terminate.out file in that directory.
+Check the post-terminate.out file in that directory for any error messages.
 _EOF_
 }
 

@@ -1274,11 +1274,17 @@ class Controller:
         if local_only:
             return results
 
-        # Sync to clients.
-        self.ui.info("updating nodes ...")
-
         # Make sure we install each remote host only once.
         nodes = self.config.hosts(nolocal=True)
+
+        # If there are no remote hosts, then we're done.
+        if not nodes:
+            # Save current configuration state.
+            self.config.update_cfg_hash()
+            return results
+
+        # Sync to clients.
+        self.ui.info("updating nodes ...")
 
         dirs = []
 
@@ -1309,11 +1315,8 @@ class Controller:
             results.ok = False
             return results
 
-        # Save current node configuration state.
-        self.config.update_nodecfg_hash()
-
         # Save current configuration state.
-        self.config.update_broctlcfg_hash()
+        self.config.update_cfg_hash()
 
         return results
 
