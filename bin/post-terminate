@@ -9,7 +9,7 @@
 #
 # post-terminate <type> <dir> [<crashflag>]
 #
-# <type> is the node's type ("proxy", "worker", etc.).
+# <type> is the node's type ("manager", "worker", etc.).
 # <dir> is the node's working directory.
 #
 # If <crashflag> is not set, then BroControl has stopped Bro normally.
@@ -19,9 +19,17 @@
 # BroControl terminated Bro forcefully (but intentionally) by SIGKILL while
 # trying to stop Bro.
 
-function mailerror
+function sendfailuremail
 {
-    $scriptdir/send-mail "failure to archive log files"
+    if [ "${mailarchivelogfail}" = "0" ]; then
+        return
+    fi
+
+    $scriptdir/send-mail "archive log failure" <<_EOF_
+Unable to archive one or more logs in directory:
+${tmp}
+Any error messages are in the post-terminate.out file in that directory.
+_EOF_
 }
 
 if [ $# -lt 2 -o $# -gt 3 ]; then
@@ -203,12 +211,9 @@ if [ $crash -eq 1 -o $killed -eq 1 ]; then
     archivelogs unrotated
 fi
 
+# If one or more logs failed to be archived, then try to send an email.
 if [ $failed -ne 0 ]; then
-    mailerror <<_EOF_
-Unable to archive one or more logs in directory:
-${tmp}
-See the post-terminate.out file for error messages.
-_EOF_
+    sendfailuremail
 fi
 
 # If Bro crashed, then we don't need to do anything else, because we don't

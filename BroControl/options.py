@@ -81,6 +81,8 @@ options = [
            "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
     Option("MailHostUpDown", 1, "bool", Option.USER, False,
            "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
+    Option("MailArchiveLogFail", 1, "bool", Option.USER, False,
+           "True to enable sending mail when log files fail to be archived."),
 
     Option("MinDiskSpace", 5, "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
