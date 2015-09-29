@@ -101,14 +101,20 @@ class Configuration:
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
+        # Option names must be valid bash variable names because we will
+        # write them to broctl-config.sh (note that broctl will convert "."
+        # to "_" when it writes to broctl-config.sh).
+        allowedchars = re.compile("^[a-z0-9_.]+$")
+        nostartdigit = re.compile("^[^0-9]")
+
         for key, value in self.config.items():
-            # Option names must be valid bash variable names because we will
-            # write them to broctl-config.sh
-            if "-" in key:
-                raise ConfigurationError('broctl option name "%s" cannot contain a \'-\' character' % key)
+            if re.match(allowedchars, key) is None:
+                raise ConfigurationError('broctl option name "%s" contains invalid characters' % key)
+            if re.match(nostartdigit, key) is None:
+                raise ConfigurationError('broctl option name "%s" cannot start with a number' % key)
 
             # No broctl option ever requires the entire value to be wrapped in
-            # quotes.
+            # quotes, and since doing so can cause problems, we don't allow it.
             if isinstance(value, str):
                 if ( (value.startswith('"') and value.endswith('"')) or
                      (value.startswith("'") and value.endswith("'")) ):
