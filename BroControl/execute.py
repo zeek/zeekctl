@@ -224,7 +224,7 @@ class Executor:
     # A convenience function that calls run_cmds.
     # dirs:  a list of the form [ (node, dir), ... ]
     #
-    # Returns a list of the form: [ (node, success), ... ]
+    # Returns a list of the form: [ (node, success, output), ... ]
     #   where "success" is a boolean (true if specified directory was created
     #   or already exists).
     def mkdirs(self, dirs):
@@ -235,7 +235,7 @@ class Executor:
             cmds += [(node, "mkdir", ["-p", dir])]
 
         for (node, success, output) in self.run_cmds(cmds):
-            results += [(node, success)]
+            results += [(node, success, output)]
 
         return results
 

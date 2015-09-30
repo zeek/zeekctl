@@ -172,7 +172,7 @@ class Controller:
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
         nodes = []
-        for (node, success) in self.executor.mkdirs(dirs):
+        for (node, success, output) in self.executor.mkdirs(dirs):
             if success:
                 nodes += [node]
             else:
@@ -679,10 +679,13 @@ class Controller:
     # If cleantmp is true, also wipes ${tmpdir}; this is done
     # even when the node is still running.
     def cleanup(self, nodes, cleantmp=False):
+        # Given a set of node names "orig" and command results "res", add
+        # all node names to "orig" that have a failed result in "res".
         def addfailed(orig, res):
-            for (n, status) in res:
-                if not status:
-                    orig.add(n.name)
+            for r in res:
+                # if status is Fail, then add the node name
+                if not r[1]:
+                    orig.add(r[0].name)
 
             return orig
 
@@ -1304,9 +1307,10 @@ class Controller:
             for dir in createdirs:
                 dirs.append((n, dir))
 
-        for (node, success) in self.executor.mkdirs(dirs):
+        for (node, success, output) in self.executor.mkdirs(dirs):
             if not success:
-                self.ui.error("cannot create (some of the) directories %s on node %s" % (",".join(createdirs), node.name))
+                self.ui.error("cannot create a directory on node %s" % node.name)
+                self.ui.error("\n".join(output))
                 results.ok = False
                 return results
 
