@@ -1,4 +1,8 @@
 
+1.4-30 | 2015-08-21 17:23:39 -0700
+
+  * Updating submodule(s).
+
 1.4-28 | 2015-07-29 15:33:37 -0500
 
   * Handle a missing broctl-config.sh symlink (Justin Azoff)
