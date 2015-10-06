@@ -53,26 +53,28 @@ Running BroControl requires the following prerequisites:
   - A *bash* (note in particular, that on FreeBSD, *bash* is not
     installed by default).
 
-  - In a cluster setup, *rsync* must be installed on every host
-    in the cluster.
-
-  - In a cluster setup, *sshd* must be installed and running on every host
-    except the manager, and *ssh* must be installed on the manager.
-
   - If *sendmail* is installed (for a cluster setup, it is needed on the
     manager only), then BroControl can send mail.  Otherwise, BroControl
     will not attempt to send mail.
 
+For a cluster setup that spans more than one machine, there are
+additional requirements:
+
+  - Every host in the cluster must have *rsync* installed.
+
+  - The manager host must have *ssh* installed, and every other host in the
+    cluster must have *sshd* installed and running.
+
+  - Decide which user account will be running BroControl, and then make sure
+    this user account is set up on all hosts in your cluster.  Also make sure
+    this user can ``ssh`` from the manager host to each of the other hosts
+    in your cluster, and this must work without being prompted for a
+    password/passphrase (one way to accomplish this is to use ssh public key
+    authentication).
+
 If you're using a load-balancing method such as PF_RING, then there is
 additional software to install (for details, see the
 :doc:`Cluster Configuration <../../configuration/index>` documentation).
-
-Additionally, in a cluster setup you must have the same user account set up
-on all hosts, and ``ssh`` access from the manager node to this
-user account must be setup on all machines, and must work
-without asking for a password/passphrase (for example, using ssh
-public key authentication).  Finally, on the worker nodes, this user
-must have access to the target network interface in promiscuous mode.
 
 
 Installation
@@ -80,39 +82,67 @@ Installation
 
 Follow the directions to install Bro and BroControl according to
 the instructions in the :doc:`Installing Bro <../../install/install>`
-documentation.  Depending on how you install Bro and BroControl, the files
-and directories that get installed might be owned by the "root" user.
-If you want to run BroControl as an ordinary user, then you will need
-to make sure that the user has write permissions to the "logs" and "spool"
-directories (and all subdirectories of these directories).
-
-Note that if you are planning to run Bro in a cluster
+documentation.  Note that if you are planning to run Bro in a cluster
 configuration, then you need to install Bro and BroControl only on the
 manager host (the BroControl install_ or deploy_ commands will install Bro
 and all required scripts to the other hosts in your cluster).
 
-For more details on how to configure BroControl in a cluster configuration,
-see the examples in the
-:doc:`Cluster Configuration <../../configuration/index>` documentation.
+Using BroControl as an unprivileged user
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you decide to run BroControl as an unprivileged user, there are a
+few things to keep in mind.
+
+Depending on how you install Bro and BroControl, the files
+and directories that get installed might be owned by the "root" user.
+If you want to run BroControl as an unprivileged user, then you will need
+to make sure that the user has write permission to the "logs" and "spool"
+directories, and everything contained in these directories.
+
+If you're using a cluster setup that spans multiple machines, then
+the user running BroControl needs permission to create the install prefix
+directory (by default, this is ``/usr/local/bro``) on each remote machine.
+This may or may not be a problem, depending on which install prefix chosen
+when Bro was built from source.  As a workaround, you can login to each
+machine in your cluster and manually create the install prefix directory
+and then set ownership or permissions of this directory so that the user
+who will run BroControl has write access to it.
+
+Finally, on the worker nodes (or the standalone node), Bro must have access
+to the target network interface in promiscuous mode.  There are
+some tips on how to do this in the `Bro FAQ <https://www.bro.org/documentation/faq.html#how-can-i-capture-packets-as-an-unprivileged-user>`_.
+
+Configuration
+-------------
+
+Before actually running BroControl, you first need to edit the ``broctl.cfg``,
+``node.cfg``, and ``networks.cfg`` files.
+
+In the ``broctl.cfg`` file, you should review the BroControl options and
+make sure they are set correctly for your environment (for a
+description of every BroControl option, see the `Option Reference`_ section
+below).  In general, the MailTo_ option is probably the most likely
+option that you will want to change.
+
+Next, edit the ``node.cfg`` file and specify the nodes that you will be
+running.  For a description of every option available for nodes, see
+the `Node`_ section below.  If you will be using a standalone configuration
+then most likely the only option you need to change is the ``interface``.
+If you will be using a cluster configuration, there is a
+:doc:`Cluster Configuration <../../configuration/index>`
+guide that provides examples and additional information.
+
+Finally, edit the ``networks.cfg`` file and list each network (see
+the examples in the file for the format to use) that is considered
+local to the monitored environment.
 
 
-Getting Started
----------------
+Basic Usage
+-----------
 
 BroControl is an interactive interface for managing a Bro installation
 which allows you to, e.g., start/stop the monitoring or update its
 configuration.
-
-Before actually running BroControl, you first need to edit the ``broctl.cfg``,
-``node.cfg``, and ``networks.cfg`` files.  In the ``broctl.cfg`` file, you
-should review the BroControl options and make sure the options are set
-correctly for your environment (for a description of every BroControl option,
-see the `Option Reference`_ section below).  Next, edit the ``node.cfg`` file
-and specify the nodes that you will be running.  For a description of
-every option available for nodes, see the `Node`_ section below.
-Finally, edit the ``networks.cfg`` file and list each network (see
-the examples in the file for the format to use) that is considered
-local to the monitored environment.
 
 BroControl is started with the ``broctl`` script and then expects
 commands on its command-line (alternatively, ``broctl`` can also be started
@@ -162,31 +192,61 @@ scripts or upgrading to a new version of Bro, deploy_ must
 be run (deploy will check all policy scripts, install all needed files, and
 restart Bro). No changes will take effect until deploy_ is run.
 
+The broctl cron_ command performs housekeeping tasks, such as checking
+whether Bro is running or not (and starting or stopping to match the expected
+state, as needed), checking if there is sufficient free disk space, etc.
+This command is intended to be run from a cron job, rather than
+interactively by a user.  To setup a cron job that runs once every
+five minutes, insert the following entry into the crontab of the
+user running BroControl (change the path to the actual location of broctl
+on your system)::
+
+      0-59/5 * * * * /usr/local/bro/bin/broctl cron
+
+If the ``"broctl cron disable"`` command is run, then broctl cron will be
+disabled (i.e., broctl cron won't do anything) until the
+``"broctl cron enable"`` command is run.  To check the status at any
+time, run ``"broctl cron ?"``.
+
+
 Log Files
 ---------
 
-On the manager system (and on the stand-alone system), you find the
-current set of (aggregated) logs in ``logs/current`` (which is a
-symlink to the corresponding spool directory).
-The logs are archived in ``logs/``, by default
-once per hour. Log files of workers and proxies are discarded at the
-same rotation interval.
+On the manager system (and on the stand-alone system), while Bro is running
+you can find the current set of (aggregated) logs in ``logs/current`` (which
+is a symlink to the corresponding spool directory).
 
-If, for some reason, log files are not able to be archived (you would notice
-this by seeing a gap in the set of logs in the ``logs/`` directory), you can
-search for unarchived logs with a command like this::
+Bro logs are automatically rotated once per hour by default, or whenever Bro
+is stopped.  A rotated log is renamed to contain a timestamp in the filename.
+For example, the ``conn.log`` might be renamed to
+``conn.2015-01-20-15-23-42.log``.
 
-    find spool -name "*.log"
+Immediately after a log is rotated, it is archived automatically.  When a log
+is archived, it is moved to a subdirectory of ``logs/`` named by date (such
+as ``logs/2015-01-20``), then it is renamed again, and gzipped.  For example,
+a rotated log file named ``conn.2015-01-20-15-23-42.log`` might be archived
+to ``logs/2015-01-20/conn.15:48:23-16:00:00.log.gz``.  If the archival was
+successful, then the original (rotated) log file is removed.
 
-If you see any logs in a subdirectory of ``spool/tmp/``, then those were moved
-there when Bro previously stopped or crashed.  If Bro is still running,
-then there might be rotated logs (i.e., logs with filenames containing a
-timestamp) in Bro's working directory.
+If, for some reason, a rotated log file cannot be archived then it will be
+left in the node's working directory.  Next time when BroControl either stops
+Bro or tries to restart a crashed Bro, it will try to archive such log files
+again.  If this attempt fails, then an email is sent which contains the
+name of a directory where any such unarchived logs can be found.
 
-Additionally, when broctl starts Bro, it creates two files "stdout.log"
-and "stderr.log".  These files are sometimes useful to debug problems,
-because they might contain error messages from Bro or from the script
-which archives log files.
+Files created only when using BroControl
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When BroControl starts Bro it creates two files "stdout.log" and "stderr.log",
+which just capture stdout and stderr from Bro.  Although these are not
+actually Bro logs, they might contain useful error or diagnostic information.
+
+Also, whenever logs are rotated, a connection summary report is generated if
+the `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
+tool is installed.  Although these are not actually Bro logs, they follow
+the same filename convention as other Bro logs and they have the filename
+prefix "conn-summary".  To prevent these files from being created, set the
+value of the TraceSummary_ option to an empty string.
 
 
 Site-specific Customization
@@ -260,25 +320,33 @@ add a script ``experimental.bro`` to a single worker for trying out new
 experimental code.
 
 
-Miscellaneous
--------------
-
 Mails
-~~~~~
+-----
 
-BroControl sends three types of mails to the address given in
-``MailTo``:
+There are several situations when BroControl sends mail to the address given in
+MailTo_ (note that BroControl will not be able to send any mail when the
+value of the SendMail_ option is an empty string):
 
-1. When the ``cron`` command runs it performs various tasks (such as
+1. When the ``broctl cron`` command runs it performs various tasks (such as
    checking available disk space, expiring old log files, etc.).  If
-   any problems occur, a list of those issues will be sent.
+   any problems occur, a mail will be sent containing a list of those issues.
+   Setting ``MailHostUpDown=0`` will disable some of this output.  Also,
+   setting ``StatsLogEnable=0`` will disable some functionality involving
+   writing to stats.log (which could also reduce the amount of email).
 
-2. When the ``cron`` command notices that a node has crashed, it
-   restarts it and sends a notification. It may also send a more
-   detailed crash report containing information about the crash.
+2. When BroControl tries to start or stop (via any of these commands:
+   start, stop, restart, deploy, or cron) a node that has crashed,
+   a crash report is mailed (one for each crashed node).  The crash report
+   is essentially just the output of the ``broctl diag`` command.
+   When ``broctl cron`` is run with the ``--no-watch`` option, then it
+   will not attempt to start or stop Bro.
 
-3. If `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
-   is installed, a traffic summary is sent each rotation interval. This
+3. When BroControl stops Bro or restarts a crashed Bro, if any log files
+   could not be archived, then an email will be sent.  This can be disabled
+   by setting ``MailArchiveLogFail=0``.
+
+4. If `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
+   is installed, a traffic summary is mailed each rotation interval. This
    can be disabled by setting ``MailConnectionSummary=0``.
 
 Command Reference
