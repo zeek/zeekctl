@@ -91,26 +91,28 @@ Using BroControl as an unprivileged user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you decide to run BroControl as an unprivileged user, there are a
-few things to keep in mind.
+few issues that you may encounter.
 
-Depending on how you install Bro and BroControl, the files
-and directories that get installed might be owned by the "root" user.
-If you want to run BroControl as an unprivileged user, then you will need
-to make sure that the user has write permission to the "logs" and "spool"
-directories, and everything contained in these directories.
+If you installed Bro and BroControl as the "root" user, then you will need
+to adjust the ownership or permissions of the "logs" and "spool" directories
+(and everything in those directories) so that the user running BroControl
+has write permission.
 
-If you're using a cluster setup that spans multiple machines, then
-the user running BroControl needs permission to create the install prefix
-directory (by default, this is ``/usr/local/bro``) on each remote machine.
-This may or may not be a problem, depending on which install prefix chosen
-when Bro was built from source.  As a workaround, you can login to each
-machine in your cluster and manually create the install prefix directory
-and then set ownership or permissions of this directory so that the user
-who will run BroControl has write access to it.
+If you're using a cluster setup that spans multiple machines, and if
+your BroControl ``install`` or ``deploy`` commands fail with a permission
+denied error, then it's most likely due to the user running BroControl
+not having permission to create the install prefix directory
+(by default, this is ``/usr/local/bro``) on each remote machine.
+A simple workaround is to login to each machine in your cluster and
+manually create the install prefix directory and then set ownership
+or permissions of this directory so that the user who will run BroControl
+has write access to it.
 
 Finally, on the worker nodes (or the standalone node), Bro must have access
-to the target network interface in promiscuous mode.  There are
-some tips on how to do this in the `Bro FAQ <https://www.bro.org/documentation/faq.html#how-can-i-capture-packets-as-an-unprivileged-user>`_.
+to the target network interface in promiscuous mode.  If Bro doesn't have
+the necessary permissions, then it will fail almost immediately upon
+startup.  A workaround for this is provided in the
+`Bro FAQ <https://www.bro.org/documentation/faq.html#how-can-i-capture-packets-as-an-unprivileged-user>`_.
 
 Configuration
 -------------
@@ -119,10 +121,11 @@ Before actually running BroControl, you first need to edit the ``broctl.cfg``,
 ``node.cfg``, and ``networks.cfg`` files.
 
 In the ``broctl.cfg`` file, you should review the BroControl options and
-make sure they are set correctly for your environment (for a
+make sure they are set correctly for your environment.  Most options have
+default values that are reasonable for most users (the MailTo_ option is
+probably the one that you will most likely want to change), but for a
 description of every BroControl option, see the `Option Reference`_ section
-below).  In general, the MailTo_ option is probably the most likely
-option that you will want to change.
+below.
 
 Next, edit the ``node.cfg`` file and specify the nodes that you will be
 running.  For a description of every option available for nodes, see
@@ -192,7 +195,7 @@ scripts or upgrading to a new version of Bro, deploy_ must
 be run (deploy will check all policy scripts, install all needed files, and
 restart Bro). No changes will take effect until deploy_ is run.
 
-The broctl cron_ command performs housekeeping tasks, such as checking
+The BroControl cron_ command performs housekeeping tasks, such as checking
 whether Bro is running or not (and starting or stopping to match the expected
 state, as needed), checking if there is sufficient free disk space, etc.
 This command is intended to be run from a cron job, rather than
@@ -276,9 +279,9 @@ script.  Note that in a cluster setup, notice filtering should be done only
 on the manager.
 
 After creating or modifying your local policy scripts, you must install them
-by using the broctl "install" or "deploy" command.  Next, you can use the
-broctl "scripts" command to verify that your new scripts will be loaded when
-you start Bro.
+by using the BroControl "install" or "deploy" command.  Next, you can use the
+BroControl "scripts" command to verify that your new scripts will be loaded
+when you start Bro.
 
 If you want to change which local policy scripts are loaded by the nodes,
 you can set SitePolicyStandalone_ for all Bro instances,
@@ -291,12 +294,12 @@ Load Order of Scripts
 ~~~~~~~~~~~~~~~~~~~~~
 
 When writing custom site-specific policy scripts, it can sometimes be useful
-to know in which order the scripts are loaded (the broctl "scripts" command
+to know in which order the scripts are loaded (the BroControl "scripts" command
 shows the load order of every script loaded by Bro).  For example, if more than
 one script sets a value for the same global variable, then the value that
 takes effect is the one set by the last such script loaded.
 
-When broctl starts Bro, the first script loaded is init-bare.bro, followed
+When BroControl starts Bro, the first script loaded is init-bare.bro, followed
 by init-default.bro (keep in mind that each of these scripts loads many
 other scripts).
 
@@ -304,7 +307,7 @@ Next, the local.bro script is loaded.  This provides for a common set of
 loaded scripts for all nodes.
 
 Next, the "broctl" script package is loaded.  This consists of some standard
-settings that broctl needs.
+settings that BroControl needs.
 
 In a cluster setup, one of the following scripts are loaded:
 local-manager.bro, local-proxy.bro, or local-worker.bro.
@@ -425,10 +428,6 @@ Questions and Answers
     as well by setting LogDir_ to a non-NFS directory. (Only
     the manager's logs will be kept permanently, the logs of
     workers/proxies are discarded upon rotation.)
-
-*When I'm using the stand-alone mode, do I still need to have ``ssh`` and ``rsync`` installed and configured?*
-    No. In stand-alone mode all operations are performed directly on the local
-    file system.
 
 *What do I need to do when something in the Bro distribution changes?*
     After pulling from the main Bro git repository, just re-run ``make
