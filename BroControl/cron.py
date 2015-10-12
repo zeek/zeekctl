@@ -122,7 +122,7 @@ class CronTasks:
                 self.config.set_state(key, perc)
 
     def expire_logs(self):
-        if self.config.logexpireinterval == 0 and self.config.statslogexpireinterval == 0:
+        if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
             return
 
         (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))

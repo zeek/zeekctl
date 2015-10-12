@@ -114,6 +114,34 @@ class Configuration:
             if not os.path.isfile(v):
                 raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
 
+        minutes = self._get_interval_minutes("logexpireinterval")
+        self._set_option("logexpireminutes", minutes)
+
+    # Convert a time interval string (from the value of the given option name)
+    # to an integer number of minutes.
+    def _get_interval_minutes(self, optname):
+        # Conversion table for time units to minutes.
+        units = {"day": 24*60, "hr": 60, "min": 1}
+
+        ss = self.config[optname]
+        try:
+            # If no time unit, assume it's days (for backward compatibility).
+            v = int(ss) * units["day"]
+            return v
+        except ValueError:
+            pass
+
+        # Time interval is a non-negative integer followed by an optional
+        # space, followed by a time unit.
+        mm = re.match("([0-9]+) ?(day|hr|min)s?$", ss)
+        if mm is None:
+            raise ConfigurationError('value of broctl option "%s" is invalid: %s' % (optname, ss))
+
+        v = int(mm.group(1))
+        v *= units[mm.group(2)]
+
+        return v
+
     def initPostPlugins(self):
         self.read_state()
 
