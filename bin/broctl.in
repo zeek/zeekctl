@@ -7,8 +7,9 @@ import sys
 import time
 import logging
 
-# This is needed so that we can import BroControl.
+# This is needed so that we can import BroControl and pybroker.
 sys.path.insert(0, "@PREFIX@/lib/broctl")
+sys.path.insert(0, "@PREFIX@/lib/python")
 
 from BroControl.broctl import BroCtl
 from BroControl import brocmd
