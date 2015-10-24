@@ -9,6 +9,3 @@ redef Log::default_mail_alarms_interval = 98765 secs;
 redef Communication::listen_ipv6 = F ;
 redef Pcap::snaplen = 1212;
 redef Pcap::bufsize = 256;
-redef Pcap::packet_fanout_enable = F;
-redef Pcap::packet_fanout_id = 23;
-redef Pcap::packet_fanout_defrag = F;

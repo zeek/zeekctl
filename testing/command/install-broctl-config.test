@@ -20,8 +20,6 @@ echo "MailAlarmsInterval=98765" >> ${broctlcfg}
 echo "IPv6Comm=0" >> ${broctlcfg}
 echo "PcapSnaplen=1212" >> ${broctlcfg}
 echo "PcapBufsize=256" >> ${broctlcfg}
-echo "PacketFanoutID=23" >> ${broctlcfg}
-echo "PacketFanoutDefrag=0" >> ${broctlcfg}
 
 ret=0
 
