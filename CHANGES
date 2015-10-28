@@ -1,4 +1,8 @@
 
+1.4-34 | 2015-10-27 21:13:15 -0500
+
+  * Added plugin for custom load balancing (Jan Grashoefer)
+
 1.4-30 | 2015-08-21 17:23:39 -0700
 
   * Updating submodule(s).
