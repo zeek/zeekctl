@@ -110,8 +110,8 @@ def make_layout(path, cmdout, silent=False):
             out.write("# Automatically generated. Do not edit.\n")
             # This is the port that standalone nodes listen on for remote
             # control by default.
-            out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
-            out.write("redef Communication::nodes += {\n")
+            out.write("redef Broker::listen_port = %s/tcp;\n" % broport.next_port(manager))
+            out.write("redef Broker::nodes += {\n")
             out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
             out.write("};\n")
 
@@ -225,7 +225,7 @@ def make_broctl_config_policy(path, cmdout, silent=False):
             out.write("@endif\n")
 
         if config.Config.ipv6comm:
-            out.write("redef Communication::listen_ipv6 = T ;\n")
+            out.write("redef Broker::listen_ipv6 = T ;\n")
         else:
-            out.write("redef Communication::listen_ipv6 = F ;\n")
+            out.write("redef Broker::listen_ipv6 = F ;\n")
 
