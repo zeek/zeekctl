@@ -144,6 +144,7 @@ installbro() {
     test $? -ne 0 && exit 1
 
     export PATH=$BROCTL_INSTALL_PREFIX/bin:$PATH
+		export PYTHONPATH=$BROCTL_INSTALL_PREFIX/lib/broctl:$PYTHONPATH
     export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 
     # If BROCTL_TEST_DEBUG is set, then leave a file in the test directory
@@ -154,6 +155,7 @@ installbro() {
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
         echo "export LD_LIBRARY_PATH=$BROCTL_INSTALL_PREFIX/lib:\$LD_LIBRARY_PATH" >> $how2run
         echo "export BROCTL_INSTALL_PREFIX=$BROCTL_INSTALL_PREFIX" >> $how2run
+        echo "export PYTHONPATH=$BROCTL_INSTALL_PREFIX/lib/broctl:\$PYTHONPATH " >> $how2run
     fi
 }
 

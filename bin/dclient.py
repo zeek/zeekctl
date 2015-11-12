@@ -7,6 +7,7 @@ import cmd
 import errno
 import json
 import os
+import pybroker
 from Queue import Queue
 from threading import Thread
 
@@ -15,7 +16,6 @@ d_host = "localhost"
 d_port = 9990
 delay_response = 15
 
-
 class BClient(cmd.Cmd):
     intro = 'Deep Cluster Client'
     prompt = '[BClient] > '
@@ -23,31 +23,29 @@ class BClient(cmd.Cmd):
 
     def __init__(self, host, port):
         cmd.Cmd.__init__(self)
-        if host and port:
-            self.connect(host, port)
 
-        self.host = None
-        self.port = None
+        if host:
+            self.host = host
+        else:
+            self.host = d_host
 
-        self.sock = None
+        if port:
+            self.port = port
+        else:
+            self.port = d_port
+
         self.cq = Queue()
-        self.bc = BConnector(self.cq)
+        self.bc = BPeer(self.cq)
         self.client_thread = Thread(target=self.bc.run)
         self.client_thread.daemon = True
         self.client_thread.start()
 
-    def con(self):
-        self.bc.connect(d_host, d_port)
-
-    def do_connect_local(self, line):
-        """ connect to localhost on 9990 """
-        print "connect to localhost on 9990"
-        self.bc.connect("127.0.0.1", 9990)
+        if host and port:
+            self.bc.connect(host, port)
 
     def do_cl(self, line):
-        """ connect to localhost on 9990 """
-        print "connect to localhost on 9990"
-        self.bc.connect("127.0.0.1", 9990)
+        """ connect to stored node """
+        self.bc.connect(self.host, self.port)
 
     # cmdloop handlers
     def do_connect(self, line):
@@ -84,6 +82,8 @@ class BClient(cmd.Cmd):
             print "shutting down deep cluster..."
             self.bc.send("shutdown")
             self.bc.disconnect()
+            self.bc.stop()
+            return True
         else:
             print ("not connected yet")
 
@@ -93,7 +93,7 @@ class BClient(cmd.Cmd):
 
     def do_exit(self, line):
         """ exit client """
-        self.bc.finish()
+        self.bc.stop()
         return True
 
     def do_dstatus(self, line):
@@ -101,7 +101,7 @@ class BClient(cmd.Cmd):
         if self.bc.is_connected():
             print "connected to host " + str(self.host) + "::" + str(self.port)
         else:
-            print ("not connected yet")
+            print ("not connected yet, stored information: " + str(self.host) + " " + str(self.port) )
 
     def do_status(self, line):
         """ sends out status command to connected dbroctld"""
@@ -144,6 +144,10 @@ class BClient(cmd.Cmd):
         else:
             print ("not connected yet")
 
+    def do_clear(self, line):
+        """ clears the console """
+        os.system('clear')
+
     def preloop(self):
         os.system('clear')
 
@@ -154,44 +158,45 @@ class BClient(cmd.Cmd):
         #print "line " + str(line) + " stop " + str(stop)
         if not self.bc.is_connected() or not line:
             return stop
-        for l in ["connect", "disconnect", "shutdown", "cl", "connect_local", "dstatus", "help", "exit"]:
+        for l in ["connect", "disconnect", "shutdown", "cl", "connect_local", "dstatus", "help", "exit", "start", "stop"]:
             if l in line:
                 return stop
 
         counter = 0
-        data = None
+        msg = None
         while counter < (delay_response / 0.25):
             time.sleep(0.25)
             while not self.cq.empty():
-                data = self.cq.get()
-                self.handleResult(data, line)
+                msg = self.cq.get()
+                self.handleResult(msg, line)
                 break
-            if data:
+            if msg:
                 break
             counter += 1
         return stop
 
-    def handleResult(self, data, line):
+    def handleResult(self, msg, line):
+        data = msg[2]['payload']
         if "netstats" in line or "peerstatus" in line:
             print ""
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             for (n,v,w) in data:
                 print "" + str(n) + ", " + str(v) + ", " + str(w)
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             print ""
         elif "print_id" in line:
             print ""
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             for n in data:
                 print "" + str(n)
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             print ""
         elif "status" in line:
             print ""
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             for n in data:
                 print "" + str(n)
-            print "-----------------------------------------------------------"
+            print "-------------------------------------------------------------------------------"
             print ""
         else:
             print ""
@@ -200,78 +205,115 @@ class BClient(cmd.Cmd):
             print "-----------------------------------------------------------"
             print ""
 
-class BConnector():
+
+class BPeer:
     def __init__(self, cqueue):
+        self.name = "dclient"
+        self.addr = ("127.0.0.1", 4242)
+        self.cqueue = cqueue
+        self.peered = None
+        self.control_peer = None
         self.running = True
-        self.host = None
-        self.port = None
-        self.sock = None
-        self.cq = cqueue
 
-    def connect(self, host, port):
-        if host and port:
-            self.host = host
-            self.port = port
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                self.sock.bind(("127.0.0.1", control_port))
-                self.sock.connect((self.host, self.port))
-            except socket.error:
-                print "Couldnt connect to ", str(host), (port), " check parameters"
-                return
-        else:
-            print ("no host or no port specified")
+        # Broker stuff
+        self.ep = pybroker.endpoint(self.name, pybroker.AUTO_PUBLISH)
+        self.ctrltopic = "dbroctld/control"
+        self.ctopic = "dbroctld/cmds"
+        self.ep.publish(self.ctrltopic)
+        self.mq = pybroker.message_queue(self.ctrltopic, self.ep)
 
-    def send(self, data):
-        if not self.sock:
-            print "not connected to a dbroctld daemon yet"
+    def connect(self, addr, port):
+        # Connect to broker peer
+        self.peered = self.ep.peer(str(addr), int(port), 1)
+
+        if not self.peered:
+            print("no broker connection could be established to " + str(addr))
             return
 
-        sdata = {'type': 'command', 'payload': data}
-        try:
-            self.sock.sendall(json.dumps(sdata))
-        finally:
-            pass
+        stat = self.ep.outgoing_connection_status().need_pop()[0]
+        if stat.status != pybroker.outgoing_connection_status.tag_established:
+            print("no broker connection could be established to " + str(addr))
+            return
+
+        print "connected to peer " + str(stat.peer_name)
+        self.control_peer = stat.peer_name
+
+    def disconnect(self):
+        if self.peered:
+            self.ep.unpeer(self.peered)
+            self.peered = None
+            self.mq = None
+            self.ep.unpublish(self.ctrltopic)
+
+    def is_connected(self):
+        return self.peered != None
 
     def run(self):
         while self.running:
-            if self.sock:
-                try:
-                    data = None
-                    data_socket = self.sock.recv(4096).strip()
-                    if data_socket:
-                        data = json.loads(data_socket)
-                    if data:
-                        if 'payload' in data.keys():
-                            #print "response: " + str(data["payload"])
-                            self.cq.put(data['payload'])
+            if self.mq:
+                msg = self.mq.want_pop()
+                self.parse_broker_msg(msg)
+            time.sleep(0.25)
 
-                except socket.error, e:
-                    err = e.args[0]
-                    if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                        break
-                    else:
-                        print e
-                        sys.exit(1)
+    def parse_broker_msg(self, msg):
+        if not msg:
+            return
 
-            time.sleep(0.1)
+        for j in msg:
+            event = None
+            res = []
+            for i in j:
+                if not event:
+                    event = i
+                else:
+                    res.append(json.loads(str(i)))
 
-    def disconnect(self):
-        if self.sock:
-            self.sock.close()
-            self.sock = None
+            if event:
+                peer = str(res[0])
+                if (self.name != peer):
+                    self.cqueue.put(("msg", peer, res[2]))
 
-    def is_connected(self):
-        return self.sock is not None
+    def send(self, data):
+        msg = BCmdMsg(self.name, self.addr, data)
+        self.ep.send(self.ctopic, msg.dump())
 
-    def finish(self):
+    def stop(self):
+        self.disconnect()
         self.running = False
-        if self.sock:
-            self.sock.close()
+
+
+class BBaseMsg(object):
+    def __init__(self, mtype):
+        self.message = {}
+        self.message['type'] = mtype
+        self.name = None
+        self.addr = None
+
+    def type(self):
+        return self.message['type']
+
+    def dump(self):
+        vec = pybroker.vector_of_data(1, pybroker.data("dbroctld"))
+        vec.append(pybroker.data(str((json.dumps(self.name)))))
+        vec.append(pybroker.data(str((json.dumps(self.addr)))))
+        vec.append(pybroker.data(str(json.dumps(self.message))))
+        return vec
+
+
+class BCmdMsg(BBaseMsg):
+    def __init__(self, name, addr, payload):
+        super(BCmdMsg, self).__init__("command")
+        self.message['payload'] = payload
+        self.name = name
+        self.addr = addr
 
 
 def main(argv):
-    client = BClient(None, None)
+    client = None
+    if len(argv) == 2:
+        client = BClient(argv[0], argv[1])
+    else:
+        client = BClient(None, None)
     client.cmdloop()
 
 if __name__ == "__main__":

@@ -48,7 +48,6 @@ def send_events_parallel(events):
 
     return results
 
-# TODO result_event is currently obsolete
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)
 
@@ -60,14 +59,12 @@ def _send_event_broker(node, event, args, result_event):
     logging.debug("args is " + str(args))
     time.sleep(1)
 
-    oq = ep.outgoing_connection_status()
-    inter = oq.want_pop()
-    if not inter:
-        logging.debug("no broker connection could be established")
-        return(False, "no broker connection could be established")
-    else:
-        for i in inter:
-            logging.debug("connected to broker-peer " + str(i.peer_name))
+    stat = ep.outgoing_connection_status().need_pop()[0]
+    if stat.status != pybroker.outgoing_connection_status.tag_established:
+        logging.debug("no broker connection could be established to " + str(stat.peer_name))
+        return
+
+    logging.debug("connected to broker-peer " + str(stat.peer_name))
 
     ep.advertise("bro/event/control/response/")
     rqueue = pybroker.message_queue("bro/event/control/response/", ep)
