@@ -1,19 +1,9 @@
 import time
 import logging
+import pybroker
 
 from BroControl import config
 from BroControl import util
-
-try:
-    import broccoli
-except ImportError:
-    broccoli = None
-
-try:
-    import pybroker
-    broker = True
-except ImportError:
-    broker = False
 
 
 # Broker communication with running nodes.
@@ -51,7 +41,7 @@ def send_events_parallel(events):
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)
 
-    ep = pybroker.endpoint("control", pybroker.AUTO_PUBLISH)
+    ep = pybroker.endpoint("control", pybroker.AUTO_ADVERTISE | pybroker.AUTO_PUBLISH)
     logging.debug("initiating broker peering with " + str(host) + ":" + str(node.getPort()))
     ep.peer(host, node.getPort(), 1)
 

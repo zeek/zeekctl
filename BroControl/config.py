@@ -20,7 +20,7 @@ from BroControl import graph
 # This class provides access to four types of configuration/state:
 #
 # - the global broctl configuration from broctl.cfg
-# - the node configuration from node.cfg
+# - the node configuration from node.json
 # - dynamic state variables which are kept across restarts in spool/state.db
 
 Config = None  # Globally accessible instance of Configuration.
@@ -130,7 +130,7 @@ class Configuration:
     def initPostPlugins(self):
         self.read_state()
 
-        # Read node.cfg
+        # Read node.json
         self.nodestore, self.local_node, self.head = self._read_nodes_json()
         if not self.nodestore:
             return False
@@ -145,7 +145,7 @@ class Configuration:
 
             for node in self.nodes("all"):
                 for (key, val) in global_env_vars.items():
-                    # Values from node.cfg take precedence over broctl.cfg
+                    # Values from node.json take precedence over broctl.cfg
                     node.env_vars.setdefault(key, val)
 
         # Set the standalone config option.
@@ -349,7 +349,7 @@ class Configuration:
         return env_vars
 
     # Obsolete
-    # Parse node.cfg.
+    # Parse node.json.
     def _read_nodes(self):
         config = py3bro.configparser.SafeConfigParser()
         fname = self.nodecfg
@@ -517,12 +517,12 @@ class Configuration:
             elif not datanode:
                 raise ConfigurationError("no datanode defined in node config")
 
-    # Parse node.cfg in Json-Format
+    # Parse node.json in Json-Format
     def _read_nodes_json(self):
         file = self.nodejson
-        logging.debug(str(self.localaddrs[0]) + " :: read the node.cfg configuration from file " + str(file))
+        logging.debug(str(self.localaddrs[0]) + " :: read the node.json configuration from file " + str(file))
         if not os.path.exists(file):
-            logging.debug("No node.cfg file available")
+            logging.debug("No node.json file available")
             raise ConfigurationError("cannot read '%s'" % self.nodejson)
 
         nodestore = {}
@@ -540,10 +540,10 @@ class Configuration:
                 data = json.load(f)
             except ValueError:
                 logging.debug(str(self.localaddrs[0]) + " :: json data to read: " + str(plainData))
-                raise ConfigurationError(str(self.localaddrs[0]) + " :: Json: node.cfg could not be decoded")
+                raise ConfigurationError(str(self.localaddrs[0]) + " :: Json: node.json could not be decoded")
 
             if "nodes" not in data.keys() or "connections" not in data.keys() or "head" not in data.keys():
-                raise ConfigurationError("Misconfigured node.cfg. One entry out of [head, node, connections] missing.")
+                raise ConfigurationError("Misconfigured node.json. One entry out of [head, node, connections] missing.")
 
             #
             # 1. Iterate over all node entries and create node objects for them
@@ -580,14 +580,14 @@ class Configuration:
                     self.overlay.addNodeAttr(nodeId, "json-data", entry)
 
                 if not node:
-                    raise ConfigurationError("no node found in node.cfg")
+                    raise ConfigurationError("no node found in node.json")
 
             #
             # 2. Create a node entry for the head node of the local subtree, which
             #    is either the local node (when it is the root) or its predecessor
             #
             if "id" not in data["head"].keys():
-                raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
+                raise ConfigurationError("Misconfigured node.json. Head entry invalid")
 
             headId = ""
             if "cluster" in data["head"] and data["head"]["cluster"]:
@@ -604,7 +604,7 @@ class Configuration:
                 head = nodestore[headId]
 
             if not hasattr(head, "host") and not hasattr(head, "roles"):
-                raise ConfigurationError("Misconfigured node.cfg. Head entry invalid")
+                raise ConfigurationError("Misconfigured node.json. Head entry invalid")
 
             #
             # 3. Parse connections between nodes

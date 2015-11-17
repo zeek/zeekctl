@@ -5,16 +5,19 @@
 import time
 import traceback
 import logging
-import json
 import pybroker
 
-from collections import defaultdict
 from Queue import Queue
 from threading import Thread
+from collections import defaultdict
 
 from BroControl.broctl import BroCtl
 from BroControl.message import BResMsg
 from BroControl.message import BCmdMsg
+
+from BroControl.broker import BrokerPeer
+from BroControl import util
+
 
 class DBroctlD(Thread):
     def __init__(self, logs, basedir, suffix=None):
@@ -26,7 +29,11 @@ class DBroctlD(Thread):
         self.suffix = suffix
         self.head = False
         self.control_peer = None
-        self.outbound = []
+        self.successors = []
+        self.predecessors = []
+        self.local_cluster = {}
+        self.bro_ep = None
+        self.fes = {}
 
         # Stores intermediate results for commands
         self.commands = {}
@@ -42,8 +49,19 @@ class DBroctlD(Thread):
         self.addr = (self.broctl.config.get_local().addr, int(self.broctl.config.get_local().port))
         self.name = self.broctl.config.get_local().name
 
+        # Broker topic for communication with client app
+        self.ctrl_topic = "dbroctld/control"
+        # Broker topic for commands
+        self.cmd_topic = "dbroctld/cmds"
+        # Broker topic for results
+        self.res_topic = "dbroctld/res"
+
+        # pack topics for BrokerPeer
+        sub = [self.ctrl_topic + "/" + self.name, self.cmd_topic, self.res_topic + "/" + self.name]
+        pub = [self.ctrl_topic + "/res"]
+
         # Start broker client
-        self.peer = BrokerPeer(self.name, self.squeue, self.addr)
+        self.peer = BrokerPeer(self.name, self.addr, self.squeue, pub, sub)
         self.client_thread = Thread(target=self.peer.run)
         self.client_thread.daemon = True
         self.client_thread.start()
@@ -63,11 +81,29 @@ class DBroctlD(Thread):
         # Start the peers in the deep cluster recursively
         self.broctl.create_overlay()
 
+    def init_bro_connections(self):
+        node_list = None
+        if self.broctl.config.nodes("standalone"):
+            node_list = "standalone"
+        elif self.broctl.config.nodes("workers"):
+            node_list = "workers"
+        nodes = self.broctl.node_args(node_list)
+
+        # Connnect all bros via broker
+        for n in nodes:
+            addr = (util.scope_addr(n.addr), n.getPort())
+            print " - connect to bro at " + str(addr)
+            self.peer.connect(addr)
+
+        for n in nodes:
+            self.local_cluster[n.name] = n
+
     def run(self):
         self.init_broker_peer()
         self.init_overlay()
         while self.running:
             self.recv()
+            self.check_timeout()
             time.sleep(0.25)
 
     def stop(self):
@@ -84,19 +120,26 @@ class DBroctlD(Thread):
     def connect(self, peer_addr):
         self.peer.connect(peer_addr)
 
-    def forward_res(self, msg):
-        self.send_res(msg['for'], msg['payload'])
-
     def send_cmd(self, cmd):
         msg = BCmdMsg(self.name, self.addr, cmd)
-        self.send(msg)
+        self.peer.send(self.cmd_topic, msg)
 
     def send_res(self, cmd, res):
         msg = BResMsg(self.name, self.addr, cmd, res)
-        self.peer.send_pred(msg)
+        for p in self.predecessors:
+            topic = self.res_topic + "/" + str(p)
+            logging.debug(" - send results to predecessor " + str(p) + " via topic " + topic)
+            self.peer.send(topic, msg)
 
-    def send(self, msg):
-        self.peer.send(msg)
+    # Send a result to the control console
+    def send_res_control(self, cmd, res):
+        if self.control_peer:
+            logging.debug(" ** send results to control " + str(res))
+            msg = BResMsg(self.name, self.addr, cmd, res)
+            self.peer.send(self.ctrl_topic + "/res", msg)
+
+    def forward_res(self, msg):
+        self.send_res(msg['for'], msg['payload'])
 
     def noop(self, *args, **kwargs):
         return True
@@ -111,59 +154,127 @@ class DBroctlD(Thread):
             logging.debug("DBroctlD: malformed data type", dtype, "received")
             raise RuntimeError("DBroctlD: malformed data type", dtype, "received")
 
-        #print str(self.addr) + ": dtype " + str(dtype) + ", peer " + str(peer) + ", data " + str(data)
+        #  print str(self.addr) + ": dtype " + str(dtype) + ", peer " + str(peer) + ", data " + str(data)
         if dtype == "msg":
-            self.handleMessage(peer, data)
+            self.handle_message(peer, data)
         elif dtype == "peer-connect":
-            self.handlePeerConnect(peer)
+            self.handle_peer_connect(peer, data)
         elif dtype == "peer-disconnect":
-            self.handlePeerDisconnect(peer)
+            self.handle_peer_disconnect(peer, data)
         else:
             raise RuntimeError("undefinded message received")
 
-    def handlePeerConnect(self, peer):
-        if(peer != "dclient"):
-            self.outbound.append(peer)
-            logging.debug("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
-            print ("peer " + str(peer) + " connected, " + str(len(self.outbound)) + " outbound connections")
+    # Timeout handling
+    def check_timeout(self):
+        if len(self.fes) == 0:
+            return
+        t = sorted(self.fes).pop()
+        if t <= time.time():
+            for e in self.fes[t]:
+                self.handle_timeout(e)
+            del self.fes[t]
+
+    # Schedule a timeout for myself
+    def schedule_timeout(self, time, ttype, msg=None):
+        if time not in self.fes:
+            self.fes[time] = [(ttype, msg)]
         else:
+            self.fes[time] += [(ttype, msg)]
+
+    # Cancel timeout
+    def cancel_timeout(self, timeout):
+        cand = None
+        for c in self.fes:
+            if self.fes[c] == timeout:
+                cand = c
+                break
+        if cand:
+            del self.fes[cand]
+
+    def handle_timeout(self, (timeout, msg)):
+        logging.debug("handle_timeout: " + timeout)
+
+        if timeout == "init_bro_connections":
+            logging.debug("timeout: init_bro_connections received")
+            self.init_bro_connections()
+        elif timeout == "command_timeout":
+            logging.debug("timeout: command_timeout received")
+            if (msg in self.commands) and self.head:
+                self.output_result(msg, self.commands[msg])
+                del self.commands[msg]
+                del self.command_replies[msg]
+        else:
+            logging.debug("unhandled timeout " + timeout + " received with " + msg)
+
+    def handle_peer_connect(self, peer, direction):
+        if(peer == "dclient"):
             self.control_peer = peer
             logging.debug("node " + str(peer) + " established control connection to us")
             print "node " + str(peer) + " established control connection to us"
+            return
 
-    def handlePeerDisconnect(self, peer):
-        if(peer != "dclient"):
-            print "peer", peer, "disconnected"
-            if peer in self.outbound:
-                logging.debug(" outbound peer " + str(peer) + " disconnected")
-                self.outbound.remove(peer)
-        else:
+        # If peer connected inbound to broker peer it means that it is a
+        # successor in the tree or a bro running in a local cluster
+        if direction == "inbound":
+            if peer in self.local_cluster:
+                logging.debug("Bro-peer " + str(peer) + " connected to us")
+                print "Bro " + str(peer) + " connected to us"
+            else:
+                self.successors.append(peer)
+                logging.debug("peer " + str(peer) + " connected, " + str(len(self.successors)) + " outbound connections")
+                print ("Peer " + str(peer) + " connected, " + str(len(self.successors)) + " outbound connections")
+
+        # Outbound means that we connected to this peer,
+        # it is thus a predecessor in the hierarchy
+        elif direction == "outbound":
+            self.predecessors.append(peer)
+            logging.debug("Peer " + str(peer) + " connected, " + str(len(self.predecessors)) + " inbound connections")
+            print ("Peer " + str(peer) + " connected, " + str(len(self.predecessors)) + " outbound connections")
+            # Publish results to this peer
+            self.peer.publish_topic(self.res_topic + "/" + str(peer))
+
+    def handle_peer_disconnect(self, peer, direction):
+        if peer == "dclient":
             logging.debug(" we lost our control connection to peer " + str(peer))
             print "control peer", peer, "disconnected"
             self.control_peer = None
+            return
+
+        print "peer", peer, "disconnected, " + str(direction)
+        if direction == "inbound":
+            if peer in self.local_cluster:
+                logging.debug("Bro " + str(peer) + " disconnected")
+            elif peer in self.successors:
+                logging.debug("Successor " + str(peer) + " disconnected")
+                self.successors.remove(peer)
+        elif direction == "outbound":
+            if peer in self.predecessors:
+                logging.debug("Predecessor " + str(peer) + " disconnected")
+                self.predecessors.remove(peer)
 
     # message handling
-    def handleMessage(self, peer, msg):
+    def handle_message(self, peer, msg):
         if 'type' not in msg.keys():
             print("Error: received a msg with no type")
             raise RuntimeError("malformed message received")
 
         if msg["type"] == "command":
-            self.handleCommand(peer, msg)
+            self.handle_command(peer, msg)
 
         elif msg["type"] == "result":
-            self.handleResult(peer, msg)
+            self.handle_result(peer, msg)
 
         else:
-            print("handleMessage: unknown message type received")
+            print("handle_message: unknown message type received")
             raise RuntimeError("message type unknown")
 
     # Handle a command message received from the control console or a
     # predecessor
-    def handleCommand(self, peer, msg):
+    def handle_command(self, peer, msg):
         ocmd = str(msg['payload'])
         (paddr, pport) = peer
         logging.debug("msg " + str(msg) + ", ocmd " + str(ocmd))
+
         if paddr != self.parent_addr or pport != self.server_port:
             logging.debug("cmd from peer " + str(peer) + " received that is not our parent " + str(self.parent_addr))
         else:
@@ -179,6 +290,7 @@ class DBroctlD(Thread):
             print("execute cmd " + str(cmd) + " with args " + str(args))
         else:
             print("execute cmd " + str(cmd))
+
         # Execute command...
         func = getattr(self.broctl, cmd, self.noop)
 
@@ -191,23 +303,18 @@ class DBroctlD(Thread):
                 res = traceback.format_exc()
 
             # handle the result of the command
-            self.processLocalResult(cmd, res)
+            self.process_local_result(cmd, res)
 
-        elif cmd == 'shutdown':
-            # Stop all local bro processes
-            self.stop()
-
-        else:
-            logging.debug("handleCommand: unknown command, ignoring it")
+        # Post processing of commands
+        self.cmd_post_processing(cmd)
 
     # Handle result message from a successor
-    def handleResult(self, peer, res):
+    def handle_result(self, peer, res):
         if 'for' not in res.keys() or 'payload' not in res.keys():
             raise RuntimeError("Received result message with invalid format")
 
         cmd = str(res['for'])
         result = res['payload']
-
         logging.debug("received reply for cmd " + str(cmd) + " from peer " + str(peer) + " with result " + str(result))
 
         if cmd not in self.commands:
@@ -236,24 +343,31 @@ class DBroctlD(Thread):
             del self.commands[cmd]
             del self.command_replies[cmd]
 
+        # Cancel timeout for this command
+        self.cancel_timeout(("command_timeout", cmd))
+
+    def cmd_post_processing(self, cmd):
+        # Certain commands require additional action afterwards
+        if cmd == 'start':  # Start bros
+            pass
+            #self.schedule_timeout(time.time() + 2, "init_bro_connections")
+        elif cmd == 'shutdown':  # Stop all local bro processes
+            self.stop()
+
     # process the results returned from broctl
-    def processLocalResult(self, cmd, res):
-        if cmd not in ["netstats", "peerstatus", "print_id", "status"]:
+    def process_local_result(self, cmd, res):
+        if cmd not in ["netstats", "peerstatus", "print_id", "status"] or not res:
             return
-
-        if res:
-            logging.debug("result of cmd " + str(cmd) + " is " + str(res))
-        else:
-            logging.debug("no result for cmd " + str(cmd))
-            return
-
         if cmd in self.commands:
             raise RuntimeError("old netstats results available!")
 
+        logging.debug("result of cmd " + str(cmd) + " is " + str(res))
         # Do command specific formatting of results and store them
         self.commands[cmd] = self.process_local_result_cmd(cmd, res)
-        self.command_replies[cmd] = len(self.outbound)
+        self.command_replies[cmd] = len(self.successors)
 
+        # If we are the head node and we have acquired all
+        # results from our successors
         if self.head and self.command_replies[cmd] == 0:
             logging.debug("no predecessor, so output results")
             self.output_result(cmd, self.commands[cmd])
@@ -262,16 +376,17 @@ class DBroctlD(Thread):
             del self.commands[cmd]
             del self.command_replies[cmd]
 
-        elif not self.outbound:
+        # If we have no successors send result to predecessor
+        elif not self.successors:
             rlist = self.commands[cmd]
             logging.debug("send results for cmd " + str(cmd) + " : " + str(rlist))
             self.send_res(cmd, rlist)
-            logging.debug("deleting cmd from cache as we have no outbound peer: " + str(cmd))
+            logging.debug("deleting cmd from cache as we have no successor: " + str(cmd))
             del self.commands[cmd]
 
-        else:
+        else:  # Schedule a timeout
             logging.debug("we wait for " + str(cmd) + " results from our successors")
-            # TODO add timout to main control loop!
+            self.schedule_timeout(time.time() + 5, "command_timeout")
 
     def process_local_result_cmd(self, cmd, res):
         if not res:
@@ -323,7 +438,7 @@ class DBroctlD(Thread):
             if success:
                 logging.debug("printid gave success, args " + str(args))
                 result.append("" + str(node) + ": " + str(args))
-                #result.append("%12s   %s = %s" % (node, args[0], args[1]))
+                # result.append("%12s   %s = %s" % (node, args[0], args[1]))
             else:
                 result.append("%12s   <error: %s>" % (node, args))
         return result
@@ -334,169 +449,25 @@ class DBroctlD(Thread):
 
         for e in self.commands[cmd]:
             print("    - " + str(e))
-        ## when we have a control connection we need to send the results
+        # when we have a control connection we need to send the results
         self.send_res_control(cmd, self.commands[cmd])
 
-    # Send a result to the control console
-    def send_res_control(self, cmd, res):
-        if self.control_peer:
-            logging.debug(" ** send result to control " + str(res))
-            msg = BResMsg(self.name, self.addr, cmd, res)
-            self.peer.send_control(msg)
+    # FIXME not done yet
+    def netstats(self):
+        """- [<nodes>]
 
+        Queries each of the nodes for their current counts of captured and
+        dropped packets."""
+        self.peer.subscribe_topic("bro/event/control/" + self.name + "/response")
+        self.peer.publish_topic("bro/event/control/" + self.name + "/request")
 
-class BrokerPeer:
-    def __init__(self, name, squeue, addr):
-        self.name = name
-        self.running = True
-        self.squeue = squeue
-        self.outbound = []
-        self.inbound = {}
-        self.tq = {}
-        self.addr = addr
+        # Construct the broker event to send
+        vec = pybroker.vector_of_data(1, pybroker.data("Control::net_stats_request"))
 
-        # broker topic for commands
-        self.ctopic = "dbroctld/cmds"
-        # broker topic for results
-        self.rtopic = "dbroctld/res"
-        self.ctrl_topic = "dbroctld/control" + "/" + name
+        # Send the event to the broker endpoint
+        self.peer.send("bro/event/control/" + self.name + "request/", vec)
+        # eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
-        # Broker endpoint configuration
-        self.ep = pybroker.endpoint(name, pybroker.AUTO_PUBLISH)
-        self.ep.listen(int(addr[1]), str(addr[0]))
-        print "Dbroctld listens on " + str(addr[0]) +  ":" + str(addr[1])
-
-        # Publish topic prefixes
-        self.ep.publish(self.ctopic)
-        self.ep.publish(self.ctrl_topic)
-
-        # Create message queue for commands and control messages that is the same for all nodes
-        self.tq[self.ctopic] = pybroker.message_queue(self.ctopic, self.ep)
-        self.tq[self.ctrl_topic] = pybroker.message_queue(self.ctrl_topic, self.ep)
-
-        # We need new topic for this peer and all its direct successors
-        prefix = self.rtopic + "/" + self.name #+ "-"+ str(incoming[0].peer_name)
-        self.ep.publish(prefix)
-
-        self.tq[prefix] = pybroker.message_queue(prefix, self.ep)
-
-    def connect(self, peer_addr):
-        logging.debug("initiating connection to " + str(peer_addr))
-        p = self.ep.peer(str(peer_addr[0]), int(peer_addr[1]), 1)
-
-        if not p:
-            logging.debug("no broker connection could be established to " + str(peer_addr))
-            return
-
-        stat = self.ep.outgoing_connection_status().need_pop()[0]
-        if stat.status != pybroker.outgoing_connection_status.tag_established:
-            logging.debug("no broker connection could be established to " + str(peer_addr))
-            return
-
-        logging.debug("connected to peer " + str(stat.peer_name))
-        self.inbound[stat.peer_name] = (peer_addr, p)
-
-    def disconnect_inbound(self):
-        for p in self.inbound.values():
-            self.ep.unpeer(p[1])
-        self.inbound.clear()
-
-    def recv(self):
-        # Check incoming and outgoing connections
-        self.check_connections()
-
-        # Checking queues
-        for q in self.tq.values():
-            msg = q.want_pop()
-            self.parse_broker_msg(msg)
-
-    def check_connections(self):
-        # 1. Checking incoming connections (we are predecessor in the tree)
-        incoming = self.ep.incoming_connection_status().want_pop()
-        if incoming:
-            if incoming[0].status == pybroker.incoming_connection_status.tag_established:
-                self.outbound += [incoming[0].peer_name]
-                print self.name + ": incoming connection from peer " + str(incoming[0].peer_name)
-
-                # Tell control
-                self.squeue.put(("peer-connect", incoming[0].peer_name, None))
-
-                # We need new topic for this peer and all its direct successors
-                #prefix = self.rtopic + "/" + self.name #+ "-"+ str(incoming[0].peer_name)
-                #self.ep.publish(prefix)
-                #self.tq[prefix] = pybroker.message_queue(prefix, self.ep)
-
-            elif incoming[0].status == pybroker.incoming_connection_status.tag_disconnected:
-                print self.name + ": peer " + str(incoming[0].peer_name) + " disconnected from us"
-                # Tell control
-                self.squeue.put(("peer-disconnect", incoming[0].peer_name, None))
-                self.outbound.remove(incoming[0].peer_name)
-
-        # 2. Checking outgoing connections
-        outgoing = self.ep.outgoing_connection_status().want_pop()
-        if outgoing:
-            if outgoing[0].status == pybroker.outgoing_connection_status.tag_established:
-                logging.debug("peer connected to us: " + outgoing[0].peer_name)
-            elif outgoing[0].status == pybroker.outgoing_connection_status.tag_disconnected:
-                logging.debug("peer disconnected from us: " + outgoing[0].peer_name)
-                del self.inbound[outgoing[0].peer_name]
-
-    def parse_broker_msg(self, msg):
-        if not msg:
-            return
-
-        for j in msg:
-            event = None
-            res = []
-            for i in j:
-                if not event:
-                    event = i
-                else:
-                    res.append(json.loads(str(i)))
-
-            if event:
-                peer = str(res[0])
-                if (self.name != peer):
-                    logging.debug(" received msg from (" + str(peer) + ") " + str(res[2]))
-                    self.squeue.put(("msg", res[1], res[2]))
-
-    def run(self):
-        while self.running:
-            self.recv()
-            time.sleep(0.25)
-
-    def send(self, msg):
-        if msg.type() == 'command':
-            print str(self.name) + ": publish command msg " + str(msg.dump())
-            self.ep.send(self.ctopic, msg.dump())
-        elif msg.type() == 'result':
-            print str(self.name) + ": publish result msg " + str(msg.dump())
-            self.ep.send(self.rtopic, msg.dump())
-        else:
-            raise RuntimeError("no msg type specified")
-
-    def send_succ(self, msg):
-        for p in self.outbound.keys():
-            prefix = self.ctopic + "/" + self.name + "-" + p
-            self.ep.send(prefix, msg.dump())
-
-    def send_pred(self, msg):
-        # Send the message to all peers that are connected inbound
-        for p in self.inbound.keys():
-            prefix = self.rtopic + "/" + p
-            self.ep.send(prefix, msg.dump())
-
-    def send_control(self, msg):
-        print "publish control msg to " + self.ctrl_topic
-        self.ep.send(self.ctrl_topic, msg.dump())
-
-    def stop(self):
-        self.disconnect_inbound()
-        self.ep.unlisten(0)
-        self.running = False
-
-
-########################################################
 
 class TermUI:
     def __init__(self):
@@ -508,8 +479,6 @@ class TermUI:
 
     def error(self, msg):
         print("ERROR", msg)
-
-########################################################
 
 
 class Logs:
@@ -523,7 +492,9 @@ class Logs:
         msgs = self.store.get(id) or []
         return msgs[since:]
 
+
 def main(basedir='/bro', suffix=None):
+    # pybroker.report_init()
     logs = Logs()
 
     d = DBroctlD(logs, basedir, suffix)

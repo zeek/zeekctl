@@ -513,11 +513,3 @@ class BroCtl(object):
         self.plugins.cmdPost("process", trace, options, scripts, results.ok)
 
         return results
-
-    @expose
-    def deep_nodes(self):
-        return self.config.overlay.nodes()
-
-    @expose
-    def deep_edges(self):
-        return self.config.overlay.edges()

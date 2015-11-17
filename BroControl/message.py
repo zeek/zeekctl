@@ -22,6 +22,9 @@ class BBaseMsg(object):
         vec.append(pybroker.data(str(json.dumps(self.message))))
         return vec
 
+    def str(self):
+        return str(self.message)
+
 
 class BCmdMsg(BBaseMsg):
     def __init__(self, name, addr, payload):
