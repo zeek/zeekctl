@@ -12,8 +12,10 @@ from BroControl import control
 from BroControl import version
 from BroControl import pluginreg
 
+
 class InvalidNodeError(Exception):
     pass
+
 
 class TermUI:
     def info(self, txt):

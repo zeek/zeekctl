@@ -73,13 +73,13 @@ class BrokerPeer:
         if incoming:
             if incoming[0].status == pybroker.incoming_connection_status.tag_established:
                 self.inbound += [incoming[0].peer_name]
-                print self.name + ": incoming connection from peer " + str(incoming[0].peer_name)
+                logging.debug("incoming connection from peer " + str(incoming[0].peer_name))
 
                 # Tell control
                 self.squeue.put(("peer-connect", incoming[0].peer_name, "inbound"))
 
             elif incoming[0].status == pybroker.incoming_connection_status.tag_disconnected:
-                print self.name + ": peer " + str(incoming[0].peer_name) + " disconnected from us"
+                logging.debug("peer " + str(incoming[0].peer_name) + " disconnected from us")
                 # Tell control
                 self.squeue.put(("peer-disconnect", incoming[0].peer_name, "inbound"))
                 self.inbound.remove(incoming[0].peer_name)

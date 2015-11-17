@@ -43,7 +43,7 @@ def _send_event_broker(node, event, args, result_event):
 
     ep = pybroker.endpoint("control", pybroker.AUTO_ADVERTISE | pybroker.AUTO_PUBLISH)
     logging.debug("initiating broker peering with " + str(host) + ":" + str(node.getPort()))
-    ep.peer(host, node.getPort(), 1)
+    peering = ep.peer(host, node.getPort(), 1)
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
     logging.debug("args is " + str(args))
@@ -56,8 +56,8 @@ def _send_event_broker(node, event, args, result_event):
 
     logging.debug("connected to broker-peer " + str(stat.peer_name))
 
-    ep.advertise("bro/event/control/response/")
     rqueue = pybroker.message_queue("bro/event/control/response/", ep)
+    ep.advertise("bro/event/control/response/")
     logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
     ep.publish("bro/event/control/request/")
 
@@ -68,24 +68,29 @@ def _send_event_broker(node, event, args, result_event):
     # Send the event to the broker endpoint
     ep.send("bro/event/control/request/", vec)
 
-    resp_event = None
     res = []
-    # timeout of at most 4 seconds for retrieving the reply
-    for c in range(0, 6):
-        time.sleep(0.5)
+    resp_event = None
+    # timeout of at most 2 seconds for retrieving the reply
+    for c in range(0, 8):
+        time.sleep(0.25)
         logging.debug("receiving broker content, counter " + str(c))
         msg = rqueue.want_pop()
         if msg:
-            for i in pybroker.deque_of_message(msg):
+            for i in msg:
                 for j in i:
                     if not resp_event:
                         resp_event = j
                     else:
                         res.append(str(j).strip())
-                    logging.debug("broker data is " + str(res))
 
-        if resp_event:
-            break
+                logging.debug("broker data is " + str(res))
+                if resp_event:
+                    break
+            if resp_event:
+                break
+
+    # Disconnect again
+    ep.unpeer(peering)
 
     if resp_event:
         if not res:

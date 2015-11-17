@@ -82,6 +82,7 @@ class DBroctlD(Thread):
         self.broctl.create_overlay()
 
     def init_bro_connections(self):
+        raise RuntimeError("epic fail")
         node_list = None
         if self.broctl.config.nodes("standalone"):
             node_list = "standalone"
@@ -203,6 +204,7 @@ class DBroctlD(Thread):
                 self.output_result(msg, self.commands[msg])
                 del self.commands[msg]
                 del self.command_replies[msg]
+            # FIXME add handling of results for an intermediate node here
         else:
             logging.debug("unhandled timeout " + timeout + " received with " + msg)
 
@@ -262,7 +264,7 @@ class DBroctlD(Thread):
             self.handle_command(peer, msg)
 
         elif msg["type"] == "result":
-            self.handle_result(peer, msg)
+            self.handle_results(peer, msg['for'], msg['payload'])
 
         else:
             print("handle_message: unknown message type received")
@@ -303,48 +305,46 @@ class DBroctlD(Thread):
                 res = traceback.format_exc()
 
             # handle the result of the command
-            self.process_local_result(cmd, res)
+            self.handle_results(self.name, cmd, res)
 
         # Post processing of commands
         self.cmd_post_processing(cmd)
 
     # Handle result message from a successor
-    def handle_result(self, peer, res):
-        if 'for' not in res.keys() or 'payload' not in res.keys():
-            raise RuntimeError("Received result message with invalid format")
-
-        cmd = str(res['for'])
-        result = res['payload']
-        logging.debug("received reply for cmd " + str(cmd) + " from peer " + str(peer) + " with result " + str(result))
-
-        if cmd not in self.commands:
-            self.commands[cmd] = []
-
-        # TODO we need a timeout mechanism in case peers fail
-        if cmd not in self.command_replies:
-            raise RuntimeError("cmd " + cmd + " not known")
-        self.command_replies[cmd] -= 1
-
-        for entry in res['payload']:
-            self.commands[cmd].append(entry)
-            logging.debug("  - append entry " + str(entry) + " to results")
-
-        if self.command_replies[cmd] > 0:
-            logging.debug("  - we do nothing yet, as we still wait for " + str(self.command_replies[cmd]) + " replies")
+    def handle_results(self, peer, cmd, res):
+        if cmd not in ["netstats", "peerstatus", "print_id", "status"] or not res:
             return
 
-        if self.head:
-            self.output_result(cmd, result)
-            del self.commands[cmd]
-            del self.command_replies[cmd]
-        else:
-            logging.debug("sending result to predecessor")
-            self.send_res(cmd, self.commands[cmd])
-            del self.commands[cmd]
-            del self.command_replies[cmd]
+        if(peer == self.name): # Results obtained locally
+            logging.debug("result of cmd " + str(cmd) + " is " + str(res))
+            # Do command specific formatting of results and store them
+            self.commands[cmd] = self.format_results(cmd, res)
+            self.command_replies[cmd] = len(self.successors)
 
-        # Cancel timeout for this command
-        self.cancel_timeout(("command_timeout", cmd))
+        else: # Results received from peer
+            if cmd not in self.command_replies or cmd not in self.commands:
+                raise RuntimeError("cmd " + cmd + " not known")
+
+            logging.debug("received reply for cmd " + str(cmd) + " from peer " + str(peer) + " with result " + str(res))
+            self.command_replies[cmd] -= 1
+            for entry in res:
+                self.commands[cmd].append(entry)
+                logging.debug("  - append entry " + str(entry) + " to results")
+
+        # We have all results together
+        if self.command_replies[cmd] == 0:
+            if self.head: #  output results as we are the head
+                self.output_result(cmd, self.commands[cmd])
+            else: #  send results to predecessor
+                logging.debug("sending result to predecessor")
+                self.send_res(cmd, self.commands[cmd])
+
+            del self.commands[cmd]
+            del self.command_replies[cmd]
+            # Cancel timeout for this command
+            self.cancel_timeout(("command_timeout", cmd))
+        elif self.command_replies[cmd] < 0:
+            raise RuntimeError("something went wrong here")
 
     def cmd_post_processing(self, cmd):
         # Certain commands require additional action afterwards
@@ -354,47 +354,13 @@ class DBroctlD(Thread):
         elif cmd == 'shutdown':  # Stop all local bro processes
             self.stop()
 
-    # process the results returned from broctl
-    def process_local_result(self, cmd, res):
-        if cmd not in ["netstats", "peerstatus", "print_id", "status"] or not res:
-            return
-        if cmd in self.commands:
-            raise RuntimeError("old netstats results available!")
-
-        logging.debug("result of cmd " + str(cmd) + " is " + str(res))
-        # Do command specific formatting of results and store them
-        self.commands[cmd] = self.process_local_result_cmd(cmd, res)
-        self.command_replies[cmd] = len(self.successors)
-
-        # If we are the head node and we have acquired all
-        # results from our successors
-        if self.head and self.command_replies[cmd] == 0:
-            logging.debug("no predecessor, so output results")
-            self.output_result(cmd, self.commands[cmd])
-            if cmd not in self.commands:
-                raise RuntimeError("cmd " + cmd + " is not part of command list")
-            del self.commands[cmd]
-            del self.command_replies[cmd]
-
-        # If we have no successors send result to predecessor
-        elif not self.successors:
-            rlist = self.commands[cmd]
-            logging.debug("send results for cmd " + str(cmd) + " : " + str(rlist))
-            self.send_res(cmd, rlist)
-            logging.debug("deleting cmd from cache as we have no successor: " + str(cmd))
-            del self.commands[cmd]
-
-        else:  # Schedule a timeout
-            logging.debug("we wait for " + str(cmd) + " results from our successors")
-            self.schedule_timeout(time.time() + 5, "command_timeout")
-
-    def process_local_result_cmd(self, cmd, res):
+    def format_results(self, cmd, res):
         if not res:
             return [(None, None, None)]
         elif(cmd == "status"):
-            return self.process_local_result_cmd_status(res)
+            return self.format_results_status(res)
         elif(cmd == "print_id"):
-            return self.process_local_result_cmd_printid(res)
+            return self.format_results_printid(res)
         else:
             result = []
             for (n, v, r) in res.get_node_output():
@@ -402,7 +368,7 @@ class DBroctlD(Thread):
                 result.append((str(self.addr), str(n), str(r)))
             return result
 
-    def process_local_result_cmd_status(self, res):
+    def format_results_status(self, res):
         result = []
         roleswidth = 20
         hostwidth = 13
@@ -432,7 +398,7 @@ class DBroctlD(Thread):
 
         return result
 
-    def process_local_result_cmd_printid(self, res):
+    def format_results_printid(self, res):
         result = []
         for (node, success, args) in res.get_node_output():
             if success:
@@ -458,6 +424,7 @@ class DBroctlD(Thread):
 
         Queries each of the nodes for their current counts of captured and
         dropped packets."""
+        raise RuntimeError("epic fail here")
         self.peer.subscribe_topic("bro/event/control/" + self.name + "/response")
         self.peer.publish_topic("bro/event/control/" + self.name + "/request")
 

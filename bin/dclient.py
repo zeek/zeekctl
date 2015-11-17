@@ -13,7 +13,7 @@ from threading import Thread
 
 sys.path.insert(0, "@PREFIX@/lib/broctl")
 
-from BroControl.daemon import BrokerPeer
+from BroControl.broker import BrokerPeer
 from BroControl.message import BResMsg
 from BroControl.message import BCmdMsg
 
@@ -21,6 +21,7 @@ control_port = 4242
 d_host = "localhost"
 d_port = 9990
 delay_response = 15
+
 
 class BClient(cmd.Cmd):
     intro = 'Deep Cluster Client'
