@@ -6,14 +6,15 @@
 
 "nodes" : [
 
-	{	
+	{
 		"id": "icsi-cluster",
 		"roles": ["cluster"],
-		"members": [	
+		"members": [
 
 		{	"id": "manager-1",
 			"roles": ["manager"],
 			"host": "localhost",
+			"port": "9990",
 			"policy": "policy 1"},
 
 		{	"id": "datanode-1",
@@ -31,10 +32,10 @@
 			"host": "localhost",
 			"policy": "policy 5"}
 	]}
-	
+
 ],
 
-"connections":	[	
+"connections":	[
 				]
 
 }
