@@ -3,7 +3,7 @@
 # Broctl test setup script (source this at the start of each test script).
 #
 # This script installs Bro to a directory that is unique to each test,
-# and provides a function "installcfgfile" that a test script can 
+# and provides a function "installcfgfile" that a test script can
 # optionally use to install files, and a function "replaceprefix" that a
 # test script can use to alter the contents of a test file to set the
 # correct install directory path.  This script also exports an environment
@@ -168,4 +168,3 @@ installbro
 
 # Output test commands (if a test fails, this might be useful for debugging)
 set -x
-

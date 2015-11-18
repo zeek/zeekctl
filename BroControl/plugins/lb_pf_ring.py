@@ -15,17 +15,13 @@ class LBPFRing(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
-        #FIXME evil hack
-        if BroControl.config.Config.pfringclusterid == "@PF_RING_CLUSTER_ID@":
-            return False
-
-        cluster_id = int(BroControl.config.Config.pfringclusterid)
+        cluster_id = BroControl.config.Config.pfringclusterid
         if cluster_id == 0:
             return False
 
         pfringtype = BroControl.config.Config.pfringclustertype
-        if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",
             "6-tuple", "round-robin"):
+        if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",
             self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
             return False
 
@@ -38,7 +34,7 @@ class LBPFRing(BroControl.plugin.Plugin):
                 pftype += "_" + pfringtype.upper().replace("-", "_")
 
         useplugin = False
-        first_app_instance = int(BroControl.config.Config.pfringfirstappinstance)
+        first_app_instance = BroControl.config.Config.pfringfirstappinstance
         app_instance = first_app_instance
 
         dd = {}
@@ -81,4 +77,3 @@ class LBPFRing(BroControl.plugin.Plugin):
             nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "bro-%s" % nn.interface)
 
         return useplugin
-

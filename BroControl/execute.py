@@ -2,7 +2,6 @@
 # If the host is local, it's done direcly; if it's remote we log in via SSH.
 
 import os
-import socket
 import shutil
 import subprocess
 import logging
@@ -138,62 +137,10 @@ def _emptyDel(self):
 subprocess.Popen.__del__ = _emptyDel
 
 
-# Returns a list of the IP addresses associated with local interfaces.
-# For IPv6 addresses, zone_id and prefix length are removed if present.
-def get_local_addrs(cmdout):
-    try:
-        # On Linux, ifconfig is often not in the user's standard PATH.
-        proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out, err = proc.communicate()
-        success = proc.returncode == 0
-    except OSError:
-        success = False
-
-    if success:
-        localaddrs = []
-        if py3bro.using_py3:
-            out = out.decode()
-        for line in out.splitlines():
-            fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                addrfield = False
-                for field in fields:
-                    if field == "inet" or field == "inet6":
-                        addrfield = True
-                    elif addrfield and field != "addr:":
-                        locaddr = field
-                        # remove "addr:" prefix (if any)
-                        if field.startswith("addr:"):
-                            locaddr = field[5:]
-                        elif field.startswith("Adresse:"):
-                            locaddr = field[8:]
-                        # remove everything after "/" or "%" (if any)
-                        locaddr = locaddr.split("/")[0]
-                        locaddr = locaddr.split("%")[0]
-                        if "Adresse" in locaddr:
-                            raise RuntimeError("stop here")
-                        localaddrs.append(locaddr)
-                        break
-    else:
-        cmdout.info("cannot get list of local IP addresses")
-
-        localaddrs = ["127.0.0.1", "::1"]
-        try:
-            addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
-        except Exception:
-            addrinfo = []
-
-        for ai in addrinfo:
-            localaddrs.append(ai[4][0])
-
-    return localaddrs
-
-
 class Executor:
-    def __init__(self, localaddrs, helperdir, timeout):
-        self.sshrunner = ssh_runner.MultiMasterManager(localaddrs)
-        self.helperdir = helperdir
-        self.timeout = timeout
+    def __init__(self, config):
+        self.config = config
+        self.sshrunner = ssh_runner.MultiMasterManager(config.localaddrs)
 
     def finish(self):
         self.sshrunner.shutdown_all()
@@ -232,7 +179,7 @@ class Executor:
         for host in hostlist:
             for bronode, cmd, args in dd[host]:
                 if helper:
-                    cmdargs = [os.path.join(self.helperdir, cmd)]
+                    cmdargs = [os.path.join(self.config.helperdir, cmd)]
                 else:
                     cmdargs = [cmd]
 
@@ -245,7 +192,7 @@ class Executor:
                 nodecmdlist.append((bronode.addr, cmdargs))
                 logging.debug("%s: %s", bronode.host, " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.timeout):
+        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.config.commandtimeout):
             nodecmd = dd[host].pop(0)
             bronode = nodecmd[0]
             if not isinstance(result, Exception):
@@ -312,4 +259,3 @@ class Executor:
 
     def host_status(self):
         return self.sshrunner.host_status()
-

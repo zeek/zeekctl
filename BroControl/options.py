@@ -15,32 +15,45 @@ class Option:
         self.dontinit = dontinit
         self.description = description
 
+        if type == "string":
+            if not isinstance(default, str):
+                raise ValueError("option '%s' default value must be string" % name)
+        else:
+            if not isinstance(default, int):
+                raise ValueError("option '%s' default value must be int" % name)
+
+        # This is a hack needed so that "make doc" will work.
+        if name.lower() == "pfringclusterid":
+            val = "@PF_RING_CLUSTER_ID@"
+            if "@" not in val:
+                # Use default value supplied by cmake
+                self.default = int(val)
 
 options = [
     # User options.
-    Option("Debug", "1", "bool", Option.USER, False,
+    Option("Debug", 1, "bool", Option.USER, False,
            "Enable extensive debugging output in spool/debug.log."),
 
-    Option("HaveNFS", "0", "bool", Option.USER, False,
+    Option("HaveNFS", 0, "bool", Option.USER, False,
            "True if shared files are mounted across all nodes via NFS (see the FAQ_)."),
-    Option("SaveTraces", "0", "bool", Option.USER, False,
+    Option("SaveTraces", 0, "bool", Option.USER, False,
            "True to let backends capture short-term traces via '-w'. These are not archived but might be helpful for debugging."),
 
-    Option("StopTimeout", "60", "int", Option.USER, False,
+    Option("StopTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
-    Option("CommTimeout", "10", "int", Option.USER, False,
+    Option("CommTimeout", 10, "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
-    Option("CommandTimeout", "60", "int", Option.USER, False,
+    Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
-    Option("BroPort", "47760", "int", Option.USER, False,
+    Option("BroPort", 47760, "int", Option.USER, False,
            "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
-    Option("LogRotationInterval", "3600", "int", Option.USER, False,
+    Option("LogRotationInterval", 3600, "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Bro script variable Log::default_rotation_interval."),
     Option("LogDir", "${BroBase}/logs", "string", Option.USER, False,
            "Directory for archived log files."),
     Option("MakeArchiveName", "${BroBase}/share/broctl/scripts/make-archive-name", "string", Option.USER, False,
            "Script to generate filenames for archived log files."),
-    Option("CompressLogs", "1", "bool", Option.USER, False,
+    Option("CompressLogs", 1, "bool", Option.USER, False,
            "True to compress archived log files."),
     Option("CompressCmd", "gzip -9", "string", Option.USER, False,
            "If archived logs will be compressed, the command to use for that. The specified command must compress its standard input to standard output."),
@@ -61,21 +74,21 @@ options = [
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
            "Destination address for alarm summary mails. Default is to use the same address as MailTo. This overrides the Bro script variable Notice::mail_dest_pretty_printed."),
-    Option("MailAlarmsInterval", "86400", "int", Option.USER, False,
+    Option("MailAlarmsInterval", 86400, "int", Option.USER, False,
            "The frequency (in seconds) of sending alarm summary mails (zero to disable). This overrides the Bro script variable Log::default_mail_alarms_interval."),
 
-    Option("MailConnectionSummary", "1", "bool", Option.USER, False,
+    Option("MailConnectionSummary", 1, "bool", Option.USER, False,
            "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
-    Option("MailHostUpDown", "1", "bool", Option.USER, False,
+    Option("MailHostUpDown", 1, "bool", Option.USER, False,
            "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
 
-    Option("MinDiskSpace", "5", "int", Option.USER, False,
+    Option("MinDiskSpace", 5, "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
-    Option("StatsLogEnable", "1", "bool", Option.USER, False,
+    Option("StatsLogEnable", 1, "bool", Option.USER, False,
            "True to enable BroControl to write statistics to the stats.log file."),
-    Option("StatsLogExpireInterval", "0", "int", Option.USER, False,
+    Option("StatsLogExpireInterval", 0, "int", Option.USER, False,
            "Number of days entries in the stats.log file are kept (zero means never expire)."),
-    Option("LogExpireInterval", "0", "int", Option.USER, False,
+    Option("LogExpireInterval", 0, "int", Option.USER, False,
            "Number of days log files are kept (zero means log files never expire)."),
     Option("KeepLogs", "", "string", Option.USER, False,
            "A space-separated list of filename shell patterns of expired log files to keep (empty string means don't keep any expired log files). The filename shell patterns are not regular expressions and do not include any directories. For example, specifying 'conn.* dns*' will prevent any expired log files with filenames starting with 'conn.' or 'dns' from being removed. Finally, note that this option is ignored if log files never expire."),
@@ -99,17 +112,17 @@ options = [
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for all Bro instances."),
 
-    Option("StatusCmdShowAll", "1", "bool", Option.USER, False,
+    Option("StatusCmdShowAll", 1, "bool", Option.USER, False,
            "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),
 
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 
-    Option("PFRINGClusterID", "@PF_RING_CLUSTER_ID@", "int", Option.USER, False,
+    Option("PFRINGClusterID", 0, "int", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
     Option("PFRINGClusterType", "4-tuple", "string", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
-    Option("PFRINGFirstAppInstance", "0", "int", Option.USER, False,
+    Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,
            "The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work."),
 
     Option("CFlowAddress", "", "string", Option.USER, False,
@@ -124,7 +137,7 @@ options = [
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
-    Option("IPv6Comm", "1", "bool", Option.USER, False,
+    Option("IPv6Comm", 1, "bool", Option.USER, False,
            "Enable IPv6 communication between cluster nodes (and also between them and BroControl). This overrides the Bro script variable Communication::listen_ipv6."),
     Option("ZoneID", "", "string", Option.USER, False,
            "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what :rfc:`4007` zone_id to append to node addresses when communicating with them."),
@@ -134,7 +147,7 @@ options = [
            "Base path of broctl installation on all nodes."),
     Option("Version", "", "string", Option.AUTOMATIC, True,
            "Version of the broctl."),
-    Option("StandAlone", "0", "bool", Option.AUTOMATIC, True,
+    Option("StandAlone", 0, "bool", Option.AUTOMATIC, True,
            "True if running in stand-alone mode (see elsewhere)."),
     Option("OS", "", "string", Option.AUTOMATIC, True,
            "Name of operating system as reported by uname."),
@@ -143,6 +156,8 @@ options = [
 
     Option("BinDir", "${BroBase}/bin", "string", Option.AUTOMATIC, False,
            "Directory for executable files."),
+    Option("Bro", "${BinDir}/bro", "string", Option.AUTOMATIC, False,
+           "Path to Bro binary."),
     Option("ScriptsDir", "${BroBase}/share/broctl/scripts", "string", Option.AUTOMATIC, False,
            "Directory for executable scripts shipping as part of broctl."),
     Option("PostProcDir", "${BroBase}/share/broctl/scripts/postprocessors", "string", Option.AUTOMATIC, False,
@@ -204,12 +219,6 @@ options = [
            "Directory where the shell copies auto-generated local policy scripts when installing."),
 
     # Internal, not documented.
-    Option("SigInt", "0", "bool", Option.INTERNAL, False,
-           "True if SIGINT has been received."),
-
-    Option("Cron", "0", "bool", Option.INTERNAL, False,
-           "True if we are running from the cron command."),
-
     Option("BroCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
            """Directory where the shell copies the broctl-config.sh
            configuration file. If this is changed, the symlink created in
@@ -225,19 +234,16 @@ def print_options(category):
         if opt.category != category:
             continue
 
-        default = ""
-
         if not opt.type:
             err += "no type given for %s\n" % opt.name
 
-        if opt.default and opt.type == "string":
-            opt.default = '"%s"' % opt.default
+        if opt.type == "string":
+            if opt.default:
+                opt.default = '"%s"' % opt.default
+            else:
+                opt.default = "_empty_"
 
-        if not opt.default and opt.type == "string":
-            opt.default = "_empty_"
-
-        if opt.default:
-            default = ", default %s" % opt.default
+        default = ", default %s" % opt.default
 
         default = default.replace("{", "\\{")
         description = opt.description.replace("{", "\\{")
@@ -245,4 +251,3 @@ def print_options(category):
         out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
     return (out, err)
-

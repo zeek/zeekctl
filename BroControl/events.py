@@ -2,7 +2,6 @@ import time
 import logging
 import pybroker
 
-from BroControl import config
 from BroControl import util
 
 
@@ -37,6 +36,7 @@ def send_events_parallel(events):
             results += [(node, success, "cmd failed")]
 
     return results
+
 
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)

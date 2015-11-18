@@ -38,12 +38,13 @@ class Node:
             The network interface for Bro to use; empty if not set.
 
         ``lb_procs`` (integer)
-            The number of clustered Bro workers you'd like to start up.
+            The number of clustered Bro workers you'd like to start up (this
+            number must be greater than zero).
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
-            processes (must be one of: ``pf_ring``, ``myricom``, or
-            ``interfaces``).
+            processes (must be one of: ``pf_ring``, ``myricom``, ``custom``,
+            or ``interfaces``).
 
         ``lb_interfaces`` (string)
             If the load balancing method is ``interfaces``, then this is
@@ -157,7 +158,6 @@ class Node:
         """Returns a string with the node's working directory."""
         return os.path.join(self._config.spooldir, self.name)
 
-    # Stores the nodes process ID.
     def setPID(self, pid):
         """Stores the process ID for the node's Bro process."""
         key = "%s-pid" % self.name
@@ -183,14 +183,12 @@ class Node:
         key = "%s-crashed" % self.name
         self._config.set_state(key, True)
 
-    # Unsets the flag for unexpected termination.
     def clearCrashed(self):
         """Clears the mark for the node's Bro process having terminated
         unexpectedly."""
         key = "%s-crashed" % self.name
         self._config.set_state(key, False)
 
-    # Returns true if node has terminated unexpectedly.
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
@@ -198,6 +196,7 @@ class Node:
         return self._config.get_state(key)
 
     def getExpectRunning(self):
+        """Returns True if we expect the node's Bro process to be running."""
         key = "%s-expect-running" % self.name.lower()
         val = self._config.get_state(key)
         if val is None:
@@ -208,12 +207,11 @@ class Node:
         key = "%s-expect-running" % self.name.lower()
         self._config.set_state(key, val)
 
-    # Set the Bro port this node is using.
     def setPort(self, port):
+        """Set the Bro port this node is using."""
         key = "%s-port" % self.name
         self._config.set_state(key, port)
 
-    # Get the Bro port this node is using.
     @doc.api
     def getPort(self):
         """Returns an integer with the port that this node's communication

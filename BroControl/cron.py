@@ -38,7 +38,7 @@ class CronTasks:
         self.pluginregistry = pluginregistry
 
     def log_stats(self, interval):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
 
         nodes = self.config.nodes()
@@ -78,12 +78,12 @@ class CronTasks:
 
                             last = -1.0
                             if tag in self.config.state:
-                                last = float(self.config.state[tag])
+                                last = self.config.state[tag]
 
-                            if float(val) == 0.0 and last != 0.0:
+                            if val == 0.0 and last != 0.0:
                                 self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
-                            if float(val) != 0.0 and last == 0.0:
+                            if val != 0.0 and last == 0.0:
                                 self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
                             self.config.set_state(tag, val)
@@ -93,8 +93,8 @@ class CronTasks:
             return
 
     def check_disk_space(self):
-        minspace = float(self.config.mindiskspace)
-        if minspace == 0.0:
+        minspace = self.config.mindiskspace
+        if minspace == 0:
             return
 
         results = self.controller.df(self.config.hosts())
@@ -113,16 +113,16 @@ class CronTasks:
 
                 if perc > 100 - minspace:
                     if key in self.config.state:
-                        if float(self.config.state[key]) > 100 - minspace:
+                        if self.config.state[key] > 100 - minspace:
                             # Already reported.
                             continue
 
                     self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
-                self.config.set_state(key, "%.1f" % perc)
+                self.config.set_state(key, perc)
 
     def expire_logs(self):
-        if self.config.logexpireinterval == "0" and self.config.statslogexpireinterval == "0":
+        if self.config.logexpireinterval == 0 and self.config.statslogexpireinterval == 0:
             return
 
         (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
@@ -135,20 +135,20 @@ class CronTasks:
     def check_hosts(self):
         for host, status in self.executor.host_status():
             tag = "alive-%s" % host
-            alive = status and "1" or "0"
+            alive = status
 
             if tag in self.config.state:
                 previous = self.config.state[tag]
 
                 if alive != previous:
-                    self.pluginregistry.hostStatusChanged(host, alive == "1")
-                    if self.config.mailhostupdown != "0":
-                        self.ui.info("host %s %s" % (host, alive == "1" and "up" or "down"))
+                    self.pluginregistry.hostStatusChanged(host, alive)
+                    if self.config.mailhostupdown:
+                        self.ui.info("host %s %s" % (host, alive and "up" or "down"))
 
             self.config.set_state(tag, alive)
 
     def update_http_stats(self):
-        if self.config.statslogenable == "0":
+        if not self.config.statslogenable:
             return
 
         # Create meta file.

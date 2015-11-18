@@ -20,7 +20,7 @@ class TestPlugin(BroControl.plugin.Plugin):
         return 1
 
     def init(self):
-        if self.getOption("enabled") == "0":
+        if not self.getOption("enabled"):
             return False
 
         foo = self.getOption("foo")
@@ -41,8 +41,8 @@ class TestPlugin(BroControl.plugin.Plugin):
         return True
 
     def options(self):
-        return [("foo", "string", "1", "Just a test option."),
-                ("enabled", "string", "0", "Set to enable plugin")]
+        return [("foo", "int", 1, "Just a test option."),
+                ("enabled", "bool", False, "Set to enable plugin")]
 
     def commands(self):
         return [("bar", "", "A test command from the Test plugin.")]
