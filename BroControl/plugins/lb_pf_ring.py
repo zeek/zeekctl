@@ -20,8 +20,8 @@ class LBPFRing(BroControl.plugin.Plugin):
             return False
 
         pfringtype = BroControl.config.Config.pfringclustertype
-            "6-tuple", "round-robin"):
         if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",
+                            "6-tuple", "round-robin"):
             self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
             return False
 

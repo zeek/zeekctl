@@ -275,18 +275,10 @@ class Configuration:
         hosts = {}
         nodelist = []
 
-        logging.debug("nolocal " + str(nolocal))
-        for n in self.localaddrs:
-            logging.debug(" * local is " + str(n))
-
         for node in self.nodes(tag):
-            logging.debug(" node address is " + str(node.addr))
-            for n in self.localaddrs:
-                logging.debug(" comparison " + str(node.addr == n))
             if node.host in hosts:
                 continue
             if (not nolocal) or (nolocal and str(node.addr) not in self.localaddrs):
-                logging.debug("  ---- append")
                 hosts[node.host] = 1
                 nodelist.append(node)
 

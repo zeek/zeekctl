@@ -494,6 +494,7 @@ class BroCtl(object):
             elif self.config.nodes("cluster"):
                 node_list = "cluster"
 
+        #nodes = [self.config.nodes("manager")]
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("peerstatus", nodes)
         results = self.controller.peerstatus(nodes)

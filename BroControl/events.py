@@ -41,13 +41,12 @@ def send_events_parallel(events):
 def _send_event_broker(node, event, args, result_event):
     host = util.scope_addr(node.addr)
 
-    ep = pybroker.endpoint("control", pybroker.AUTO_ADVERTISE | pybroker.AUTO_PUBLISH)
+    ep = pybroker.endpoint("control")
     logging.debug("initiating broker peering with " + str(host) + ":" + str(node.getPort()))
     peering = ep.peer(host, node.getPort(), 1)
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
     logging.debug("args is " + str(args))
-    time.sleep(1)
 
     stat = ep.outgoing_connection_status().need_pop()[0]
     if stat.status != pybroker.outgoing_connection_status.tag_established:
@@ -56,11 +55,13 @@ def _send_event_broker(node, event, args, result_event):
 
     logging.debug("connected to broker-peer " + str(stat.peer_name))
 
-    rqueue = pybroker.message_queue("bro/event/control/response/", ep)
-    ep.advertise("bro/event/control/response/")
-    logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
-    ep.publish("bro/event/control/request/")
 
+    rqueue = pybroker.message_queue("bro/event/control/response/", ep)
+    #ep.advertise("bro/event/control/response/")
+    logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
+    #ep.publish("bro/event/control/request/")
+
+    time.sleep(1)
     # Construct the broker event to send
     vec = pybroker.vector_of_data(1, pybroker.data(event))
     for a in args:
@@ -92,7 +93,7 @@ def _send_event_broker(node, event, args, result_event):
     # Disconnect again
     ep.unpeer(peering)
 
-    if resp_event:
+    if resp_event and res:
         if not res:
             logging.debug("broker event " + str(resp_event) + " without payload received")
         else:

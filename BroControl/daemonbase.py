@@ -1,16 +1,136 @@
-# Basic Broker Connector
+# Stub class for a daemon: BrokerControl
+# Basic Broker Connector: BrokerPeer
 # + helper classes Logs and TermUI
 
 import pybroker
 import logging
 import time
 import json
-
+from collections import defaultdict
 from Queue import Queue
+from threading import Thread
+
+# Polling interval for new messages
+loop_time = 0.25
+
+
+class BaseDaemon(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.squeue = Queue()
+        self.fes = {}
+        self.peer = None
+        self.running = True
+
+    # Put functionality to connect to BrokerPeer here
+    def init_broker_peer(self, name, addr, pub, sub):
+        # Start broker client
+        self.peer = BrokerPeer(name, addr, self.squeue, pub, sub)
+        self.client_thread = Thread(target=self.peer.run)
+        self.client_thread.daemon = True
+        self.client_thread.start()
+
+    def init_all(self):
+        pass
+
+    def run(self):
+        self.init_all()
+        while self.running:
+            self.recv()
+            self.check_timeout()
+            time.sleep(loop_time)
+
+    def recv(self):
+        data = None
+        if self.squeue.empty():
+            return
+        (mtype, peer, data) = self.squeue.get()
+        self.handle_message(mtype, peer, data)
+
+    # Timeout handling
+    def check_timeout(self):
+        if len(self.fes) == 0:
+            return
+        t = sorted(self.fes).pop()
+        if t <= time.time():
+            for e in self.fes[t]:
+                self.handle_timeout(e)
+            del self.fes[t]
+
+    def handle_peer_connect(self, peer, direction):
+        pass
+
+    def handle_peer_disconnect(self, peer, direction):
+        pass
+
+    def handle_message(self, mytpe, peer, msg):
+        pass
+
+    def handle_timeout(self, (timeout, msg)):
+        pass
+
+    # Schedule a timeout for myself
+    def schedule_timeout(self, time, ttype, msg=None):
+        if time not in self.fes:
+            self.fes[time] = [(ttype, msg)]
+        else:
+            self.fes[time] += [(ttype, msg)]
+
+    # Cancel timeout
+    def cancel_timeout(self, timeout):
+        cand = None
+        for c in self.fes:
+            if self.fes[c] == timeout:
+                cand = c
+                break
+        if cand:
+            del self.fes[cand]
+
+    def connect(self, peer_addr):
+        if not self.peer:
+            raise RuntimeError("Not connected to BrokerPeer yet")
+        self.peer.connect(peer_addr)
+
+    def send(self, topic, msg):
+        if not self.peer:
+            raise RuntimeError("Not connected to BrokerPeer yet")
+        self.peer.send(topic, msg)
+
+    def stop(self):
+        self.running = False
+        if self.peer:
+            self.peer.stop()
+
+    def noop(self, *args, **kwargs):
+        return True
+
+class TermUI:
+    def __init__(self):
+        pass
+
+    def output(self, msg):
+        print(msg)
+    warn = info = output
+
+    def error(self, msg):
+        print("ERROR", msg)
+
+
+class Logs:
+    def __init__(self):
+        self.store = defaultdict(list)
+
+    def append(self, id, stream, txt):
+        self.store[id].append((stream, txt))
+
+    def get(self, id, since=0):
+        msgs = self.store.get(id) or []
+        return msgs[since:]
+
 
 
 class BrokerPeer:
-    def __init__(self, name, addr, squeue,  pub, sub):
+    def __init__(self, name, addr, squeue, pub, sub):
         self.name = name
         self.running = True
         self.squeue = squeue
@@ -20,7 +140,7 @@ class BrokerPeer:
         self.addr = addr
 
         # Broker endpoint configuration
-        self.ep = pybroker.endpoint(name, pybroker.AUTO_ADVERTISE | pybroker.AUTO_PUBLISH)
+        self.ep = pybroker.endpoint(name)
         if self.addr:
             self.ep.listen(int(addr[1]), str(addr[0]))
             print "Dbroctld listens on " + str(addr[0]) + ":" + str(addr[1])

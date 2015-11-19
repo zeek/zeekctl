@@ -2,29 +2,27 @@
 # hierarchic overlay for command dissemination and
 # result collection
 
-import time
 import traceback
 import logging
 import pybroker
 
-from Queue import Queue
-from threading import Thread
 from collections import defaultdict
 
 from BroControl.broctl import BroCtl
 from BroControl.message import BResMsg
 from BroControl.message import BCmdMsg
 
-from BroControl.broker import BrokerPeer
+from BroControl.daemonbase import BaseDaemon
+from BroControl.daemonbase import TermUI
+from BroControl.daemonbase import Logs
 from BroControl import util
 
 
-class DBroctlD(Thread):
+class DBroctlD(BaseDaemon):
     def __init__(self, logs, basedir, suffix=None):
-        Thread.__init__(self)
+        BaseDaemon.__init__(self)
 
         self.logs = logs
-        self.squeue = Queue()
         self.basedir = basedir
         self.suffix = suffix
         self.head = False
@@ -32,17 +30,20 @@ class DBroctlD(Thread):
         self.successors = []
         self.predecessors = []
         self.local_cluster = {}
-        self.bro_ep = None
-        self.fes = {}
 
         # Stores intermediate results for commands
         self.commands = {}
         self.command_replies = {}
         logging.debug("DBroctld init with suffix " + str(suffix))
 
-        self.running = True
+    def init_all(self):
+        self.init_broctl()
+        # Install the local node, its cluster nodes, and its peers
+        self.broctl.install()
+        # Start the peers in the deep cluster recursively
+        self.broctl.create_overlay()
 
-    def init_broker_peer(self):
+    def init_broctl(self):
         # BroCtl
         self.broctl = BroCtl(self.basedir, ui=TermUI(), suffix=self.suffix)
         self.parent_addr = (self.broctl.config.get_head().addr, int(self.broctl.config.get_head().port))
@@ -57,14 +58,11 @@ class DBroctlD(Thread):
         self.res_topic = "dbroctld/res"
 
         # pack topics for BrokerPeer
-        sub = [self.ctrl_topic + "/" + self.name, self.cmd_topic, self.res_topic + "/" + self.name]
-        pub = [self.ctrl_topic + "/res"]
+        self.pub = [self.ctrl_topic + "/res"]
+        self.sub = [self.ctrl_topic + "/" + self.name, self.cmd_topic, self.res_topic + "/" + self.name]
 
-        # Start broker client
-        self.peer = BrokerPeer(self.name, self.addr, self.squeue, pub, sub)
-        self.client_thread = Thread(target=self.peer.run)
-        self.client_thread.daemon = True
-        self.client_thread.start()
+        # Init the broker peer
+        self.init_broker_peer(self.name, self.addr, self.pub, self.sub)
 
         # check if we are the head of the cluster
         if self.parent_addr == self.addr:
@@ -74,12 +72,6 @@ class DBroctlD(Thread):
         else:
             logging.debug("establishing a connection to predecessor " + str(self.parent_addr))
             self.peer.connect(self.parent_addr)
-
-    def init_overlay(self):
-        # Install the local node, its cluster nodes, and its peers
-        self.broctl.install()
-        # Start the peers in the deep cluster recursively
-        self.broctl.create_overlay()
 
     def init_bro_connections(self):
         raise RuntimeError("epic fail")
@@ -99,14 +91,6 @@ class DBroctlD(Thread):
         for n in nodes:
             self.local_cluster[n.name] = n
 
-    def run(self):
-        self.init_broker_peer()
-        self.init_overlay()
-        while self.running:
-            self.recv()
-            self.check_timeout()
-            time.sleep(0.25)
-
     def stop(self):
         print "exit dbroctld..."
         logging.debug("exit dbroctld")
@@ -118,19 +102,16 @@ class DBroctlD(Thread):
         self.peer.stop()
         self.running = False
 
-    def connect(self, peer_addr):
-        self.peer.connect(peer_addr)
-
     def send_cmd(self, cmd):
         msg = BCmdMsg(self.name, self.addr, cmd)
-        self.peer.send(self.cmd_topic, msg)
+        self.send(self.cmd_topic, msg)
 
     def send_res(self, cmd, res):
         msg = BResMsg(self.name, self.addr, cmd, res)
         for p in self.predecessors:
             topic = self.res_topic + "/" + str(p)
             logging.debug(" - send results to predecessor " + str(p) + " via topic " + topic)
-            self.peer.send(topic, msg)
+            self.send(topic, msg)
 
     # Send a result to the control console
     def send_res_control(self, cmd, res):
@@ -141,56 +122,6 @@ class DBroctlD(Thread):
 
     def forward_res(self, msg):
         self.send_res(msg['for'], msg['payload'])
-
-    def noop(self, *args, **kwargs):
-        return True
-
-    def recv(self):
-        data = None
-        if self.squeue.empty():
-            return
-        (dtype, peer, data) = self.squeue.get()
-
-        if dtype not in ["msg", "peer-connect", "peer-disconnect"]:
-            logging.debug("DBroctlD: malformed data type", dtype, "received")
-            raise RuntimeError("DBroctlD: malformed data type", dtype, "received")
-
-        #  print str(self.addr) + ": dtype " + str(dtype) + ", peer " + str(peer) + ", data " + str(data)
-        if dtype == "msg":
-            self.handle_message(peer, data)
-        elif dtype == "peer-connect":
-            self.handle_peer_connect(peer, data)
-        elif dtype == "peer-disconnect":
-            self.handle_peer_disconnect(peer, data)
-        else:
-            raise RuntimeError("undefinded message received")
-
-    # Timeout handling
-    def check_timeout(self):
-        if len(self.fes) == 0:
-            return
-        t = sorted(self.fes).pop()
-        if t <= time.time():
-            for e in self.fes[t]:
-                self.handle_timeout(e)
-            del self.fes[t]
-
-    # Schedule a timeout for myself
-    def schedule_timeout(self, time, ttype, msg=None):
-        if time not in self.fes:
-            self.fes[time] = [(ttype, msg)]
-        else:
-            self.fes[time] += [(ttype, msg)]
-
-    # Cancel timeout
-    def cancel_timeout(self, timeout):
-        cand = None
-        for c in self.fes:
-            if self.fes[c] == timeout:
-                cand = c
-                break
-        if cand:
-            del self.fes[cand]
 
     def handle_timeout(self, (timeout, msg)):
         logging.debug("handle_timeout: " + timeout)
@@ -211,7 +142,7 @@ class DBroctlD(Thread):
     def handle_peer_connect(self, peer, direction):
         if(peer == "dclient"):
             self.control_peer = peer
-            logging.debug("node " + str(peer) + " established control connection to us")
+            logging.debug("control connection opened")
             print "node " + str(peer) + " established control connection to us"
             return
 
@@ -255,20 +186,31 @@ class DBroctlD(Thread):
                 self.predecessors.remove(peer)
 
     # message handling
-    def handle_message(self, peer, msg):
-        if 'type' not in msg.keys():
-            print("Error: received a msg with no type")
-            raise RuntimeError("malformed message received")
+    def handle_message(self, mtype, peer, msg):
+        if mtype not in ["msg", "peer-connect", "peer-disconnect"]:
+            logging.debug("DBroctlD: malformed data type", mtype, "received")
+            raise RuntimeError("DBroctlD: malformed data type", mtype, "received")
 
-        if msg["type"] == "command":
-            self.handle_command(peer, msg)
+        #  print str(self.addr) + ": dtype " + str(dtype) + ", peer " + str(peer) + ", data " + str(data)
+        if mtype == "peer-connect":
+            self.handle_peer_connect(peer, msg)
 
-        elif msg["type"] == "result":
-            self.handle_results(peer, msg['for'], msg['payload'])
+        elif mtype == "peer-disconnect":
+            self.handle_peer_disconnect(peer, msg)
+
+        elif mtype == "msg":
+            if 'type' not in msg.keys():
+                print("Error: received a msg with no type")
+                raise RuntimeError("malformed message received")
+
+            if msg["type"] == "command":
+                self.handle_command(peer, msg)
+
+            elif msg["type"] == "result":
+                self.handle_results(peer, msg['for'], msg['payload'])
 
         else:
-            print("handle_message: unknown message type received")
-            raise RuntimeError("message type unknown")
+            raise RuntimeError("undefinded message received")
 
     # Handle a command message received from the control console or a
     # predecessor
@@ -436,32 +378,8 @@ class DBroctlD(Thread):
         # eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
 
-class TermUI:
-    def __init__(self):
-        pass
-
-    def output(self, msg):
-        print(msg)
-    warn = info = output
-
-    def error(self, msg):
-        print("ERROR", msg)
-
-
-class Logs:
-    def __init__(self):
-        self.store = defaultdict(list)
-
-    def append(self, id, stream, txt):
-        self.store[id].append((stream, txt))
-
-    def get(self, id, since=0):
-        msgs = self.store.get(id) or []
-        return msgs[since:]
-
-
 def main(basedir='/bro', suffix=None):
-    # pybroker.report_init()
+    #pybroker.report_init()
     logs = Logs()
 
     d = DBroctlD(logs, basedir, suffix)
