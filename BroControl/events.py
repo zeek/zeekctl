@@ -55,9 +55,7 @@ def _send_event_broker(node, event, args, result_event):
 
     logging.debug("connected to broker-peer " + str(stat.peer_name))
 
-
     rqueue = pybroker.message_queue("bro/event/control/response/", ep)
-    #ep.advertise("bro/event/control/response/")
     logging.debug("broker connect to host " + str(host) + ", port " + str(node.getPort()))
     #ep.publish("bro/event/control/request/")
 

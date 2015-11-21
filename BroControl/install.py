@@ -20,6 +20,7 @@ class Port:
         node.setPort(self.p)
         return self.p
 
+
 # Directories/files in form (path, mirror) which are synced from the manager to
 # all remote hosts.
 # If "mirror" is False, then the path is assumed to be a directory and it will
@@ -92,6 +93,7 @@ def make_broctl_config_sh(cmdout):
 
     return True
 
+
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
 
@@ -99,6 +101,7 @@ def make_layout(path, cmdout, silent=False):
         make_standalone_layout(path, cmdout, silent)
     else:
         make_cluster_layout(path, cmdout, silent)
+
 
 def make_standalone_layout(path, cmdout, silent):
     manager = config.Config.manager()
@@ -120,10 +123,11 @@ def make_standalone_layout(path, cmdout, silent):
         out.write("# Automatically generated. Do not edit.\n")
         # This is the port that standalone nodes listen on for remote
         # control by default.
-        out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
-        out.write("redef Communication::nodes += {\n")
+        out.write("redef Broker::listen_port = %s/tcp;\n" % broport.next_port(manager))
+        out.write("redef Broker::nodes += {\n")
         out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
+
 
 def get_cluster_roles(rlist):
     roles = ""
@@ -142,6 +146,7 @@ def get_cluster_roles(rlist):
             raise RuntimeError("node role not found")
 
     return roles
+
 
 def make_cluster_layout(path, cmdout, silent=False):
     manager=config.Config.manager()
@@ -196,6 +201,7 @@ def make_cluster_layout(path, cmdout, silent=False):
     file_out.close()
 
     logging.debug("out:" + str(out))
+
 
 # Reads in a list of networks from file.
 def read_networks(fname):
@@ -264,9 +270,9 @@ def make_broctl_config_policy(path, cmdout, silent=False):
             out.write("@endif\n")
 
         if config.Config.ipv6comm:
-            out.write("redef Communication::listen_ipv6 = T ;\n")
+            out.write("redef Broker::listen_ipv6 = T ;\n")
         else:
-            out.write("redef Communication::listen_ipv6 = F ;\n")
+            out.write("redef Broker::listen_ipv6 = F ;\n")
 
 
 # Write individual node.cfg file per successor in the hierarchy
@@ -287,14 +293,14 @@ def makeNodeConfig(path, node, cmdout, silent=False):
     overlay = config.Config.overlay
     localNode = config.Config.get_local()
 
-    npath = os.path.join (path, "node.json_" + str(node.name))
+    npath = os.path.join(path, "node.json_" + str(node.name))
     logging.debug(str(localNode.name) + " write node.json for " + str(node.name) + " to path " + str(npath))
 
     g = ""
     if hasattr(node, "cluster"):
         g = overlay.getSubgraph(node.cluster)
     else:
-        g= overlay.getSubgraph(node.name)
+        g = overlay.getSubgraph(node.name)
 
     edgeNum = len(g.edges())
     nodeNum = len(g.nodes())
