@@ -113,7 +113,7 @@ class BroCtl(object):
 
     # Turns node name arguments into a list of nodes.  If "get_hosts" is True,
     # then only one node per host is chosen.  If "get_types" is True, then
-    # only one node per node type (manager, proxy, etc.) is chosen.
+    # only one node per node type (manager, datanode, etc.) is chosen.
     def node_args(self, args=None, get_hosts=False, get_types=False):
         if not args:
             args = "all"
@@ -134,7 +134,7 @@ class BroCtl(object):
                 nodes = newlist
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.roles, n.name))
 
         if get_hosts:
             hosts = {}
@@ -150,9 +150,10 @@ class BroCtl(object):
             types = {}
             typenodes = []
             for node in nodes:
-                if node.type not in types:
-                    types[node.type] = 1
-                    typenodes.append(node)
+                for r in node.roles:
+                    if r not in types:
+                        types[r] = 1
+                        typenodes.append(node)
 
             nodes = typenodes
 

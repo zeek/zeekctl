@@ -23,6 +23,9 @@ from .version import VERSION
 
 Config = None # Globally accessible instance of Configuration.
 
+# all possible node roles
+possible_roles = set(["manager", "datanode", "worker", "standalone", "peer"])
+
 class ConfigurationError(Exception):
     pass
 
@@ -178,7 +181,7 @@ class Configuration:
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "proxies", all proxy Nodes are returned.
+    # - If tag is "datanodes", all datanode Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
     #     the standalone Node is returned (standalone config).
@@ -200,21 +203,21 @@ class Configuration:
         elif tag == "manager":
             nodetype = "manager"
 
-        elif tag == "proxies":
-            nodetype = "proxy"
+        elif tag == "datanodes":
+            nodetype = "datanode"
 
         elif tag == "workers":
             nodetype = "worker"
 
         for n in self.nodestore.values():
             if nodetype:
-                if nodetype == n.type:
+                if nodetype in n.roles:
                     nodes += [n]
 
             elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.roles, n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -320,7 +323,6 @@ class Configuration:
 
         nodestore = {}
 
-        counts = {}
         for sec in config.sections():
             node = node_mod.Node(self, sec)
 
@@ -328,13 +330,20 @@ class Configuration:
 
                 key = key.replace(".", "_")
 
+                # TODO This is a hack to make this compatible!
+                # We need a better way or it does not matter at all
+                # when we change to json anyway...
+                if key == "type":
+                    key = "roles"
+                    node.__dict__[key] = [val]
+                else:
+                    node.__dict__[key] = val
+
                 if key not in node_mod.Node._keys:
                     self.ui.warn("ignoring unrecognized node config option '%s' given for node '%s'" % (key, sec))
                     continue
 
-                node.__dict__[key] = val
-
-            self._check_node(node, nodestore, counts)
+            self._check_node(node, nodestore)
 
             if node.name in nodestore:
                 raise ConfigurationError("duplicate node name '%s'" % node.name)
@@ -343,12 +352,12 @@ class Configuration:
         self._check_nodestore(nodestore)
         return nodestore
 
-    def _check_node(self, node, nodestore, counts):
-        if not node.type:
-            raise ConfigurationError("no type given for node %s" % node.name)
+    def _check_node(self, node, nodestore):
+        if not node.roles:
+            raise ConfigurationError("no role given for node %s" % node.name)
 
-        if node.type not in ("manager", "proxy", "worker", "standalone"):
-            raise ConfigurationError("unknown node type '%s' given for node '%s'" % (node.type, node.name))
+        if possible_roles.issubset(node.roles):
+            raise ConfigurationError("Unknown node role '%s' given for node '%s'" % (node.roles, node.name))
 
         if not node.host:
             raise ConfigurationError("no host given for node '%s'" % node.name)
@@ -368,18 +377,10 @@ class Configuration:
         except ConfigurationError as err:
             raise ConfigurationError("node '%s' config: %s" % (node.name, err))
 
-        # Each node gets a number unique across its type.
-        try:
-            counts[node.type] += 1
-        except KeyError:
-            counts[node.type] = 1
-
-        node.count = counts[node.type]
-
         numprocs = 0
 
         if node.lb_procs:
-            if node.type != "worker":
+            if "worker" not in node.roles:
                 raise ConfigurationError("load balancing node config options are only for worker nodes")
             try:
                 numprocs = int(node.lb_procs)
@@ -423,14 +424,12 @@ class Configuration:
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
-                # only the node name, count, and pin_cpus need to be changed
+                # only the node name, and pin_cpus need to be changed
                 newname = "%s-%d" % (origname, num)
                 newnode.name = newname
                 if newname in nodestore:
                     raise ConfigurationError("duplicate node name '%s'" % newname)
                 nodestore[newname] = newnode
-                counts[node.type] += 1
-                newnode.count = counts[node.type]
                 if pin_cpus:
                     newnode.pin_cpus = pin_cpus[num-1]
 
@@ -443,14 +442,14 @@ class Configuration:
 
         standalone = False
         manager = False
-        proxy = False
+        datanode = False
 
         manageronlocalhost = False
         # Note: this is a subset of localaddrs
         localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
-            if n.type == "manager":
+            if "manager" in n.roles:
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
@@ -460,10 +459,10 @@ class Configuration:
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
-            elif n.type == "proxy":
-                proxy = True
+            elif "datanode" in n.roles:
+                datanode = True
 
-            elif n.type == "standalone":
+            elif "standalone" in n.roles:
                 standalone = True
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
@@ -474,13 +473,13 @@ class Configuration:
         else:
             if not manager:
                 raise ConfigurationError("no manager defined in node config")
-            elif not proxy:
-                raise ConfigurationError("no proxy defined in node config")
+            elif not datanode:
+                raise ConfigurationError("no datanode defined in node config")
 
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.addr not in localhostaddrs:
+                if "manager" not in n.roles and n.addr not in localhostaddrs:
                     raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 
@@ -571,8 +570,14 @@ class Configuration:
                         elif addrfield and field != "addr:":
                             locaddr = field
                             # remove "addr:" prefix (if any)
+                            # FIXME when OS is in different language the search
+                            # term need to be different
+                            # English: addr
+                            # German: Adresse
                             if field.startswith("addr:"):
                                 locaddr = field[5:]
+                            elif field.startswith("Adresse:"):
+                                locaddr = field[8:]
                             # remove everything after "/" or "%" (if any)
                             locaddr = locaddr.split("/")[0]
                             locaddr = locaddr.split("%")[0]

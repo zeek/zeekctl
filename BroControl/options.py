@@ -45,7 +45,7 @@ options = [
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
     Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
-    Option("BroPort", 9999, "int", Option.USER, False,
+    Option("BroPort", 9000, "int", Option.USER, False,
            "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", 3600, "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Bro script variable Log::default_rotation_interval."),
@@ -249,4 +249,3 @@ def print_options(category):
         out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
     return (out, err)
-

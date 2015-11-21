@@ -40,7 +40,7 @@ def _make_bro_params(node, live):
     if live:
         args += ["-p", "broctl-live"]
 
-    if node.type == "standalone":
+    if "standalone" in node.roles:
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
@@ -63,15 +63,15 @@ def _make_bro_params(node, live):
     #    but overrided by broctl.cfg)
     args += config.Config.sitepolicystandalone.split()
     args += ["broctl"]
-    if node.type == "standalone":
+    if "standalone" in node.roles:
         args += ["broctl/standalone"]
     else:
         args += ["base/frameworks/cluster"]
-        if node.type == "manager":
+        if "manager" in node.roles:
             args += config.Config.sitepolicymanager.split()
-        elif node.type == "proxy":
-            args += ["local-proxy"]
-        elif node.type == "worker":
+        elif "datanode" in node.roles:
+            args += ["local-datanode"]
+        elif "worker" in node.roles:
             args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
 
@@ -87,7 +87,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if node.type != "standalone":
+    if "standalone" not in node.roles:
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -113,30 +113,30 @@ class Controller:
     def start(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
-        proxies = []
+        datanodes = []
         workers = []
 
         for n in nodes:
             n.setExpectRunning(True)
 
-            if n.type == "worker":
+            if "worker" in n.roles:
                 workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
+            elif "datanode" in n.roles:
+                datanodes += [n]
             else:
                 manager += [n]
 
-        # Start nodes. Do it in the order manager, proxies, workers.
+        # Start nodes. Do it in the order manager, datanodes, workers.
         if manager:
             self._start_nodes(manager, results)
 
             if not results.ok:
-                for n in (proxies + workers):
+                for n in (datanodes + workers):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._start_nodes(proxies, results)
+        if datanodes:
+            self._start_nodes(datanodes, results)
 
             if not results.ok:
                 for n in workers:
@@ -376,32 +376,32 @@ class Controller:
     def stop(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
-        proxies = []
+        datanodes = []
         workers = []
 
         for n in nodes:
             n.setExpectRunning(False)
 
-            if n.type == "worker":
+            if "worker" in n.roles:
                 workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
+            elif "datanode" in n.roles:
+                datanodes += [n]
             else:
                 manager += [n]
 
 
-        # Stop nodes. Do it in the order workers, proxies, manager
+        # Stop nodes. Do it in the order workers, datanodedatanodess, manager
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager):
+                for n in (datanodes + manager):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._stop_nodes(proxies, results)
+        if datanodes:
+            self._stop_nodes(datanodes, results)
 
             if not results.ok:
                 for n in manager:
@@ -568,7 +568,7 @@ class Controller:
         for (node, isrunning) in nodestatus:
             node_info = {
                 "name": node.name,
-                "type": node.type,
+                "roles": node.roles,
                 "host": node.host,
                 "status": "stopped",
                 "pid": None,
@@ -930,8 +930,8 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and node.type not in ("manager", "standalone"):
-                    # Don't need this on the workers/proxies.
+                if key == "logdir" and "manager" not in node.roles and "standalone" not in node.roles:
+                    # Don't need this on the workers/datanodes.
                     continue
 
                 path = self.config.config[key]
@@ -1079,7 +1079,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         for (node, error, vals) in self.get_top_output(nodes):
-            top_info = {"name": node.name, "type": node.type,
+            top_info = {"name": node.name, "roles": node.roles,
                         "host": node.host, "pid": None, "proc": None,
                         "vsize": None, "rss": None, "cpu": None,
                         "cmd": None, "error": None}
@@ -1381,4 +1381,3 @@ class Controller:
                 self.ui.info("\nOutput of broctl cron:\n%s" % output)
 
         logging.debug("cron done")
-
