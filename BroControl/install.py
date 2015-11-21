@@ -142,7 +142,7 @@ def make_standalone_layout(path, cmdout, silent):
         # control by default.
         out.write("redef Broker::listen_port = %s/tcp;\n" % broport.next_port(manager))
         out.write("redef Broker::nodes += {\n")
-        out.write("\t[\"control\"] = [$ip=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+        out.write("\t[\"control\"] = [$ip=%s, $zone_id=\"%s\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
         out.write("};\n")
 
 
