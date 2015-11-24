@@ -15,7 +15,7 @@ awk '{
         # we need a constant-width string of Xs).
         if ( $3 ~ /^[0-9]+$/ ) { $3 = "XXXXX" }      # PID
         if ( $4 ~ /^[0-9]+$/ ) { $4 = "XXXXX" }      # PPID
-        if ( $5 ~ /^[0-9]+\.[0-9]$/ ) { $5 = "XX.X" }  # %CPU
+        if ( $5 ~ /^[0-9]+\.?[0-9]$/ ) { $5 = "XX.X" } # %CPU
         if ( $6 ~ /^[0-9]+\.[0-9]$/ ) { $6 = "XX.X" }  # %MEM
         if ( $7 ~ /^[0-9]+$/ ) { $7 = "XXXXX" }      # VSZ
         if ( $8 ~ /^[0-9]+$/ ) { $8 = "XXXXX" }      # RSS
