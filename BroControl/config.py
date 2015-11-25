@@ -551,7 +551,9 @@ class Configuration:
     def _get_local_addrs(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
-            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            # Need to set LANG here to ensure that the output of ifconfig
+            # is consistent regardless of which locale the system is using.
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
             success = proc.returncode == 0
         except OSError:
