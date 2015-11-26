@@ -20,7 +20,7 @@ class LBCustom(BroControl.plugin.Plugin):
         useplugin = False
 
         for nn in self.nodes():
-            if nn.type != "worker" or nn.lb_method != "custom":
+            if "worker" not in nn.roles or nn.lb_method != "custom":
                 continue
 
             useplugin = True

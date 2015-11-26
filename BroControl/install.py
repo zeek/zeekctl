@@ -118,14 +118,16 @@ def make_standalone_layout(path, cmdout, silent):
     if not silent:
         cmdout.info("generating standalone-layout.bro ...")
 
+    port = broport.next_port(manager)
     filename = os.path.join(path, "standalone-layout.bro")
     with open(filename, "w") as out:
         out.write("# Automatically generated. Do not edit.\n")
         # This is the port that standalone nodes listen on for remote
         # control by default.
-        out.write("redef Broker::listen_port = %s/tcp;\n" % broport.next_port(manager))
+        out.write("redef Broker::listen_port = %s/tcp;\n" % port)
+        out.write("redef Cluster::cluster_id = \"%s\";\n" % manager.name)
         out.write("redef Broker::nodes += {\n")
-        out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
+        out.write("\t[\"%s\"] = [$ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, port))
         out.write("};\n")
 
 
@@ -162,8 +164,9 @@ def make_cluster_layout(path, cmdout, silent=False):
 
     out = ""
     out += "# Automatically generated. Do not edit.\n"
+    out += "redef Cluster::cluster_id = \"%s\";\n" % manager.cluster
     out += "redef Cluster::nodes = {\n"
-    out += "\t[\"control\"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager))
+    #out += "\t[\"control\"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager))
 
     for n in config.Config.nodes():
         # Manager definition

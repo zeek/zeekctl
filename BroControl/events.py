@@ -46,7 +46,6 @@ def _send_event_broker(node, event, args, result_event):
     peering = ep.peer(host, node.getPort(), 1)
 
     logging.debug("broker: %s(%s) to node %s", event, ", ".join(args), node.name)
-    logging.debug("args is " + str(args))
 
     stat = ep.outgoing_connection_status().need_pop()[0]
     if stat.status != pybroker.outgoing_connection_status.tag_established:

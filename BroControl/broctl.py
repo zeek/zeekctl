@@ -511,6 +511,7 @@ class BroCtl(object):
 		Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
+        raise RuntimeError("should not happen")
         logging.debug("broctl: rcvd cmd netstats with node_list " + str(node_list))
         if not node_list:
             if self.config.nodes("standalone"):

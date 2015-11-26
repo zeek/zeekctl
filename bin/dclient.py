@@ -1,20 +1,15 @@
 #! /usr/bin/env python
 
-import socket
 import sys
 import time
 import cmd
-import errno
-import json
 import os
-import pybroker
 from Queue import Queue
 from threading import Thread
 
 sys.path.insert(0, "@PREFIX@/lib/broctl")
 
-from BroControl.broker import BrokerPeer
-from BroControl.message import BResMsg
+from BroControl.daemonbase import BrokerPeer
 from BroControl.message import BCmdMsg
 
 control_port = 4242
@@ -23,7 +18,7 @@ d_port = 9990
 delay_response = 15
 
 
-class BClient(cmd.Cmd):
+class DeepClient(cmd.Cmd):
     intro = 'Deep Cluster Client'
     prompt = '[BClient] > '
     ruler = '-'
@@ -44,11 +39,11 @@ class BClient(cmd.Cmd):
 
         self.addr = (local_host, local_port)
 
-        self.ctrl_topic = "dbroctld/control"
-        self.cmd_topic = "dbroctld/cmds"
+        self.ctrl_topic = "dbroctld/control/"
+        self.cmd_topic = "dbroctld/cmds/"
 
         # pack topics for BrokerPeer
-        sub = [self.ctrl_topic + "/res"]
+        sub = [self.ctrl_topic + "res"]
         pub = [self.cmd_topic]
 
         self.cq = Queue()
@@ -174,13 +169,13 @@ class BClient(cmd.Cmd):
             time.sleep(0.25)
             while not self.cq.empty():
                 msg = self.cq.get()
-                self.handleResult(msg, line)
+                self.handle_result(msg, line)
             if line in str(msg):
                 break
             counter += 1
         return stop
 
-    def handleResult(self, msg, line):
+    def handle_result(self, msg, line):
         # Ignore all connection-related messages
         for s in ["peer-connect", "peer-disconnect"]:
             if s in msg:
@@ -188,14 +183,15 @@ class BClient(cmd.Cmd):
 
         # Format all other responses
         data = msg[2]['payload']
-        if "netstats" in line or "peerstatus" in line:
+        #if "netstats" in line or "peerstatus" in line:
+        if "peerstatus" in line:
             print ""
             print "-------------------------------------------------------------------------------"
             for (n,v,w) in data:
                 print "" + str(n) + ", " + str(v) + ", " + str(w)
             print "-------------------------------------------------------------------------------"
             print ""
-        elif "print_id" in line:
+        if "print_id" in line:
             print ""
             print "-------------------------------------------------------------------------------"
             for n in data:
@@ -221,9 +217,9 @@ def main(argv):
     #pybroker.report_init()
     client = None
     if len(argv) == 2:
-        client = BClient("dclient", argv[0], argv[1])
+        client = DeepClient("dclient", argv[0], argv[1])
     else:
-        client = BClient(None, None)
+        client = DeepClient(None, None)
     client.cmdloop()
 
 if __name__ == "__main__":

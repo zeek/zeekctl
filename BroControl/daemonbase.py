@@ -10,6 +10,8 @@ from collections import defaultdict
 from Queue import Queue
 from threading import Thread
 
+from message import BResMsg
+
 # Polling interval for new messages
 loop_time = 0.25
 
@@ -213,12 +215,14 @@ class BrokerPeer:
             elif outgoing[0].status == pybroker.outgoing_connection_status.tag_disconnected:
                 logging.debug("peer disconnected from us: " + outgoing[0].peer_name)
                 self.squeue.put(("peer-disconnect", outgoing[0].peer_name, "outbound"))
-                del self.outbound[outgoing[0].peer_name]
+                if outgoing[0].peer_name in self.outbound:
+                    del self.outbound[outgoing[0].peer_name]
 
     def parse_broker_msg(self, msg):
         if not msg:
             return
 
+        json_encoding = True
         for j in msg:
             event = None
             res = []
@@ -226,13 +230,26 @@ class BrokerPeer:
                 if not event:
                     event = i
                 else:
-                    res.append(json.loads(str(i)))
+                    # We need to differentiate input from another daemon (json)
+                    # from input coming from a bro process (non-json)
+                    try:
+                        res.append(json.loads(str(i)))
+                    except ValueError:
+                        res.append(str(i).strip())
+                        json_encoding = False
 
-            if event:
+            if not event:
+                return
+
+            if json_encoding: # msg from another BrokerPeer endpoint
                 peer = str(res[0])
                 if (self.name != peer):
                     logging.debug(" received msg from (" + str(peer) + ") " + str(res[2]))
                     self.squeue.put(("msg", res[1], res[2]))
+            else: # msg from a bro process
+                logging.debug(" received msg from bro for event" + str(event) + " with res" + str(res))
+                msg = BResMsg(None, None, str(event), res)
+                self.squeue.put(("msg", None, msg.json()))
 
     def run(self):
         while self.running:
@@ -259,5 +276,5 @@ class BrokerPeer:
 
     def stop(self):
         self.disconnect()
-        self.ep.unlisten(0)
+        #self.ep.unlisten(0)
         self.running = False
