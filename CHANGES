@@ -1,4 +1,8 @@
 
+1.4-36 | 2015-12-08 13:21:05 -0500
+
+  * Fix problem of unexpected ifconfig output with some locales (Daniel Thayer)
+
 1.4-34 | 2015-10-27 21:13:15 -0500
 
   * Added plugin for custom load balancing (Jan Grashoefer)
