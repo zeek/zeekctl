@@ -243,7 +243,7 @@ class Executor:
     # on one or more hosts.
     # dirs:  a list of the form [ (node, dir), ... ]
     #
-    # Returns a list of the form: [ (node, success), ... ]
+    # Returns a list of the form: [ (node, success, output), ... ]
     #   where "success" is a boolean (true if specified directory was removed
     #   or does not exist).
     def rmdirs(self, dirs):
@@ -254,7 +254,7 @@ class Executor:
             cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
 
         for (node, success, output) in self.run_cmds(cmds, shell=True):
-            results += [(node, success)]
+            results += [(node, success, output)]
 
         return results
 

@@ -682,10 +682,10 @@ class Controller:
         # Given a set of node names "orig" and command results "res", add
         # all node names to "orig" that have a failed result in "res".
         def addfailed(orig, res):
-            for r in res:
+            for (node, status, output) in res:
                 # if status is Fail, then add the node name
-                if not r[1]:
-                    orig.add(r[0].name)
+                if not status:
+                    orig.add(node.name)
 
             return orig
 
