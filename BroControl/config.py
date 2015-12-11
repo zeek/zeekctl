@@ -98,6 +98,8 @@ class Configuration:
         else:
             self._set_option("time", "")
 
+        minutes = self._get_interval_minutes("logexpireinterval")
+        self._set_option("logexpireminutes", minutes)
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
@@ -133,8 +135,11 @@ class Configuration:
             if not os.path.isfile(v):
                 raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
 
-        minutes = self._get_interval_minutes("logexpireinterval")
-        self._set_option("logexpireminutes", minutes)
+        # Verify that logs don't expire more quickly than the rotation interval
+        logexpireseconds = 60 * self.config["logexpireminutes"]
+        if 0 < logexpireseconds < self.config["logrotationinterval"]:
+            raise ConfigurationError("Log expire interval cannot be shorter than the log rotation interval")
+
 
     # Convert a time interval string (from the value of the given option name)
     # to an integer number of minutes.
