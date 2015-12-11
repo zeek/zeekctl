@@ -46,15 +46,15 @@ def sync(nodes, paths, cmdout):
     result = True
     cmds = []
     for n in nodes:
-        args = ["-rRl", "--delete", "--rsh=\"ssh -o ConnectTimeout=30\""]
-        dst = ["%s:/" % util.format_rsync_addr(util.scope_addr(n.host))]
+        args = ["-rRl", "--delete", "--rsh=\"ssh -o BatchMode=yes -o ConnectTimeout=30\""]
+        dst = ["%s:/" % util.format_rsync_addr(util.scope_addr(n.addr))]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
         cmds += [(n, cmdline, "", None)]
 
     for (id, success, output) in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.host), "\n".join(output)))
+            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.addr), "\n".join(output)))
             result = False
 
     return result
@@ -224,7 +224,7 @@ class Executor:
     # A convenience function that calls run_cmds.
     # dirs:  a list of the form [ (node, dir), ... ]
     #
-    # Returns a list of the form: [ (node, success), ... ]
+    # Returns a list of the form: [ (node, success, output), ... ]
     #   where "success" is a boolean (true if specified directory was created
     #   or already exists).
     def mkdirs(self, dirs):
@@ -235,7 +235,7 @@ class Executor:
             cmds += [(node, "mkdir", ["-p", dir])]
 
         for (node, success, output) in self.run_cmds(cmds):
-            results += [(node, success)]
+            results += [(node, success, output)]
 
         return results
 
@@ -243,7 +243,7 @@ class Executor:
     # on one or more hosts.
     # dirs:  a list of the form [ (node, dir), ... ]
     #
-    # Returns a list of the form: [ (node, success), ... ]
+    # Returns a list of the form: [ (node, success, output), ... ]
     #   where "success" is a boolean (true if specified directory was removed
     #   or does not exist).
     def rmdirs(self, dirs):
@@ -254,7 +254,7 @@ class Executor:
             cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
 
         for (node, success, output) in self.run_cmds(cmds, shell=True):
-            results += [(node, success)]
+            results += [(node, success, output)]
 
         return results
 

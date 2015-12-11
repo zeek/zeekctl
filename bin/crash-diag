@@ -81,6 +81,6 @@ show_log prof.log 10
 show_log packet_filter.log 30
 show_log loaded_scripts.log -1
 
-) >.crash-diag.log
+) >.crash-diag.out
 
-cat .crash-diag.log
+cat .crash-diag.out

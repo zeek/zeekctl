@@ -99,8 +99,27 @@ class Configuration:
             self._set_option("time", "")
 
 
-    # Do a basic sanity check on some critical options.
+    # Do a basic sanity check on broctl options.
     def _check_options(self):
+        # Option names must be valid bash variable names because we will
+        # write them to broctl-config.sh (note that broctl will convert "."
+        # to "_" when it writes to broctl-config.sh).
+        allowedchars = re.compile("^[a-z0-9_.]+$")
+        nostartdigit = re.compile("^[^0-9]")
+
+        for key, value in self.config.items():
+            if re.match(allowedchars, key) is None:
+                raise ConfigurationError('broctl option name "%s" contains invalid characters' % key)
+            if re.match(nostartdigit, key) is None:
+                raise ConfigurationError('broctl option name "%s" cannot start with a number' % key)
+
+            # No broctl option ever requires the entire value to be wrapped in
+            # quotes, and since doing so can cause problems, we don't allow it.
+            if isinstance(value, str):
+                if ( (value.startswith('"') and value.endswith('"')) or
+                     (value.startswith("'") and value.endswith("'")) ):
+                    raise ConfigurationError('value of broctl option "%s" cannot be wrapped in quotes' % key)
+
         dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
         files = ("makearchivename", )
 
@@ -430,7 +449,7 @@ class Configuration:
             if not node.lb_method:
                 raise ConfigurationError("no load balancing method given for node '%s'" % node.name)
 
-            if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+            if node.lb_method not in ("pf_ring", "myricom", "custom", "interfaces"):
                 raise ConfigurationError("unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
 
             if node.lb_method == "interfaces":
@@ -486,7 +505,7 @@ class Configuration:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
             elif n.type == "proxy":
                 proxy = True
@@ -494,7 +513,7 @@ class Configuration:
             elif n.type == "standalone":
                 standalone = True
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the standalone node. The standalone node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
         if standalone:
             if len(nodestore) > 1:
@@ -579,7 +598,9 @@ class Configuration:
     def _get_local_addrs(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
-            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            # Need to set LANG here to ensure that the output of ifconfig
+            # is consistent regardless of which locale the system is using.
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
             success = proc.returncode == 0
         except OSError:
@@ -608,7 +629,7 @@ class Configuration:
                             break
 
             if not localaddrs:
-                raise ConfigurationError("ifconfig does not show any local IP addresses")
+                raise ConfigurationError("ifconfig does not show any IP addresses")
         else:
             localaddrs = ["127.0.0.1", "::1"]
             try:
@@ -759,11 +780,6 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl configuration.
-    def update_broctlcfg_hash(self):
-        cfghash = self._get_broctlcfg_hash()
-        self.set_state("hash-broctlcfg", cfghash)
-
     # Return a hash value (as a string) of the current broctl node config.
     def _get_nodecfg_hash(self, filehash=False):
         if filehash:
@@ -782,9 +798,12 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl node config.
-    def update_nodecfg_hash(self):
+    # Update the stored hash value of the current broctl config.
+    def update_cfg_hash(self):
+        cfghash = self._get_broctlcfg_hash()
         nodehash = self._get_nodecfg_hash()
+
+        self.set_state("hash-broctlcfg", cfghash)
         self.set_state("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version number.

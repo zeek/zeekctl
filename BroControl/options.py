@@ -81,6 +81,8 @@ options = [
            "True to mail connection summary reports each log rotation interval (if false, then connection summary reports will still be generated and archived, but they will not be mailed). However, this option has no effect if the trace-summary script is not available."),
     Option("MailHostUpDown", 1, "bool", Option.USER, False,
            "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
+    Option("MailArchiveLogFail", 1, "bool", Option.USER, False,
+           "True to enable sending mail when log files fail to be archived."),
 
     Option("MinDiskSpace", 5, "int", Option.USER, False,
            "Percentage of minimum disk space available before warning is mailed."),
@@ -93,7 +95,7 @@ options = [
     Option("KeepLogs", "", "string", Option.USER, False,
            "A space-separated list of filename shell patterns of expired log files to keep (empty string means don't keep any expired log files). The filename shell patterns are not regular expressions and do not include any directories. For example, specifying 'conn.* dns*' will prevent any expired log files with filenames starting with 'conn.' or 'dns' from being removed. Finally, note that this option is ignored if log files never expire."),
     Option("BroArgs", "", "string", Option.USER, False,
-           "Additional arguments to pass to Bro on the command-line."),
+           "Additional arguments to pass to Bro on the command-line (e.g. broargs=-f \"tcp port 80\")."),
     Option("MemLimit", "unlimited", "string", Option.USER, False,
            "Maximum amount of memory for Bro processes to use (in KB, or the string 'unlimited')."),
     Option("Env_Vars", "", "string", Option.USER, False,
