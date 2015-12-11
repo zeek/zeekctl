@@ -4,8 +4,8 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff cleanup.out
 # @TEST-EXEC: btest-diff cleanup-onenode.out
-# @TEST-EXEC: btest-diff cleanup-all.out
-# @TEST-EXEC: btest-diff cleanup-all-onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all-onenode.out
 
 . broctl-test-setup
 

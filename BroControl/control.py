@@ -172,7 +172,7 @@ class Controller:
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
         nodes = []
-        for (node, success) in self.executor.mkdirs(dirs):
+        for (node, success, output) in self.executor.mkdirs(dirs):
             if success:
                 nodes += [node]
             else:
@@ -352,7 +352,7 @@ class Controller:
 
         msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
-        cmds = [(node, postterminate, [node.cwd(), "crash"]) for node in nodes]
+        cmds = [(node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
@@ -512,7 +512,7 @@ class Controller:
             if node in kill:
                 crashflag = "killed"
 
-            cmds += [(node, postterminate, [node.cwd(), crashflag])]
+            cmds += [(node, postterminate, [node.type, node.cwd(), crashflag])]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
@@ -679,10 +679,13 @@ class Controller:
     # If cleantmp is true, also wipes ${tmpdir}; this is done
     # even when the node is still running.
     def cleanup(self, nodes, cleantmp=False):
+        # Given a set of node names "orig" and command results "res", add
+        # all node names to "orig" that have a failed result in "res".
         def addfailed(orig, res):
-            for (n, status) in res:
+            for (node, status, output) in res:
+                # if status is Fail, then add the node name
                 if not status:
-                    orig.add(n.name)
+                    orig.add(node.name)
 
             return orig
 
@@ -706,6 +709,7 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
+            self.ui.info("cleaning %s ..." % self.config.tmpdir)
             results3 = self.executor.rmdirs([(n, self.config.tmpdir) for n in running + notrunning])
             results4 = self.executor.mkdirs([(n, self.config.tmpdir) for n in running + notrunning])
             failed = addfailed(failed, results3)
@@ -1273,11 +1277,17 @@ class Controller:
         if local_only:
             return results
 
-        # Sync to clients.
-        self.ui.info("updating nodes ...")
-
         # Make sure we install each remote host only once.
         nodes = self.config.hosts(nolocal=True)
+
+        # If there are no remote hosts, then we're done.
+        if not nodes:
+            # Save current configuration state.
+            self.config.update_cfg_hash()
+            return results
+
+        # Sync to clients.
+        self.ui.info("updating nodes ...")
 
         dirs = []
 
@@ -1297,9 +1307,10 @@ class Controller:
             for dir in createdirs:
                 dirs.append((n, dir))
 
-        for (node, success) in self.executor.mkdirs(dirs):
+        for (node, success, output) in self.executor.mkdirs(dirs):
             if not success:
-                self.ui.error("cannot create (some of the) directories %s on node %s" % (",".join(createdirs), node.name))
+                self.ui.error("cannot create a directory on node %s" % node.name)
+                self.ui.error("\n".join(output))
                 results.ok = False
                 return results
 
@@ -1308,11 +1319,8 @@ class Controller:
             results.ok = False
             return results
 
-        # Save current node configuration state.
-        self.config.update_nodecfg_hash()
-
         # Save current configuration state.
-        self.config.update_broctlcfg_hash()
+        self.config.update_cfg_hash()
 
         return results
 

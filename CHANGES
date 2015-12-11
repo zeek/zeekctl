@@ -1,4 +1,81 @@
 
+1.4-57 | 2015-12-11 12:00:07 -0500
+
+  * Simplify some code and fix a test that can fail on OS X (Daniel Thayer)
+
+  * Improvements to broctl documentation (Daniel Thayer)
+
+  * Improve diagnostic and  error messages (Daniel Thayer)
+
+  * Add more private IP space to etc/networks.cfg (Daniel Thayer)
+
+  * Add a new broctl option to control sending log archive mail (Daniel Thayer)
+
+    Added a new broctl option MailArchiveLogFail that controls whether or
+    not to send mail when there is a failure to archive log files.
+
+  * Check for invalid option names and values more carefully (Daniel Thayer)
+
+  * Fix use of ssh to always use IP address (Daniel Thayer)
+
+    Changed all uses of ssh to use IP address instead of hostname.
+    This ensures that the ssh host key lookup always succeeds (assuming tha
+    the user did the manual setup first).  This avoids confusion when a user
+    uses different combinations of IP addr, hostname, or FQDN when setting
+    up the ssh host keys and the broctl node.cfg.  For example, if a user
+    specifies the FQDN in node.cfg, but then manually does an ssh to each
+    worker machine using just the hostname (not the FQDN) when setting up
+    the ssh host keys, then "broctl install" would fail because ssh can'
+    find the host key.  The simplest solution in this case is to have
+    broctl always use IP addresses with ssh.
+
+    Also changed ssh to use BatchMode consistently to avoid a misleading
+    error message (can't find ssh-askpass) when the rsync fails.
+
+  * Improve post-terminate script's ability to archive logs (Daniel Thayer)
+
+    Changed post-terminate to attempt to archive logs that have already
+    been rotated.  Presumably, the archival of such logs was previously
+    attempted and failed, but now post-terminate will at least send an
+    email when it fails to archive them.
+
+    Also changed crash-diag output file extension to no longer use ".log"
+    in order to avoid post-terminate trying to archive it.
+
+  * Send email if post-terminate fails to archive logs
+
+    Changed the post-terminate script to run archive-log serially instead
+    of multiple instances simultaneously in the background, in order to
+    reduce the load on the system.  Also changed post-terminate to send an
+    email if it fails to archive one or more logs (the email contains the
+    name of the specific spool/tmp/post-terminate directory so that the user
+    can check for error messages or manually archive any logs there). (Daniel Thayer)
+
+  * Rename logs when archive-log is run with "-c" option (Daniel Thayer)
+
+    When the post-terminate script is dealing with a crashed Bro node,
+    it runs archive-log with the "-c" flag to indicate that the logs
+    should be archived but the originals should not be removed.
+    As a result, a user may be confused when seeing log files in
+    a spool/tmp/post-terminate directory because it is not clear
+    which ones were successfully archived.
+
+    To avoid confusion, now the original log files will be renamed
+    (e.g., conn.log --> conn.log_archived) after being successfully
+    archived.
+
+  * Capture output of background post-terminate script (Daniel Thayer)
+
+    If a spool/tmp/post-terminate directory doesn't get removed, then there
+    will be a new file "post-terminate.out" which might contain error
+    messages from the part of the post-terminate script that was run
+    in the background (these messages would most likely be from the
+    archive-log script that was executed by post-terminate).
+    This might be helpful when trying to diagnose a failure to archive
+    log files.
+
+  * Add bro node type to post-terminate dir name (Daniel Thayer)
+
 1.4-36 | 2015-12-08 13:21:05 -0500
 
   * Fix problem of unexpected ifconfig output with some locales (Daniel Thayer)
