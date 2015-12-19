@@ -225,3 +225,5 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         else:
             out.write("redef Communication::listen_ipv6 = F ;\n")
 
+        out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
+        out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)

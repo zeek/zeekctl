@@ -127,6 +127,11 @@ options = [
     Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,
            "The first application instance for a PF_RING dnacluster interface to use.  Broctl will start at this application instance number and increment for each new process running on that DNA cluster.  Bro must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work."),
 
+    Option("PcapSnaplen", 8192, "int", Option.AUTOMATIC, False,
+           "Number of bytes per packet to capture from live interfaces via libpcap."),
+    Option("PcapBufsize", 128, "int", Option.AUTOMATIC, False,
+           "Number of Mbytes to provide as buffer space when capturing from live interfaces via libpcap."),
+
     Option("CFlowAddress", "", "string", Option.USER, False,
            "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
     Option("CFlowUser", "", "string", Option.USER, False,
