@@ -48,7 +48,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def default(self, line):
         strlist = line.split()
 
-        if not self.broctl.plugins.runCustomCommand(strlist[0], " ".join(strlist[1:]), self):
+        if not self.broctl.runplugin(strlist[0], " ".join(strlist[1:]), self):
             if strlist[0] != "--help":
                 self.error("unknown command '%s'" % strlist[0])
 
@@ -784,4 +784,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
