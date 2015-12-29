@@ -148,7 +148,7 @@ class PluginRegistry:
         try:
             (myplugin, usage, descr) = self._cmds[cmd]
         except LookupError:
-            return (False,)
+            return (False, None)
 
         prefix = myplugin.prefix()
 
