@@ -25,9 +25,9 @@ class BaseDaemon(Thread):
         self.running = True
 
     # Put functionality to connect to BrokerPeer here
-    def init_broker_peer(self, name, addr, pub, sub):
+    def init_broker_peer(self, name, addr, pub, sub_single, sub_multi):
         # Start broker client
-        self.peer = BrokerPeer(name, addr, self.squeue, pub, sub)
+        self.peer = BrokerPeer(name, addr, self.squeue, pub, sub_single, sub_multi)
         self.client_thread = Thread(target=self.peer.run)
         self.client_thread.daemon = True
         self.client_thread.start()
@@ -132,7 +132,7 @@ class Logs:
 
 
 class BrokerPeer:
-    def __init__(self, name, addr, squeue, pub, sub):
+    def __init__(self, name, addr, squeue, pub, sub_single, sub_multi):
         self.name = name
         self.running = True
         self.squeue = squeue
@@ -140,9 +140,11 @@ class BrokerPeer:
         self.inbound = []
         self.tq = {}
         self.addr = addr
+        #self.fq = {}
 
         # Broker endpoint configuration
-        self.ep = pybroker.endpoint(name)
+        flags = pybroker.AUTO_PUBLISH | pybroker.AUTO_ADVERTISE | pybroker.AUTO_ROUTING
+        self.ep = pybroker.endpoint(name, flags)
         if self.addr:
             self.ep.listen(int(addr[1]), str(addr[0]))
             print "Dbroctld listens on " + str(addr[0]) + ":" + str(addr[1])
@@ -152,8 +154,19 @@ class BrokerPeer:
             self.ep.publish(p)
 
         # Subscriptions
-        for s in sub:
-            self.tq[s] = pybroker.message_queue(s, self.ep)
+        for s in sub_single:
+            self.tq[s] = pybroker.message_queue(s, self.ep, pybroker.SINGLE_HOP)
+        for s in sub_multi:
+            self.tq[s] = pybroker.message_queue(s, self.ep, pybroker.MULTI_HOP)
+
+        # Forwarding of topics
+        # - receiving msgs
+        #for f in forw.keys():
+        #    self.fq[f] = (pybroker.message_queue(f, self.ep, pybroker.MULTI_HOP), forw[f])
+        # - resending messages
+        #for f in forw.values():
+        #    self.ep.publish(f)
+
 
     def connect(self, peer_addr):
         logging.debug("initiating connection to " + str(peer_addr))
@@ -172,7 +185,12 @@ class BrokerPeer:
         self.outbound[stat.peer_name] = (peer_addr, p)
         self.squeue.put(("peer-connect", stat.peer_name, "outbound"))
 
-    def disconnect(self):
+    def disconnect(self, peer_name):
+        if str(peer_name) in self.outbound:
+            self.ep.unpeer(self.outbound[str(peer_name)][1])
+            del self.outbound[peer_name]
+
+    def disconnect_all(self):
         for p in self.outbound.values():
             self.ep.unpeer(p[1])
         self.outbound.clear()
@@ -188,6 +206,10 @@ class BrokerPeer:
         for q in self.tq.values():
             msg = q.want_pop()
             self.parse_broker_msg(msg)
+        #for q in self.fq.values():
+        #    msg = q[0].want_pop()
+        #    if msg:
+        #        self.send(q[1], msg)
 
     def check_connections(self):
         # 1. Checking incoming connections (other peer initiated connection)
@@ -262,7 +284,7 @@ class BrokerPeer:
 
     def subscribe_topic(self, topic):
         if topic not in self.tq:
-            self.tq[topic] = pybroker.message_queue(topic, self.ep)
+            self.tq[topic] = pybroker.message_queue(topic, self.ep, pybroker.MULTI_HOP)
 
     def unsubscribe_topic(self, topic):
         if topic in self.tq:
@@ -275,6 +297,6 @@ class BrokerPeer:
         self.ep.unpublish(topic)
 
     def stop(self):
-        self.disconnect()
+        self.disconnect_all()
         #self.ep.unlisten(0)
         self.running = False

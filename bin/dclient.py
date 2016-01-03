@@ -43,11 +43,12 @@ class DeepClient(cmd.Cmd):
         self.cmd_topic = "dbroctld/cmds/"
 
         # pack topics for BrokerPeer
-        sub = [self.ctrl_topic + "res"]
+        sub_single = []
+        sub_multi = [self.ctrl_topic + "res"]
         pub = [self.cmd_topic]
 
         self.cq = Queue()
-        self.peer = BrokerPeer("dclient", None, self.cq, pub, sub)
+        self.peer = BrokerPeer("dclient", None, self.cq, pub, sub_single, sub_multi)
         self.client_thread = Thread(target=self.peer.run)
         self.client_thread.daemon = True
         self.client_thread.start()
@@ -94,7 +95,7 @@ class DeepClient(cmd.Cmd):
         """ shutdown the deep cluster """
         if self.send_cmd("shutdown"):
             print "shutting down deep cluster..."
-            self.peer.disconnect()
+            self.peer.disconnect_all()
             self.peer.stop()
             return True
 
@@ -184,14 +185,21 @@ class DeepClient(cmd.Cmd):
         # Format all other responses
         data = msg[2]['payload']
         #if "netstats" in line or "peerstatus" in line:
-        if "peerstatus" in line:
+        if "netstats" in line or "peerstatus" in line:
             print ""
             print "-------------------------------------------------------------------------------"
-            for (n,v,w) in data:
-                print "" + str(n) + ", " + str(v) + ", " + str(w)
+            for n in data:
+                print str(n)
             print "-------------------------------------------------------------------------------"
             print ""
-        if "print_id" in line:
+        #elif "peerstatus" in line:
+        #    print ""
+        #    print "-------------------------------------------------------------------------------"
+        #    for (n,v,w) in data:
+        #        print "" + str(n) + ", " + str(v) + ", " + str(w)
+        #    print "-------------------------------------------------------------------------------"
+        #    print ""
+        elif "print_id" in line:
             print ""
             print "-------------------------------------------------------------------------------"
             for n in data:

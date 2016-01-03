@@ -5,7 +5,6 @@
 import traceback
 import logging
 import time
-import json
 import pybroker
 
 from collections import defaultdict
@@ -73,16 +72,22 @@ class DBroctlD(BaseDaemon):
         # Topic to obtain responses from local bro
         self.bro_res_topic = "bro/event/control/" + str(self.name) + "/response/"
 
-        # pack topics for BrokerPeer
-        self.pub = [self.ctrl_topic + str(self.name),
-                    self.bro_ctrl_topic]
-        self.sub = [self.ctrl_topic + str(self.name),
-                    self.cmd_topic,
-                    self.res_topic + str(self.name),
-                    self.bro_res_topic]
+        # Topics for BrokerPeer
+        self.pub = [    self.ctrl_topic + str(self.name),
+                        self.bro_ctrl_topic ]
+
+        self.sub_single = [ self.bro_res_topic ]
+
+        self.sub_multi  = [ self.ctrl_topic + str(self.name),
+                            self.cmd_topic,
+                            self.res_topic + str(self.name) ]
+
+        # Topics that need to be translated to another topics
+        # (required to prevent loops)
+        #self.forw = { "bro/global/" + self.name + "/" : "dbroctld/event/" }
 
         # Init the broker peer
-        self.init_broker_peer(self.name, self.addr, self.pub, self.sub)
+        self.init_broker_peer(self.name, self.addr, self.pub, self.sub_single, self.sub_multi)
 
         # check if we are the head of the cluster
         if self.parent_addr == self.addr:
@@ -93,20 +98,23 @@ class DBroctlD(BaseDaemon):
             logging.debug("establishing a connection to predecessor " + str(self.parent_addr))
             self.peer.connect(self.parent_addr)
 
-    # Initiate broker connections to bro processes
+    # Initiate broker connections to all bro processes
+    # in the local cluster
     def init_bro_connections(self):
         #raise RuntimeError("epic fail")
         node_list = None
         if self.broctl.config.nodes("standalone"):
             node_list = "standalone"
         elif self.broctl.config.nodes("manager"):
-            node_list = "manager"
-        nodes = self.broctl.node_args(node_list)
+            node_list = "cluster"
+        nodes = self.broctl.config.nodes(node_list)
+
+        print "connect to local cluster of size " + str(len(nodes)) + ":"
 
         # Connnect all bros via broker
         for n in nodes:
             addr = (util.scope_addr(n.addr), n.getPort())
-            print " - connect to bro at " + str(addr)
+            print " - connect to " + n.name + "-bro at " + str(addr)
             self.peer.connect(addr)
 
         for n in nodes:
@@ -114,13 +122,14 @@ class DBroctlD(BaseDaemon):
 
     # disconnect from all bro processes via broker
     def disconnect_bro_connections(self):
-        pass
+        for k in self.local_cluster.keys():
+            self.peer.disconnect(k)
 
     def stop(self):
         print "exit dbroctld..."
         logging.debug("exit dbroctld")
 
-        # Shutting down the local bro instances
+        # Shutting down the local Bro instances
         self.broctl.stop()
 
         # Cleanup
@@ -270,7 +279,8 @@ class DBroctlD(BaseDaemon):
 
         if cmd == "netstats":
             self.netstats()
-
+        elif cmd == "peerstatus":
+            self.peerstatus()
         elif hasattr(func,  'api_exposed'):
             res = None
 
@@ -288,14 +298,14 @@ class DBroctlD(BaseDaemon):
     # Handle result message from a successor
     def handle_results(self, peer, cmd, res):
         logging.debug("handle_result for peer " + str(peer) + ", cmd " + str(cmd) + ", res " + str(res))
-        if cmd not in ["netstats", "peerstatus", "print_id", "status", "Control::net_stats_response"] or not res:
+        if cmd not in ["netstats", "peerstatus", "print_id", "status", "Control::net_stats_response", "Control::peer_status_response"] or not res:
             return
 
         if(peer == self.name): # Results obtained locally
             logging.debug("result of cmd " + str(cmd) + " is " + str(res))
             # Do command specific formatting of results and store them
+            self.add_command(cmd, len(self.successors))
             self.commands[cmd] = self.format_results(cmd, res)
-            self.command_replies[cmd] = len(self.successors)
 
         else: # Results received from peer
             if str(cmd) not in self.command_replies or cmd not in self.commands:
@@ -395,28 +405,38 @@ class DBroctlD(BaseDaemon):
         self.send_res_control(cmd, self.commands[cmd])
 
     def netstats(self):
-        """- [<nodes>]
+        """
 
         Queries each of the nodes for their current counts of captured and
         dropped packets."""
 
-        #raise RuntimeError("epic fail here")
-
         # store that we issued this command to wait for replies
-        self.commands["Control::net_stats_response"] = []
-        #counter = len(self.local_cluster) + len(self.successors)
-        counter = len(self.broctl.config.nodes("cluster")) + len(self.successors)
-        logging.debug("dbroctld:netstats, expect at least " + str(counter) + " replies")
-        self.command_replies["Control::net_stats_response"] = counter
-
+        self.add_command("Control::net_stats_response", len(self.local_cluster) + len(self.successors))
         # Construct the broker msg to send
         msg = BroMsg("Control::net_stats_request", None)
         self.send(self.bro_ctrl_topic, msg)
         # eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
+    def peerstatus(self):
+        """
+
+        Queries each of the nodes for their current counts of captured and
+        dropped packets."""
+
+        # store that we issued this command to wait for replies
+        self.add_command("Control::peer_status_response", len(self.local_cluster) + len(self.successors))
+        # Construct the broker msg to send
+        msg = BroMsg("Control::peer_status_request", None)
+        self.send(self.bro_ctrl_topic, msg)
+
+    def add_command(self, cmd, count):
+        self.commands[cmd] = []
+        self.command_replies[cmd] = count
+        logging.debug("dbroctld" + cmd + ", expect at least " + str(count) + " replies")
+
 
 def main(basedir='/bro', suffix=None):
-    pybroker.report_init()
+    #pybroker.report_init()
     logs = Logs()
 
     d = DBroctlD(logs, basedir, suffix)
