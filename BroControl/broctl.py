@@ -500,3 +500,9 @@ class BroCtl(object):
 
         return results
 
+    @expose
+    @check_config
+    @lock_required
+    def plugincmd(self, cmd, args):
+        return self.plugins.runCustomCommand(cmd, args, self.ui)
+

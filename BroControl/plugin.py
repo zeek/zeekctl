@@ -624,7 +624,8 @@ class Plugin(object):
     def cmd_custom(self, cmd, args, cmdout):
         """Called when a command defined by the ``commands`` method is executed.
         *cmd* is the command (without the plugin's prefix), and *args* is a
-        single string with all arguments.
+        single string with all arguments.  It returns a CmdResult object
+        containing the command results.
 
         If the arguments are actually node names, ``parseNodes`` can
         be used to get the `Node`_ objects.

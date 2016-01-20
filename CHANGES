@@ -1,4 +1,10 @@
 
+1.4-70 | 2016-01-19 22:42:10 -0600
+
+  * Fix custom plugin commands to behave more like built-in commands. (Aaron Eppert/Daniel Thayer)
+
+  * Add README.rst -> doc/broctl.rst symlink. Addresses BIT-1413 (Johanna Amann)
+
 1.4-61 | 2015-12-19 13:39:47 -0800
 
    * Add broctl.cfg options PcapSnaplen and PcapBuflen to set pcap's
