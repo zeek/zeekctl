@@ -29,8 +29,9 @@ MailHostUpDown = 1
 # A value of 0 disables log rotation.
 LogRotationInterval = 3600
 
-# Expiration interval for log files in LogDir. Files older than this many days
-# will be deleted upon running "broctl cron".  A value of 0 means that logs
+# Expiration interval for archived log files in LogDir.  Files older than this
+# will be deleted by "broctl cron".  The interval is an integer followed by
+# one of these time units:  day, hr, min.  A value of 0 means that logs
 # never expire.
 LogExpireInterval = 0
 

@@ -98,6 +98,8 @@ class Configuration:
         else:
             self._set_option("time", "")
 
+        minutes = self._get_interval_minutes("logexpireinterval")
+        self._set_option("logexpireminutes", minutes)
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
@@ -132,6 +134,37 @@ class Configuration:
             v = self.config[f]
             if not os.path.isfile(v):
                 raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
+
+        # Verify that logs don't expire more quickly than the rotation interval
+        logexpireseconds = 60 * self.config["logexpireminutes"]
+        if 0 < logexpireseconds < self.config["logrotationinterval"]:
+            raise ConfigurationError("Log expire interval cannot be shorter than the log rotation interval")
+
+
+    # Convert a time interval string (from the value of the given option name)
+    # to an integer number of minutes.
+    def _get_interval_minutes(self, optname):
+        # Conversion table for time units to minutes.
+        units = {"day": 24*60, "hr": 60, "min": 1}
+
+        ss = self.config[optname]
+        try:
+            # If no time unit, assume it's days (for backward compatibility).
+            v = int(ss) * units["day"]
+            return v
+        except ValueError:
+            pass
+
+        # Time interval is a non-negative integer followed by an optional
+        # space, followed by a time unit.
+        mm = re.match("([0-9]+) ?(day|hr|min)s?$", ss)
+        if mm is None:
+            raise ConfigurationError('value of broctl option "%s" is invalid (value must be integer followed by a time unit "day", "hr", or "min"): %s' % (optname, ss))
+
+        v = int(mm.group(1))
+        v *= units[mm.group(2)]
+
+        return v
 
     def initPostPlugins(self):
         self.read_state()
