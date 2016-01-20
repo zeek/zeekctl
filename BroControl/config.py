@@ -159,7 +159,7 @@ class Configuration:
         # space, followed by a time unit.
         mm = re.match("([0-9]+) ?(day|hr|min)s?$", ss)
         if mm is None:
-            raise ConfigurationError('value of broctl option "%s" is invalid: %s' % (optname, ss))
+            raise ConfigurationError('value of broctl option "%s" is invalid (value must be integer followed by a time unit "day", "hr", or "min"): %s' % (optname, ss))
 
         v = int(mm.group(1))
         v *= units[mm.group(2)]
