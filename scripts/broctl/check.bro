@@ -9,7 +9,7 @@ event bro_init() &priority=-10
 	terminate_communication();
 	}
 
-# We want the local loaded_scripts.log on worker and proxy configurations
+# We want the local loaded_scripts.log on worker and datanode configurations
 event bro_init() &priority=-10
     {
     local f = Log::get_filter(LoadedScripts::LOG, "default");
