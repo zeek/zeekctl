@@ -37,7 +37,7 @@ class CmdResult:
         results = self.nodes
 
         if not self._sorted:
-            results.sort(key=lambda n: (n[0].roles, n[0].name))
+            results.sort(key=lambda n: (n[0].type, n[0].name))
             self._sorted = True
 
         return results
@@ -53,7 +53,7 @@ class CmdResult:
             results.append((node, success, output))
 
         if not self._sorted:
-            results.sort(key=lambda n: (n[0].roles, n[0].name))
+            results.sort(key=lambda n: (n[0].type, n[0].name))
             self._sorted = True
 
         return results

@@ -39,7 +39,7 @@ class LBPFRing(BroControl.plugin.Plugin):
 
         dd = {}
         for nn in self.nodes():
-            if "worker" not in nn.roles or nn.lb_method != "pf_ring":
+            if nn.type != "worker" or nn.lb_method != "pf_ring":
                 continue
 
             useplugin = True

@@ -134,7 +134,7 @@ class BroCtl(object):
                 nodes = newlist
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.roles, n.name))
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         if get_hosts:
             hosts = {}
@@ -150,10 +150,10 @@ class BroCtl(object):
             types = {}
             typenodes = []
             for node in nodes:
-                for r in node.roles:
-                    if r not in types:
-                        types[r] = 1
-                        typenodes.append(node)
+                r = node.type
+                if r not in types:
+                    types[r] = 1
+                    typenodes.append(node)
 
             nodes = typenodes
 

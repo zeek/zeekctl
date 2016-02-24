@@ -40,7 +40,7 @@ def _make_bro_params(node, live):
     if live:
         args += ["-p", "broctl-live"]
 
-    if "standalone" in node.roles:
+    if node.type == "standalone":
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
@@ -63,15 +63,15 @@ def _make_bro_params(node, live):
     #    but overrided by broctl.cfg)
     args += config.Config.sitepolicystandalone.split()
     args += ["broctl"]
-    if "standalone" in node.roles:
+    if node.type == "standalone":
         args += ["broctl/standalone"]
     else:
         args += ["base/frameworks/cluster"]
-        if "manager" in node.roles:
+        if node.type == "manager":
             args += config.Config.sitepolicymanager.split()
-        elif "datanode" in node.roles:
+        elif node.type == "datanode":
             args += ["local-datanode"]
-        elif "worker" in node.roles:
+        elif node.type == "worker":
             args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
 
@@ -87,7 +87,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if "standalone" not in node.roles:
+    if node.type != "standalone":
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -119,9 +119,9 @@ class Controller:
         for n in nodes:
             n.setExpectRunning(True)
 
-            if "worker" in n.roles:
+            if n.type == "worker":
                 workers += [n]
-            elif "datanode" in n.roles:
+            elif n.type == "datanode":
                 datanodes += [n]
             else:
                 manager += [n]
@@ -382,9 +382,9 @@ class Controller:
         for n in nodes:
             n.setExpectRunning(False)
 
-            if "worker" in n.roles:
+            if n.type == "worker":
                 workers += [n]
-            elif "datanode" in n.roles:
+            elif n.type == "datanode":
                 datanodes += [n]
             else:
                 manager += [n]
@@ -568,7 +568,7 @@ class Controller:
         for (node, isrunning) in nodestatus:
             node_info = {
                 "name": node.name,
-                "roles": node.roles,
+                "type": node.type,
                 "host": node.host,
                 "status": "stopped",
                 "pid": None,
@@ -930,7 +930,7 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and "manager" not in node.roles and "standalone" not in node.roles:
+                if key == "logdir" and node.type != "manager" and node.type != "standalone":
                     # Don't need this on the workers/datanodes.
                     continue
 
@@ -1079,7 +1079,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         for (node, error, vals) in self.get_top_output(nodes):
-            top_info = {"name": node.name, "roles": node.roles,
+            top_info = {"name": node.name, "type": node.type,
                         "host": node.host, "pid": None, "proc": None,
                         "vsize": None, "rss": None, "cpu": None,
                         "cmd": None, "error": None}

@@ -9,9 +9,10 @@ from BroControl import doc
 
 class Node:
     """Class representing one node of the BroControl maintained setup. In
-    standalone mode, there's always exactly one node of role``standalone``. In
-    a cluster setup, there is exactly one of role ``manager``, one or
-    more of role ``datanode``+``lognode``, and zero or more of role``worker``.
+    standalone mode, there's always exactly one node of type ``standalone``. In
+    a cluster setup, there is exactly one of type ``manager``, one of type
+    ``datanode``, zero or one of type ``lognode``, and zero or more of
+    type ``worker``.
 
     A ``Node`` object has a number of keys with values that are set
     via the ``node.cfg`` file and can be accessed directly (from a plugin)
@@ -21,9 +22,9 @@ class Node:
             The name of the node, which corresponds to the ``[<name>]``
             section in ``node.cfg``.
 
-        ``roles`` [string]
-            The roles of the node, which will be one of ``standalone``,
-            ``manager``, ``datanode``, ``lognode``, ``worker``.
+        ``type`` (string)
+            The type of the node, which will be one of ``standalone``,
+            ``manager``, ``datanode``, ``lognode``, or ``worker``.
 
         ``env_vars`` (string)
             A comma-separated list of environment variables to set when
@@ -88,7 +89,7 @@ class Node:
 
     # Valid keys in nodes file. The values will be stored in attributes of the
     # same name. Custom keys can be add via addKey().
-    _keys = {"roles": 1, "host": 1, "interface": 1, "aux_scripts": 1,
+    _keys = {"type": 1, "host": 1, "interface": 1, "aux_scripts": 1,
              "brobase": 1, "ether": 1, "zone_id": 1,
              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
              "pin_cpus": 1, "env_vars": 1}

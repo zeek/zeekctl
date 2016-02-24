@@ -92,22 +92,11 @@ def make_broctl_config_sh(cmdout):
     return True
 
 
-def get_cluster_roles(rlist):
-    roles = ""
-    for r in rlist:
-        if roles != "":
-            roles += ", "
-        if r == "manager":
-            roles += "Cluster::MANAGER"
-        elif r == "datanode":
-            roles += "Cluster::DATANODE"
-        elif r == "lognode":
-            roles += "Cluster::LOGNODE"
-        elif r == "worker":
-            roles += "Cluster::WORKER"
-        else:
-            raise RuntimeError("node role not found")
+def get_cluster_roles(ntype, managerlog=False):
+    roles = "Cluster::%s" % ntype.upper()
 
+    if ntype == "manager" and managerlog:
+        roles += ", Cluster::LOGNODE"
     return roles
 
 
@@ -165,10 +154,16 @@ def make_cluster_layout(path, cmdout, silent=False):
     out += "redef Cluster::nodes = {\n"
     out += "\t[\"control\"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager))
 
+    managerlognode = True
+    for n in config.Config.nodes():
+        if n.type == "lognode":
+            managerlognode = False
+            break
+
     for n in config.Config.nodes():
         # Manager definition
         if n == manager:
-            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, get_cluster_roles(manager.roles), util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager))
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, get_cluster_roles(manager.type, managerlognode), util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager))
             for s in workers:
                 out += "\"%s\"" % s.name
                 if s != workers[-1]:
@@ -176,8 +171,8 @@ def make_cluster_layout(path, cmdout, silent=False):
             out += ")],\n"
 
         # Datanode definition
-        elif "datanode" in n.roles or "lognode" in n.roles:
-            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (n.name, get_cluster_roles(n.roles), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), manager.name)
+        elif n.type == "datanode" or n.type == "lognode":
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (n.name, get_cluster_roles(n.type), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), manager.name)
             for s in workers:
                 out += "\"%s\"" % s.name
                 if s != workers[-1]:
@@ -185,9 +180,9 @@ def make_cluster_layout(path, cmdout, silent=False):
             out += ")],\n"
 
         # Workers definition
-        elif "worker" in n.roles:
+        elif n.type == "worker":
             p = len(workers) % len(datanodes)
-            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (n.name, get_cluster_roles(n.roles), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), n.interface, manager.name, datanodes[p].name)
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (n.name, get_cluster_roles(n.type), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), n.interface, manager.name, datanodes[p].name)
 
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:
@@ -262,11 +257,11 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         out.write("redef Notice::sendmail  = \"%s\";\n" % config.Config.sendmail)
         out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
         out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
-        if "standalone" not in manager.roles:
+        if manager.type != "standalone":
             out.write("@if ( Cluster::has_local_role(Cluster::MANAGER) )\n")
         out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
         out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
-        if "standalone" not in manager.roles:
+        if manager.type != "standalone":
             out.write("@endif\n")
 
         if config.Config.ipv6comm:

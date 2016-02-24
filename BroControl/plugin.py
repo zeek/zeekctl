@@ -138,7 +138,7 @@ class Plugin(object):
                 notnodes.append(arg)
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.roles, n.name))
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         return (nodes, notnodes)
 

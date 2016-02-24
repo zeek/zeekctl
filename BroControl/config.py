@@ -23,8 +23,8 @@ from .version import VERSION
 
 Config = None # Globally accessible instance of Configuration.
 
-# all possible node roles
-possible_roles = set(["manager", "datanode", "worker", "standalone", "peer"])
+# all possible node types
+possible_types = ("manager", "lognode", "datanode", "worker", "standalone")
 
 class ConfigurationError(Exception):
     pass
@@ -211,13 +211,13 @@ class Configuration:
 
         for n in self.nodestore.values():
             if nodetype:
-                if nodetype in n.roles:
+                if n.type == nodetype:
                     nodes += [n]
 
             elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.roles, n.name))
+        nodes.sort(key=lambda n: (n.type, n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -330,14 +330,7 @@ class Configuration:
 
                 key = key.replace(".", "_")
 
-                # TODO This is a hack to make this compatible!
-                # We need a better way or it does not matter at all
-                # when we change to json anyway...
-                if key == "type":
-                    key = "roles"
-                    node.__dict__[key] = [val]
-                else:
-                    node.__dict__[key] = val
+                node.__dict__[key] = val
 
                 if key not in node_mod.Node._keys:
                     self.ui.warn("ignoring unrecognized node config option '%s' given for node '%s'" % (key, sec))
@@ -353,11 +346,11 @@ class Configuration:
         return nodestore
 
     def _check_node(self, node, nodestore):
-        if not node.roles:
-            raise ConfigurationError("no role given for node %s" % node.name)
+        if not node.type:
+            raise ConfigurationError("no type given for node %s" % node.name)
 
-        if possible_roles.issubset(node.roles):
-            raise ConfigurationError("Unknown node role '%s' given for node '%s'" % (node.roles, node.name))
+        if node.type not in possible_types:
+            raise ConfigurationError("Unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
             raise ConfigurationError("no host given for node '%s'" % node.name)
@@ -380,7 +373,7 @@ class Configuration:
         numprocs = 0
 
         if node.lb_procs:
-            if "worker" not in node.roles:
+            if node.type != "worker":
                 raise ConfigurationError("load balancing node config options are only for worker nodes")
             try:
                 numprocs = int(node.lb_procs)
@@ -449,7 +442,7 @@ class Configuration:
         localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
-            if "manager" in n.roles:
+            if n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
@@ -459,10 +452,10 @@ class Configuration:
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
-            elif "datanode" in n.roles:
+            elif n.type == "datanode":
                 datanode = True
 
-            elif "standalone" in n.roles:
+            elif n.type == "standalone":
                 standalone = True
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
@@ -479,7 +472,7 @@ class Configuration:
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if "manager" not in n.roles and n.addr not in localhostaddrs:
+                if n.type != "manager" and n.addr not in localhostaddrs:
                     raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 

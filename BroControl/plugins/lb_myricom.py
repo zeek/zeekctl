@@ -17,7 +17,7 @@ class LBMyricom(BroControl.plugin.Plugin):
         useplugin = False
 
         for nn in self.nodes():
-            if "worker" not in nn.roles or nn.lb_method != "myricom":
+            if nn.type != "worker" or nn.lb_method != "myricom":
                 continue
 
             useplugin = True
