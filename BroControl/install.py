@@ -146,7 +146,7 @@ def make_cluster_layout(path, cmdout, silent=False):
         cmdout.info("generating cluster-layout.bro ...")
 
     workers = config.Config.nodes("workers")
-    datanodes = config.Config.nodes("datanodes")
+    datanode = config.Config.nodes("datanode")[0]
 
     out = ""
     out += "# Automatically generated. Do not edit.\n"
@@ -181,8 +181,7 @@ def make_cluster_layout(path, cmdout, silent=False):
 
         # Workers definition
         elif n.type == "worker":
-            p = len(workers) % len(datanodes)
-            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (n.name, get_cluster_roles(n.type), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), n.interface, manager.name, datanodes[p].name)
+            out += "\t[\"%s\"] = [$node_roles=set(%s), $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $datanode=\"%s\"],\n" % (n.name, get_cluster_roles(n.type), util.format_bro_addr(n.addr), n.zone_id, broport.next_port(n), n.interface, manager.name, datanode.name)
 
     # Activate time-machine support if configured.
     if config.Config.timemachinehost:

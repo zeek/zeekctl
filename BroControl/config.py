@@ -181,8 +181,8 @@ class Configuration:
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "datanodes", all datanode Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
+    # - If tag is "datanode", the datanode Node is returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
     #     the standalone Node is returned (standalone config).
     # - If tag is "standalone", the standalone Node is returned.
@@ -203,7 +203,7 @@ class Configuration:
         elif tag == "manager":
             nodetype = "manager"
 
-        elif tag == "datanodes":
+        elif tag == "datanode":
             nodetype = "datanode"
 
         elif tag == "workers":
@@ -435,6 +435,7 @@ class Configuration:
 
         standalone = False
         manager = False
+        lognode = False
         datanode = False
 
         manageronlocalhost = False
@@ -452,7 +453,14 @@ class Configuration:
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
 
+            elif n.type == "lognode":
+                if lognode:
+                    raise ConfigurationError("only one lognode can be defined")
+                lognode = True
+
             elif n.type == "datanode":
+                if datanode:
+                    raise ConfigurationError("only one datanode can be defined")
                 datanode = True
 
             elif n.type == "standalone":

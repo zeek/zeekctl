@@ -390,7 +390,7 @@ class Controller:
                 manager += [n]
 
 
-        # Stop nodes. Do it in the order workers, datanodedatanodess, manager
+        # Stop nodes. Do it in the order workers, datanodes, manager
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
