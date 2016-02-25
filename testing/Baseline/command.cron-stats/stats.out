@@ -1,5 +1,5 @@
 1387075318.44 manager action started
-1387075320.49 proxy-1 action started
+1387075320.49 datanode-1 action started
 1387075322.54 worker-1 action started
 1387075322.54 worker-2 action started
 1387075328.26 manager parent vsize 30384128
@@ -7,11 +7,11 @@
 1387075328.26 manager parent pid 13551
 1387075328.26 manager parent cpu 0
 1387075328.26 manager parent rss 5668864
-1387075328.26 proxy-1 parent vsize 30384128
-1387075328.26 proxy-1 parent cmd python
-1387075328.26 proxy-1 parent pid 13575
-1387075328.26 proxy-1 parent cpu 0
-1387075328.26 proxy-1 parent rss 5672960
+1387075328.26 datanode-1 parent vsize 30384128
+1387075328.26 datanode-1 parent cmd python
+1387075328.26 datanode-1 parent pid 13575
+1387075328.26 datanode-1 parent cpu 0
+1387075328.26 datanode-1 parent rss 5672960
 1387075328.26 worker-1 parent vsize 30384128
 1387075328.26 worker-1 parent cmd python
 1387075328.26 worker-1 parent pid 13613

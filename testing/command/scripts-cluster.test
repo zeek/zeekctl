@@ -25,7 +25,7 @@ broctl scripts > tmp1.out 2>&1
 eval ${rmpaths} tmp1.out > all.out
 
 # show loaded_scripts.log for one node
-broctl scripts proxy-1 > tmp2.out 2>&1
+broctl scripts worker-1 > tmp2.out 2>&1
 eval ${rmpaths} tmp2.out > onenode.out
 
 # Test with "-c" for all nodes
@@ -33,6 +33,6 @@ broctl scripts -c > tmp3.out 2>&1
 eval ${rmpaths} tmp3.out > c-all.out
 
 # Test with "-c" for one node
-broctl scripts -c proxy-1 > tmp4.out 2>&1
+broctl scripts -c worker-1 > tmp4.out 2>&1
 eval ${rmpaths} tmp4.out > c-onenode.out
 

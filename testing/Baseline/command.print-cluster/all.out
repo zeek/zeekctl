@@ -1,4 +1,4 @@
      manager   Log::default_rotation_interval = 1.0 hr
-     proxy-1   Log::default_rotation_interval = 1.0 day
+  datanode-1   Log::default_rotation_interval = 1.0 day
     worker-1   Log::default_rotation_interval = 1.0 day
     worker-2   Log::default_rotation_interval = 1.0 day

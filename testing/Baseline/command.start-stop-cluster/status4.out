@@ -2,6 +2,6 @@ Getting process status ...
 Getting peer status ...
 Name         Type    Host             Status    Pid    Peers  Started
 manager      manager localhost        running   10400  ???    04 Dec 06:17:59
-proxy-1      proxy   localhost        stopped
+datanode-1   datanode localhost        stopped
 worker-1     worker  localhost        stopped
 worker-2     worker  localhost        stopped

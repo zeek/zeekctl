@@ -8,10 +8,6 @@ host=localhost
 type=datanode
 host=localhost
 
-[datanode-2]
-type=datanode
-host=localhost
-
 [worker-1]
 type=worker
 host=localhost
