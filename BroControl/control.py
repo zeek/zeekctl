@@ -880,36 +880,6 @@ class Controller:
 
         return rates
 
-    # Update the configuration of a running instance on the fly.
-    def update(self, nodes):
-        results = cmdresult.CmdResult()
-
-        running = self._isrunning(nodes)
-        zone = self.config.zoneid
-        if not zone:
-            zone = "NOZONE"
-
-        cmds = []
-        for (node, isrunning) in running:
-            if isrunning:
-                env = _make_env_params(node)
-                env += " BRO_DNS_FAKE=1"
-                args = " ".join(_make_bro_params(node, False))
-                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.format_bro_addr(node.addr), zone, node.getPort(), args), env, None)]
-                self.ui.info("updating %s ..." % node.name)
-
-        res = execute.run_localcmds(cmds)
-
-        for (tag, success, output) in res:
-            node = self.config.nodes(tag=tag)[0]
-            if not success:
-                self.ui.info("failed to update %s: %s" % (tag, output[0]))
-                results.set_node_fail(node)
-            else:
-                self.ui.info("%s: %s" % (tag, output[0]))
-                results.set_node_success(node)
-
-        return results
 
     # Gets disk space on all volumes relevant to broctl installation.
     # Returns a list of the form:  [ (host, diskinfo), ...]

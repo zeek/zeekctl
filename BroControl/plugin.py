@@ -599,28 +599,6 @@ class Plugin(object):
         pass
 
     @doc.api("override")
-    def cmd_update_pre(self, nodes):
-        """Called just before the ``update`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_update_post(self, results):
-        """Called just after the ``update`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
     def cmd_custom(self, cmd, args, cmdout):
         """Called when a command defined by the ``commands`` method is executed.
         *cmd* is the command (without the plugin's prefix), and *args* is a

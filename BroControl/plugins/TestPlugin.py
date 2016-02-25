@@ -157,12 +157,6 @@ class TestPlugin(BroControl.plugin.Plugin):
     def cmd_status_post(self, nodes):
         self.message("TestPlugin: Test post 'status': %s" % self._nodes(nodes))
 
-    def cmd_update_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'update':  %s" % self._nodes(nodes))
-
-    def cmd_update_post(self, results):
-        self.message("TestPlugin: Test post 'update': %s" % self._results(results))
-
     def cmd_df_pre(self, nodes):
         self.message("TestPlugin: Test pre 'df':  %s" % self._nodes(nodes))
 
