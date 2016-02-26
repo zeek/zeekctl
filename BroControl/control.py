@@ -113,6 +113,7 @@ class Controller:
     def start(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
+        lognodes = []
         datanodes = []
         workers = []
 
@@ -123,10 +124,20 @@ class Controller:
                 workers += [n]
             elif n.type == "datanode":
                 datanodes += [n]
+            elif n.type == "lognode":
+                lognodes += [n]
             else:
                 manager += [n]
 
-        # Start nodes. Do it in the order manager, datanodes, workers.
+        # Start nodes. Do it in the order lognode, manager, datanodes, workers.
+        if lognodes:
+            self._start_nodes(lognodes, results)
+
+            if not results.ok:
+                for n in (manager + datanodes + workers):
+                    results.set_node_fail(n)
+                return results
+
         if manager:
             self._start_nodes(manager, results)
 
@@ -376,6 +387,7 @@ class Controller:
     def stop(self, nodes):
         results = cmdresult.CmdResult()
         manager = []
+        lognodes = []
         datanodes = []
         workers = []
 
@@ -386,17 +398,19 @@ class Controller:
                 workers += [n]
             elif n.type == "datanode":
                 datanodes += [n]
+            elif n.type == "lognode":
+                lognodes += [n]
             else:
                 manager += [n]
 
 
-        # Stop nodes. Do it in the order workers, datanodes, manager
+        # Stop nodes. Do it in the order workers, datanodes, manager, lognodes
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (datanodes + manager):
+                for n in (datanodes + manager + lognodes):
                     results.set_node_fail(n)
                 return results
 
@@ -404,12 +418,20 @@ class Controller:
             self._stop_nodes(datanodes, results)
 
             if not results.ok:
-                for n in manager:
+                for n in (manager + lognodes):
                     results.set_node_fail(n)
                 return results
 
         if manager:
             self._stop_nodes(manager, results)
+
+            if not results.ok:
+                for n in lognodes:
+                    results.set_node_fail(n)
+                return results
+
+        if lognodes:
+            self._stop_nodes(lognodes, results)
 
         return results
 

@@ -94,7 +94,6 @@ class Node:
              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
              "pin_cpus": 1, "env_vars": 1}
 
-
     def __init__(self, config, name):
         """Instantiates a new node of the given name."""
         self.name = name
@@ -130,6 +129,15 @@ class Node:
                 return str(v)
 
         return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())]
+
+    def sortorder(self):
+        typeorder = ("standalone", "manager", "lognode", "datanode", "worker")
+
+        if self.type in typeorder:
+            return typeorder.index(self.type)
+        else:
+            return len(typeorder)
+
 
     @doc.api
     def describe(self):

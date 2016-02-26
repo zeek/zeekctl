@@ -134,7 +134,7 @@ class BroCtl(object):
                 nodes = newlist
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.sortorder(), n.name))
 
         if get_hosts:
             hosts = {}
