@@ -1,9 +1,13 @@
 #! /usr/bin/env bash
 #
 # Replace columns from "broctl status" output that are not predictable
-# (such as PID) with Xs.  If the "--peers" command-line option is given, then
-# the "Peers" column is not replaced.  If the "--time" command-line option is
-# given, then the "Started" date/time columns are not replaced.
+# (such as PID) with Xs.
+#
+# If the "--peers" command-line option is given, then the "Peers" column
+# is not replaced.  If the "--time" command-line option is given, then
+# the "Started" date/time columns are not replaced.
+# The "--quick" command-line option must be given when the quick status output
+# (i.e., no peers column) is being used.
 
 usepeers=0
 if [ "$1" = "--peers" ]; then
@@ -13,8 +17,12 @@ usetimefmt=0
 if [ "$1" = "--time" ]; then
     usetimefmt=1
 fi
+tcol=7
+if [ "$1" = "--quick" ]; then
+    tcol=6
+fi
 
-awk -v peers=${usepeers} -v usetimefmt=${usetimefmt} '{
+awk -v tcol=${tcol} -v peers=${usepeers} -v usetimefmt=${usetimefmt} '{
     if ( NR > 1 )
     {
         # Check the format of each field, and replace with Xs only if the
@@ -27,9 +35,12 @@ awk -v peers=${usepeers} -v usetimefmt=${usetimefmt} '{
 
         if ( usetimefmt == 0) {
             # The "Started" column consists of three fields:
-            if ( $7 ~ /^[0-3][0-9]$/ ) { $7 = "XX" }
-            if ( $8 ~ /^[A-Za-z]+$/ ) { $8 = "XXX" }
-            if ( $9 ~ /^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$/ ) { $9 = "XX:XX:XX" }
+            tc=tcol;
+            if ( $tc ~ /^[0-3][0-9]$/ ) { $tc = "XX" }
+            tc++;
+            if ( $tc ~ /^[A-Za-z]+$/ ) { $tc = "XXX" }
+            tc++;
+            if ( $tc ~ /^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$/ ) { $tc = "XX:XX:XX" }
         }
     }
 

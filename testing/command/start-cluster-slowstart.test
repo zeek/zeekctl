@@ -2,13 +2,13 @@
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --quick" btest-diff status1.out
 # @TEST-EXEC: btest-diff status2.out
 
 . broctl-test-setup
 
 while read line; do installcfgfile "$line"; done << EOF
-etc/broctl.cfg__no_email
+etc/broctl.cfg__quickstatus
 etc/node.cfg__cluster
 bin/bro__test
 EOF
