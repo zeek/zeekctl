@@ -46,7 +46,7 @@ unlimited
 unlimited
 
 ==== .cmdline
--U .status -p broctl -p broctl-live -p local -p proxy-1 local.bro broctl base/frameworks/cluster local-proxy broctl/auto
+-U .status -p broctl -p broctl-live -p local -p datanode-1 local.bro broctl base/frameworks/cluster local-datanode broctl/auto
 
 ==== .env_vars
 PATH=/tmp/broctltest/test.28034/bin:/tmp/broctltest/test.28034/share/broctl/scripts:/tmp/broctltest/test.28034/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
