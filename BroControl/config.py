@@ -52,6 +52,7 @@ class Configuration:
         else:
             self.state_store = SqliteState(self.statefile)
 
+        self.read_state()
         self._update_cfg_state()
 
     def reload_cfg(self):
@@ -167,8 +168,6 @@ class Configuration:
         return v
 
     def initPostPlugins(self):
-        self.read_state()
-
         # Read node.cfg
         self.nodestore = self._read_nodes()
 
@@ -587,6 +586,9 @@ class Configuration:
     # Set a dynamic state variable.
     def set_state(self, key, val):
         key = key.lower()
+        if self.state.get(key) == val:
+            return
+
         self.state[key] = val
         self.state_store.set(key, val)
 
