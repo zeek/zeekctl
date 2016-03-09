@@ -598,44 +598,68 @@ class Configuration:
     def read_state(self):
         self.state = dict(self.state_store.items())
 
-    # Returns a list of the IP addresses associated with local interfaces.
-    # For IPv6 addresses, zone_id and prefix length are removed if present.
-    def _get_local_addrs(self):
+    def _get_local_addrs_ifconfig(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
-            # Need to set LANG here to ensure that the output of ifconfig
-            # is consistent regardless of which locale the system is using.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
             success = proc.returncode == 0
         except OSError:
-            success = False
+            return False
 
-        if success:
-            localaddrs = []
-            if py3bro.using_py3:
-                out = out.decode()
-            for line in out.splitlines():
-                fields = line.split()
-                if "inet" in fields or "inet6" in fields:
-                    addrfield = False
-                    for field in fields:
-                        if field == "inet" or field == "inet6":
-                            addrfield = True
-                        elif addrfield and field != "addr:":
-                            locaddr = field
-                            # remove "addr:" prefix (if any)
-                            if field.startswith("addr:"):
-                                locaddr = field[5:]
-                            # remove everything after "/" or "%" (if any)
-                            locaddr = locaddr.split("/")[0]
-                            locaddr = locaddr.split("%")[0]
-                            localaddrs.append(locaddr)
-                            break
+        localaddrs = []
+        if py3bro.using_py3:
+            out = out.decode()
+        for line in out.splitlines():
+            fields = line.split()
+            if "inet" in fields or "inet6" in fields:
+                addrfield = False
+                for field in fields:
+                    if field == "inet" or field == "inet6":
+                        addrfield = True
+                    elif addrfield and field != "addr:":
+                        locaddr = field
+                        # remove "addr:" prefix (if any)
+                        if field.startswith("addr:"):
+                            locaddr = field[5:]
+                        # remove everything after "/" or "%" (if any)
+                        locaddr = locaddr.split("/")[0]
+                        locaddr = locaddr.split("%")[0]
+                        localaddrs.append(locaddr)
+                        break
+        return localaddrs
 
-            if not localaddrs:
-                raise ConfigurationError("ifconfig does not show any IP addresses")
-        else:
+    def _get_local_addrs_ip(self):
+        try:
+            # On bleeding edge Linux systems ifconfig has been superseded by ip
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ip address"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, err = proc.communicate()
+            success = proc.returncode == 0
+        except OSError:
+            return False
+
+        localaddrs = []
+        if py3bro.using_py3:
+            out = out.decode()
+        for line in out.splitlines():
+             fields = line.split()
+             if "inet" in fields or "inet6" in fields:
+                  locaddr = fields[1]
+                  locaddr = locaddr.split("/")[0]
+                  locaddr = locaddr.split("%")[0]
+                  localaddrs.append(locaddr)
+        return localaddrs
+
+    # get_local_addrs* functions return a list of the IP addresses associated with local interfaces.
+    # For IPv6 addresses, zone_id and prefix length are removed if present.
+    def _get_local_addrs(self):
+        # ifconfig is more portable so try it first
+        localaddrs = self._get_local_addrs_ifconfig()
+        # try Linux's ip tool if ifconfig was not found
+        if not localaddrs:
+          localaddrs = self._get_local_addrs_ip()
+        # fallback to localhost if we did not find IP
+        if not localaddrs:
             localaddrs = ["127.0.0.1", "::1"]
             try:
                 addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
@@ -645,7 +669,7 @@ class Configuration:
             for ai in addrinfo:
                 localaddrs.append(ai[4][0])
 
-            self.ui.error("ifconfig failed (local IP addrs are: %s)" % ", ".join(localaddrs))
+            self.ui.error("retrieving IP's failed (local IP addrs are: %s)" % ", ".join(localaddrs))
 
         return localaddrs
 
@@ -840,4 +864,3 @@ class Configuration:
             version = version[:-6]
 
         return version
-
