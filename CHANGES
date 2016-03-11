@@ -1,4 +1,8 @@
 
+1.4-84 | 2016-03-11 16:32:46 -0600
+
+  * Support ip command for getting local IP addrs (Jon Schipp)
+
 1.4-77 | 2016-01-20 14:44:36 -0500
 
   * Allow users to specify a more granular log expire interval (Daniel Thayer)
