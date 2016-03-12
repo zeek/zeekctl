@@ -2,7 +2,7 @@
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --quick" btest-diff status1.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
 # @TEST-EXEC: btest-diff status2.out
 
 . broctl-test-setup
