@@ -1,7 +1,5 @@
-Getting process status ...
-Getting peer status ...
-Name         Type    Host             Status    Pid    Peers  Started
-manager      manager localhost        running   26085  ???    04 Dec 03:58:39
-datanode-1   datanode localhost        running   26107  ???    04 Dec 03:58:41
-worker-1     worker  localhost        running   26142  ???    04 Dec 03:58:43
-worker-2     worker  localhost        running   26141  ???    04 Dec 03:58:43
+Name         Type    Host             Status    Pid    Started
+manager      manager localhost        running   26085  04 Dec 03:58:39
+datanode-1   datanode localhost        running   26107  04 Dec 03:58:41
+worker-1     worker  localhost        running   26142  04 Dec 03:58:43
+worker-2     worker  localhost        running   26141  04 Dec 03:58:43

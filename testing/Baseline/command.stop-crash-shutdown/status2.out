@@ -1,6 +1,4 @@
-Getting process status ...
-Getting peer status ...
-Name         Type    Host             Status    Pid    Peers  Started
+Name         Type    Host             Status    Pid    Started
 manager      manager localhost        stopped
 datanode-1   datanode localhost        stopped
 worker-1     worker  localhost        crashed
