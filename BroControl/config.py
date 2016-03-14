@@ -360,7 +360,16 @@ class Configuration:
         except socket.gaierror as e:
             raise ConfigurationError("unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
 
-        addr_str = addrinfo[0][4][0]
+        addrs = [ addr[4][0] for addr in addrinfo ]
+
+        addr_str = addrs[0]
+
+        # Choose the first IPv4 addr in the list.
+        for ip in addrs:
+            if ":" not in ip:
+                addr_str = ip
+                break
+
         # zone_id is handled manually, so strip it if it's there
         node.addr = addr_str.split("%")[0]
 
