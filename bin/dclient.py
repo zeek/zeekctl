@@ -227,7 +227,7 @@ def main(argv):
     if len(argv) == 2:
         client = DeepClient("dclient", argv[0], argv[1])
     else:
-        client = DeepClient(None, None)
+        client = DeepClient("dclient", None, None)
     client.cmdloop()
 
 if __name__ == "__main__":
