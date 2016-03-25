@@ -47,6 +47,7 @@ def send_events_parallel(events):
 
     for (node, result_event, bc) in sent:
         (success, result_args) = _send_event_wait(node, result_event, bc)
+        bc.connDelete()
         results += [(node, success, result_args)]
 
     return results
