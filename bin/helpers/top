@@ -24,7 +24,9 @@ cmd_netbsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d 
 # The awk command removes the first sample from the output and converts the
 # CPU percentages to integers.  The sed command removes the trailing + or -
 # signs that sometimes occur with the memory statistics.
-cmd_darwin='top -l 2 -s0 -stats pid,vprvt,rsize,cpu,command | awk -v c=0 "{ if(\$1 == \"PID\") c++; else if(c>1) printf(\"%d %s %s %d %s\n\", \$1, \$2, \$3, \$4, \$5)}" | sed "s/[+-] / /g"'
+# NOTE: on OS X 10.10 or newer, the top "vprvt" option no longer works,
+# so "mem" is used here instead.
+cmd_darwin='top -l 2 -s0 -stats pid,mem,rsize,cpu,command | awk -v c=0 "{ if(\$1 == \"PID\") c++; else if(c>1) printf(\"%d %s %s %d %s\n\", \$1, \$2, \$3, \$4, \$5)}" | sed "s/[+-] / /g"'
 
 eval cmd="\$cmd_${os}"
 
