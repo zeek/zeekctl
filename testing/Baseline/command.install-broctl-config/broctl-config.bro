@@ -7,3 +7,5 @@ redef Notice::mail_from  = "broctltestuser@mydomain";
 redef Log::default_rotation_interval = 12345 secs;
 redef Log::default_mail_alarms_interval = 98765 secs;
 redef Broker::listen_ipv6 = F ;
+redef Pcap::snaplen = 1212;
+redef Pcap::bufsize = 256;

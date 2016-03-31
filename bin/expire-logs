@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Delete logs older than ${logexpireinterval} days, and remove entries in
+# Delete logs older than ${logexpireminutes} minutes, and remove entries in
 # stats.log older than ${statslogexpireinterval} days.
 
 . `dirname $0`/broctl-config.sh
@@ -45,7 +45,7 @@ function expire_statslog()
 
 function expire_log()
 {
-    if [ ${logexpireinterval} -eq 0 ]; then
+    if [ ${logexpireminutes} -eq 0 ]; then
         return 0
     fi
 
@@ -72,7 +72,7 @@ function expire_log()
     fi
 
     # Remove old files.
-    $find_cmd "${logdir}" -type f -regex $file_pattern -mtime +${logexpireinterval} $exclude -delete
+    $find_cmd "${logdir}" -type f -regex $file_pattern -mmin +${logexpireminutes} $exclude -delete
     rc=$?
 
     # Remove now empty directories (this will not remove non-empty dirs, so we
@@ -82,7 +82,7 @@ function expire_log()
     return $rc
 }
 
-if [ -n "${logexpireinterval}" ]; then
+if [ -n "${logexpireminutes}" ]; then
     expire_log || exit 1
 fi
 

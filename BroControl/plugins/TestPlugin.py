@@ -5,6 +5,7 @@
 # The plugin is off by default. To enable it, add "test.enabled=1" to broctl.cfg.
 
 import BroControl.plugin
+import BroControl.cmdresult
 
 class TestPlugin(BroControl.plugin.Plugin):
     def __init__(self):
@@ -76,7 +77,8 @@ class TestPlugin(BroControl.plugin.Plugin):
     def hostStatusChanged(self, host, status):
         self.message("TestPlugin: host status changed: %s -> %s" % (host, status))
 
-    def cmd_custom(self, cmd, args):
+    def cmd_custom(self, cmd, args, cmdout):
+        results = BroControl.cmdresult.CmdResult()
 
         bar = self.getState("bar")
         if not bar:
@@ -84,6 +86,8 @@ class TestPlugin(BroControl.plugin.Plugin):
 
         self.setState("bar", str(int(bar) + 1))
         self.message("TestPlugin: My command: %s" % args)
+
+        return results
 
     def cmd_check_pre(self, nodes):
         self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))

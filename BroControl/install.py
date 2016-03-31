@@ -56,28 +56,24 @@ def get_nfssyncs():
 
     return nfssyncs
 
-# Generate shell script that sets Broctl dynamic variables according
-# to their current values.  This shell script gets included in all
-# other scripts.
+# Generate a shell script "broctl-config.sh" that sets env. vars. that
+# correspond to broctl config options.
 def make_broctl_config_sh(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
 
     with open(cfg_path, "w") as out:
-        for (varname, value) in config.Config.options():
-            # Don't write if variable name is an invalid bash variable name
-            if "-" in varname:
-                continue
-
+        for (varname, value) in config.Config.options(dynamic=False):
             if isinstance(value, bool):
                 # Convert bools to the string "1" or "0"
                 value = (value and "1" or "0")
             else:
                 value = str(value)
 
-            # Don't write if the value contains any double quotes (this
-            # could happen for BroArgs, which we don't need in this file)
-            if '"' not in value:
-                out.write("%s=\"%s\"\n" % (varname.replace(".", "_"), value))
+            # In order to prevent shell errors, here we convert plugin
+            # option names to use underscores, and double quotes in the value
+            # are escaped.
+            out.write('%s="%s"\n' % (varname.replace(".", "_"),
+                       value.replace('"', '\\"')))
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
@@ -265,3 +261,6 @@ def make_broctl_config_policy(path, cmdout, silent=False):
             out.write("redef Broker::listen_ipv6 = T ;\n")
         else:
             out.write("redef Broker::listen_ipv6 = F ;\n")
+
+        out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
+        out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)

@@ -143,19 +143,19 @@ class PluginRegistry:
 
     def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
-        False if no such command is known."""
+        a CmdResult object which contains the command results, or None if
+        the command doesn't exist."""
         try:
             (myplugin, usage, descr) = self._cmds[cmd]
         except LookupError:
-            return False
+            return None
 
         prefix = myplugin.prefix()
 
         if cmd.startswith("%s." % prefix):
             cmd = cmd[len(prefix)+1:]
 
-        myplugin.cmd_custom(cmd, args, cmdout)
-        return True
+        return myplugin.cmd_custom(cmd, args, cmdout)
 
     def allCustomCommands(self):
         """Returns a list of string tuples *(cmd, descr)* listing all commands

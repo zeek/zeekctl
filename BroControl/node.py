@@ -33,19 +33,20 @@ class Node:
             the ``broctl.cfg`` file.
 
         ``host`` (string)
-            The hostname of the system the node is running on.
+            The hostname (or the IP address) of the system the node is
+            running on.
 
         ``interface`` (string)
             The network interface for Bro to use; empty if not set.
 
         ``lb_procs`` (integer)
-            The number of clustered Bro workers you'd like to start up (this
-            number must be greater than zero).
+            The number of clustered Bro workers you'd like to start up. This
+            number must be greater than zero.
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
-            processes (must be one of: ``pf_ring``, ``myricom``, or
-            ``interfaces``).
+            processes.  This must be one of: ``pf_ring``, ``myricom``, ``custom``,
+            or ``interfaces``.
 
         ``lb_interfaces`` (string)
             If the load balancing method is ``interfaces``, then this is

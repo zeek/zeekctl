@@ -5,6 +5,7 @@
 # processes get a "(+)".
 
 import BroControl.plugin
+import BroControl.cmdresult
 
 class PsBro(BroControl.plugin.Plugin):
     def __init__(self):
@@ -20,6 +21,7 @@ class PsBro(BroControl.plugin.Plugin):
         return [("bro", "[<nodes>]", "Show Bro processes on nodes' systems")]
 
     def cmd_custom(self, cmd, args, cmdout):
+        results = BroControl.cmdresult.CmdResult()
 
         assert(cmd == "bro") # Can't be anything else.
 
@@ -33,7 +35,8 @@ class PsBro(BroControl.plugin.Plugin):
 
         if not nodes:
             cmdout.error("No nodes given.")
-            return
+            results.ok = False
+            return results
 
         # Get one node for every host running at least one of the nodes. Also
         # records each hosts Bro PIDs.
@@ -97,3 +100,6 @@ class PsBro(BroControl.plugin.Plugin):
                     cmdout.info("   (-) %s" % line.strip())
 
             first_node = False
+
+        return results
+

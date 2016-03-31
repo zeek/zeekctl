@@ -55,6 +55,7 @@ class Configuration:
         else:
             self.state_store = SqliteState(self.statefile)
 
+        self.read_state()
         self._update_cfg_state()
 
     def reload_cfg(self):
@@ -101,9 +102,30 @@ class Configuration:
         else:
             self._set_option("time", "")
 
+        minutes = self._get_interval_minutes("logexpireinterval")
+        self._set_option("logexpireminutes", minutes)
 
-    # Do a basic sanity check on some critical options.
+    # Do a basic sanity check on broctl options.
     def _check_options(self):
+        # Option names must be valid bash variable names because we will
+        # write them to broctl-config.sh (note that broctl will convert "."
+        # to "_" when it writes to broctl-config.sh).
+        allowedchars = re.compile("^[a-z0-9_.]+$")
+        nostartdigit = re.compile("^[^0-9]")
+
+        for key, value in self.config.items():
+            if re.match(allowedchars, key) is None:
+                raise ConfigurationError('broctl option name "%s" contains invalid characters' % key)
+            if re.match(nostartdigit, key) is None:
+                raise ConfigurationError('broctl option name "%s" cannot start with a number' % key)
+
+            # No broctl option ever requires the entire value to be wrapped in
+            # quotes, and since doing so can cause problems, we don't allow it.
+            if isinstance(value, str):
+                if ( (value.startswith('"') and value.endswith('"')) or
+                     (value.startswith("'") and value.endswith("'")) ):
+                    raise ConfigurationError('value of broctl option "%s" cannot be wrapped in quotes' % key)
+
         dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
         files = ("makearchivename", )
 
@@ -117,9 +139,38 @@ class Configuration:
             if not os.path.isfile(v):
                 raise ConfigurationError('broctl option "%s" file not found: %s' % (f, v))
 
-    def initPostPlugins(self):
-        self.read_state()
+        # Verify that logs don't expire more quickly than the rotation interval
+        logexpireseconds = 60 * self.config["logexpireminutes"]
+        if 0 < logexpireseconds < self.config["logrotationinterval"]:
+            raise ConfigurationError("Log expire interval cannot be shorter than the log rotation interval")
 
+
+    # Convert a time interval string (from the value of the given option name)
+    # to an integer number of minutes.
+    def _get_interval_minutes(self, optname):
+        # Conversion table for time units to minutes.
+        units = {"day": 24*60, "hr": 60, "min": 1}
+
+        ss = self.config[optname]
+        try:
+            # If no time unit, assume it's days (for backward compatibility).
+            v = int(ss) * units["day"]
+            return v
+        except ValueError:
+            pass
+
+        # Time interval is a non-negative integer followed by an optional
+        # space, followed by a time unit.
+        mm = re.match("([0-9]+) ?(day|hr|min)s?$", ss)
+        if mm is None:
+            raise ConfigurationError('value of broctl option "%s" is invalid (value must be integer followed by a time unit "day", "hr", or "min"): %s' % (optname, ss))
+
+        v = int(mm.group(1))
+        v *= units[mm.group(2)]
+
+        return v
+
+    def initPostPlugins(self):
         # Read node.cfg
         self.nodestore = self._read_nodes()
 
@@ -405,7 +456,7 @@ class Configuration:
             if not node.lb_method:
                 raise ConfigurationError("no load balancing method given for node '%s'" % node.name)
 
-            if node.lb_method not in ("pf_ring", "myricom", "interfaces"):
+            if node.lb_method not in ("pf_ring", "myricom", "custom", "interfaces"):
                 raise ConfigurationError("unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
 
             if node.lb_method == "interfaces":
@@ -460,7 +511,7 @@ class Configuration:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the manager node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
             elif n.type == "lognode":
                 if lognode:
@@ -475,7 +526,7 @@ class Configuration:
             elif n.type == "standalone":
                 standalone = True
                 if n.addr not in self.localaddrs:
-                    raise ConfigurationError("must run broctl on same machine as the standalone node (local IP addrs are: %s)" % ", ".join(self.localaddrs))
+                    raise ConfigurationError("must run broctl on same machine as the standalone node. The standalone node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
         if standalone:
             if len(nodestore) > 1:
@@ -544,6 +595,9 @@ class Configuration:
     # Set a dynamic state variable.
     def set_state(self, key, val):
         key = key.lower()
+        if self.state.get(key) == val:
+            return
+
         self.state[key] = val
         self.state_store.set(key, val)
 
@@ -555,48 +609,73 @@ class Configuration:
     def read_state(self):
         self.state = dict(self.state_store.items())
 
-    # Returns a list of the IP addresses associated with local interfaces.
-    # For IPv6 addresses, zone_id and prefix length are removed if present.
-    def _get_local_addrs(self):
+    # Use ifconfig command to find local IP addrs.
+    def _get_local_addrs_ifconfig(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
-            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            # Also need to set LANG here to ensure that the output of ifconfig
+            # is consistent regardless of which locale the system is using.
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
             success = proc.returncode == 0
         except OSError:
-            success = False
+            return False
 
-        if success:
-            localaddrs = []
-            if py3bro.using_py3:
-                out = out.decode()
-            for line in out.splitlines():
-                fields = line.split()
-                if "inet" in fields or "inet6" in fields:
-                    addrfield = False
-                    for field in fields:
-                        if field == "inet" or field == "inet6":
-                            addrfield = True
-                        elif addrfield and field != "addr:":
-                            locaddr = field
-                            # remove "addr:" prefix (if any)
-                            # FIXME when OS is in different language the search
-                            # term need to be different
-                            # English: addr
-                            # German: Adresse
-                            if field.startswith("addr:"):
-                                locaddr = field[5:]
-                            elif field.startswith("Adresse:"):
-                                locaddr = field[8:]
-                            # remove everything after "/" or "%" (if any)
-                            locaddr = locaddr.split("/")[0]
-                            locaddr = locaddr.split("%")[0]
-                            localaddrs.append(locaddr)
-                            break
+        localaddrs = []
+        if py3bro.using_py3:
+            out = out.decode()
+        for line in out.splitlines():
+            fields = line.split()
+            if "inet" in fields or "inet6" in fields:
+                addrfield = False
+                for field in fields:
+                    if field == "inet" or field == "inet6":
+                        addrfield = True
+                    elif addrfield and field != "addr:":
+                        locaddr = field
+                        # remove "addr:" prefix (if any)
+                        if field.startswith("addr:"):
+                            locaddr = field[5:]
+                        # remove everything after "/" or "%" (if any)
+                        locaddr = locaddr.split("/")[0]
+                        locaddr = locaddr.split("%")[0]
+                        localaddrs.append(locaddr)
+                        break
+        return localaddrs
 
-            if not localaddrs:
-                raise ConfigurationError("ifconfig does not show any local IP addresses")
-        else:
+    # Use ip command to find local IP addrs.
+    def _get_local_addrs_ip(self):
+        try:
+            proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ip address"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, err = proc.communicate()
+            success = proc.returncode == 0
+        except OSError:
+            return False
+
+        localaddrs = []
+        if py3bro.using_py3:
+            out = out.decode()
+        for line in out.splitlines():
+            fields = line.split()
+            if "inet" in fields or "inet6" in fields:
+                locaddr = fields[1]
+                locaddr = locaddr.split("/")[0]
+                locaddr = locaddr.split("%")[0]
+                localaddrs.append(locaddr)
+        return localaddrs
+
+    # Return a list of the IP addresses associated with local interfaces.
+    # For IPv6 addresses, zone_id and prefix length are removed if present.
+    def _get_local_addrs(self):
+        # ifconfig is more portable so try it first
+        localaddrs = self._get_local_addrs_ifconfig()
+
+        if not localaddrs:
+            # On some Linux systems ifconfig has been superseded by ip.
+            localaddrs = self._get_local_addrs_ip()
+
+        # Fallback to localhost if we did not find any IP addrs.
+        if not localaddrs:
             localaddrs = ["127.0.0.1", "::1"]
             try:
                 addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
@@ -606,7 +685,7 @@ class Configuration:
             for ai in addrinfo:
                 localaddrs.append(ai[4][0])
 
-            self.ui.error("ifconfig failed (local IP addrs are: %s)" % ", ".join(localaddrs))
+            self.ui.error("failed to find local IP addresses (found: %s)" % ", ".join(localaddrs))
 
         return localaddrs
 
@@ -746,11 +825,6 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl configuration.
-    def update_broctlcfg_hash(self):
-        cfghash = self._get_broctlcfg_hash()
-        self.set_state("hash-broctlcfg", cfghash)
-
     # Return a hash value (as a string) of the current broctl node config.
     def _get_nodecfg_hash(self, filehash=False):
         if filehash:
@@ -769,9 +843,12 @@ class Configuration:
         hh.update(data)
         return hh.hexdigest()
 
-    # Update the stored hash value of the current broctl node config.
-    def update_nodecfg_hash(self):
+    # Update the stored hash value of the current broctl config.
+    def update_cfg_hash(self):
+        cfghash = self._get_broctlcfg_hash()
         nodehash = self._get_nodecfg_hash()
+
+        self.set_state("hash-broctlcfg", cfghash)
         self.set_state("hash-nodecfg", nodehash)
 
     # Runs Bro to get its version number.
@@ -803,4 +880,3 @@ class Configuration:
             version = version[:-6]
 
         return version
-
