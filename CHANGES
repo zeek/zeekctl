@@ -1,4 +1,8 @@
 
+1.4-87 | 2016-03-31 10:35:47 -0400
+
+  * Eliminate unnecessary writes to the state db (Daniel Thayer)
+
 1.4-84 | 2016-03-11 16:32:46 -0600
 
   * Support ip command for getting local IP addrs (Jon Schipp)

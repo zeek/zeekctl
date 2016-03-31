@@ -88,7 +88,6 @@ def make_layout(path, cmdout, silent=False):
             return self.p
 
     manager = config.Config.manager()
-    broport = Port(config.Config.broport - 1)
 
     filename = os.path.join(path, "cluster-layout.bro")
 
@@ -106,7 +105,7 @@ def make_layout(path, cmdout, silent=False):
             out.write("# Automatically generated. Do not edit.\n")
             # This is the port that standalone nodes listen on for remote
             # control by default.
-            out.write("redef Communication::listen_port = %s/tcp;\n" % broport.next_port(manager))
+            out.write("redef Communication::listen_port = %s/tcp;\n" % config.Config.broport)
             out.write("redef Communication::nodes += {\n")
             out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
             out.write("};\n")
@@ -115,6 +114,7 @@ def make_layout(path, cmdout, silent=False):
         if not silent:
             cmdout.info("generating cluster-layout.bro ...")
 
+        broport = Port(config.Config.broport)
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
 
@@ -123,7 +123,7 @@ def make_layout(path, cmdout, silent=False):
             out.write("redef Cluster::nodes = {\n")
 
             # Control definition.  For now just reuse the manager information.
-            out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.next_port(manager)))
+            out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, config.Config.broport))
 
             # Manager definition
             out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
