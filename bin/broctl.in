@@ -52,16 +52,13 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.plugincmd(cmd, cmdargs)
 
-        if results:
-            success = results.ok
-        else:
-            success = False
+        if results.unknowncmd:
             self.error("unknown command '%s'" % cmd)
 
             if not self.interactive:
                 self.do_help(None)
 
-        return success
+        return results.ok
 
     def emptyline(self):
         pass
@@ -93,20 +90,22 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if args:
             raise SyntaxError("nodes does not take any arguments")
 
-        for node in self.broctl.nodes():
-            self.info(node)
+        results = self.broctl.nodes()
+        for (node, success, data) in results.get_node_data():
+            self.info(data["description"])
 
-        return True
+        return results.ok
 
     def do_config(self, args):
         """Prints all configuration options with their current values."""
         if args:
             raise SyntaxError("config does not take any arguments")
 
-        for (key, val) in self.broctl.get_config():
+        results = self.broctl.get_config()
+        for (key, val) in results.keyval:
             self.info("%s = %s" % (key, val))
 
-        return True
+        return results.ok
 
     def do_install(self, args):
         """- [--local]

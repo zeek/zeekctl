@@ -6,6 +6,7 @@ import os
 import logging
 
 from BroControl import config
+from BroControl import cmdresult
 from BroControl import node
 from BroControl import plugin
 
@@ -143,12 +144,11 @@ class PluginRegistry:
 
     def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
-        a CmdResult object which contains the command results, or None if
-        the command doesn't exist."""
+        a CmdResult object which contains the command results."""
         try:
             (myplugin, usage, descr) = self._cmds[cmd]
         except LookupError:
-            return None
+            return cmdresult.CmdResult(ok=False, unknowncmd=True)
 
         prefix = myplugin.prefix()
 
