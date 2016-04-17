@@ -31,6 +31,17 @@ build_bro() {
 }
 
 replaceprefix() {
+    # First, fix the BROSCRIPTDIR path (this step is needed to avoid any
+    # unintended difference between PREFIX and BROSCRIPTDIR because on FreeBSD
+    # /home is actually a symlink to /usr/home).
+    oldpath=`grep '^BROSCRIPTDIR' lib/broctl/BroControl/version.py | awk -F \" '{ print $2 }'`
+    newpath=`canonicalpath "$oldpath"`
+    if [ "$newpath" != "$oldpath" ]; then
+        for i in lib/broctl/BroControl/version.py ; do
+            sed "s#$oldpath#$newpath#" $i > $i.new && cp $i.new $i && rm $i.new
+        done
+    fi
+
     for i in etc/broctl.cfg bin/broctl lib/broctl/BroControl/version.py ; do
         sed "s#${INSTALLPREFIX}#@PREFIX@#" $i > $i.new && cp $i.new $i && rm $i.new
         if [ $? -ne 0 ]; then
@@ -39,13 +50,19 @@ replaceprefix() {
     done
 }
 
+canonicalpath() {
+    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
+    test $? -ne 0 && exit 1
+    echo $newpath
+}
+
 BROCTLSRCDIR=`dirname "$0"`/../..
 BROSRCDIR=${BROCTLSRCDIR}/../..
 BROCTLBUILDDIR=${BROCTLSRCDIR}/build
 
 # Absolute path of a directory where all of the broctl test files are located.
-BROCTL_TEST=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" ${BROCTLBUILDDIR}/testing`
-test $? -ne 0 && exit 1
+BROCTL_TEST=`canonicalpath "${BROCTLBUILDDIR}/testing"`
+test -z "${BROCTL_TEST}" && exit 1
 
 if [ "$1" = "cleanall" ]; then
     # verify the path is a directory (and exists) before attempting to remove
