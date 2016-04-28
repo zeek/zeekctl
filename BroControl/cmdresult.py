@@ -3,9 +3,12 @@
 class CmdResult:
     """Class representing the result of a broctl command."""
 
-    def __init__(self):
+    def __init__(self, ok=True, unknowncmd=False):
         # Command succeeded (True), or error occurred (False)
-        self.ok = True
+        self.ok = ok
+
+        # If True, then the requested command does not exist.
+        self.unknowncmd = unknowncmd
 
         # Number of Bro nodes that command succeeded, and number that failed
         self.success_count = 0
@@ -16,6 +19,9 @@ class CmdResult:
 
         # Results in the "nodes" list have been sorted (True), or not (False)
         self._sorted = False
+
+        # List of arbitrary (key, value) pairs.
+        self.keyval = []
 
     def to_dict(self):
         return {

@@ -7,6 +7,7 @@ import logging
 
 from BroControl import util
 from BroControl import config
+from BroControl import cmdresult
 from BroControl import execute
 from BroControl import control
 from BroControl import version
@@ -174,28 +175,39 @@ class BroCtl(object):
     @expose
     @check_config
     def nodes(self):
-        nodes = []
+        results = cmdresult.CmdResult()
+
         if self.plugins.cmdPre("nodes"):
-            nodes = [ n.describe() for n in self.config.nodes() ]
+            for n in self.config.nodes():
+                results.set_node_data(n, True, n.to_dict())
+        else:
+            results.ok = False
+
         self.plugins.cmdPost("nodes")
-        return nodes
+
+        return results
 
     @expose
     @check_config
     def get_config(self):
-        configlist = []
+        results = cmdresult.CmdResult()
+
         if self.plugins.cmdPre("config"):
-            configlist = self.config.options()
+            results.keyval = self.config.options()
+        else:
+            results.ok = False
+
         self.plugins.cmdPost("config")
-        return configlist
+        return results
 
     @expose
     @check_config
     @lock_required
     def install(self, local=False):
-        results = None
         if self.plugins.cmdPre("install"):
             results = self.controller.install(local)
+        else:
+            results = cmdresult.CmdResult(ok=False)
 
         self.plugins.cmdPost("install")
         return results
@@ -263,8 +275,8 @@ class BroCtl(object):
     @expose
     @lock_required
     def deploy(self):
-        results = None
         if not self.plugins.cmdPre("deploy"):
+            results = cmdresult.CmdResult(ok=False)
             return results
 
         if self.config.is_cfg_changed():
@@ -470,9 +482,11 @@ class BroCtl(object):
     def execute(self, cmd):
         nodes = self.node_args(get_hosts=True)
 
-        results = None
         if self.plugins.cmdPre("exec", cmd):
             results = self.controller.execute_cmd(nodes, cmd)
+        else:
+            results = cmdresult.CmdResult(ok=False)
+
         self.plugins.cmdPost("exec", cmd)
 
         return results
@@ -493,9 +507,11 @@ class BroCtl(object):
     @check_config
     @lock_required
     def process(self, trace, options, scripts):
-        results = None
         if self.plugins.cmdPre("process", trace, options, scripts):
             results = self.controller.process(trace, options, scripts)
+        else:
+            results = cmdresult.CmdResult(ok=False)
+
         self.plugins.cmdPost("process", trace, options, scripts, results.ok)
 
         return results
