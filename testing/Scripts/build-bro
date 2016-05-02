@@ -121,6 +121,3 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# We no longer need the temporary directory where Bro was installed.
-rm -rf "${INSTALLPREFIX}"
-
