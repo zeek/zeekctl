@@ -1,0 +1,5 @@
+Error: cannot start bro; check output of "diag"
+Error: touch: cannot touch '.test': Permission denied
+rm: cannot remove '.test': No such file or directory
+start: check permissions of Bro working dir: /home/repo/bro/aux/broctl/testing/../build/testing/test.10863/spool/bro
+starting bro ...
