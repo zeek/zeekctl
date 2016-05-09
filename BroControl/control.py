@@ -845,45 +845,6 @@ class Controller:
         return netif
 
 
-    # Get current statistics from cFlow.
-    #
-    # Returns dict of the form port->(cum-pkts, cum-bytes).
-    #
-    # Returns None if we can't run the helper sucessfully.
-    def getCFlowStatus(self):
-        (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "cflow-stats"))
-        if not success or not output:
-            self.ui.error("failed to run cflow-stats")
-            return None
-
-        vals = {}
-
-        for line in output:
-            try:
-                (port, pps, bps, pkts, bytes) = line.split()
-                vals[port] = (float(pkts), float(bytes))
-            except ValueError:
-                # Probably an error message because we can't connect.
-                self.ui.error("failed to get cFlow statistics: %s" % line)
-                return None
-
-        return vals
-
-    # Calculates the differences between two getCFlowStatus() calls.
-    # Returns a list of tuples in the same form as get_capstats_output() does.
-    def calculateCFlowRate(self, start, stop, interval):
-        diffs = [(port, stop[port][0] - start[port][0], (stop[port][1] - start[port][1])) for port in start.keys() if port in stop]
-
-        rates = []
-        for (port, pkts, bytes) in diffs:
-            vals = {"kpps": "%.1f" % (pkts / 1e3 / interval)}
-            if start[port][1] >= 0:
-                vals["mbps"] = "%.1f" % (bytes * 8 / 1e6 / interval)
-
-            rates += [(port, None, vals)]
-
-        return rates
-
     # Update the configuration of a running instance on the fly.
     def update(self, nodes):
         results = cmdresult.CmdResult()

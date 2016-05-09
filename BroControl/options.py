@@ -132,13 +132,6 @@ options = [
     Option("PcapBufsize", 128, "int", Option.AUTOMATIC, False,
            "Number of Mbytes to provide as buffer space when capturing from live interfaces via libpcap."),
 
-    Option("CFlowAddress", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
-    Option("CFlowUser", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the user name for accessing its configuration interface."),
-    Option("CFlowPassword", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the password for accessing its configuration interface."),
-
     Option("TimeMachineHost", "", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the address of the host it is running on."),
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
