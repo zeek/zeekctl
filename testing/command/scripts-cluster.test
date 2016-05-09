@@ -1,7 +1,7 @@
 # Test that the scripts command can output contents of loaded_scripts.log
 # on all nodes, or just a specified node.
 #
-# @TEST-SERIALIZE: broccoli
+# @TEST-SERIALIZE: cluster
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-yyyy-mm-dd-hh-mm-ss btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-yyyy-mm-dd-hh-mm-ss btest-diff onenode.out

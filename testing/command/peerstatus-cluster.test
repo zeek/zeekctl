@@ -1,7 +1,7 @@
 # Test that the peerstatus command can get status of all nodes, or just
 # a specified node.
 #
-# @TEST-SERIALIZE: broccoli
+# @TEST-SERIALIZE: cluster
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-peerstatus-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-peerstatus-output btest-diff onenode.out
