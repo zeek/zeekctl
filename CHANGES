@@ -1,4 +1,17 @@
 
+1.4-96 | 2016-04-28 13:43:22 -0400
+
+  * Fix inconsistent return value data type for some commands
+
+    This fix ensures that a broctl command return value from the library
+    is always a CmdResult. (Daniel Thayer)
+
+1.4-94 | 2016-04-28 13:29:34 -0400
+
+  * Fix the top command on OS X 10.10 or newer (Daniel Thayer)
+
+  * Fix build-bro script for running broctl tests on FreeBSD (Daniel Thayer)
+
 1.4-91 | 2016-03-31 15:08:24 -0500
 
   * Explicitly close the Broccoli connection to avoid resource leak (Aaron Eppert)
