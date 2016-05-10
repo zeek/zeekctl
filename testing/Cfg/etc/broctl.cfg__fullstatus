@@ -1,0 +1,4 @@
+# Don't send emails or summary reports, and use full status command output
+sendmail=
+tracesummary=
+statuscmdshowall=1
