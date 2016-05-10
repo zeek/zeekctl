@@ -186,7 +186,9 @@ options = [
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
            "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
-           "Directory where standard plugins are located."),
+           "Directory where standard broctl plugins are located."),
+    Option("PluginBroDir", "${BroBase}/lib/bro/plugins", "string", Option.AUTOMATIC, False,
+           "Directory where Bro plugins are located.  BroControl will search this directory tree for broctl plugins that are provided by any Bro plugin."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
            "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary reports."),
