@@ -1,6 +1,4 @@
-Getting process status ...
-Getting peer status ...
-Name         Type    Host             Status    Pid    Peers  Started
+Name         Type    Host             Status    Pid    Started
 manager      manager localhost        stopped
 proxy-1      proxy   localhost        stopped
 proxy-2      proxy   localhost        stopped

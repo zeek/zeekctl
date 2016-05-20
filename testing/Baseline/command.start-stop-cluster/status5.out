@@ -1,7 +1,5 @@
-Getting process status ...
-Getting peer status ...
-Name         Type    Host             Status    Pid    Peers  Started
-manager      manager localhost        running   10400  ???    04 Dec 06:17:59
-proxy-1      proxy   localhost        running   10475  ???    04 Dec 06:18:02
-worker-1     worker  localhost        running   10513  ???    04 Dec 06:18:04
-worker-2     worker  localhost        running   10514  ???    04 Dec 06:18:04
+Name         Type    Host             Status    Pid    Started
+manager      manager localhost        running   10400  04 Dec 06:17:59
+proxy-1      proxy   localhost        running   10475  04 Dec 06:18:02
+worker-1     worker  localhost        running   10513  04 Dec 06:18:04
+worker-2     worker  localhost        running   10514  04 Dec 06:18:04

@@ -78,7 +78,11 @@ class BroCtl(object):
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
 
     def setup(self):
-        for pdir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
+        plugindirs = self.config.sitepluginpath.split(":")
+        plugindirs.append(self.config.plugindir)
+        plugindirs.append(self.config.pluginbrodir)
+
+        for pdir in plugindirs:
             if pdir:
                 self.plugins.addDir(pdir)
 
