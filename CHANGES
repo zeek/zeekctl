@@ -1,4 +1,32 @@
 
+1.4-112 | 2016-06-14 16:14:52 -0700
+
+  * Fix a failing test on some platforms and improve its error
+     message. (Daniel Thayer)
+
+  * Add Bro plugin directory to broctl plugin search path. (Daniel
+    Thayer)
+
+  * Update test baselines. (Daniel Thayer)
+
+  * Changed the default value of the StatusCmdShowAll option so that
+    the broctl status command runs faster. (Daniel Thayer)
+
+  * Changed the status-timefmt test so that it can be run in parallel
+    with the other tests. (Daniel Thayer)
+
+  * Remove dead code and update docs. (Daniel Thayer)
+
+  * Rename serialization set for cluster tests. (Daniel Thayer)
+
+  * Change node hostname resolution to be more consistent. (Daniel
+    Thayer)
+
+  * Add another test for broctl start command. (Daniel Thayer)
+
+  * Prevent start helper from getting in infinite loop. (Daniel
+    Thayer)
+
 1.4-100 | 2016-05-17 16:22:25 -0700
 
   * Updating baseline for Bro control framework change. (Robin Sommer)
