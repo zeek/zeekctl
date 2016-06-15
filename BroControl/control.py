@@ -499,7 +499,7 @@ class Controller:
             time.sleep(1)
             timeout -= 1
 
-        for node in todo:
+        for node in todo.values():
             results.set_node_fail(node)
 
         # Do post-terminate cleanup for those which terminated gracefully.
