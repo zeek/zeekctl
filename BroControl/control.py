@@ -442,7 +442,11 @@ class Controller:
         # Stop nodes.
         for (node, success, output) in stop(running, 15):
             if not success:
-                self.ui.error("failed to send stop signal to %s" % node.name)
+                # Give up on this node.  Most likely either we cannot connect
+                # to the host, or we don't have permission to kill the process.
+                self.ui.error("unable to stop %s: %s" % (node.name, output[0]))
+                results.set_node_fail(node)
+                running.remove(node)
 
         if running:
             time.sleep(1)
