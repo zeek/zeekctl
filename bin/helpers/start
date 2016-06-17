@@ -42,18 +42,18 @@ shift
 rm -f .pid
 
 # Make sure .test does not exist
-rm -f .test
+rm -f .test > /dev/null 2>&1
 if [ -e .test ]; then
-    echo "start: check permissions of Bro working dir: $workingdir" >&2
+    echo "start: cannot remove files in Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
     exit 1
 fi
 
 # Create and remove a test file to ensure that the run-bro script will be able
 # to create a pid file.
-touch .test
-rm .test
+touch .test > /dev/null 2>&1
+rm .test > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "start: check permissions of Bro working dir: $workingdir" >&2
+    echo "start: problem with Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
     exit 1
 fi
 
