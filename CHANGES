@@ -1,4 +1,8 @@
 
+1.4-117 | 2016-06-22 12:14:37 -0400
+
+  * Improve broctl behavior when unable to stop a node (Daniel Thayer)
+
 1.4-112 | 2016-06-14 16:14:52 -0700
 
   * Fix a failing test on some platforms and improve its error
