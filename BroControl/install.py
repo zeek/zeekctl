@@ -47,9 +47,14 @@ def get_nfssyncs():
 # Generate a shell script "broctl-config.sh" that sets env. vars. that
 # correspond to broctl config options.
 def make_broctl_config_sh(cmdout):
+    # Rather than just overwriting the file, we first write out a tmp file,
+    # and then rename it to avoid a race condition where a process outside of
+    # broctl (such as archive-log) is trying to read the file while it is
+    # being written.
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
+    tmp_path = os.path.join(config.Config.broctlconfigdir, ".broctl-config.sh.tmp")
 
-    with open(cfg_path, "w") as out:
+    with open(tmp_path, "w") as out:
         for (varname, value) in config.Config.options(dynamic=False):
             if isinstance(value, bool):
                 # Convert bools to the string "1" or "0"
@@ -62,6 +67,8 @@ def make_broctl_config_sh(cmdout):
             # are escaped.
             out.write('%s="%s"\n' % (varname.replace(".", "_"),
                        value.replace('"', '\\"')))
+
+    os.rename(tmp_path, cfg_path)
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
