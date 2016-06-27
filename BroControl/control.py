@@ -350,13 +350,24 @@ class Controller:
         for n in nodes:
             self.pluginregistry.broProcessDied(n)
 
-        msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
+        msg1 = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
+        msg2 = "This crash report does not include a backtrace.  In order for crash reports\nto be useful when Bro crashes, a backtrace is needed.\n"
+
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         cmds = [(node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
-                msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg + "\n".join(output))
+                outstr = "\n".join(output)
+
+                # Note: here it is assumed that the crash-diag script outputs
+                # this string only when there's a backtrace.
+                if "Core file: " in outstr:
+                    msg = msg1 + outstr
+                else:
+                    msg = msg2 + outstr
+
+                msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg)
                 if not msuccess:
                     self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
             else:

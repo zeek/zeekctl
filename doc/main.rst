@@ -57,6 +57,10 @@ Running BroControl requires the following prerequisites:
     manager only), then BroControl can send mail.  Otherwise, BroControl
     will not attempt to send mail.
 
+  - If *gdb* is installed and if Bro crashes, then BroControl can include
+    a backtrace in its crash report.  That can be helpful for debugging
+    problems with Bro.
+
 For a cluster setup that spans more than one machine, there are
 additional requirements:
 
