@@ -1,4 +1,8 @@
 
+1.4-119 | 2016-06-28 11:11:19 -0400
+
+  * Fix race condition in reading/writing broctl-config.sh (Daniel Thayer)
+
 1.4-117 | 2016-06-22 12:14:37 -0400
 
   * Improve broctl behavior when unable to stop a node (Daniel Thayer)
