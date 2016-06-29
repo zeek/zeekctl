@@ -112,6 +112,7 @@ class Controller:
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
+        logger = []
         manager = []
         proxies = []
         workers = []
@@ -123,10 +124,20 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            else:
+            elif n.type == "manager":
                 manager += [n]
+            elif n.type == "logger":
+                logger += [n]
 
-        # Start nodes. Do it in the order manager, proxies, workers.
+        # Start nodes. Do it in the order logger, manager, proxies, workers.
+        if logger:
+            self._start_nodes(logger, results)
+
+            if not results.ok:
+                for n in (manager + proxies + workers):
+                    results.set_node_fail(n)
+                return results
+
         if manager:
             self._start_nodes(manager, results)
 
@@ -375,6 +386,7 @@ class Controller:
     # Stop Bro processes on nodes.
     def stop(self, nodes):
         results = cmdresult.CmdResult()
+        logger = []
         manager = []
         proxies = []
         workers = []
@@ -386,17 +398,19 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            else:
+            elif n.type == "manager":
                 manager += [n]
+            elif n.type == "logger":
+                logger += [n]
 
 
-        # Stop nodes. Do it in the order workers, proxies, manager
+        # Stop nodes. Do it in the order workers, proxies, manager, logger
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager):
+                for n in (proxies + manager + logger):
                     results.set_node_fail(n)
                 return results
 
@@ -404,12 +418,20 @@ class Controller:
             self._stop_nodes(proxies, results)
 
             if not results.ok:
-                for n in manager:
+                for n in (manager + logger):
                     results.set_node_fail(n)
                 return results
 
         if manager:
             self._stop_nodes(manager, results)
+
+            if not results.ok:
+                for n in logger:
+                    results.set_node_fail(n)
+                return results
+
+        if logger:
+            self._stop_nodes(logger, results)
 
         return results
 

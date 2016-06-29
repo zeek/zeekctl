@@ -124,41 +124,56 @@ def make_layout(path, cmdout, silent=False):
         broport = Port(config.Config.broport)
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
+        logger = config.Config.nodes("logger")
+
+        if logger:
+            # Use the first logger in list, since only one logger is allowed.
+            logger = logger[0]
+            loggerstr = '$logger="%s", ' % logger.name
+        else:
+            # If no logger exists, then manager does the logging.
+            loggerstr = ""
+
+        ostr = "# Automatically generated. Do not edit.\n"
+        ostr += "redef Cluster::nodes = {\n"
+
+        # Control definition.  For now just reuse the manager information.
+        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, config.Config.broport)
+
+        # Logger definition
+        if logger:
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.next_port(logger))
+
+        # Manager definition
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager), loggerstr)
+        for s in workers:
+            ostr += '"%s"' % s.name
+            if s != workers[-1]:
+                ostr += ", "
+        ostr += ")],\n"
+
+        # Proxies definition
+        for p in proxies:
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), loggerstr, manager.name)
+            for s in workers:
+                ostr += '"%s"' % s.name
+                if s != workers[-1]:
+                    ostr += ", "
+            ostr += ")],\n"
+
+        # Workers definition
+        for w in workers:
+            p = w.count % len(proxies)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, loggerstr, manager.name, proxies[p].name)
+
+        # Activate time-machine support if configured.
+        if config.Config.timemachinehost:
+            ostr += '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
+
+        ostr += "};\n"
 
         with open(filename, "w") as out:
-            out.write("# Automatically generated. Do not edit.\n")
-            out.write("redef Cluster::nodes = {\n")
-
-            # Control definition.  For now just reuse the manager information.
-            out.write("\t[\"control\"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id=\"%s\", $p=%s/tcp],\n" % (util.format_bro_addr(manager.addr), config.Config.zoneid, config.Config.broport))
-
-            # Manager definition
-            out.write("\t[\"%s\"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $workers=set(" % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager)))
-            for s in workers:
-                out.write("\"%s\"" % s.name)
-                if s != workers[-1]:
-                    out.write(", ")
-            out.write(")],\n")
-
-            # Proxies definition
-            for p in proxies:
-                out.write("\t[\"%s\"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $manager=\"%s\", $workers=set(" % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), manager.name))
-                for s in workers:
-                    out.write("\"%s\"" % s.name)
-                    if s != workers[-1]:
-                        out.write(", ")
-                out.write(")],\n")
-
-            # Workers definition
-            for w in workers:
-                p = w.count % len(proxies)
-                out.write("\t[\"%s\"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id=\"%s\", $p=%s/tcp, $interface=\"%s\", $manager=\"%s\", $proxy=\"%s\"],\n" % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, manager.name, proxies[p].name))
-
-            # Activate time-machine support if configured.
-            if config.Config.timemachinehost:
-                out.write("\t[\"time-machine\"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n" % (config.Config.timemachinehost, config.Config.timemachineport))
-
-            out.write("};\n")
+            out.write(ostr)
 
 
 # Reads in a list of networks from file.

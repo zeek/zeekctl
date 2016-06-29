@@ -10,8 +10,10 @@ from BroControl import doc
 class Node:
     """Class representing one node of the BroControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
-    a cluster setup, there is exactly one of type ``manager``, one or
-    more of type ``proxy``, and zero or more of type ``worker``.
+    a cluster setup, there is zero or one of type ``logger``, exactly one of
+    type ``manager``, one or more of type ``proxy``, and zero or more of
+    type ``worker``.  The manager will handle writing logs if there is no
+    logger defined in a cluster.
 
     A ``Node`` object has a number of keys with values that are set
     via the ``node.cfg`` file and can be accessed directly (from a plugin)
@@ -22,8 +24,10 @@ class Node:
             section in ``node.cfg``.
 
         ``type`` (string)
-            The type of the node, which will be one of ``standalone``,
-            ``manager``, ``proxy``, and ``worker``.
+            The type of the node.  In a standalone configuration, the only
+            allowed type is ``standalone``.  In a cluster configuration, the
+            type must be one of: ``logger``, ``manager``, ``proxy``,
+            or ``worker``.
 
         ``env_vars`` (string)
             A comma-separated list of environment variables to set when
