@@ -209,7 +209,7 @@ def make_local_networks(path, cmdout, silent=False):
     return True
 
 
-def make_broctl_config_policy(path, cmdout, silent=False):
+def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
     manager = config.Config.manager()
 
     filename = os.path.join(path, "broctl-config.bro")
@@ -234,3 +234,6 @@ def make_broctl_config_policy(path, cmdout, silent=False):
 
         out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
         out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)
+
+       	out.write(plugin_reg.getBroctlConfig(cmdout))
+        out.write("\n")

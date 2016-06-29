@@ -648,7 +648,7 @@ class Controller:
                 results.ok = False
                 return results
 
-            install.make_broctl_config_policy(cwd, self.ui, True)
+            install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry, True)
 
             cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_make_bro_params(node, False)))
             cmd += " broctl/check"
@@ -1224,7 +1224,7 @@ class Controller:
             return results
 
         self.ui.info("generating broctl-config.bro ...")
-        install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui)
+        install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui, self.pluginregistry)
 
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
         try:
