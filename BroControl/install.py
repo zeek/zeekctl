@@ -235,5 +235,5 @@ def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
         out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
         out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)
 
-       	out.write(plugin_reg.getBroctlConfig(cmdout))
+        out.write(plugin_reg.getBroctlConfig(cmdout))
         out.write("\n")
