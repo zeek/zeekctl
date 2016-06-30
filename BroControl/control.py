@@ -840,11 +840,13 @@ class Controller:
     def _capstats_interface(self, node):
         netif = node.interface
 
-        # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
-        # is needed to prevent capstats from trying to use the same interface
-        # name as Bro.
+        # If PF_RING+DNA with pfdnacluster_master is being used or there is a
+        # packet source prefix, then this hack is needed to prevent capstats
+        # from trying to use the same interface name as Bro.
         if netif.startswith("dnacl") and netif.count("@") == 1:
             netif = netif.split("@", 1)[0]
+        if "::" in netif:
+            netif = netif.split("::", 1)[1]
 
         return netif
 
