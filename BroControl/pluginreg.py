@@ -180,8 +180,26 @@ class PluginRegistry:
                 node.Node.addKey(key)
 
     def _loadPlugins(self, cmdout):
+        # Don't visit the same dir twice (this also prevents infinite
+        # recursion when following symlinks).
+        visited_dirs = set()
+
         for path in self._dirs:
-            for root, dirs, files in os.walk(os.path.abspath(path)):
+
+            for root, dirs, files in os.walk(os.path.abspath(path),
+                                             followlinks=True):
+                stat = os.stat(root)
+                visited_dirs.add((stat.st_dev, stat.st_ino))
+                dirs_to_visit_next = []
+
+                for dir in dirs:
+                    stat = os.stat(os.path.join(root, dir))
+
+                    if (stat.st_dev, stat.st_ino) not in visited_dirs:
+                        dirs_to_visit_next.append(dir)
+
+                dirs[:] = dirs_to_visit_next
+
                 for name in files:
                     if name.endswith(".py") and not name.startswith("__"):
                         self._importPlugin(os.path.join(root, name[:-3]), cmdout)
