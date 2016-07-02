@@ -314,6 +314,18 @@ class Plugin(object):
         return []
 
     @doc.api("override")
+    def broctl_config(self):
+        """Returns a string containing Bro script code that should be written
+        to the dynamically generated Bro script named "broctl-config.bro".
+        This provides a way for plugins to easily add Bro script code that
+        depends on broctl settings.
+
+        This method can be overridden by derived classes. The default
+        implementation does nothing.
+        """
+        return
+
+    @doc.api("override")
     def init(self):
         """Called once just before BroControl starts executing any commands.
         This method can do any initialization that the plugin may require.

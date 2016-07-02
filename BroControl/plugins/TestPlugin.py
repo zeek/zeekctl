@@ -51,6 +51,10 @@ class TestPlugin(BroControl.plugin.Plugin):
     def nodeKeys(self):
         return ["mykey"]
 
+    def broctl_config(self):
+        script = "# This is a test."
+        return script
+
     def done(self):
         self.message("TestPlugin: done")
 

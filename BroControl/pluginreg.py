@@ -157,6 +157,29 @@ class PluginRegistry:
 
         return myplugin.cmd_custom(cmd, args, cmdout)
 
+    def getBroctlConfig(self):
+        """Call the broctl_config method on all plugins in case a plugin
+        needs to add some custom script code to broctl-config.bro.  Returns
+        a string containing Bro script code from the plugins.
+        """
+
+        extra_code = []
+
+        for p in self._activeplugins():
+            code = p.broctl_config()
+            if code:
+                # Make sure first character of returned string is a newline
+                extra_code.append("")
+                extra_code.append("# Begin code from %s plugin" % p.name())
+                extra_code.append(code)
+                extra_code.append("# End code from %s plugin" % p.name())
+
+        if extra_code:
+            # Make sure last character of returned string is a newline
+            extra_code.append("")
+
+        return "\n".join(extra_code)
+
     def allCustomCommands(self):
         """Returns a list of string tuples *(cmd, descr)* listing all commands
         defined by any plugin."""
