@@ -124,24 +124,27 @@ def make_layout(path, cmdout, silent=False):
         broport = Port(config.Config.broport)
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
-        logger = config.Config.nodes("logger")
+        loggers = config.Config.nodes("loggers")
 
-        if logger:
+        if loggers:
             # Use the first logger in list, since only one logger is allowed.
-            logger = logger[0]
+            logger = loggers[0]
+            manager_is_logger = "F"
             loggerstr = '$logger="%s", ' % logger.name
         else:
             # If no logger exists, then manager does the logging.
+            manager_is_logger = "T"
             loggerstr = ""
 
         ostr = "# Automatically generated. Do not edit.\n"
+        ostr += "redef Cluster::manager_is_logger = %s;\n" % manager_is_logger
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
         ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, config.Config.broport)
 
         # Logger definition
-        if logger:
+        if loggers:
             ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.next_port(logger))
 
         # Manager definition
@@ -236,9 +239,15 @@ def make_broctl_config_policy(path, cmdout, silent=False):
         out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
         out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
         if manager.type != "standalone":
-            out.write("@if ( Cluster::local_node_type() == Cluster::MANAGER )\n")
+            loggers = config.Config.nodes("loggers")
+            if loggers:
+                ntype = "LOGGER"
+            else:
+                ntype = "MANAGER"
+            out.write("@if ( Cluster::local_node_type() == Cluster::%s )\n" % ntype)
         out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
         out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
+
         if manager.type != "standalone":
             out.write("@endif\n")
 

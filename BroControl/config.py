@@ -229,7 +229,7 @@ class Configuration:
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "logger", the logger Node is returned.
+    # - If tag is "loggers", all logger Nodes are returned.
     # - If tag is "proxies", all proxy Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
@@ -249,7 +249,7 @@ class Configuration:
         elif tag == "standalone":
             nodetype = "standalone"
 
-        elif tag == "logger":
+        elif tag == "loggers":
             nodetype = "logger"
 
         elif tag == "manager":
