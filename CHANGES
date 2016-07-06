@@ -1,4 +1,8 @@
 
+1.4-127 | 2016-07-06 08:58:18 -0500
+
+  * Ignore packet source prefix of interface name when using capstats. (Jan Grashoefer)
+
 1.4-125 | 2016-07-02 17:53:42 -0500
 
   * New plugin function "broctl_config" so plugin authors can add their own

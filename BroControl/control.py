@@ -837,14 +837,19 @@ class Controller:
         return results
 
 
+    # Convert a Bro network interface name to one that capstats can use.
     def _capstats_interface(self, node):
         netif = node.interface
 
-        # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
-        # is needed to prevent capstats from trying to use the same interface
-        # name as Bro.
         if netif.startswith("dnacl") and netif.count("@") == 1:
+            # PF_RING+DNA with pfdnacluster_master is being used
+            # (e.g. interface name "dnacluster:21" gets changed to
+            # "dnacluster:21@1" by the broctl pf_ring plugin)
             netif = netif.split("@", 1)[0]
+
+        elif "::" in netif:
+            # Interface name has packet source prefix (e.g. "af_packet::eth0")
+            netif = netif.split("::", 1)[1]
 
         return netif
 
