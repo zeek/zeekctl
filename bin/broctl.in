@@ -467,7 +467,11 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.capstats(interval=interval, node_list=args)
 
-        outputcapstats("Interface", results.get_node_data())
+        nodedata = results.get_node_data()
+        if nodedata:
+            outputcapstats("Interface", nodedata)
+        else:
+            self.info("No network interfaces suitable for use with capstats were found.")
 
         return results.ok
 
