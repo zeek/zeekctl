@@ -25,6 +25,39 @@ fi
 
 echo
 
+core=`ls -t *core* 2> /dev/null`
+gdb=`which gdb 2> /dev/null`
+
+# If no backtrace can be generated, then output an explanation.  However,
+# skip this if there's no .status file, because in that case Bro didn't run.
+if [ -f .status ]; then
+    if [ -n "$gdb" ]; then
+        if [ -z "$core" ]; then
+            # Check if the system allows core files.
+            ulimit -c unlimited 2> /dev/null
+            coresize=`ulimit -c`
+            msg=""
+            if [ "$coresize" != "unlimited" ]; then
+                msg="  You may also need to change your\nsystem settings to allow core files."
+            fi
+
+            echo "No core file found.  The most likely explanation is that Bro either"
+            echo -e "terminated on its own or was killed.${msg}"
+            echo
+        fi
+    else
+        if [ -n "$core" ]; then
+            echo "Unable to output a backtrace because gdb is not installed."
+            echo "It is recommended to install gdb so that BroControl can output a"
+            echo "backtrace the next time Bro crashes."
+        else
+            echo "No core file found and gdb is not installed.  It is recommended to"
+            echo "install gdb so that BroControl can output a backtrace if Bro crashes."
+        fi
+        echo
+    fi
+fi
+
 if [ -f "${bro}" ];then
     bro_version=`"${bro}" -v 2>&1 >/dev/null | awk '{print $3}'`
 else
@@ -33,20 +66,22 @@ fi
 
 echo Bro $bro_version
 uname -sr
-echo
 
-if which gdb >/dev/null 2>&1; then
-    core=`ls -t *core* 2> /dev/null`
-    echo "thread apply all bt" >.gdb_cmds
-    for c in $core; do
-        if [ -f $c ]; then
-            echo $c
-            gdb --batch -x .gdb_cmds "${bro}" $c 2>/dev/null
-        fi
-    done
-    rm -f .gdb_cmds
-else
-    echo "No gdb installed."
+# Output a backtrace, if possible.
+if [ -n "$gdb" ]; then
+    if [ -n "$core" ]; then
+        echo "thread apply all bt" >.gdb_cmds
+        for c in $core; do
+            if [ -f $c ]; then
+                echo
+                # Note: broctl looks for this string in order to determine
+                # if a backtrace was output.
+                echo "Core file: $c"
+                gdb --batch -x .gdb_cmds "${bro}" $c 2>/dev/null
+            fi
+        done
+        rm -f .gdb_cmds
+    fi
 fi
 
 # Usage:

@@ -2,7 +2,7 @@
 #
 # Remove content from "broctl diag" output that is too system-dependent
 # (currently, this includes the contents of stderr.log, stdout.log, PATH,
-# bro version, and system information).
+# BROPATH, and system information).
 
 awk '{
     if ( $0 ~ /^==== std(err|out)\.log/ ) {
@@ -18,7 +18,7 @@ awk '{
         else if ( $0 ~ /^BROPATH=/ ) {
             print "BROPATH=<...>"
         }
-        else if ( $0 ~ /^Bro / ) {
+        else if ( $0 ~ /^No / ) {
             skip=1
         }
         else {
