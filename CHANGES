@@ -1,4 +1,11 @@
 
+1.4-132 | 2016-07-14 18:23:27 -0400
+
+  * Don't run capstats on interfaces with packet source prefix (Daniel Thayer)
+
+    If an interface name contains the string "::" (indicating a packet source
+    plugin is being used), then don't try to run capstats on that interface.
+
 1.4-130 | 2016-07-13 14:36:34 -0400
 
   * Improve crash reports that have no backtrace (Daniel Thayer)

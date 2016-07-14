@@ -795,6 +795,8 @@ class Controller:
                 continue
 
             netif = self._capstats_interface(node)
+            if not netif:
+                continue
 
             if hosts.setdefault((node.addr, netif), node) == node:
                 nodenetifs.append((node, netif))
@@ -862,8 +864,9 @@ class Controller:
             netif = netif.split("@", 1)[0]
 
         elif "::" in netif:
-            # Interface name has packet source prefix (e.g. "af_packet::eth0")
-            netif = netif.split("::", 1)[1]
+            # Interface name has packet source prefix (e.g. "af_packet::eth0"),
+            # so don't try to run capstats on this interface.
+            netif = None
 
         return netif
 
