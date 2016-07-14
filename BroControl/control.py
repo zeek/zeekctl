@@ -361,13 +361,27 @@ class Controller:
         for n in nodes:
             self.pluginregistry.broProcessDied(n)
 
-        msg = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
+        msg_header_backtrace = "If you want to help us debug this problem, then please forward\nthis mail to reports@bro.org\n"
+
+        msg_header_no_backtrace = "This crash report does not include a backtrace.  In order for crash reports\nto be useful when Bro crashes, a backtrace is needed.\n"
+
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         cmds = [(node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes]
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
-                msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg + "\n".join(output))
+                crashreport = "\n".join(output)
+
+                # Note: here it is assumed that the crash-diag script outputs
+                # this string only when there's a backtrace.
+                has_backtrace = "Core file: " in crashreport
+
+                if has_backtrace:
+                    msg = msg_header_backtrace + crashreport
+                else:
+                    msg = msg_header_no_backtrace + crashreport
+
+                msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg)
                 if not msuccess:
                     self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
             else:
@@ -803,6 +817,8 @@ class Controller:
                 continue
 
             netif = self._capstats_interface(node)
+            if not netif:
+                continue
 
             if hosts.setdefault((node.addr, netif), node) == node:
                 nodenetifs.append((node, netif))
@@ -859,14 +875,20 @@ class Controller:
         return results
 
 
+    # Convert a Bro network interface name to one that capstats can use.
     def _capstats_interface(self, node):
         netif = node.interface
 
-        # If PF_RING+DNA with pfdnacluster_master is being used, then this hack
-        # is needed to prevent capstats from trying to use the same interface
-        # name as Bro.
         if netif.startswith("dnacl") and netif.count("@") == 1:
+            # PF_RING+DNA with pfdnacluster_master is being used
+            # (e.g. interface name "dnacluster:21" gets changed to
+            # "dnacluster:21@1" by the broctl pf_ring plugin)
             netif = netif.split("@", 1)[0]
+
+        elif "::" in netif:
+            # Interface name has packet source prefix (e.g. "af_packet::eth0"),
+            # so don't try to run capstats on this interface.
+            netif = None
 
         return netif
 

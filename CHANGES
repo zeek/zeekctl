@@ -1,4 +1,29 @@
 
+1.4-132 | 2016-07-14 18:23:27 -0400
+
+  * Don't run capstats on interfaces with packet source prefix (Daniel Thayer)
+
+    If an interface name contains the string "::" (indicating a packet source
+    plugin is being used), then don't try to run capstats on that interface.
+
+1.4-130 | 2016-07-13 14:36:34 -0400
+
+  * Improve crash reports that have no backtrace (Daniel Thayer)
+
+    Changed the text of the crash reports that broctl mails so that if no
+    backtrace is included then the crash report will now explain what to do
+    in order to get a backtrace (there is a separate message depending on
+    whether there's no core file, no gdb, or both are missing).  Only when
+    a backtrace is included will the crash report tell the user to mail the
+    crash report to the bro team.
+
+    Also added gdb to the list of recommended prerequisites in the
+    documentation.
+
+1.4-127 | 2016-07-06 08:58:18 -0500
+
+  * Ignore packet source prefix of interface name when using capstats. (Jan Grashoefer)
+
 1.4-125 | 2016-07-02 17:53:42 -0500
 
   * New plugin function "broctl_config" so plugin authors can add their own
