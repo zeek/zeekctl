@@ -1,10 +1,13 @@
 # Test that the install command creates a broctl-config.bro policy file
-# containing the values of certain broctl options.
+# with the correct contents.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: btest-diff broctl-config.bro
+# @TEST-EXEC: btest-diff standalone
+# @TEST-EXEC: btest-diff no-logger
+# @TEST-EXEC: btest-diff logger
 
 . broctl-test-setup
+set -e
 
 broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
@@ -21,13 +24,25 @@ echo "IPv6Comm=0" >> ${broctlcfg}
 echo "PcapSnaplen=1212" >> ${broctlcfg}
 echo "PcapBufsize=256" >> ${broctlcfg}
 
-ret=0
-
-test ! -e ${broctlconfig} || ret=1
+if [ -e ${broctlconfig} ]; then
+    exit 1
+fi
 
 broctl install
+cp ${broctlconfig} standalone
 
-cp ${broctlconfig} broctl-config.bro
+# Install a cluster config.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__cluster
+EOF
 
-exit $ret
+broctl install
+cp ${broctlconfig} no-logger
 
+# Install a cluster config with a logger node.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__logger
+EOF
+
+broctl install
+cp ${broctlconfig} logger

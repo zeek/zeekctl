@@ -124,7 +124,7 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            elif n.type == "manager":
+            elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
                 logger += [n]
@@ -412,7 +412,7 @@ class Controller:
                 workers += [n]
             elif n.type == "proxy":
                 proxies += [n]
-            elif n.type == "manager":
+            elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
                 logger += [n]
