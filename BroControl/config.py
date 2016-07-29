@@ -610,7 +610,7 @@ class Configuration:
     def read_state(self):
         self.state = dict(self.state_store.items())
 
-    # Use ifconfig command to find local IP addrs.
+    # Use the ifconfig command to find local IP addrs.
     def _get_local_addrs_ifconfig(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
@@ -618,51 +618,92 @@ class Configuration:
             # is consistent regardless of which locale the system is using.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # The output of ifconfig varies by OS and by IPv4 vs IPv6.
+        # Linux example:
+        #   inet addr:127.0.0.1
+        #   inet6 addr: ::1/128
+        # BSD (and OS X) example:
+        #   inet 127.0.0.1
+        #   inet6 ::1
+        #   inet6 fe80::1%lo0
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                addrfield = False
-                for field in fields:
-                    if field == "inet" or field == "inet6":
-                        addrfield = True
-                    elif addrfield and field != "addr:":
-                        locaddr = field
-                        # remove "addr:" prefix (if any)
-                        if field.startswith("addr:"):
-                            locaddr = field[5:]
-                        # remove everything after "/" or "%" (if any)
-                        locaddr = locaddr.split("/")[0]
-                        locaddr = locaddr.split("%")[0]
-                        localaddrs.append(locaddr)
-                        break
+            if len(fields) < 3:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+
+            if addrstr[-1] == ":" and addrstr.count(":") == 1:
+                addrstr = fields[2]
+
+            if addrstr.count(":") == 1:
+                # Remove "addr:" prefix (if any).
+                addrstr = addrstr.split(":")[1]
+
+            # Remove everything after "/" or "%" (if any)
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.error('failed to extract IP addresses from the "ifconfig -a" command output')
+
         return localaddrs
 
-    # Use ip command to find local IP addrs.
+    # Use the ip command to find local IP addrs.
     def _get_local_addrs_ip(self):
         try:
+            # On Linux, "ip" is sometimes not in the user's standard PATH.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ip address"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # Here is an example portion of "ip" command output:
+        #    inet 127.0.0.1/8
+        #    inet6 ::1/128
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                locaddr = fields[1]
-                locaddr = locaddr.split("/")[0]
-                locaddr = locaddr.split("%")[0]
-                localaddrs.append(locaddr)
+            if len(fields) < 2:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.error('failed to extract IP addresses from the "ip address" command output')
+
         return localaddrs
 
     # Return a list of the IP addresses associated with local interfaces.
@@ -677,6 +718,8 @@ class Configuration:
 
         # Fallback to localhost if we did not find any IP addrs.
         if not localaddrs:
+            self.ui.error('failed to find local IP addresses with "ifconfig -a" or "ip address" commands')
+
             localaddrs = ["127.0.0.1", "::1"]
             try:
                 addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
@@ -685,8 +728,6 @@ class Configuration:
 
             for ai in addrinfo:
                 localaddrs.append(ai[4][0])
-
-            self.ui.error("failed to find local IP addresses (found: %s)" % ", ".join(localaddrs))
 
         return localaddrs
 
@@ -881,3 +922,17 @@ class Configuration:
             version = version[:-6]
 
         return version
+
+
+# Check if a string is a valid representation of an IP address or not.
+def _is_valid_addr(ipstr):
+    try:
+        if ":" in ipstr:
+            socket.inet_pton(socket.AF_INET6, ipstr)
+        else:
+            socket.inet_pton(socket.AF_INET, ipstr)
+    except socket.error:
+        return False
+
+    return True
+
