@@ -222,20 +222,47 @@ class HostHandler(Thread):
         self.master = SSHMaster(self.host, self.localaddrs)
 
     def ping(self):
+        # Error message should indicate whether or not ssh is being used.
+        msgstr = "ssh "
+        if self.host in self.localaddrs:
+            msgstr = ""
+
+        # Error message shows if a connection was previously established.
+        if self.alive:
+            msg = "Lost %sconnection to host %s" % (msgstr, self.host)
+        else:
+            msg = "Failed to establish %sconnection to host %s" % (msgstr, self.host)
+
+        # This will be set to True below only if the "ping" is received.
+        self.alive = False
+
         try:
             resp = self.master.exec_command(["/bin/echo", "ping"], timeout=10)
-            return resp.stdout.strip() == "ping"
         except Exception as e:
             # This happens most likely due to broken pipe (i.e., ssh
             # terminates, usually because it couldn't connect, or its own
             # timeout occurred).
-            logging.debug("Host %s is not alive", self.host)
-            return False
+            return "%s: %s" % (msg, e)
+
+        try:
+            ping_recvd = resp.stdout.strip() == "ping"
+        except Exception:
+            # This happens when there was a timeout in SSHMaster (in this
+            # situation, that almost always means unable to establish
+            # connection or a loss of connection).
+            return msg
+
+        if ping_recvd:
+            self.alive = True
+            return ""
+
+        # This should probably never happen.
+        return "Communication failure with host %s when checking connection" % self.host
 
     def connect_and_ping(self):
         if not self.alive:
             self.connect()
-        self.alive = self.ping()
+        return self.ping()
 
     def run(self):
         while True:
@@ -252,9 +279,8 @@ class HostHandler(Thread):
         if item is STOP_RUNNING:
             return True
 
-        self.connect_and_ping()
+        msg = self.connect_and_ping()
         if not self.alive:
-            msg = "Host %s is not alive" % self.host
             logging.debug(msg)
             resp = [Exception(msg)] * len(item)
             rq.put(resp)
@@ -264,9 +290,9 @@ class HostHandler(Thread):
             resp = self.master.exec_commands(item, shell, self.timeout)
         except Exception as e:
             self.alive = False
-            msgstr = ""
-            if self.host not in self.localaddrs:
-                msgstr = "ssh "
+            msgstr = "ssh "
+            if self.host in self.localaddrs:
+                msgstr = ""
             msg = "Lost %sconnection while running command on host %s: %s" % (msgstr, self.host, e)
             logging.debug(msg)
             resp = [Exception(msg)] * len(item)
