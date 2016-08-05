@@ -104,12 +104,15 @@ CmdResult = collections.namedtuple("CmdResult", "status stdout stderr")
 
 class SSHMaster:
     def __init__(self, host, localaddrs):
-        self.host = host
+        # The BatchMode=yes disables interactive prompting.  The LogLevel=error
+        # prevents seeing login banners but allows error messages from ssh.
         self.base_cmd = [
             "ssh",
-            "-o", "BatchMode=yes", "-o", "LogLevel=error",
+            "-o", "BatchMode=yes",
+            "-o", "LogLevel=error",
             host,
         ]
+        self.host = host
         self.need_connect = True
         self.master = None
         self.localaddrs = localaddrs
@@ -128,7 +131,7 @@ class SSHMaster:
     def readline_with_timeout(self, timeout):
         readable, _, _ = select.select([self.master.stdout], [], [], timeout)
         if not readable:
-            return False
+            return None
         jtxt = self.master.stdout.readline()
         if py3bro.using_py3:
             jtxt = jtxt.decode()
@@ -148,7 +151,10 @@ class SSHMaster:
         else:
             self.master.stdin.write(self.run_mux)
         self.master.stdin.flush()
+
+        # Wait until we receive the "ready" message from muxer script
         self.readline_with_timeout(timeout)
+
         for cmd in cmds:
             jcmd = "%s\n" % json.dumps(cmd)
             if py3bro.using_py3:
@@ -160,7 +166,8 @@ class SSHMaster:
         self.sent_commands = len(cmds)
 
     def collect_results(self, timeout):
-        outputs = [Exception("Command timeout")] * self.sent_commands
+        outputs = [Exception("Command timeout on host %s" % self.host)] * self.sent_commands
+
         while True:
             line = self.readline_with_timeout(timeout)
             if not line:
@@ -179,10 +186,6 @@ class SSHMaster:
 
             outputs[idx] = CmdResult(status, out, err)
         return outputs
-
-    def ping(self, timeout=10):
-        output = self.exec_command(["/bin/echo", "ping"], timeout=timeout)
-        return output and output.stdout.strip() == "ping"
 
     def close(self):
         if not self.master:
@@ -206,7 +209,7 @@ class HostHandler(Thread):
         self.localaddrs = localaddrs
         self.timeout = timeout
         self.q = Queue()
-        self.alive = "Unknown"
+        self.alive = False
         self.master = None
         Thread.__init__(self)
 
@@ -220,13 +223,17 @@ class HostHandler(Thread):
 
     def ping(self):
         try:
-            return self.master.ping()
+            resp = self.master.exec_command(["/bin/echo", "ping"], timeout=10)
+            return resp.stdout.strip() == "ping"
         except Exception as e:
+            # This happens most likely due to broken pipe (i.e., ssh
+            # terminates, usually because it couldn't connect, or its own
+            # timeout occurred).
             logging.debug("Host %s is not alive", self.host)
             return False
 
     def connect_and_ping(self):
-        if self.alive != True:
+        if not self.alive:
             self.connect()
         self.alive = self.ping()
 
@@ -247,7 +254,9 @@ class HostHandler(Thread):
 
         self.connect_and_ping()
         if not self.alive:
-            resp = [Exception("Host %s is not alive" % self.host)] * len(item)
+            msg = "Host %s is not alive" % self.host
+            logging.debug(msg)
+            resp = [Exception(msg)] * len(item)
             rq.put(resp)
             return False
 
@@ -255,7 +264,10 @@ class HostHandler(Thread):
             resp = self.master.exec_commands(item, shell, self.timeout)
         except Exception as e:
             self.alive = False
-            msg = "Exception in iteration for %s: %s" % (self.host, e)
+            msgstr = ""
+            if self.host not in self.localaddrs:
+                msgstr = "ssh "
+            msg = "Lost %sconnection while running command on host %s: %s" % (msgstr, self.host, e)
             logging.debug(msg)
             resp = [Exception(msg)] * len(item)
             time.sleep(2)
@@ -289,9 +301,10 @@ class MultiMasterManager:
         try:
             return rq.get(timeout=timeout)
         except Empty:
-            logging.debug("Host timeout %s", host)
             self.shutdown(host)
-            return [Exception("Host timeout")] #FIXME: needs to be the right length
+            # This can happen due to commands that take a while to run, a
+            # loss of connectivity to remote host, or both.
+            return [Exception("Timeout waiting for commands to finish on host %s" % host)] #FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]
