@@ -296,10 +296,14 @@ class MultiMasterManager:
         self.response_queues[host] = rq
         self.masters[host].send_commands(commands, shell, rq)
 
-    def get_result(self, host, timeout):
+    def get_result(self, host, hosttimeout):
+        # Add a few seconds to the host timeout in order to let the
+        # command timeout happen first.
+        hosttimeout += 5
+
         rq = self.response_queues[host]
         try:
-            return rq.get(timeout=timeout)
+            return rq.get(timeout=hosttimeout)
         except Empty:
             self.shutdown(host)
             # This can happen due to commands that take a while to run, a
@@ -309,11 +313,11 @@ class MultiMasterManager:
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]
 
-    def exec_commands(self, host, commands, timeout=65):
+    def exec_commands(self, host, commands, timeout=60):
         self.send_commands(host, commands, timeout)
         return self.get_result(host, timeout)
 
-    def exec_multihost_commands(self, cmds, shell=False, timeout=65):
+    def exec_multihost_commands(self, cmds, shell=False, timeout=60):
         hosts = collections.defaultdict(list)
         for host, cmd in cmds:
             hosts[host].append(cmd)
