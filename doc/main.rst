@@ -178,9 +178,9 @@ up-to-date based on the configuration specified in the ``broctl.cfg``,
 ``node.cfg``, and ``networks.cfg`` files.  It will also check if there
 are any syntax errors in your Bro policy scripts. For a cluster setup it will
 copy all of the required scripts and executables to all the other hosts
-in your cluster.  Then it will successively start manager, proxies, and
-workers (for a standalone configuration, only one Bro instance will be
-started).
+in your cluster.  Then it will successively start the logger, manager,
+proxies, and workers (for a standalone configuration, only one Bro instance
+will be started).
 
 The status_ command can be used to check that all nodes are "running".
 If any nodes have a status of "crashed", then use the diag_ command to
@@ -219,9 +219,10 @@ time, run ``"broctl cron ?"``.
 Log Files
 ---------
 
-On the manager system (and on the stand-alone system), while Bro is running
-you can find the current set of (aggregated) logs in ``logs/current`` (which
-is a symlink to the corresponding spool directory).
+While Bro is running you can find the current set of (aggregated) logs
+in ``logs/current`` (which is a symlink to the corresponding spool directory).
+In a cluster setup, logs are written on the logger host (however, if there
+is no logger defined in your node.cfg, then the manager writes logs).
 
 Bro logs are automatically rotated once per hour by default, or whenever Bro
 is stopped.  A rotated log is renamed to contain a timestamp in the filename.
