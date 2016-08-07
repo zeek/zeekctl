@@ -229,6 +229,7 @@ class Configuration:
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
+    # - If tag is "loggers", all logger Nodes are returned.
     # - If tag is "proxies", all proxy Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
@@ -247,6 +248,9 @@ class Configuration:
 
         elif tag == "standalone":
             nodetype = "standalone"
+
+        elif tag == "loggers":
+            nodetype = "logger"
 
         elif tag == "manager":
             nodetype = "manager"
@@ -398,7 +402,7 @@ class Configuration:
         if not node.type:
             raise ConfigurationError("no type given for node %s" % node.name)
 
-        if node.type not in ("manager", "proxy", "worker", "standalone"):
+        if node.type not in ("logger", "manager", "proxy", "worker", "standalone"):
             raise ConfigurationError("unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
@@ -503,6 +507,7 @@ class Configuration:
             raise ConfigurationError("no nodes found in node config")
 
         standalone = False
+        logger = False
         manager = False
         proxy = False
 
@@ -511,7 +516,12 @@ class Configuration:
         localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
-            if n.type == "manager":
+            if n.type == "logger":
+                if logger:
+                    raise ConfigurationError("only one logger can be defined")
+                logger = True
+
+            elif n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined")
                 manager = True
