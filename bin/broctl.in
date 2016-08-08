@@ -26,9 +26,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         self.interactive = interactive
 
         # Warn user to do broctl install, if needed.  Skip this check when
-        # running cron to avoid receiving annoying emails.
-        if cmd != "cron":
-            self.broctl.warn_broctl_install(cmd in ("install", "deploy"))
+        # running cron to avoid receiving annoying emails.  Also skip if the
+        # install or deploy commands are running.
+        if cmd not in ("cron", "install", "deploy"):
+            self.broctl.warn_broctl_install()
 
     def finish(self):
         self.broctl.finish()

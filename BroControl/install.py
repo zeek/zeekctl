@@ -96,14 +96,7 @@ def make_layout(path, cmdout, silent=False):
 
     manager = config.Config.manager()
 
-    filename = os.path.join(path, "cluster-layout.bro")
-
-    # If there is a standalone node, delete any cluster-layout file to
-    # avoid the cluster framework from activating and get out of here.
     if config.Config.nodes("standalone"):
-        if os.access(filename, os.W_OK):
-            os.unlink(filename)
-        # We do need to establish the port for the manager.
         if not silent:
             cmdout.info("generating standalone-layout.bro ...")
 
@@ -121,6 +114,7 @@ def make_layout(path, cmdout, silent=False):
         if not silent:
             cmdout.info("generating cluster-layout.bro ...")
 
+        filename = os.path.join(path, "cluster-layout.bro")
         broport = Port(config.Config.broport)
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
