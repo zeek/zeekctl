@@ -47,6 +47,19 @@ def get_nfssyncs():
 # Generate a shell script "broctl-config.sh" that sets env. vars. that
 # correspond to broctl config options.
 def make_broctl_config_sh(cmdout):
+    ostr = ""
+    for (varname, value) in config.Config.options(dynamic=False):
+        if isinstance(value, bool):
+            # Convert bools to the string "1" or "0"
+            value = (value and "1" or "0")
+        else:
+            value = str(value)
+
+        # In order to prevent shell errors, here we convert plugin
+        # option names to use underscores, and double quotes in the value
+        # are escaped.
+        ostr += '%s="%s"\n' % (varname.replace(".", "_"), value.replace('"', '\\"'))
+
     # Rather than just overwriting the file, we first write out a tmp file,
     # and then rename it to avoid a race condition where a process outside of
     # broctl (such as archive-log) is trying to read the file while it is
@@ -54,25 +67,29 @@ def make_broctl_config_sh(cmdout):
     cfg_path = os.path.join(config.Config.broctlconfigdir, "broctl-config.sh")
     tmp_path = os.path.join(config.Config.broctlconfigdir, ".broctl-config.sh.tmp")
 
-    with open(tmp_path, "w") as out:
-        for (varname, value) in config.Config.options(dynamic=False):
-            if isinstance(value, bool):
-                # Convert bools to the string "1" or "0"
-                value = (value and "1" or "0")
-            else:
-                value = str(value)
+    try:
+        with open(tmp_path, "w") as out:
+            out.write(ostr)
+    except IOError as e:
+        cmdout.error("failed to write file: %s" % e)
+        return False
 
-            # In order to prevent shell errors, here we convert plugin
-            # option names to use underscores, and double quotes in the value
-            # are escaped.
-            out.write('%s="%s"\n' % (varname.replace(".", "_"),
-                       value.replace('"', '\\"')))
-
-    os.rename(tmp_path, cfg_path)
+    try:
+        os.rename(tmp_path, cfg_path)
+    except OSError as e:
+        cmdout.error("failed to rename file %s: %s" % (tmp_path, e))
+        return False
 
     symlink = os.path.join(config.Config.scriptsdir, "broctl-config.sh")
 
-    if not os.path.islink(symlink) or os.readlink(symlink) != cfg_path:
+    # check if the symlink needs to be updated
+    try:
+        update_link = not os.path.islink(symlink) or os.readlink(symlink) != cfg_path
+    except OSError as e:
+        cmdout.error("failed to read symlink: %s" % e)
+        return False
+
+    if update_link:
         # attempt to update the symlink
         try:
             util.force_symlink(cfg_path, symlink)
@@ -101,14 +118,14 @@ def make_layout(path, cmdout, silent=False):
             cmdout.info("generating standalone-layout.bro ...")
 
         filename = os.path.join(path, "standalone-layout.bro")
-        with open(filename, "w") as out:
-            out.write("# Automatically generated. Do not edit.\n")
-            # This is the port that standalone nodes listen on for remote
-            # control by default.
-            out.write("redef Communication::listen_port = %s/tcp;\n" % config.Config.broport)
-            out.write("redef Communication::nodes += {\n")
-            out.write("\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id))
-            out.write("};\n")
+
+        ostr = "# Automatically generated. Do not edit.\n"
+        # This is the port that standalone nodes listen on for remote
+        # control by default.
+        ostr += "redef Communication::listen_port = %s/tcp;\n" % config.Config.broport
+        ostr += "redef Communication::nodes += {\n"
+        ostr += "\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id)
+        ostr += "};\n"
 
     else:
         if not silent:
@@ -169,8 +186,14 @@ def make_layout(path, cmdout, silent=False):
 
         ostr += "};\n"
 
+    try:
         with open(filename, "w") as out:
             out.write(ostr)
+    except IOError as e:
+        cmdout.error("failed to write file: %s" % e)
+        return False
+
+    return True
 
 
 # Reads in a list of networks from file.
@@ -201,22 +224,28 @@ def make_local_networks(path, cmdout, silent=False):
 
     netcfg = config.Config.localnetscfg
 
-    if not os.path.exists(netcfg):
-        cmdout.error("file not found: %s" % netcfg)
+    try:
+        nets = read_networks(netcfg)
+    except IOError as e:
+        cmdout.error("failed to read file: %s" % e)
         return False
 
-    nets = read_networks(netcfg)
+    ostr = "# Automatically generated. Do not edit.\n\n"
 
-    with open(os.path.join(path, "local-networks.bro"), "w") as out:
-        out.write("# Automatically generated. Do not edit.\n\n")
+    ostr += "redef Site::local_nets = {\n"
+    for (cidr, tag) in nets:
+        ostr += "\t%s," % cidr
+        if tag:
+            ostr += "\t# %s" % tag
+        ostr += "\n"
+    ostr += "};\n\n"
 
-        out.write("redef Site::local_nets = {\n")
-        for (cidr, tag) in nets:
-            out.write("\t%s," % cidr)
-            if tag:
-                out.write("\t# %s" % tag)
-            out.write("\n")
-        out.write("};\n\n")
+    try:
+        with open(os.path.join(path, "local-networks.bro"), "w") as out:
+            out.write(ostr)
+    except IOError as e:
+        cmdout.error("failed to write file: %s" % e)
+        return False
 
     return True
 
@@ -224,33 +253,42 @@ def make_local_networks(path, cmdout, silent=False):
 def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
     manager = config.Config.manager()
 
-    filename = os.path.join(path, "broctl-config.bro")
-    with open(filename, "w") as out:
-        out.write("# Automatically generated. Do not edit.\n")
-        out.write("redef Notice::mail_dest = \"%s\";\n" % config.Config.mailto)
-        out.write("redef Notice::mail_dest_pretty_printed = \"%s\";\n" % config.Config.mailalarmsto)
-        out.write("redef Notice::sendmail  = \"%s\";\n" % config.Config.sendmail)
-        out.write("redef Notice::mail_subject_prefix  = \"%s\";\n" % config.Config.mailsubjectprefix)
-        out.write("redef Notice::mail_from  = \"%s\";\n" % config.Config.mailfrom)
-        if manager.type != "standalone":
-            loggers = config.Config.nodes("loggers")
-            if loggers:
-                ntype = "LOGGER"
-            else:
-                ntype = "MANAGER"
-            out.write("@if ( Cluster::local_node_type() == Cluster::%s )\n" % ntype)
-        out.write("redef Log::default_rotation_interval = %s secs;\n" % config.Config.logrotationinterval)
-        out.write("redef Log::default_mail_alarms_interval = %s secs;\n" % config.Config.mailalarmsinterval)
-
-        if manager.type != "standalone":
-            out.write("@endif\n")
-
-        if config.Config.ipv6comm:
-            out.write("redef Communication::listen_ipv6 = T ;\n")
+    ostr = '# Automatically generated. Do not edit.\n'
+    ostr += 'redef Notice::mail_dest = "%s";\n' % config.Config.mailto
+    ostr += 'redef Notice::mail_dest_pretty_printed = "%s";\n' % config.Config.mailalarmsto
+    ostr += 'redef Notice::sendmail = "%s";\n' % config.Config.sendmail
+    ostr += 'redef Notice::mail_subject_prefix = "%s";\n' % config.Config.mailsubjectprefix
+    ostr += 'redef Notice::mail_from = "%s";\n' % config.Config.mailfrom
+    if manager.type != "standalone":
+        loggers = config.Config.nodes("loggers")
+        if loggers:
+            ntype = "LOGGER"
         else:
-            out.write("redef Communication::listen_ipv6 = F ;\n")
+            ntype = "MANAGER"
+        ostr += '@if ( Cluster::local_node_type() == Cluster::%s )\n' % ntype
 
-        out.write("redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen)
-        out.write("redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize)
+    ostr += 'redef Log::default_rotation_interval = %s secs;\n' % config.Config.logrotationinterval
+    ostr += 'redef Log::default_mail_alarms_interval = %s secs;\n' % config.Config.mailalarmsinterval
 
-        out.write(plugin_reg.getBroctlConfig())
+    if manager.type != "standalone":
+        ostr += '@endif\n'
+
+    if config.Config.ipv6comm:
+        ostr += 'redef Communication::listen_ipv6 = T;\n'
+    else:
+        ostr += 'redef Communication::listen_ipv6 = F;\n'
+
+    ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
+    ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize
+
+    ostr += plugin_reg.getBroctlConfig()
+
+    filename = os.path.join(path, "broctl-config.bro")
+    try:
+        with open(filename, "w") as out:
+            out.write(ostr)
+    except IOError as e:
+        cmdout.error("failed to write file: %s" % e)
+        return False
+
+    return True
