@@ -82,7 +82,7 @@ class Configuration:
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
-            raise RuntimeError("cannot run uname")
+            raise RuntimeError("failed to run uname: %s" % output)
         self._set_option("os", output[0].lower().strip())
 
         if self.config["os"] == "linux":
@@ -112,7 +112,7 @@ class Configuration:
 
         for key, value in self.config.items():
             if re.match(allowedchars, key) is None:
-                raise ConfigurationError('broctl option name "%s" contains invalid characters' % key)
+                raise ConfigurationError('broctl option name "%s" contains invalid characters (allowed characters: a-z, 0-9, ., and _)' % key)
             if re.match(nostartdigit, key) is None:
                 raise ConfigurationError('broctl option name "%s" cannot start with a number' % key)
 
@@ -353,11 +353,11 @@ class Configuration:
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' in env_vars option: %s" % keyval)
+                    raise ConfigurationError("missing '=' in env_vars option value: %s" % keyval)
 
                 key = key.strip()
                 if not key:
-                    raise ConfigurationError("missing environment variable name in env_vars option: %s" % keyval)
+                    raise ConfigurationError("env_vars option value must contain at least one environment variable name: %s" % keyval)
 
                 env_vars[key] = val.strip()
 
@@ -392,6 +392,7 @@ class Configuration:
             self._check_node(node, nodestore, counts)
 
             if node.name in nodestore:
+                # This only happens when lb_procs is being used.
                 raise ConfigurationError("duplicate node name '%s'" % node.name)
             nodestore[node.name] = node
 
@@ -411,7 +412,7 @@ class Configuration:
         try:
             addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
         except socket.gaierror as e:
-            raise ConfigurationError("unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
+            raise ConfigurationError("hostname lookup failed for '%s' in node config [%s]" % (node.host, e.args[1]))
 
         addrs = [ addr[4][0] for addr in addrinfo ]
 
@@ -445,7 +446,7 @@ class Configuration:
 
         if node.lb_procs:
             if node.type != "worker":
-                raise ConfigurationError("load balancing node config options are only for worker nodes")
+                raise ConfigurationError("node '%s' config: load balancing node config options are only for worker nodes" % node.name)
             try:
                 numprocs = int(node.lb_procs)
             except ValueError:
@@ -523,7 +524,7 @@ class Configuration:
 
             elif n.type == "manager":
                 if manager:
-                    raise ConfigurationError("only one manager can be defined")
+                    raise ConfigurationError("only one manager can be defined in node config")
                 manager = True
                 if n.addr in localhostaddrs:
                     manageronlocalhost = True
@@ -620,7 +621,7 @@ class Configuration:
     def read_state(self):
         self.state = dict(self.state_store.items())
 
-    # Use ifconfig command to find local IP addrs.
+    # Use the ifconfig command to find local IP addrs.
     def _get_local_addrs_ifconfig(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
@@ -628,51 +629,92 @@ class Configuration:
             # is consistent regardless of which locale the system is using.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # The output of ifconfig varies by OS and by IPv4 vs IPv6.
+        # Linux example:
+        #   inet addr:127.0.0.1
+        #   inet6 addr: ::1/128
+        # BSD (and OS X) example:
+        #   inet 127.0.0.1
+        #   inet6 ::1
+        #   inet6 fe80::1%lo0
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                addrfield = False
-                for field in fields:
-                    if field == "inet" or field == "inet6":
-                        addrfield = True
-                    elif addrfield and field != "addr:":
-                        locaddr = field
-                        # remove "addr:" prefix (if any)
-                        if field.startswith("addr:"):
-                            locaddr = field[5:]
-                        # remove everything after "/" or "%" (if any)
-                        locaddr = locaddr.split("/")[0]
-                        locaddr = locaddr.split("%")[0]
-                        localaddrs.append(locaddr)
-                        break
+            if len(fields) < 3:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+
+            if addrstr[-1] == ":" and addrstr.count(":") == 1:
+                addrstr = fields[2]
+
+            if addrstr.count(":") == 1:
+                # Remove "addr:" prefix (if any).
+                addrstr = addrstr.split(":")[1]
+
+            # Remove everything after "/" or "%" (if any)
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.warn('failed to extract IP addresses from the "ifconfig -a" command output')
+
         return localaddrs
 
-    # Use ip command to find local IP addrs.
+    # Use the ip command to find local IP addrs.
     def _get_local_addrs_ip(self):
         try:
+            # On Linux, "ip" is sometimes not in the user's standard PATH.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ip address"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # Here is an example portion of "ip" command output:
+        #    inet 127.0.0.1/8
+        #    inet6 ::1/128
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                locaddr = fields[1]
-                locaddr = locaddr.split("/")[0]
-                locaddr = locaddr.split("%")[0]
-                localaddrs.append(locaddr)
+            if len(fields) < 2:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.warn('failed to extract IP addresses from the "ip address" command output')
+
         return localaddrs
 
     # Return a list of the IP addresses associated with local interfaces.
@@ -687,6 +729,8 @@ class Configuration:
 
         # Fallback to localhost if we did not find any IP addrs.
         if not localaddrs:
+            self.ui.warn('failed to find local IP addresses with "ifconfig -a" or "ip address" commands')
+
             localaddrs = ["127.0.0.1", "::1"]
             try:
                 addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
@@ -695,8 +739,6 @@ class Configuration:
 
             for ai in addrinfo:
                 localaddrs.append(ai[4][0])
-
-            self.ui.error("failed to find local IP addresses (found: %s)" % ", ".join(localaddrs))
 
         return localaddrs
 
@@ -712,13 +754,17 @@ class Configuration:
 
     # Returns True if the broctl config files have changed since last reload.
     def is_cfg_changed(self):
-        if "configchksum" in self.state:
-            if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
-                return True
+        try:
+            if "configchksum" in self.state:
+                if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
+                    return True
 
-        if "confignodechksum" in self.state:
-            if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
-                return True
+            if "confignodechksum" in self.state:
+                if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
+                    return True
+        except IOError:
+            # If we can't read the config files, then do nothing.
+            pass
 
         return False
 
@@ -728,9 +774,8 @@ class Configuration:
 
     # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
-    # are missing.  If the "isinstall" parameter is True, then we're running
-    # the install or deploy command, so some of the warnings are skipped.
-    def warn_broctl_install(self, isinstall):
+    # are missing.
+    def warn_broctl_install(self):
         missingstate = False
 
         # Check if node config has changed since last install.
@@ -738,18 +783,11 @@ class Configuration:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                # If running the install/deploy cmd, then skip this warning
-                if not isinstall:
-                    self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
 
                 return
         else:
             missingstate = True
-
-        # If we're running the install or deploy commands, then skip the
-        # rest of the checks.
-        if isinstall:
-            return
 
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
@@ -875,14 +913,14 @@ class Configuration:
         if success and output:
             version = output[-1]
         else:
-            msg = ""
+            msg = " with no output"
             if output:
                 msg = " with output:\n%s" % "\n".join(output)
-            raise ConfigurationError("running \"bro -v\" failed%s" % msg)
+            raise ConfigurationError('running "bro -v" failed%s' % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
-            raise ConfigurationError("cannot determine Bro version [%s]" % version.strip())
+            raise ConfigurationError('cannot determine Bro version ("bro -v" output: %s)' % version.strip())
 
         version = match.group(1)
         # If bro is built with the "--enable-debug" configure option, then it
@@ -891,3 +929,17 @@ class Configuration:
             version = version[:-6]
 
         return version
+
+
+# Check if a string is a valid representation of an IP address or not.
+def _is_valid_addr(ipstr):
+    try:
+        if ":" in ipstr:
+            socket.inet_pton(socket.AF_INET6, ipstr)
+        else:
+            socket.inet_pton(socket.AF_INET, ipstr)
+    except socket.error:
+        return False
+
+    return True
+

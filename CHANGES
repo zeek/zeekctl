@@ -1,4 +1,17 @@
 
+1.4-150 | 2016-08-09 13:38:17 -0400
+
+  * Show python stack trace if unexpected exception is raised (Daniel Thayer)
+
+  * Improve broctl error messages and error handling across the board (Daniel Thayer)
+
+  * Add a new node type for logging (Daniel Thayer)
+
+    Allow user to specify a Bro node of type "logger" in the node.cfg.  This
+    node will handle logging instead of the manager.  If the user chooses
+    not to specify a logger node in node.cfg, then everything works the same
+    as before.
+
 1.4-132 | 2016-07-14 18:23:27 -0400
 
   * Don't run capstats on interfaces with packet source prefix (Daniel Thayer)

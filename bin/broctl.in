@@ -26,9 +26,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         self.interactive = interactive
 
         # Warn user to do broctl install, if needed.  Skip this check when
-        # running cron to avoid receiving annoying emails.
-        if cmd != "cron":
-            self.broctl.warn_broctl_install(cmd in ("install", "deploy"))
+        # running cron to avoid receiving annoying emails.  Also skip if the
+        # install or deploy commands are running.
+        if cmd not in ("cron", "install", "deploy"):
+            self.broctl.warn_broctl_install()
 
     def finish(self):
         self.broctl.finish()
@@ -208,12 +209,15 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        if data[0][2]["type"] == "standalone":
+        if data and data[0][2]["type"] == "standalone":
             # In standalone mode, we need a wider "type" column.
             typewidth = 10
             hostwidth = 13
 
-        showall = "peers" in data[0][2]
+        showall = False
+        if data:
+            showall = "peers" in data[0][2]
+
         if showall:
             colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
         else:
@@ -246,11 +250,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        proclist = data[0][2]["procs"]
-        if proclist[0]["type"] == "standalone":
-            # In standalone mode, we need a wider "type" column.
-            typewidth = 10
-            hostwidth = 13
+        if data:
+            proclist = data[0][2]["procs"]
+            if proclist[0]["type"] == "standalone":
+                # In standalone mode, we need a wider "type" column.
+                typewidth = 10
+                hostwidth = 13
 
         lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-4s %-5s %s" % ("Name",
                 typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
@@ -781,20 +786,19 @@ def main():
         loop.precmd(cmdline)
         try:
             cmdsuccess = loop.onecmd(cmdline)
-        except Exception as e:
-            cmdsuccess = False
-            print("Error: %s" % e, file=sys.stderr)
+            loop.postcmd(False, cmdline)
         except KeyboardInterrupt:
             cmdsuccess = False
+        finally:
+            loop.finish()
 
-        loop.postcmd(False, cmdline)
     else:
         try:
             cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
         except KeyboardInterrupt:
             cmdsuccess = False
-
-    loop.finish()
+        finally:
+            loop.finish()
 
     return not cmdsuccess
 

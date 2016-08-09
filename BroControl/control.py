@@ -263,7 +263,7 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                self.ui.error("cannot connect to %s" % node.name)
+                self.ui.error("failed to run check-pid on node %s" % node.name)
                 continue
 
             running = output[0] == "running" and True or False
@@ -658,7 +658,7 @@ class Controller:
                 try:
                     shutil.rmtree(cwd)
                 except OSError as err:
-                    self.ui.error("cannot remove directory: %s" % err)
+                    self.ui.error("cannot remove directory %s: %s" % (cwd, err))
                     results.ok = False
                     return results
 
@@ -679,12 +679,16 @@ class Controller:
             installed_policies = installed and "1" or "0"
             print_scripts = list_scripts and "1" or "0"
 
-            install.make_layout(cwd, self.ui, True)
+            if not install.make_layout(cwd, self.ui, True):
+                results.ok = False
+                return results
             if not install.make_local_networks(cwd, self.ui, True):
                 results.ok = False
                 return results
 
-            install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry, True)
+            if not install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry, True):
+                results.ok = False
+                return results
 
             cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_make_bro_params(node, False)))
             cmd += " broctl/check"
@@ -693,7 +697,11 @@ class Controller:
 
         for ((node, cwd), success, output) in execute.run_localcmds(cmds):
             results.set_node_output(node, success, output)
-            shutil.rmtree(cwd)
+            try:
+                shutil.rmtree(cwd)
+            except OSError as err:
+                # Don't bother reporting an error now.
+                pass
 
         return results
 
@@ -1235,7 +1243,7 @@ class Controller:
                 try:
                     shutil.rmtree(dirpath)
                 except OSError as err:
-                    self.ui.error("failed to remove directory: %s" % err)
+                    self.ui.error("failed to remove directory %s: %s" % (dirpath, err))
                     results.ok = False
                     return results
 
@@ -1260,7 +1268,9 @@ class Controller:
                         results.ok = False
                         return results
 
-        install.make_layout(self.config.policydirsiteinstallauto, self.ui)
+        if not install.make_layout(self.config.policydirsiteinstallauto, self.ui):
+            results.ok = False
+            return results
 
         self.ui.info("generating local-networks.bro ...")
         if not install.make_local_networks(self.config.policydirsiteinstallauto, self.ui):
@@ -1268,7 +1278,9 @@ class Controller:
             return results
 
         self.ui.info("generating broctl-config.bro ...")
-        install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui, self.pluginregistry)
+        if not install.make_broctl_config_policy(self.config.policydirsiteinstallauto, self.ui, self.pluginregistry):
+            results.ok = False
+            return results
 
         loggers = self.config.nodes("loggers")
         if loggers:
