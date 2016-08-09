@@ -209,12 +209,15 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        if data[0][2]["type"] == "standalone":
+        if data and data[0][2]["type"] == "standalone":
             # In standalone mode, we need a wider "type" column.
             typewidth = 10
             hostwidth = 13
 
-        showall = "peers" in data[0][2]
+        showall = False
+        if data:
+            showall = "peers" in data[0][2]
+
         if showall:
             colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
         else:
@@ -247,11 +250,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        proclist = data[0][2]["procs"]
-        if proclist[0]["type"] == "standalone":
-            # In standalone mode, we need a wider "type" column.
-            typewidth = 10
-            hostwidth = 13
+        if data:
+            proclist = data[0][2]["procs"]
+            if proclist[0]["type"] == "standalone":
+                # In standalone mode, we need a wider "type" column.
+                typewidth = 10
+                hostwidth = 13
 
         lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-4s %-5s %s" % ("Name",
                 typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
