@@ -1,37 +1,24 @@
 
 1.4-150 | 2016-08-09 13:38:17 -0400
 
-  * Show python stack trace if unexpected exception is raised (Daniel Thayer)
+  * Show python stack trace if unexpected exception is raised.
+    (Daniel Thayer)
 
-  * Improve broctl error messages and error handling across the board (Daniel Thayer)
+  * Improve broctl error messages and error handling across the board.
+    (Daniel Thayer)
 
-  * Add a new node type for logging (Daniel Thayer)
-
-    Allow user to specify a Bro node of type "logger" in the node.cfg.  This
-    node will handle logging instead of the manager.  If the user chooses
-    not to specify a logger node in node.cfg, then everything works the same
-    as before.
+  * Add a new optional node type "logger" that will handle logging
+    instead of the manager. (Daniel Thayer)
 
 1.4-132 | 2016-07-14 18:23:27 -0400
 
-  * Don't run capstats on interfaces with packet source prefix (Daniel Thayer)
-
-    If an interface name contains the string "::" (indicating a packet source
-    plugin is being used), then don't try to run capstats on that interface.
+  * Don't run capstats on interfaces with packet source prefix. (Daniel Thayer)
 
 1.4-130 | 2016-07-13 14:36:34 -0400
 
-  * Improve crash reports that have no backtrace (Daniel Thayer)
-
-    Changed the text of the crash reports that broctl mails so that if no
-    backtrace is included then the crash report will now explain what to do
-    in order to get a backtrace (there is a separate message depending on
-    whether there's no core file, no gdb, or both are missing).  Only when
-    a backtrace is included will the crash report tell the user to mail the
-    crash report to the bro team.
-
-    Also added gdb to the list of recommended prerequisites in the
-    documentation.
+  * Improve the text of crash reports with instructions on how to
+    get a backtrace, which should reduce the amount of useless crash
+    reports mailed to the Bro team. (Daniel Thayer)
 
 1.4-127 | 2016-07-06 08:58:18 -0500
 
@@ -52,7 +39,7 @@
 
 1.4-117 | 2016-06-22 12:14:37 -0400
 
-  * Improve broctl behavior when unable to stop a node (Daniel Thayer)
+  * Improve broctl behavior when unable to stop a node. (Daniel Thayer)
 
 1.4-112 | 2016-06-14 16:14:52 -0700
 
@@ -87,53 +74,45 @@
 
 1.4-96 | 2016-04-28 13:43:22 -0400
 
-  * Fix inconsistent return value data type for some commands
-
-    This fix ensures that a broctl command return value from the library
-    is always a CmdResult. (Daniel Thayer)
+  * Fix inconsistent return value data type for some commands, so that
+    they always return a CmdResult. (Daniel Thayer)
 
 1.4-94 | 2016-04-28 13:29:34 -0400
 
-  * Fix the top command on OS X 10.10 or newer (Daniel Thayer)
+  * Fix the top command on OS X 10.10 or newer. (Daniel Thayer)
 
-  * Fix build-bro script for running broctl tests on FreeBSD (Daniel Thayer)
+  * Fix build-bro script for running broctl tests on FreeBSD. (Daniel Thayer)
 
 1.4-91 | 2016-03-31 15:08:24 -0500
 
-  * Explicitly close the Broccoli connection to avoid resource leak (Aaron Eppert)
+  * Explicitly close the Broccoli connection to avoid resource leak. (Aaron Eppert)
 
 1.4-89 | 2016-03-31 12:02:19 -0500
 
-  * Prevent ssh login banners from appearing in broctl output (Jon Schipp)
+  * Prevent ssh login banners from appearing in broctl output. (Jon Schipp)
 
 1.4-87 | 2016-03-31 10:35:47 -0400
 
-  * Eliminate unnecessary writes to the state db (Daniel Thayer)
+  * Eliminate unnecessary writes to the state db. (Daniel Thayer)
 
 1.4-84 | 2016-03-11 16:32:46 -0600
 
-  * Support ip command for getting local IP addrs (Jon Schipp)
+  * Support ip command for getting local IP addrs. (Jon Schipp)
 
 1.4-77 | 2016-01-20 14:44:36 -0500
 
-  * Allow users to specify a more granular log expire interval (Daniel Thayer)
+  * Changed LogExpireInterval to allow users to specify a more
+    granular log expire interval, which is a number followed by
+    a unit: "day", "hr", or "min".  An integer value with no unit
+    is still allowed and interpreted the same as before. (Daniel Thayer)
 
-    Changed LogExpireInterval to be an arbitrary time interval instead
-    of just an integer number of days.  The time interval is specified
-    just like time interval literals in Bro scripts (except that negative
-    values are not allowed, and only time units "day", "hr", and "min" are
-    recognized).
+  * More verbose error message for logexpireinterval value. (Daniel Thayer)
 
-    For backward compatibility, an integer value without a time unit is
-    still interpreted as a number of days. (Daniel Thayer)
+  * Prevent log expire interval from being less than rotation interval. (Daniel Thayer)
 
-  * More verbose error message for logexpireinterval value (Daniel Thayer)
+  * Improve the ps test diff canonifier. (Daniel Thayer)
 
-  * Prevent log expire interval from being less than rotation interval (Daniel Thayer)
-
-  * Improve the ps test diff canonifier (Daniel Thayer)
-
-  * Improve the cron-expire test script (Daniel Thayer)
+  * Improve the cron-expire test script. (Daniel Thayer)
 
 
 1.4-70 | 2016-01-19 22:42:10 -0600
@@ -149,78 +128,40 @@
 
 1.4-57 | 2015-12-11 12:00:07 -0500
 
-  * Simplify some code and fix a test that can fail on OS X (Daniel Thayer)
+  * Simplify some code and fix a test that can fail on OS X. (Daniel Thayer)
 
-  * Improvements to broctl documentation (Daniel Thayer)
+  * Improvements to broctl documentation. (Daniel Thayer)
 
-  * Improve diagnostic and  error messages (Daniel Thayer)
+  * Improve diagnostic and error messages. (Daniel Thayer)
 
   * Add more private IP space to etc/networks.cfg (Daniel Thayer)
 
-  * Add a new broctl option to control sending log archive mail (Daniel Thayer)
+  * Add a new broctl option, MailArchiveLogFail, to control sending
+    log archive mail. (Daniel Thayer)
 
-    Added a new broctl option MailArchiveLogFail that controls whether or
-    not to send mail when there is a failure to archive log files.
+  * Check for invalid option names and values more carefully. (Daniel Thayer)
 
-  * Check for invalid option names and values more carefully (Daniel Thayer)
+  * Fix use of ssh to always use IP address to avoid host key verification
+    failures, and use BatchMode consistently to avoid a misleading
+    error message when rsync fails. (Daniel Thayer)
 
-  * Fix use of ssh to always use IP address (Daniel Thayer)
+  * Changed post-terminate to attempt to archive logs that have already
+    been rotated.  Also changed crash-diag output file extension to no
+    longer use ".log" in order to avoid post-terminate trying to
+    archive it. (Daniel Thayer)
 
-    Changed all uses of ssh to use IP address instead of hostname.
-    This ensures that the ssh host key lookup always succeeds (assuming tha
-    the user did the manual setup first).  This avoids confusion when a user
-    uses different combinations of IP addr, hostname, or FQDN when setting
-    up the ssh host keys and the broctl node.cfg.  For example, if a user
-    specifies the FQDN in node.cfg, but then manually does an ssh to each
-    worker machine using just the hostname (not the FQDN) when setting up
-    the ssh host keys, then "broctl install" would fail because ssh can'
-    find the host key.  The simplest solution in this case is to have
-    broctl always use IP addresses with ssh.
+  * Send email if post-terminate fails to archive logs, and changed
+    the post-terminate script to run archive-log serially instead
+    of multiple instances simultaneously in the background.
+    (Daniel Thayer)
 
-    Also changed ssh to use BatchMode consistently to avoid a misleading
-    error message (can't find ssh-askpass) when the rsync fails.
+  * Rename logs in the spool/tmp/post-terminate directory to indicate
+    they were successfully archived when archive-log is run with the "-c"
+    option.  (Daniel Thayer)
 
-  * Improve post-terminate script's ability to archive logs (Daniel Thayer)
-
-    Changed post-terminate to attempt to archive logs that have already
-    been rotated.  Presumably, the archival of such logs was previously
-    attempted and failed, but now post-terminate will at least send an
-    email when it fails to archive them.
-
-    Also changed crash-diag output file extension to no longer use ".log"
-    in order to avoid post-terminate trying to archive it.
-
-  * Send email if post-terminate fails to archive logs
-
-    Changed the post-terminate script to run archive-log serially instead
-    of multiple instances simultaneously in the background, in order to
-    reduce the load on the system.  Also changed post-terminate to send an
-    email if it fails to archive one or more logs (the email contains the
-    name of the specific spool/tmp/post-terminate directory so that the user
-    can check for error messages or manually archive any logs there). (Daniel Thayer)
-
-  * Rename logs when archive-log is run with "-c" option (Daniel Thayer)
-
-    When the post-terminate script is dealing with a crashed Bro node,
-    it runs archive-log with the "-c" flag to indicate that the logs
-    should be archived but the originals should not be removed.
-    As a result, a user may be confused when seeing log files in
-    a spool/tmp/post-terminate directory because it is not clear
-    which ones were successfully archived.
-
-    To avoid confusion, now the original log files will be renamed
-    (e.g., conn.log --> conn.log_archived) after being successfully
-    archived.
-
-  * Capture output of background post-terminate script (Daniel Thayer)
-
-    If a spool/tmp/post-terminate directory doesn't get removed, then there
-    will be a new file "post-terminate.out" which might contain error
-    messages from the part of the post-terminate script that was run
-    in the background (these messages would most likely be from the
-    archive-log script that was executed by post-terminate).
-    This might be helpful when trying to diagnose a failure to archive
-    log files.
+  * Capture output of background post-terminate script to file
+    "post-terminate.out" which might be helpful for debugging
+    problems with log archival. (Daniel Thayer)
 
   * Add bro node type to post-terminate dir name (Daniel Thayer)
 
@@ -278,15 +219,8 @@
 
   * Check config file contents rather than timestamp (Daniel Thayer)
 
-  * Add ability for broctl to reload its configuration (Daniel Thayer)
-
-    Added the ability for broctl to reload its configuration (both
-    broctl.cfg and node.cfg).  Each time a user runs a broctl command
-    a check of the broctl config files is performed to determine if the
-    config has changed since the last time the config was loaded.  If a
-    change is detected, then before doing anything else, broctl will either
-    reload the config (for the "deploy" command) or warn the user to run
-    the "deploy" command (for any other command).
+  * Add ability for broctl to reload its configuration, which the
+    deploy command will do if a config file change is detected. (Daniel Thayer)
 
   * Avoid caching config values because config might change (Daniel Thayer)
 
@@ -331,7 +265,7 @@
 
   * Improve and extend tests. (Daniel Thayer)
 
-  * Improve error messages related to the env_vars option.
+  * Improve error messages related to the env_vars option. (Daniel Thayer)
 
   * Remove code that was automatically removing quoted values of the
     env_vars option. (Daniel Thayer)
