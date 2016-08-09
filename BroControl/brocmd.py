@@ -45,11 +45,7 @@ class ExitValueCmd(cmd.Cmd):
                         else:
                             line = line.rstrip("\r\n")
                 line = self.precmd(line)
-                try:
-                    success = self.onecmd(line)
-                except Exception as e:
-                    success = False
-                    print("Error: %s" % e)
+                success = self.onecmd(line)
                 self.postcmd(False, line)
             self.postloop()
         finally:

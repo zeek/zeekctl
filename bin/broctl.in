@@ -786,20 +786,19 @@ def main():
         loop.precmd(cmdline)
         try:
             cmdsuccess = loop.onecmd(cmdline)
-        except Exception as e:
-            cmdsuccess = False
-            print("Error: %s" % e, file=sys.stderr)
+            loop.postcmd(False, cmdline)
         except KeyboardInterrupt:
             cmdsuccess = False
+        finally:
+            loop.finish()
 
-        loop.postcmd(False, cmdline)
     else:
         try:
             cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
         except KeyboardInterrupt:
             cmdsuccess = False
-
-    loop.finish()
+        finally:
+            loop.finish()
 
     return not cmdsuccess
 
