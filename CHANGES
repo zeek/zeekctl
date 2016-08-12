@@ -1,4 +1,14 @@
 
+1.5-beta | 2016-08-12 13:20:27 -0700
+
+  * Release 1.5-beta.
+
+  * Fix rsync error message to not show ssh login banner. (Daniel Thayer)
+
+  * Run "make doc" to update broctl.rst (Daniel Thayer)
+
+  * Pruning CHANGES a bit (Daniel Thayer)
+
 1.4-150 | 2016-08-09 13:38:17 -0400
 
   * Show python stack trace if unexpected exception is raised.
@@ -879,7 +889,7 @@
 
 1.1-150 | 2013-07-14 08:00:44 -0700
 
-  * Fix broken link in README. (Bernhard Amann, thanks kraigu)
+  * Fix broken link in README. (Johanna Amann, thanks kraigu)
 
 1.1-148 | 2013-07-03 17:06:44 -0700
 
