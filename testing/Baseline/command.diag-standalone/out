@@ -3,8 +3,11 @@
 No core file found and gdb is not installed.  It is recommended to
 install gdb so that BroControl can output a backtrace if Bro crashes.
 
-Bro 2.4-1
+Bro 2.5-1
 Darwin 14.5.0
+
+Bro plugins:
+Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
 

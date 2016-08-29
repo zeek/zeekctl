@@ -26,11 +26,16 @@ brotestcfg = {"crash": "", "crashshutdown": "", "slowstart": "",
               "slowstop": "", "envvars": "" }
 
 # Parse cmd-line args (most of them can be ignored).
-optlist, args = getopt.getopt(sys.argv[1:], "bde:f:ghi:p:r:y:Y:s:t:w:vx:z:CD:FI:K:LOPR:ST:U:WZ")
+optlist, args = getopt.getopt(sys.argv[1:], "abde:f:ghi:p:r:s:t:vw:x:z:CFG:H:I:LNPQR:ST:U:WX:")
 for (opt, val) in optlist:
     if opt == "-v":
         # broctl doesn't care which version bro reports
-        print("bro version 2.4-1", file=sys.stderr)
+        print("bro version 2.5-1", file=sys.stderr)
+        sys.exit(0)
+    elif opt == "-N":
+        print("Bro::ARP - ARP Parsing (built-in)")
+        print("Bro::ZIP - Generic ZIP support analyzer (built-in)")
+        print("Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)")
         sys.exit(0)
     elif opt == "-U":
         statusfile = val
