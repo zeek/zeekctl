@@ -66,6 +66,9 @@ fi
 
 echo Bro $bro_version
 uname -sr
+echo
+echo "Bro plugins:"
+"${bro}" -N | grep -v "(built-in)"
 
 # Output a backtrace, if possible.
 if [ -n "$gdb" ]; then
