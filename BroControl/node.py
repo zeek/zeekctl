@@ -231,4 +231,6 @@ class Node:
         """Adds a supported node key. This is used by the PluginRegistry to
         register custom keys."""
 
-        Node._keys[kw] = 1
+        # We need to convert to lowercase here because Python's configparser
+        # automatically converts keys to lowercase when reading node.cfg.
+        Node._keys[kw.lower()] = 1
