@@ -129,7 +129,7 @@ else
     mv $file_name $new_fname
 
     find_cmd=find
-    if [ "${os}" = "openbsd" ]; then
+    if [ "${os}" = "OpenBSD" ]; then
         find_cmd=gfind
     fi
     # Only delete if too large (>100MB).

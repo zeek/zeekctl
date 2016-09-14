@@ -83,11 +83,11 @@ class Configuration:
         (success, output) = execute.run_localcmd("uname")
         if not success:
             raise RuntimeError("failed to run uname: %s" % output)
-        self._set_option("os", output[0].lower().strip())
+        self._set_option("os", output[0].strip())
 
-        if self.config["os"] == "linux":
+        if self.config["os"] == "Linux":
             self._set_option("pin_command", "taskset -c")
-        elif self.config["os"] == "freebsd":
+        elif self.config["os"] == "FreeBSD":
             self._set_option("pin_command", "cpuset -l")
         else:
             self._set_option("pin_command", "")
@@ -95,7 +95,7 @@ class Configuration:
         # Find the time command (should be a GNU time for best results).
         (success, output) = execute.run_localcmd("which time")
         if success:
-            self._set_option("time", output[0].lower().strip())
+            self._set_option("time", output[0].strip())
         else:
             self._set_option("time", "")
 

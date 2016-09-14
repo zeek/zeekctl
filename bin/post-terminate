@@ -133,9 +133,9 @@ while [ -n "$pidfiles" ]; do
 done
 
 find_cmd="find -E"
-if [ "${os}" = "linux" ]; then
+if [ "${os}" = "Linux" ]; then
     find_cmd=find
-elif [ "${os}" = "openbsd" ]; then
+elif [ "${os}" = "OpenBSD" ]; then
     find_cmd=gfind
 fi
 

@@ -50,7 +50,7 @@ function expire_log()
     fi
 
     find_cmd=find
-    if [ "${os}" = "openbsd" ]; then
+    if [ "${os}" = "OpenBSD" ]; then
         find_cmd=gfind
     fi
 
