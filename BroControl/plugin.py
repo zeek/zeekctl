@@ -229,7 +229,14 @@ class Plugin(object):
     @doc.api("override")
     def prefix(self):
         """Returns a string with a prefix for the plugin's options and
-        commands names (e.g., "myplugin").
+        commands names (e.g., "myplugin").  The prefix cannot contain
+        any whitespace or dots (because dots are used as separators when
+        forming the plugin's option names, state variable names, and
+        command names).
+
+        Note that BroControl will refuse to load a plugin if its prefix
+        matches the prefix of another loaded plugin (this comparison is not
+        case-sensitive).
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default
@@ -247,7 +254,7 @@ class Plugin(object):
 
             ``name``
                 A string with name of the option (e.g., ``Path``). Option
-                names are case-insensitive. Note that the option name exposed
+                names are not case-sensitive. Note that the option name exposed
                 to the user will be prefixed with your plugin's prefix as
                 returned by *prefix()* (e.g., ``myplugin.Path``).
 
@@ -301,11 +308,13 @@ class Plugin(object):
 
     @doc.api("override")
     def nodeKeys(self):
-        """Returns a list of names of custom keys (the value of a key
-        can be specified in ``node.cfg`` for any node defined there). The
-        value for a key will be available from the `Node`_ object as attribute
-        ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not set, the
-        attribute will be set to an empty string.
+        """Returns a list of names of custom keys for nodes (the value of a
+        key can be specified in ``node.cfg`` for any node defined there).
+        Node key names are not case-sensitive.
+
+        The value for a key will be available from the `Node`_ object as
+        attribute ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not
+        set, the attribute will be set to an empty string.
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default

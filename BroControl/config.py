@@ -379,6 +379,7 @@ class Configuration:
         for sec in config.sections():
             node = node_mod.Node(self, sec)
 
+            # Note that the keys are converted to lowercase by configparser.
             for (key, val) in config.items(sec):
 
                 key = key.replace(".", "_")
@@ -394,6 +395,7 @@ class Configuration:
             if node.name in nodestore:
                 # This only happens when lb_procs is being used.
                 raise ConfigurationError("duplicate node name '%s'" % node.name)
+
             nodestore[node.name] = node
 
         self._check_nodestore(nodestore)
@@ -579,6 +581,7 @@ class Configuration:
                     raise ConfigurationError("broctl config syntax error: %s" % line)
 
                 (key, val) = args
+                # Option names are not case-sensitive.
                 key = key.strip().lower()
 
                 # if the key already exists, just overwrite with new value
@@ -597,7 +600,9 @@ class Configuration:
 
     # Initialize a global option if not already set.
     def _set_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
         key = key.lower()
+
         if key not in self.config:
             if isinstance(val, str):
                 self.config[key] = self.subst(val)

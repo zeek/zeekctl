@@ -275,12 +275,19 @@ class PluginRegistry:
                 if "." in p.prefix() or " " in p.prefix():
                     cmdout.warn("failed to load plugin %s because prefix contains dots or spaces" % p.name())
 
+                # Need to convert prefix to lowercase here, because a plugin
+                # can override the prefix() method and might not return a
+                # lowercase string.  Also, we don't allow two plugins to have
+                # prefixes that differ only by case (due to the fact that
+                # plugin option names include the prefix and are converted
+                # to lowercase).
                 pluginprefix = p.prefix().lower()
+
                 sameprefix = False
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("failed to load plugin %s due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("failed to load plugin %s (prefix %s) due to plugin %s (prefix %s) having the same prefix" % (p.name(), p.prefix(), i.name(), i.prefix()))
                         break
 
                 if not sameprefix:
