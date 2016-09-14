@@ -618,9 +618,10 @@ class Configuration:
         self.state[key] = val
         self.state_store.set(key, val)
 
-    # Returns value of state variable, or None if it's not defined.
-    def get_state(self, key):
-        return self.state.get(key)
+    # Returns value of state variable, or the specified default value if the
+    # state variable is not defined.
+    def get_state(self, key, default=None):
+        return self.state.get(key.lower(), default)
 
     # Read dynamic state variables.
     def read_state(self):

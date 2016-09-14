@@ -74,11 +74,9 @@ class CronTasks:
 
                         if key == "pkts" and str(node) != "$total":
                             # Report if we don't see packets on an interface.
-                            tag = "lastpkts-%s" % node.name.lower()
+                            tag = "lastpkts-%s" % node.name
 
-                            last = -1.0
-                            if tag in self.config.state:
-                                last = self.config.state[tag]
+                            last = self.config.get_state(tag, default=-1.0)
 
                             if val == 0.0 and last != 0.0:
                                 self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
@@ -109,13 +107,13 @@ class CronTasks:
 
                 fs = df[0]
                 perc = df[4]
-                key = ("disk-space-%s%s" % (host, fs.replace("/", "-"))).lower()
+                key = ("disk-space-%s%s" % (host, fs.replace("/", "-")))
 
                 if perc > 100 - minspace:
-                    if key in self.config.state:
-                        if self.config.state[key] > 100 - minspace:
-                            # Already reported.
-                            continue
+                    last = self.config.get_state(key, default=-1)
+                    if last > 100 - minspace:
+                        # Already reported.
+                        continue
 
                     self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
 
