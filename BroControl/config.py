@@ -314,12 +314,11 @@ class Configuration:
 
             key = match.group(2).lower()
             if self.has_attr(key):
-                value = self.__getattr__(key)
+                value = str(self.__getattr__(key))
             else:
                 value = match.group(4)
-
-            if not value:
-                value = ""
+                if value is None:
+                    value = ""
 
             text = text[0:match.start(1)] + value + text[match.end(1):]
 
