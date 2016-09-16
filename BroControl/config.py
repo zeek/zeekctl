@@ -871,7 +871,9 @@ class Configuration:
     def _warn_dangling_bro(self):
         nodes = {}
         for n in self.nodes():
-            nodes[n.name] = n.host
+            # Convert node name to lowercase because below we are using
+            # node names from the state db (which is lowercase).
+            nodes[n.name.lower()] = n.host
 
         for key in self.state.keys():
             # Look for a PID associated with a Bro node
