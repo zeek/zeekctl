@@ -1355,9 +1355,6 @@ class Controller:
 
     # Triggers all activity which is to be done regularly via cron.
     def cron(self, watch):
-        if not self.config.has_attr("cronenabled"):
-            self.config.set_state("cronenabled", True)
-
         if not self.config.cronenabled:
             return
 

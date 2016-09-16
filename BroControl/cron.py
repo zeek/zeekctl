@@ -135,9 +135,8 @@ class CronTasks:
             tag = "alive-%s" % host
             alive = status
 
-            if tag in self.config.state:
-                previous = self.config.state[tag]
-
+            previous = self.config.get_state(tag)
+            if previous is not None:
                 if alive != previous:
                     self.pluginregistry.hostStatusChanged(host, alive)
                     if self.config.mailhostupdown:
