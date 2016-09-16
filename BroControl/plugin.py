@@ -66,7 +66,7 @@ class Plugin(object):
         See the output of ``broctl config`` for a complete list."""
         val = config.Config.get_option(name)
         if val is None:
-            raise KeyError("unknown config option %s" % name)
+            raise KeyError("plugin %s lookup of unknown config option %s" % (self.name(), name))
 
         return val
 
@@ -82,7 +82,7 @@ class Plugin(object):
 
         val = config.Config.get_option(name)
         if val is None:
-            raise KeyError("unknown plugin option %s" % name)
+            raise KeyError("plugin %s lookup of unknown plugin option %s" % (self.name(), name))
 
         return val
 
@@ -109,7 +109,7 @@ class Plugin(object):
         variables.
         """
         if "." in name or " " in name:
-            self.error("plugin state variable name must not contain dots or spaces")
+            self.error('plugin %s state variable name "%s" must not contain dots or spaces' % (self.name(), name))
             return
 
         name = "%s.state.%s" % (self.prefix(), name)
