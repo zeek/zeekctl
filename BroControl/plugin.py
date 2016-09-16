@@ -61,14 +61,14 @@ class Plugin(object):
 
     @doc.api
     def getGlobalOption(self, name):
-        """Returns the value of the global BroControl option or state
-        attribute *name*. If the user has not set the options, its default
-        value is returned. See the output of ``broctl config`` for a complete
-        list."""
-        if not config.Config.has_attr(name):
+        """Returns the value of the global BroControl option *name*.
+
+        See the output of ``broctl config`` for a complete list."""
+        val = config.Config.get_option(name)
+        if val is None:
             raise KeyError("unknown config option %s" % name)
 
-        return config.Config.__getattr__(name)
+        return val
 
     @doc.api
     def getOption(self, name):
@@ -78,12 +78,13 @@ class Plugin(object):
         overridden by a user in ``broctl.cfg``. An option's value cannot be
         changed by the plugin.
         """
-        name = "%s.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.%s" % (self.prefix(), name)
 
-        if not config.Config.has_attr(name):
+        val = config.Config.get_option(name)
+        if val is None:
             raise KeyError("unknown plugin option %s" % name)
 
-        return config.Config.__getattr__(name)
+        return val
 
     @doc.api
     def getState(self, name):
@@ -96,12 +97,9 @@ class Plugin(object):
 
         Note that a plugin cannot query any global BroControl state variables.
         """
-        name = "%s.state.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.state.%s" % (self.prefix(), name)
 
-        if not config.Config.has_attr(name):
-            return ""
-
-        return config.Config.__getattr__(name)
+        return config.Config.get_state(name, "")
 
     @doc.api
     def setState(self, name, value):

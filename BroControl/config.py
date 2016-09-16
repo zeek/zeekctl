@@ -205,14 +205,6 @@ class Configuration:
             return self.state[attr]
         raise AttributeError("unknown config attribute %s" % attr)
 
-    # Returns True if attribute is defined.
-    def has_attr(self, attr):
-        if attr in self.config:
-            return True
-        if attr in self.state:
-            return True
-        return False
-
     # Returns a sorted list of all broctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
     def options(self, dynamic=True):
@@ -313,9 +305,9 @@ class Configuration:
                 return text
 
             key = match.group(2).lower()
-            if self.has_attr(key):
+            try:
                 value = str(self.__getattr__(key))
-            else:
+            except AttributeError:
                 value = match.group(4)
                 if value is None:
                     value = ""
@@ -607,6 +599,10 @@ class Configuration:
                 self.config[key] = self.subst(val)
             else:
                 self.config[key] = val
+
+    # Returns value of an option, or None if the option is not defined.
+    def get_option(self, key):
+        return self.config.get(key.lower())
 
     # Set a dynamic state variable.
     def set_state(self, key, val):
