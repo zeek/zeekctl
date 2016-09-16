@@ -26,6 +26,33 @@ Config = None # Globally accessible instance of Configuration.
 class ConfigurationError(Exception):
     pass
 
+class NodeStore:
+    def __init__(self):
+        self.nodestore = {}
+        self.nodenameslower = []
+
+    def add_node(self, node):
+        # Add a node to the nodestore, but first check for duplicate node
+        # names. This check is not case-sensitive, because names are stored
+        # lowercase in the state db, and some filesystems are not
+        # case-sensitive (working dir name is node name).
+        # Duplicate node names can occur either because the user defined two
+        # nodes that differ only by case (e.g. "Worker-1" and "worker-1"), or
+        # if a user defines a node name that conflicts with an auto-generated
+        # one (e.g. "worker-1" with lb_procs=2 and "worker-1-2").
+        namelower = node.name.lower()
+        if namelower in self.nodenameslower:
+            matchname = ""
+            for nn in self.nodestore:
+                if nn.lower() == namelower:
+                    matchname = nn
+                    break
+            raise ConfigurationError('node name "%s" is a duplicate of "%s"' % (node.name, matchname))
+
+        self.nodestore[node.name] = node
+        self.nodenameslower.append(namelower)
+
+
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
         self.ui = ui
@@ -368,7 +395,7 @@ class Configuration:
         except py3bro.configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
-        nodestore = {}
+        nodestore = NodeStore()
 
         counts = {}
         for sec in config.sections():
@@ -385,16 +412,14 @@ class Configuration:
 
                 node.__dict__[key] = val
 
+            # Perform a sanity check on the node, and update nodestore.
             self._check_node(node, nodestore, counts)
 
-            if node.name in nodestore:
-                # This only happens when lb_procs is being used.
-                raise ConfigurationError("duplicate node name '%s'" % node.name)
+        # Perform a sanity check on the nodestore (make sure we have a valid
+        # cluster config, etc.).
+        self._check_nodestore(nodestore.nodestore)
 
-            nodestore[node.name] = node
-
-        self._check_nodestore(nodestore)
-        return nodestore
+        return nodestore.nodestore
 
     def _check_node(self, node, nodestore, counts):
         if not node.type:
@@ -486,12 +511,10 @@ class Configuration:
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
-                # only the node name, count, and pin_cpus need to be changed
+
+                # Update the node attrs that need to be changed
                 newname = "%s-%d" % (origname, num)
                 newnode.name = newname
-                if newname in nodestore:
-                    raise ConfigurationError("duplicate node name '%s'" % newname)
-                nodestore[newname] = newnode
                 counts[node.type] += 1
                 newnode.count = counts[node.type]
                 if pin_cpus:
@@ -499,6 +522,10 @@ class Configuration:
 
                 if newnode.lb_method == "interfaces":
                     newnode.interface = netifs.pop().strip()
+
+                nodestore.add_node(newnode)
+
+        nodestore.add_node(node)
 
     def _check_nodestore(self, nodestore):
         if not nodestore:
@@ -584,6 +611,7 @@ class Configuration:
 
         # Convert option values to correct data type
         for opt in options.options:
+            # Convert key to lowercase because keys are stored in lowercase.
             key = opt.name.lower()
             if key in config:
                 try:
@@ -613,6 +641,7 @@ class Configuration:
 
     # Returns value of an option, or None if the option is not defined.
     def get_option(self, key):
+        # Convert key to lowercase because keys are stored in lowercase.
         return self.config.get(key.lower())
 
     # Set a dynamic state variable.
