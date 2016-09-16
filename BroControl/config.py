@@ -600,6 +600,13 @@ class Configuration:
             else:
                 self.config[key] = val
 
+    # Set a global option (regardless of whether or not it is already set).
+    def set_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
+        key = key.lower()
+
+        self.config[key] = val
+
     # Returns value of an option, or None if the option is not defined.
     def get_option(self, key):
         return self.config.get(key.lower())

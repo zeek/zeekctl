@@ -923,15 +923,17 @@ class Plugin(object):
                 self.error("plugin option %s default value must be type %s" % (optname, ty))
                 continue
 
-            optname = optname.lower()
-            if optname in config.Config.config:
+            val = config.Config.get_option(optname)
+            if val is not None:
                 # Convert option values to correct data type for options
                 # specified in broctl.cfg
-                val = config.Config.config[optname]
                 try:
-                    config.Config.config[optname] = type_converters[ty](val)
+                    newval = type_converters[ty](val)
                 except ValueError:
                     self.error('broctl option "%s" has invalid value "%s" for type %s' % (optname, val, ty))
+                    continue
+
+                config.Config.set_option(optname, newval)
             else:
                 # Set default value for options not specified in broctl.cfg
                 config.Config._set_option(optname, default)
