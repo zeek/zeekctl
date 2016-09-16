@@ -89,8 +89,7 @@ class Plugin(object):
     @doc.api
     def getState(self, name):
         """Returns the current value of one of the plugin's state variables,
-        *name*. The returned value will always be a string. If it has not yet
-        been set, an empty string will be returned.
+        *name*. If it has not yet been set, an empty string will be returned.
 
         Different from options, state variables can be set by the plugin.
         They are persistent across restarts.
@@ -104,8 +103,7 @@ class Plugin(object):
     @doc.api
     def setState(self, name, value):
         """Sets one of the plugin's state variables, *name*, to *value*.
-        *value* must be a string. The change is permanent and will be recorded
-        to disk.
+        The change is permanent and will be recorded to disk.
 
         Note that a plugin cannot change any global BroControl state
         variables.
@@ -113,9 +111,6 @@ class Plugin(object):
         if "." in name or " " in name:
             self.error("plugin state variable name must not contain dots or spaces")
             return
-
-        if not isinstance(value, str):
-            self.error("value for a plugin state variable must be a string")
 
         name = "%s.state.%s" % (self.prefix(), name)
         config.Config.set_state(name, value)
