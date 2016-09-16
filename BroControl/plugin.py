@@ -114,6 +114,8 @@ class Plugin(object):
         """
         if "." in name or " " in name:
             self.error("plugin state variable name must not contain dots or spaces")
+            return
+
         if not isinstance(value, str):
             self.error("value for a plugin state variable must be a string")
 
