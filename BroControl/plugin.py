@@ -915,23 +915,28 @@ class Plugin(object):
 
         for (name, ty, default, descr) in self.options():
             if not name:
-                self.error("plugin option names must not be empty")
+                self.error("plugin %s option name must not be empty" % self.name())
+                continue
 
             if "." in name or " " in name:
-                self.error("plugin option names must not contain dots or spaces")
+                self.error('plugin %s option name "%s" must not contain dots or spaces' % (self.name(), name))
+                continue
 
             optname = "%s.%s" % (self.prefix(), name)
 
             if not isinstance(default, pytype[ty]):
-                self.error("plugin option %s default must be type %s" % (optname, ty))
+                self.error("plugin option %s default value must be type %s" % (optname, ty))
+                continue
 
-            # Convert to correct data type (for options specified in broctl.cfg)
             optname = optname.lower()
             if optname in config.Config.config:
+                # Convert option values to correct data type for options
+                # specified in broctl.cfg
                 val = config.Config.config[optname]
                 try:
                     config.Config.config[optname] = type_converters[ty](val)
                 except ValueError:
-                    self.error("broctl option '%s' has invalid value '%s' for type %s" % (optname, val, ty))
-
-            config.Config._set_option(optname, default)
+                    self.error('broctl option "%s" has invalid value "%s" for type %s' % (optname, val, ty))
+            else:
+                # Set default value for options not specified in broctl.cfg
+                config.Config._set_option(optname, default)
