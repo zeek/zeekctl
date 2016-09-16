@@ -936,4 +936,4 @@ class Plugin(object):
                 config.Config.set_option(optname, newval)
             else:
                 # Set default value for options not specified in broctl.cfg
-                config.Config._set_option(optname, default)
+                config.Config.init_option(optname, default)

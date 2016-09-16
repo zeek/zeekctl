@@ -65,42 +65,46 @@ class Configuration:
         from BroControl import execute
 
         # Set defaults for options we get passed in.
-        self._set_option("brobase", self.basedir)
-        self._set_option("broscriptdir", self.broscriptdir)
-        self._set_option("version", VERSION)
+        self.init_option("brobase", self.basedir)
+        self.init_option("broscriptdir", self.broscriptdir)
+        self.init_option("version", VERSION)
 
         # Initialize options that are not already set.
         for opt in options.options:
             if not opt.dontinit:
-                self._set_option(opt.name, opt.default)
+                self.init_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
-        self._set_option("mailto", "%s" % os.getenv("USER"))
-        self._set_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-        self._set_option("mailalarmsto", self.config["mailto"])
+        self.init_option("mailto", "%s" % os.getenv("USER"))
+        self.init_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
+        self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
             raise RuntimeError("failed to run uname: %s" % output)
-        self._set_option("os", output[0].strip())
+        self.init_option("os", output[0].strip())
 
+        # Determine the CPU pinning command.
+        pin_cmd = ""
         if self.config["os"] == "Linux":
-            self._set_option("pin_command", "taskset -c")
+            pin_cmd = "taskset -c"
         elif self.config["os"] == "FreeBSD":
-            self._set_option("pin_command", "cpuset -l")
-        else:
-            self._set_option("pin_command", "")
+            pin_cmd = "cpuset -l"
+
+        self.init_option("pin_command", pin_cmd)
 
         # Find the time command (should be a GNU time for best results).
+        time_cmd = ""
         (success, output) = execute.run_localcmd("which time")
         if success:
-            self._set_option("time", output[0].strip())
-        else:
-            self._set_option("time", "")
+            time_cmd = output[0].strip()
 
+        self.init_option("time", time_cmd)
+
+        # Calculate the log expire interval (in minutes).
         minutes = self._get_interval_minutes("logexpireinterval")
-        self._set_option("logexpireminutes", minutes)
+        self.init_option("logexpireminutes", minutes)
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
@@ -193,7 +197,7 @@ class Configuration:
         if len(self.nodestore) == 1:
             standalone = True
 
-        self._set_option("standalone", standalone)
+        self.init_option("standalone", standalone)
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -590,7 +594,7 @@ class Configuration:
         return config
 
     # Initialize a global option if not already set.
-    def _set_option(self, key, val):
+    def init_option(self, key, val):
         # Store option names in lowercase, because they are not case-sensitive.
         key = key.lower()
 
