@@ -1,6 +1,8 @@
 import json
 import sqlite3
 
+from BroControl.exceptions import RuntimeEnvironmentError
+
 class SqliteState:
     def __init__(self, path):
         self.path = path
@@ -8,14 +10,14 @@ class SqliteState:
         try:
             self.db = sqlite3.connect(self.path)
         except sqlite3.Error as err:
-            raise sqlite3.Error("%s: %s\nCheck if the user running BroControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself." % (err, path))
+            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running BroControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself." % (err, path))
 
         self.c = self.db.cursor()
 
         try:
             self.setup()
         except sqlite3.Error as err:
-            raise sqlite3.Error("%s: %s" % (err, path))
+            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running BroControl has write access to the database file.\nOtherwise, the database file is possibly corrupt." % (err, path))
 
     def setup(self):
         # Create table
@@ -40,7 +42,7 @@ class SqliteState:
         try:
             self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])
         except sqlite3.Error as err:
-            raise sqlite3.Error("%s: %s" % (err, self.path))
+            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running BroControl has write access to the database file." % (err, self.path))
 
         self.db.commit()
 

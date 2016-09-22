@@ -9,6 +9,7 @@ import re
 from BroControl import py3bro
 from BroControl import node as node_mod
 from BroControl import options
+from BroControl.exceptions import ConfigurationError, RuntimeEnvironmentError
 from .state import SqliteState
 from .version import VERSION
 
@@ -22,9 +23,6 @@ from .version import VERSION
 # - dynamic state variables which are kept across restarts in spool/state.db
 
 Config = None # Globally accessible instance of Configuration.
-
-class ConfigurationError(Exception):
-    pass
 
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
@@ -82,7 +80,7 @@ class Configuration:
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
-            raise RuntimeError("failed to run uname: %s" % output)
+            raise RuntimeEnvironmentError("failed to run uname: %s" % output)
         self._set_option("os", output[0].lower().strip())
 
         if self.config["os"] == "linux":
@@ -916,11 +914,11 @@ class Configuration:
             msg = " with no output"
             if output:
                 msg = " with output:\n%s" % "\n".join(output)
-            raise ConfigurationError('running "bro -v" failed%s' % msg)
+            raise RuntimeEnvironmentError('running "bro -v" failed%s' % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
-            raise ConfigurationError('cannot determine Bro version ("bro -v" output: %s)' % version.strip())
+            raise RuntimeEnvironmentError('cannot determine Bro version ("bro -v" output: %s)' % version.strip())
 
         version = match.group(1)
         # If bro is built with the "--enable-debug" configure option, then it
