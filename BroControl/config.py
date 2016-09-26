@@ -26,6 +26,33 @@ Config = None # Globally accessible instance of Configuration.
 class ConfigurationError(Exception):
     pass
 
+class NodeStore:
+    def __init__(self):
+        self.nodestore = {}
+        self.nodenameslower = []
+
+    def add_node(self, node):
+        # Add a node to the nodestore, but first check for duplicate node
+        # names. This check is not case-sensitive, because names are stored
+        # lowercase in the state db, and some filesystems are not
+        # case-sensitive (working dir name is node name).
+        # Duplicate node names can occur either because the user defined two
+        # nodes that differ only by case (e.g. "Worker-1" and "worker-1"), or
+        # if a user defines a node name that conflicts with an auto-generated
+        # one (e.g. "worker-1" with lb_procs=2 and "worker-1-2").
+        namelower = node.name.lower()
+        if namelower in self.nodenameslower:
+            matchname = ""
+            for nn in self.nodestore:
+                if nn.lower() == namelower:
+                    matchname = nn
+                    break
+            raise ConfigurationError('node name "%s" is a duplicate of "%s"' % (node.name, matchname))
+
+        self.nodestore[node.name] = node
+        self.nodenameslower.append(namelower)
+
+
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
         self.ui = ui
@@ -65,42 +92,46 @@ class Configuration:
         from BroControl import execute
 
         # Set defaults for options we get passed in.
-        self._set_option("brobase", self.basedir)
-        self._set_option("broscriptdir", self.broscriptdir)
-        self._set_option("version", VERSION)
+        self.init_option("brobase", self.basedir)
+        self.init_option("broscriptdir", self.broscriptdir)
+        self.init_option("version", VERSION)
 
         # Initialize options that are not already set.
         for opt in options.options:
             if not opt.dontinit:
-                self._set_option(opt.name, opt.default)
+                self.init_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
-        self._set_option("mailto", "%s" % os.getenv("USER"))
-        self._set_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-        self._set_option("mailalarmsto", self.config["mailto"])
+        self.init_option("mailto", "%s" % os.getenv("USER"))
+        self.init_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
+        self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
             raise RuntimeError("failed to run uname: %s" % output)
-        self._set_option("os", output[0].lower().strip())
+        self.init_option("os", output[0].strip())
 
-        if self.config["os"] == "linux":
-            self._set_option("pin_command", "taskset -c")
-        elif self.config["os"] == "freebsd":
-            self._set_option("pin_command", "cpuset -l")
-        else:
-            self._set_option("pin_command", "")
+        # Determine the CPU pinning command.
+        pin_cmd = ""
+        if self.config["os"] == "Linux":
+            pin_cmd = "taskset -c"
+        elif self.config["os"] == "FreeBSD":
+            pin_cmd = "cpuset -l"
+
+        self.init_option("pin_command", pin_cmd)
 
         # Find the time command (should be a GNU time for best results).
+        time_cmd = ""
         (success, output) = execute.run_localcmd("which time")
         if success:
-            self._set_option("time", output[0].lower().strip())
-        else:
-            self._set_option("time", "")
+            time_cmd = output[0].strip()
 
+        self.init_option("time", time_cmd)
+
+        # Calculate the log expire interval (in minutes).
         minutes = self._get_interval_minutes("logexpireinterval")
-        self._set_option("logexpireminutes", minutes)
+        self.init_option("logexpireminutes", minutes)
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
@@ -193,7 +224,7 @@ class Configuration:
         if len(self.nodestore) == 1:
             standalone = True
 
-        self._set_option("standalone", standalone)
+        self.init_option("standalone", standalone)
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -204,14 +235,6 @@ class Configuration:
         if attr in self.state:
             return self.state[attr]
         raise AttributeError("unknown config attribute %s" % attr)
-
-    # Returns True if attribute is defined.
-    def has_attr(self, attr):
-        if attr in self.config:
-            return True
-        if attr in self.state:
-            return True
-        return False
 
     # Returns a sorted list of all broctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
@@ -313,13 +336,12 @@ class Configuration:
                 return text
 
             key = match.group(2).lower()
-            if self.has_attr(key):
-                value = self.__getattr__(key)
-            else:
+            try:
+                value = str(self.__getattr__(key))
+            except AttributeError:
                 value = match.group(4)
-
-            if not value:
-                value = ""
+                if value is None:
+                    value = ""
 
             text = text[0:match.start(1)] + value + text[match.end(1):]
 
@@ -373,12 +395,13 @@ class Configuration:
         except py3bro.configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
-        nodestore = {}
+        nodestore = NodeStore()
 
         counts = {}
         for sec in config.sections():
             node = node_mod.Node(self, sec)
 
+            # Note that the keys are converted to lowercase by configparser.
             for (key, val) in config.items(sec):
 
                 key = key.replace(".", "_")
@@ -389,15 +412,14 @@ class Configuration:
 
                 node.__dict__[key] = val
 
+            # Perform a sanity check on the node, and update nodestore.
             self._check_node(node, nodestore, counts)
 
-            if node.name in nodestore:
-                # This only happens when lb_procs is being used.
-                raise ConfigurationError("duplicate node name '%s'" % node.name)
-            nodestore[node.name] = node
+        # Perform a sanity check on the nodestore (make sure we have a valid
+        # cluster config, etc.).
+        self._check_nodestore(nodestore.nodestore)
 
-        self._check_nodestore(nodestore)
-        return nodestore
+        return nodestore.nodestore
 
     def _check_node(self, node, nodestore, counts):
         if not node.type:
@@ -489,12 +511,10 @@ class Configuration:
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
-                # only the node name, count, and pin_cpus need to be changed
+
+                # Update the node attrs that need to be changed
                 newname = "%s-%d" % (origname, num)
                 newnode.name = newname
-                if newname in nodestore:
-                    raise ConfigurationError("duplicate node name '%s'" % newname)
-                nodestore[newname] = newnode
                 counts[node.type] += 1
                 newnode.count = counts[node.type]
                 if pin_cpus:
@@ -502,6 +522,10 @@ class Configuration:
 
                 if newnode.lb_method == "interfaces":
                     newnode.interface = netifs.pop().strip()
+
+                nodestore.add_node(newnode)
+
+        nodestore.add_node(node)
 
     def _check_nodestore(self, nodestore):
         if not nodestore:
@@ -579,6 +603,7 @@ class Configuration:
                     raise ConfigurationError("broctl config syntax error: %s" % line)
 
                 (key, val) = args
+                # Option names are not case-sensitive.
                 key = key.strip().lower()
 
                 # if the key already exists, just overwrite with new value
@@ -586,6 +611,7 @@ class Configuration:
 
         # Convert option values to correct data type
         for opt in options.options:
+            # Convert key to lowercase because keys are stored in lowercase.
             key = opt.name.lower()
             if key in config:
                 try:
@@ -596,13 +622,27 @@ class Configuration:
         return config
 
     # Initialize a global option if not already set.
-    def _set_option(self, key, val):
+    def init_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
         key = key.lower()
+
         if key not in self.config:
             if isinstance(val, str):
                 self.config[key] = self.subst(val)
             else:
                 self.config[key] = val
+
+    # Set a global option (regardless of whether or not it is already set).
+    def set_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
+        key = key.lower()
+
+        self.config[key] = val
+
+    # Returns value of an option, or None if the option is not defined.
+    def get_option(self, key):
+        # Convert key to lowercase because keys are stored in lowercase.
+        return self.config.get(key.lower())
 
     # Set a dynamic state variable.
     def set_state(self, key, val):
@@ -613,9 +653,10 @@ class Configuration:
         self.state[key] = val
         self.state_store.set(key, val)
 
-    # Returns value of state variable, or None if it's not defined.
-    def get_state(self, key):
-        return self.state.get(key)
+    # Returns value of state variable, or the specified default value if the
+    # state variable is not defined.
+    def get_state(self, key, default=None):
+        return self.state.get(key.lower(), default)
 
     # Read dynamic state variables.
     def read_state(self):
@@ -830,7 +871,9 @@ class Configuration:
     def _warn_dangling_bro(self):
         nodes = {}
         for n in self.nodes():
-            nodes[n.name] = n.host
+            # Convert node name to lowercase because below we are using
+            # node names from the state db (which is lowercase).
+            nodes[n.name.lower()] = n.host
 
         for key in self.state.keys():
             # Look for a PID associated with a Bro node

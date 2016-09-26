@@ -61,14 +61,14 @@ class Plugin(object):
 
     @doc.api
     def getGlobalOption(self, name):
-        """Returns the value of the global BroControl option or state
-        attribute *name*. If the user has not set the options, its default
-        value is returned. See the output of ``broctl config`` for a complete
-        list."""
-        if not config.Config.has_attr(name):
-            raise KeyError("unknown config option %s" % name)
+        """Returns the value of the global BroControl option *name*.
 
-        return config.Config.__getattr__(name)
+        See the output of ``broctl config`` for a complete list."""
+        val = config.Config.get_option(name)
+        if val is None:
+            raise KeyError("plugin %s lookup of unknown config option %s" % (self.name(), name))
+
+        return val
 
     @doc.api
     def getOption(self, name):
@@ -78,44 +78,39 @@ class Plugin(object):
         overridden by a user in ``broctl.cfg``. An option's value cannot be
         changed by the plugin.
         """
-        name = "%s.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.%s" % (self.prefix(), name)
 
-        if not config.Config.has_attr(name):
-            raise KeyError("unknown plugin option %s" % name)
+        val = config.Config.get_option(name)
+        if val is None:
+            raise KeyError("plugin %s lookup of unknown plugin option %s" % (self.name(), name))
 
-        return config.Config.__getattr__(name)
+        return val
 
     @doc.api
     def getState(self, name):
         """Returns the current value of one of the plugin's state variables,
-        *name*. The returned value will always be a string. If it has not yet
-        been set, an empty string will be returned.
+        *name*. If it has not yet been set, an empty string will be returned.
 
         Different from options, state variables can be set by the plugin.
         They are persistent across restarts.
 
         Note that a plugin cannot query any global BroControl state variables.
         """
-        name = "%s.state.%s" % (self.prefix().lower(), name.lower())
+        name = "%s.state.%s" % (self.prefix(), name)
 
-        if not config.Config.has_attr(name):
-            return ""
-
-        return config.Config.__getattr__(name)
+        return config.Config.get_state(name, "")
 
     @doc.api
     def setState(self, name, value):
         """Sets one of the plugin's state variables, *name*, to *value*.
-        *value* must be a string. The change is permanent and will be recorded
-        to disk.
+        The change is permanent and will be recorded to disk.
 
         Note that a plugin cannot change any global BroControl state
         variables.
         """
         if "." in name or " " in name:
-            self.error("plugin state variable name must not contain dots or spaces")
-        if not isinstance(value, str):
-            self.error("value for a plugin state variable must be a string")
+            self.error('plugin %s state variable name "%s" must not contain dots or spaces' % (self.name(), name))
+            return
 
         name = "%s.state.%s" % (self.prefix(), name)
         config.Config.set_state(name, value)
@@ -229,7 +224,14 @@ class Plugin(object):
     @doc.api("override")
     def prefix(self):
         """Returns a string with a prefix for the plugin's options and
-        commands names (e.g., "myplugin").
+        commands names (e.g., "myplugin").  The prefix cannot contain
+        any whitespace or dots (because dots are used as separators when
+        forming the plugin's option names, state variable names, and
+        command names).
+
+        Note that BroControl will refuse to load a plugin if its prefix
+        matches the prefix of another loaded plugin (this comparison is not
+        case-sensitive).
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default
@@ -247,7 +249,7 @@ class Plugin(object):
 
             ``name``
                 A string with name of the option (e.g., ``Path``). Option
-                names are case-insensitive. Note that the option name exposed
+                names are not case-sensitive. Note that the option name exposed
                 to the user will be prefixed with your plugin's prefix as
                 returned by *prefix()* (e.g., ``myplugin.Path``).
 
@@ -301,11 +303,13 @@ class Plugin(object):
 
     @doc.api("override")
     def nodeKeys(self):
-        """Returns a list of names of custom keys (the value of a key
-        can be specified in ``node.cfg`` for any node defined there). The
-        value for a key will be available from the `Node`_ object as attribute
-        ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not set, the
-        attribute will be set to an empty string.
+        """Returns a list of names of custom keys for nodes (the value of a
+        key can be specified in ``node.cfg`` for any node defined there).
+        Node key names are not case-sensitive.
+
+        The value for a key will be available from the `Node`_ object as
+        attribute ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not
+        set, the attribute will be set to an empty string.
 
         This method can be overridden by derived classes. The implementation
         must not call the parent class' implementation. The default
@@ -906,23 +910,30 @@ class Plugin(object):
 
         for (name, ty, default, descr) in self.options():
             if not name:
-                self.error("plugin option names must not be empty")
+                self.error("plugin %s option name must not be empty" % self.name())
+                continue
 
             if "." in name or " " in name:
-                self.error("plugin option names must not contain dots or spaces")
+                self.error('plugin %s option name "%s" must not contain dots or spaces' % (self.name(), name))
+                continue
 
             optname = "%s.%s" % (self.prefix(), name)
 
             if not isinstance(default, pytype[ty]):
-                self.error("plugin option %s default must be type %s" % (optname, ty))
+                self.error("plugin option %s default value must be type %s" % (optname, ty))
+                continue
 
-            # Convert to correct data type (for options specified in broctl.cfg)
-            optname = optname.lower()
-            if optname in config.Config.config:
-                val = config.Config.config[optname]
+            val = config.Config.get_option(optname)
+            if val is not None:
+                # Convert option values to correct data type for options
+                # specified in broctl.cfg
                 try:
-                    config.Config.config[optname] = type_converters[ty](val)
+                    newval = type_converters[ty](val)
                 except ValueError:
-                    self.error("broctl option '%s' has invalid value '%s' for type %s" % (optname, val, ty))
+                    self.error('broctl option "%s" has invalid value "%s" for type %s' % (optname, val, ty))
+                    continue
 
-            config.Config._set_option(optname, default)
+                config.Config.set_option(optname, newval)
+            else:
+                # Set default value for options not specified in broctl.cfg
+                config.Config.init_option(optname, default)

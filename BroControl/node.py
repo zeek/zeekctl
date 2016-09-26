@@ -174,7 +174,7 @@ class Node:
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
-        key = "%s-pid" % self.name.lower()
+        key = "%s-pid" % self.name
         return self._config.get_state(key)
 
     def clearPID(self):
@@ -197,19 +197,19 @@ class Node:
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
-        key = "%s-crashed" % self.name.lower()
+        key = "%s-crashed" % self.name
         return self._config.get_state(key)
 
     def getExpectRunning(self):
         """Returns True if we expect the node's Bro process to be running."""
-        key = "%s-expect-running" % self.name.lower()
+        key = "%s-expect-running" % self.name
         val = self._config.get_state(key)
         if val is None:
             val = False
         return val
 
     def setExpectRunning(self, val):
-        key = "%s-expect-running" % self.name.lower()
+        key = "%s-expect-running" % self.name
         self._config.set_state(key, val)
 
     def setPort(self, port):
@@ -223,7 +223,7 @@ class Node:
         system is listening on for incoming connections, or -1 if no such port
         has been set yet.
         """
-        key = "%s-port" % self.name.lower()
+        key = "%s-port" % self.name
         return self._config.get_state(key) or -1
 
     @staticmethod
@@ -231,4 +231,6 @@ class Node:
         """Adds a supported node key. This is used by the PluginRegistry to
         register custom keys."""
 
-        Node._keys[kw] = 1
+        # We need to convert to lowercase here because Python's configparser
+        # automatically converts keys to lowercase when reading node.cfg.
+        Node._keys[kw.lower()] = 1

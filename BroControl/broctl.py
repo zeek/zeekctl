@@ -94,6 +94,8 @@ class BroCtl(object):
         self.plugins.initPluginCmds()
         util.enable_signals()
         os.chdir(self.config.brobase)
+        if self.config.get_state("cronenabled") is None:
+            self.config.set_state("cronenabled", True)
 
     def reload_cfg(self):
         self.config.reload_cfg()
@@ -362,8 +364,6 @@ class BroCtl(object):
     def cronenabled(self):
         results = False
         if self.plugins.cmdPre("cron", "?", False):
-            if not self.config.has_attr("cronenabled"):
-                self.config.set_state("cronenabled", True)
             results = self.config.cronenabled
         self.plugins.cmdPost("cron", "?", False)
         return results

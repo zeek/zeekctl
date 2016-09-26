@@ -27,7 +27,6 @@ class SqliteState:
         self.db.commit()
 
     def get(self, key):
-        key = key.lower()
         self.c.execute("SELECT value FROM state WHERE key=?", [key])
         records = self.c.fetchall()
         if records:
@@ -35,7 +34,6 @@ class SqliteState:
         return None
 
     def set(self, key, value):
-        key = key.lower()
         value = json.dumps(value)
         try:
             self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])

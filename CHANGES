@@ -1,4 +1,68 @@
 
+1.5-beta-19 | 2016-09-26 15:50:22 -0400
+
+ The "Case sensitivity bugs are fun" release.
+
+  * Fix a bug where broctl loses state of running Bro nodes
+
+    If a node name contains uppercase letters, then restarting broctl while
+    that node is running results in a confusing warning about that node still
+    running, and broctl discards the PID of that node.  Fixed by converting
+    the node name to lowercase before checking the state database (where all
+    keys are converted to lowercase).
+
+    Addresses BIT-1676. (Daniel Thayer)
+
+  * Add a (case-insensitive) check for duplicate node names
+
+    Report an error if a user defines node names differing only by case (such
+    as "worker-1" and "Worker-1").  This check is needed because keys
+    in the state db are converted to lowercase. (Daniel Thayer)
+
+  * Improve error messages for plugin API functions (Daniel Thayer)
+
+  * Do not restrict plugin state var. to string type
+
+    Removed the restriction that plugin state variables must be string
+    type, because normal state variables have no such restriction. (Daniel Thayer)
+
+  * Fix the plugin getGlobalOption() function
+
+    Fixed the getGlobalOption() function in the plugin API.  It did not
+    convert its argument to lowercase, and could return the value of a
+    state variable.
+
+    Also simplified some code by replacing the config has_attr() function
+    with a new function get_option(), which helps reduce the number of places
+    in the code where keys are converted to lowercase. (Daniel Thayer)
+
+  * Do not set a plugin state var. with invalid name (Daniel Thayer)
+
+  * Improve code that sets plugin option values
+
+    Improved error messages to include the name of the plugin, and fixed a
+    problem where any option with an invalid name was being set (now such
+    options are skipped). (Daniel Thayer)
+
+  * Simplify some broctl cron-related code by using get_state() (Daniel Thayer)
+
+  * Fix the subst() function for non-string data types (Daniel Thayer)
+
+  * Code simplification involving the config get_state() function
+
+    Added an optional default parameter to the config get_state() function,
+    and changed that function to convert the key to lowercase.  These changes
+    help simplify some code by reducing the number of conversions to lowercase. (Daniel Thayer)
+
+  * Simplify code by not converting option values to lowercase (Daniel Thayer)
+
+  * Fix problem with custom node keys that are not lowercase (Daniel Thayer)
+
+  * Improve documentation of case-sensitive issues in broctl (Daniel Thayer)
+
+  * Remove redundant lowercase conversions of state var. names (Daniel Thayer)
+
+
 1.5-beta-2 | 2016-09-01 12:03:46 -0400
 
   * Improve crash reports by showing Bro plugin info (Daniel Thayer)
