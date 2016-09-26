@@ -1,3 +1,20 @@
+
+1.5-beta-24 | 2016-09-26 16:24:21 -0400
+
+  * Don't show a stack trace when it's not useful
+
+    BroControl exceptions are now defined in the new exceptions.py file.
+    The broctl client will handle only those exceptions (showing a useful
+    error message), because they are expected to occur in various
+    predictable situations (bad user input, bad config file, etc.).
+    In these situations, a stack trace is not useful, because the cause
+    of the problem is well-understood (and should be explained by the
+    error message).
+
+    If a standard Python exception is raised (this is not expected to occur),
+    then broctl will terminate with a stack trace, which is useful to help
+    debug the problem. (Daniel Thayer)
+
 1.5-beta-22 | 2016-09-26 16:11:21 -0400
 
   * Fix crash-diag script to not confuse log files with core files

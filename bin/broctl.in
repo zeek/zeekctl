@@ -10,7 +10,7 @@ import logging
 # This is needed so that we can import BroControl.
 sys.path.insert(0, "@PREFIX@/lib/broctl")
 
-from BroControl.broctl import BroCtl
+from BroControl.broctl import BroCtl, BroControlError, CommandSyntaxError
 from BroControl import brocmd
 from BroControl import util
 from BroControl import utilcurses
@@ -89,7 +89,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_nodes(self, args):
         """Prints a list of all configured nodes."""
         if args:
-            raise SyntaxError("nodes does not take any arguments")
+            raise CommandSyntaxError("the nodes command does not take any arguments")
 
         results = self.broctl.nodes()
         for (node, success, data) in results.get_node_data():
@@ -100,7 +100,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_config(self, args):
         """Prints all configuration options with their current values."""
         if args:
-            raise SyntaxError("config does not take any arguments")
+            raise CommandSyntaxError("the config command does not take any arguments")
 
         results = self.broctl.get_config()
         for (key, val) in results.keyval:
@@ -128,7 +128,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if arg == "--local":
                 local = True
             else:
-                raise SyntaxError("Invalid argument: %s" % arg)
+                raise CommandSyntaxError("invalid argument for the install command: %s" % arg)
 
         results = self.broctl.install(local)
         return results.ok
@@ -185,7 +185,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         restart_ commands, in that order.
         """
         if args:
-            raise SyntaxError("deploy does not take any arguments")
+            raise CommandSyntaxError("the deploy command does not take any arguments")
 
         results = self.broctl.deploy()
 
@@ -546,7 +546,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             id = args[0]
             args = " ".join(args[1:])
         except IndexError:
-            raise SyntaxError("no id given to print")
+            raise CommandSyntaxError("no id given to print")
 
         results = self.broctl.print_id(id=id, node_list=args)
 
@@ -630,7 +630,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                     # Check non-installed policies.
                     check = True
                 else:
-                    raise SyntaxError("Unknown option: %s" % opt)
+                    raise CommandSyntaxError("invalid argument for the scripts command: %s" % opt)
 
                 args = args[1:]
 
@@ -682,7 +682,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             if arg == "--":
                 if in_scripts:
-                    raise SyntaxError("cannot parse arguments")
+                    raise CommandSyntaxError('cannot parse the arguments of the process command (too many "--")')
 
                 in_scripts = True
                 continue
@@ -694,7 +694,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 scripts += [arg]
 
         if not trace:
-            raise SyntaxError("no trace file given")
+            raise CommandSyntaxError("the process command requires the pathname of a trace file")
 
         results = self.broctl.process(trace, options, scripts)
 
@@ -777,7 +777,7 @@ def main():
 
     try:
         loop = BroCtlCmdLoop(BroCtl, interactive, cmd)
-    except Exception as e:
+    except BroControlError as e:
         print("Error: %s" % e, file=sys.stderr)
         return 1
 
@@ -787,6 +787,9 @@ def main():
         try:
             cmdsuccess = loop.onecmd(cmdline)
             loop.postcmd(False, cmdline)
+        except BroControlError as e:
+            cmdsuccess = False
+            print("Error: %s" % e, file=sys.stderr)
         except KeyboardInterrupt:
             cmdsuccess = False
         finally:
@@ -795,6 +798,9 @@ def main():
     else:
         try:
             cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        except BroControlError as e:
+            cmdsuccess = False
+            print("Error: %s" % e, file=sys.stderr)
         except KeyboardInterrupt:
             cmdsuccess = False
         finally:

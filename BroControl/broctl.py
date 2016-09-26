@@ -12,9 +12,7 @@ from BroControl import execute
 from BroControl import control
 from BroControl import version
 from BroControl import pluginreg
-
-class InvalidNodeError(Exception):
-    pass
+from BroControl.exceptions import *
 
 class TermUI:
     def info(self, txt):
@@ -168,7 +166,7 @@ class BroCtl(object):
     def lock(self, showwait=True):
         lockstatus = util.lock(self.ui, showwait)
         if not lockstatus:
-            raise RuntimeError("Unable to get lock")
+            raise LockError("Unable to get lock")
 
         self.config.read_state()
 
