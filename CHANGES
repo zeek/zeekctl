@@ -1,3 +1,13 @@
+1.5-beta-22 | 2016-09-26 16:11:21 -0400
+
+  * Fix crash-diag script to not confuse log files with core files
+
+    Fixed the crash-diag script to not include any log filenames that
+    contain the word "core" in the list of core files. (Daniel Thayer)
+
+  * Improve crash-diag script's handling of core filenames
+
+    Fixed the script to handle filenames that contain a space. (Daniel Thayer)
 
 1.5-beta-19 | 2016-09-26 15:50:22 -0400
 

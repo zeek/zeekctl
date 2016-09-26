@@ -25,7 +25,10 @@ fi
 
 echo
 
-core=`ls -t *core* 2> /dev/null`
+# Identify all core files in the current directory.  We assume these
+# filenames contain the word "core" and do not end in ".log".
+core=`ls -t *core* 2> /dev/null | grep -v '\.log$'`
+
 gdb=`which gdb 2> /dev/null`
 
 # If no backtrace can be generated, then output an explanation.  However,
@@ -74,13 +77,13 @@ echo "Bro plugins:"
 if [ -n "$gdb" ]; then
     if [ -n "$core" ]; then
         echo "thread apply all bt" >.gdb_cmds
-        for c in $core; do
-            if [ -f $c ]; then
+        for c in "$core"; do
+            if [ -f "$c" ]; then
                 echo
                 # Note: broctl looks for this string in order to determine
                 # if a backtrace was output.
                 echo "Core file: $c"
-                gdb --batch -x .gdb_cmds "${bro}" $c 2>/dev/null
+                gdb --batch -x .gdb_cmds "${bro}" "$c" 2>/dev/null
             fi
         done
         rm -f .gdb_cmds
