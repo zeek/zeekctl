@@ -112,7 +112,7 @@ options = [
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for workers."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for all Bro instances."),
+           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts."),
 
     Option("StatusCmdShowAll", 0, "bool", Option.USER, False,
            "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),

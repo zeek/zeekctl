@@ -12,7 +12,7 @@ BroControl
 .. rst-class:: opening
 
     This document summarizes installation and use of *BroControl*,
-    Bro's interactive shell for operating Bro installations. *BroControl*
+    a tool for operating Bro installations. *BroControl*
     has two modes of operation: a *stand-alone* mode for
     managing a traditional, single-system Bro setup; and a *cluster*
     mode for maintaining a multi-system setup of coordinated Bro
@@ -50,16 +50,16 @@ Running BroControl requires the following prerequisites:
   - A version of *Python* >= 2.6 (on FreeBSD, the package "py27-sqlite3" must
     also be installed).
 
-  - A *bash* (note in particular, that on FreeBSD, *bash* is not
-    installed by default).
+  - A *bash* (note that on FreeBSD, *bash* is not installed by default).
 
-  - If *sendmail* is installed (for a cluster setup, it is needed on the
-    manager only), then BroControl can send mail.  Otherwise, BroControl
+  - If *sendmail* is installed, then BroControl can send mail (for a cluster
+    setup, it would be needed on the manager only).  Otherwise, BroControl
     will not attempt to send mail.
 
-  - If *gdb* is installed and if Bro crashes, then BroControl can include
-    a backtrace in its crash report.  That can be helpful for debugging
-    problems with Bro.
+  - If *gdb* is installed and if Bro crashes with a core dump, then BroControl
+    can include a backtrace in its crash report (that can be helpful for
+    debugging problems with Bro).  Otherwise, crash reports will not include
+    a backtrace.
 
 For a cluster setup that spans more than one machine, there are
 additional requirements:
@@ -70,13 +70,19 @@ additional requirements:
     cluster must have *sshd* installed and running.
 
   - Decide which user account will be running BroControl, and then make sure
-    this user account is set up on all hosts in your cluster.  Also make sure
-    this user can ``ssh`` from the manager host to each of the other hosts
-    in your cluster, and this must work without being prompted for a
-    password/passphrase (one way to accomplish this is to use ssh public key
-    authentication).
+    this user account is set up on all hosts in your cluster.
+    Note that if you plan to run broctl using sudo (i.e., "sudo broctl"), then
+    the user running broctl will be "root" (and in that case the user running
+    sudo does not need to exist on the other hosts in your cluster).
 
-If you're using a load-balancing method such as PF_RING, then there is
+  - Make sure the user running BroControl can ``ssh`` from the manager host
+    to each of the other hosts in your cluster, and this must work without
+    being prompted for anything (one way to accomplish this is to use ssh
+    public key authentication).  You will need to try this manually before
+    attempting to run broctl, because broctl uses ssh to connect to other
+    hosts in your cluster.
+
+If you're using a load-balancing method (such as PF_RING), then there is
 additional software to install (for details, see the
 :doc:`Cluster Configuration <../../configuration/index>` documentation).
 
@@ -84,15 +90,292 @@ additional software to install (for details, see the
 Installation
 ------------
 
-Follow the directions to install Bro and BroControl according to
-the instructions in the :doc:`Installing Bro <../../install/install>`
+Follow the directions to install Bro and BroControl
+in the :doc:`Installing Bro <../../install/install>`
 documentation.  Note that if you are planning to run Bro in a cluster
 configuration, then you need to install Bro and BroControl only on the
 manager host (the BroControl install_ or deploy_ commands will install Bro
 and all required scripts to the other hosts in your cluster).
 
+
+Configuration
+-------------
+
+Before attempting to run BroControl, you first need to edit the ``broctl.cfg``,
+``node.cfg``, and ``networks.cfg`` files.  All three of these configuration
+files contain a valid configuration by default, but you might need to
+customize a few things.
+
+First, edit the ``node.cfg`` file and specify the nodes that you will be
+running.  You need to decide whether you will be running Bro standalone or
+in a cluster.  For a standalone configuration, there must be only one Bro node
+defined in this file.  For a cluster configuration, at a minimum there
+must be a manager node, a proxy node, and one or more worker nodes.
+There is a :doc:`Cluster Configuration <../../configuration/index>`
+guide that provides examples and additional information.
+
+Each node defined in the ``node.cfg`` file has a set of options.  A few options
+are required to be specified on every node, and some options are allowed only
+on certain node types (broctl will issue an error if you make a mistake).
+By default, the ``node.cfg`` file contains a valid configuration for
+a standalone setup and has a valid cluster configuration commented-out.
+If you want to use the default configuration, then at least check if
+the "interface" option is set correctly for your system.  For a
+description of every option available for nodes, see the `Node`_ section below.
+
+In the ``broctl.cfg`` file, you should review the BroControl options and
+check if any are not set correctly for your environment.  The options have
+default values that are reasonable for most users (the MailTo_ option is
+probably the one that you will most likely want to change), but for a
+description of every BroControl option, see the `Option Reference`_ section
+below.
+
+BroControl options are used in three different ways:  some options
+override the value of a Bro script constant (these are noted in the
+documentation), some affect only BroControl itself, and others affect Bro.
+
+Finally, edit the ``networks.cfg`` file and add each network (using standard
+CIDR notation) that is considered local to the monitored environment (by
+default, the ``networks.cfg`` file just lists the private IPv4 address spaces).
+
+The information in the ``networks.cfg`` file is used when creating connection
+summary reports.  Also, BroControl takes the information in the
+``networks.cfg`` file and puts it in the global Bro script constant
+``Site::local_nets``, and this global constant is used by several
+standard Bro scripts.
+
+
+Basic Usage
+-----------
+
+There are two ways to run BroControl commands:  by specifying a BroControl
+command on the command-line (e.g. "broctl deploy"), or by entering
+BroControl's interactive shell by running the broctl script without
+any arguments (e.g. "broctl").  The interactive shell expects
+commands on its command-line::
+
+  > broctl
+  Welcome to BroControl x.y
+
+  Type "help" for help.
+
+  [BroControl] >
+
+As the message says, type help_ to see a list of
+all commands. We will now briefly summarize the most important
+commands. A full reference follows `Command Reference`_.
+
+If this is the first time you are running BroControl, then the first command
+you must run is the BroControl deploy_ command.  The "deploy" command
+will make sure all of the files needed by BroControl and Bro are brought
+up-to-date based on the configuration specified in the ``broctl.cfg``,
+``node.cfg``, and ``networks.cfg`` files.  It will also check if there
+are any syntax errors in your Bro policy scripts. For a cluster setup it will
+copy all of the required scripts and executables to all the other hosts
+in your cluster.  Then it will successively start the logger, manager,
+proxies, and workers (for a standalone configuration, only one Bro instance
+will be started).
+
+The status_ command can be used to check that all nodes are "running".
+If any nodes have a status of "crashed", then use the diag_ command to
+see diagnostic information (you can specify the name of a crashed node
+as an argument to the diag command to show diagnostics for only that one
+node).
+
+If you want to stop the monitoring, issue the stop_ command. After all
+nodes have stopped, the status_ command should show all nodes as "stopped".
+
+The exit_ command leaves the shell (you can exit BroControl while Bro
+is running).
+
+Whenever the BroControl or Bro configuration is modified in any way,
+including changes to configuration files and site-specific policy
+scripts or upgrading to a new version of Bro, deploy_ must
+be run (deploy will check all policy scripts, install all needed files, and
+restart Bro). No changes will take effect until deploy_ is run.
+
+
+BroControl cron command
+-----------------------
+
+The main purpose of the BroControl cron_ command is to check for Bro nodes
+that have crashed, and to restart them.  The command also performs other
+housekeeping tasks, such as removing expired log files, checking if there is
+sufficient free disk space, etc.  Although this command can be run directly
+by a user, it is intended to be run from a cron job so that crashed nodes
+will be restarted automatically.
+
+For example, to setup a cron job that runs once every
+five minutes, insert the following entry into the crontab of the
+user running BroControl (change the path to the actual location of broctl
+on your system)::
+
+      */5 * * * * /usr/local/bro/bin/broctl cron
+
+It is important to make sure that the cron job runs as the same user that
+normally runs broctl on your system.
+
+If the ``"broctl cron disable"`` command is run, then broctl cron will be
+disabled (i.e., broctl cron won't do anything) until the
+``"broctl cron enable"`` command is run.  To check the status at any
+time, run ``"broctl cron ?"``.
+
+
+Log Files
+---------
+
+Log rotation and archival
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While Bro is running you can find the current set of (aggregated) logs
+in ``logs/current`` (which is a symlink to the corresponding spool directory).
+In a cluster setup, logs are written on the logger host (however, if there
+is no logger defined in your node.cfg, then the manager writes logs).
+
+Bro logs are automatically rotated once per hour by default, or whenever Bro
+is stopped.  A rotated log is renamed to contain a timestamp in the filename.
+For example, the ``conn.log`` might be renamed to
+``conn.2015-01-20-15-23-42.log``.
+
+Immediately after a log is rotated, it is archived automatically.  When a log
+is archived, it is moved to a subdirectory of ``logs/`` named by date (such
+as ``logs/2015-01-20``), then it is renamed again, and gzipped.  For example,
+a rotated log file named ``conn.2015-01-20-15-23-42.log`` might be archived
+to ``logs/2015-01-20/conn.15:48:23-16:00:00.log.gz``.  If the archival was
+successful, then the original (rotated) log file is removed.
+
+If, for some reason, a rotated log file cannot be archived then it will be
+left in the node's working directory.  Next time when BroControl either stops
+Bro or tries to restart a crashed Bro, it will try to archive such log files
+again.  If this attempt fails, then an email is sent which contains the
+name of a directory where any such unarchived logs can be found.
+
+Log files created only when using BroControl
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are several log files that are not created by Bro, but rather are
+created only when using BroControl to run Bro.
+
+When BroControl starts Bro it creates two files "stdout.log" and "stderr.log",
+which just capture stdout and stderr from Bro.  Although these are not
+actually Bro logs, they might contain useful error or diagnostic information.
+The contents of these files are included in crash reports and also
+in the output of the "broctl diag" command.
+
+Also, whenever logs are rotated, a connection summary report is generated if
+the `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
+tool is installed.  Although these are not actually Bro logs, they follow
+the same filename convention as other Bro logs and they have the filename
+prefix "conn-summary".  If you don't want these connection summary files
+to be created, then you can set the value of the TraceSummary_ option to
+an empty string.
+
+
+Bro Scripts
+-----------
+
+Site-specific Customization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to adapt the Bro policy to the local environment, then
+you will most likely need to write local policy scripts.
+
+Sample local policy scripts (which you can edit)
+are located in ``share/bro/site``. In a stand-alone setup, a single
+file called ``local.bro`` gets loaded automatically.  In a cluster
+setup, the same ``local.bro`` gets automatically loaded by all nodes
+in the cluster, followed by one of three other files: ``local-manager.bro``,
+``local-worker.bro``, and ``local-proxy.bro`` are loaded by the manager,
+workers, and proxy, respectively.  The latter three files seldom
+need to be modified, and are empty by default.
+
+The recommended way to modify the policy is to use only "@load" directives
+in the ``local.bro`` scripts.  For example, you can add a "@load" directive
+to load a Bro policy script that is included with Bro but is not loaded
+by default.  You can also create custom site-specific
+policy scripts in the same directory as the ``local.bro`` script, and "@load"
+them from the ``local.bro`` script.  For example, you could create
+your own Bro script ``mypolicy.bro`` in the ``share/bro/site`` directory,
+and then add a line "@load mypolicy" (without the quotes) to the ``local.bro``
+script.
+
+After creating or modifying your local policy scripts, you must install them
+by using the BroControl "install" or "deploy" command.  Next, you can use the
+BroControl "scripts" command to verify that your new scripts will be loaded
+when you start Bro.
+
+
+Load Order of Scripts
+~~~~~~~~~~~~~~~~~~~~~
+
+When writing custom site-specific policy scripts, it can be useful
+to know in which order the scripts are loaded.  For example, if more than
+one script sets a value for the same global variable, then the value that
+takes effect is the one set by the last such script loaded.  The
+BroControl "scripts" command shows the load order of every script
+loaded by Bro.
+
+When Bro starts up, the first script it loads is init-bare.bro, followed
+by init-default.bro (keep in mind that each of these scripts loads many
+other scripts).  Note that these are the only scripts that are automatically
+loaded when running Bro directly (instead of using BroControl to run Bro).
+
+The next script loaded is the local.bro script.  By default, this script
+loads a variety of other scripts.  You can edit local.bro and comment-out
+anything that your site doesn't need (or add new "@load" directives).
+
+Next, the "broctl" script package is loaded.  This consists of some standard
+settings that BroControl needs.
+
+In a cluster setup, one of the following scripts are loaded:
+local-manager.bro, local-proxy.bro, or local-worker.bro.  By default,
+these scripts are empty and there is seldom any need to modify them.
+
+The next scripts loaded are ``local-networks.bro`` and ``broctl-config.bro``.
+These scripts are automatically generated by BroControl based on the
+contents of the ``networks.cfg`` and ``broctl.cfg`` files.  Also, some
+BroControl plugins might generate script code that will be automatically
+inserted into the broctl-config.bro script.
+
+The last scripts loaded are any node-specific scripts specified with the
+option ``aux_scripts`` in ``node.cfg``.  This option is seldom ever
+needed, but can be used to load additional scripts to individual nodes only.
+For example, one could add a script ``experimental.bro`` to a single worker
+for trying out new experimental code.
+
+
+Mails
+-----
+
+There are several situations when BroControl sends mail to the address given in
+MailTo_ (note that BroControl will not be able to send any mail when the
+value of the SendMail_ option is an empty string):
+
+1. When the "broctl cron" command runs it performs various tasks (such as
+   checking available disk space, expiring old log files, etc.).  If
+   any problems occur, a mail will be sent containing a list of those issues.
+   Setting ``MailHostUpDown=0`` will disable some of this output.  Also,
+   setting ``StatsLogEnable=0`` will disable some functionality involving
+   writing to stats.log (which could also help reduce the amount of mail sent).
+
+2. When BroControl tries to start or stop (via any of these commands:
+   start, stop, restart, deploy, or cron) a node that has crashed,
+   a crash report is mailed (one for each crashed node).  The crash report
+   is essentially just the output of the "broctl diag" command.
+
+3. When BroControl stops Bro or restarts a crashed Bro, if any log files
+   could not be archived, then mail will be sent to warn about this problem.
+   This mail can be disabled by setting ``MailArchiveLogFail=0``.
+
+4. If `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
+   is installed, a traffic summary is mailed each rotation interval.  To
+   disable this mail, set ``MailConnectionSummary=0`` (however, the
+   connection summary file will still be created and archived along with
+   all other log files).
+
+
 Using BroControl as an unprivileged user
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------
 
 If you decide to run BroControl as an unprivileged user, there are a
 few issues that you may encounter.
@@ -118,251 +401,45 @@ the necessary permissions, then it will fail almost immediately upon
 startup.  A workaround for this is provided in the
 `Bro FAQ <https://www.bro.org/documentation/faq.html#how-can-i-capture-packets-as-an-unprivileged-user>`_.
 
-Configuration
--------------
 
-Before actually running BroControl, you first need to edit the ``broctl.cfg``,
-``node.cfg``, and ``networks.cfg`` files.
+Bro communication
+-----------------
 
-In the ``broctl.cfg`` file, you should review the BroControl options and
-make sure they are set correctly for your environment.  Most options have
-default values that are reasonable for most users (the MailTo_ option is
-probably the one that you will most likely want to change), but for a
-description of every BroControl option, see the `Option Reference`_ section
-below.
+This section summarizes the network communication between Bro and BroControl,
+which is useful to understand if you need to reconfigure your firewall.  If
+your firewall is preventing Bro communication, then either the "deploy"
+command or the "peerstatus" command will fail.
 
-Next, edit the ``node.cfg`` file and specify the nodes that you will be
-running.  For a description of every option available for nodes, see
-the `Node`_ section below.  If you will be using a standalone configuration
-then most likely the only option you need to change is the ``interface``.
-If you will be using a cluster configuration, there is a
-:doc:`Cluster Configuration <../../configuration/index>`
-guide that provides examples and additional information.
+For a cluster setup, BroControl uses ssh to run commands on other hosts in
+the cluster, so the manager host needs to connect to TCP port 22 on each
+of the other hosts in the cluster.  Note that BroControl never attempts
+to ssh to the localhost, so in a standalone setup BroControl does not use ssh.
 
-Finally, edit the ``networks.cfg`` file and list each network (see
-the examples in the file for the format to use) that is considered
-local to the monitored environment.
+Each instance of Bro in a cluster needs to communicate directly with other
+instances of Bro regardless of whether these instances are running on the same
+host or not.  Each proxy and worker needs to connect to the manager,
+and each worker needs to connect to one proxy.  If a logger node is defined,
+then each of the other nodes needs to connect to the logger.
 
+Note that you can change the port that Bro listens on by changing the value
+of the "BroPort" option in your ``broctl.cfg`` file (this should be needed
+only if your system has another process that listens on the same port).  By
+default, a standalone Bro listens on TCP port 47760.  For a cluster setup,
+the logger listens on TCP port 47761, and the manager listens on TCP port 47762
+(or 47761 if no logger is defined).  Each proxy is assigned its own port
+number, starting with one number greater than the manager's port.  Likewise,
+each worker is assigned its own port starting one number greater than the
+highest port number assigned to a proxy.
 
-Basic Usage
------------
-
-BroControl is an interactive interface for managing a Bro installation
-which allows you to, e.g., start/stop the monitoring or update its
-configuration.
-
-BroControl is started with the ``broctl`` script and then expects
-commands on its command-line (alternatively, ``broctl`` can also be started
-with a single command directly on the shell's command line, such as
-``broctl help``)::
-
-  > broctl
-  Welcome to BroControl x.y
-
-  Type "help" for help.
-
-  [BroControl] >
-
-As the message says, type help_ to see a list of
-all commands. We will now briefly summarize the most important
-commands. A full reference follows `Command Reference`_.
-
-The config_ command gives a list of all BroControl options with their
-current values.  This can be useful when troubleshooting a problem to
-check if an option has the expected value.
-
-If this is the first time you are running BroControl, then the first command
-you must run is the BroControl deploy_ command.  The "deploy" command
-will make sure all of the files needed by BroControl and Bro are brought
-up-to-date based on the configuration specified in the ``broctl.cfg``,
-``node.cfg``, and ``networks.cfg`` files.  It will also check if there
-are any syntax errors in your Bro policy scripts. For a cluster setup it will
-copy all of the required scripts and executables to all the other hosts
-in your cluster.  Then it will successively start the logger, manager,
-proxies, and workers (for a standalone configuration, only one Bro instance
-will be started).
-
-The status_ command can be used to check that all nodes are "running".
-If any nodes have a status of "crashed", then use the diag_ command to
-see diagnostic information (you can specify the name of a crashed node
-as an argument to the diag command to show diagnostics for only that one
-node).
-
-To stop the monitoring, issue the stop_ command. After all
-nodes have stopped, the status_ command should show all nodes as "stopped".
-exit_ leaves the shell (you can also exit BroControl while Bro nodes are
-running).
-
-Whenever the BroControl or Bro configuration is modified in any way,
-including changes to configuration files and site-specific policy
-scripts or upgrading to a new version of Bro, deploy_ must
-be run (deploy will check all policy scripts, install all needed files, and
-restart Bro). No changes will take effect until deploy_ is run.
-
-The BroControl cron_ command performs housekeeping tasks, such as checking
-whether Bro is running or not (and starting or stopping to match the expected
-state, as needed), checking if there is sufficient free disk space, etc.
-This command is intended to be run from a cron job, rather than
-interactively by a user.  To setup a cron job that runs once every
-five minutes, insert the following entry into the crontab of the
-user running BroControl (change the path to the actual location of broctl
-on your system)::
-
-      0-59/5 * * * * /usr/local/bro/bin/broctl cron
-
-If the ``"broctl cron disable"`` command is run, then broctl cron will be
-disabled (i.e., broctl cron won't do anything) until the
-``"broctl cron enable"`` command is run.  To check the status at any
-time, run ``"broctl cron ?"``.
-
-
-Log Files
----------
-
-While Bro is running you can find the current set of (aggregated) logs
-in ``logs/current`` (which is a symlink to the corresponding spool directory).
-In a cluster setup, logs are written on the logger host (however, if there
-is no logger defined in your node.cfg, then the manager writes logs).
-
-Bro logs are automatically rotated once per hour by default, or whenever Bro
-is stopped.  A rotated log is renamed to contain a timestamp in the filename.
-For example, the ``conn.log`` might be renamed to
-``conn.2015-01-20-15-23-42.log``.
-
-Immediately after a log is rotated, it is archived automatically.  When a log
-is archived, it is moved to a subdirectory of ``logs/`` named by date (such
-as ``logs/2015-01-20``), then it is renamed again, and gzipped.  For example,
-a rotated log file named ``conn.2015-01-20-15-23-42.log`` might be archived
-to ``logs/2015-01-20/conn.15:48:23-16:00:00.log.gz``.  If the archival was
-successful, then the original (rotated) log file is removed.
-
-If, for some reason, a rotated log file cannot be archived then it will be
-left in the node's working directory.  Next time when BroControl either stops
-Bro or tries to restart a crashed Bro, it will try to archive such log files
-again.  If this attempt fails, then an email is sent which contains the
-name of a directory where any such unarchived logs can be found.
-
-Files created only when using BroControl
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When BroControl starts Bro it creates two files "stdout.log" and "stderr.log",
-which just capture stdout and stderr from Bro.  Although these are not
-actually Bro logs, they might contain useful error or diagnostic information.
-
-Also, whenever logs are rotated, a connection summary report is generated if
-the `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
-tool is installed.  Although these are not actually Bro logs, they follow
-the same filename convention as other Bro logs and they have the filename
-prefix "conn-summary".  To prevent these files from being created, set the
-value of the TraceSummary_ option to an empty string.
-
-
-Site-specific Customization
----------------------------
-
-You'll most likely want to adapt the Bro policy to the local
-environment and generally site-specific tuning requires writing
-local policy scripts.
-
-Sample local policy scripts (which you can edit)
-are located in ``share/bro/site``. In the stand-alone setup, a single
-file called ``local.bro`` gets loaded automatically.  In the cluster
-setup, the same ``local.bro`` gets loaded, followed by one of three
-other files: ``local-manager.bro``, ``local-worker.bro``, and
-``local-proxy.bro`` are loaded by the manager, workers, and proxy,
-respectively.
-
-The recommended way to modify the policy is to use only "@load" directives
-in the ``local.bro`` scripts.  For example, you can add a "@load" directive
-to load a Bro policy script that is included with Bro but is not loaded
-by default.  You can also create custom site-specific
-policy scripts in the same directory as the ``local.bro`` scripts, and "@load"
-them from one of the ``local.bro`` scripts.  For example, you could create
-your own Bro script ``mypolicy.bro`` in the ``share/bro/site`` directory,
-and then add a line "@load mypolicy" (without the quotes) to the ``local.bro``
-script.  Note that in a cluster setup, notice filtering should be done only
-on the manager.
-
-After creating or modifying your local policy scripts, you must install them
-by using the BroControl "install" or "deploy" command.  Next, you can use the
-BroControl "scripts" command to verify that your new scripts will be loaded
-when you start Bro.
-
-If you want to change which local policy scripts are loaded by the nodes,
-you can set SitePolicyStandalone_ for all Bro instances,
-SitePolicyManager_ for the manager, and SitePolicyWorker_ for the
-workers.  To change the directory where local policy scripts are
-located, set the option SitePolicyPath_ to a different path.  These
-options can be changed in the ``broctl.cfg`` file.
-
-Load Order of Scripts
-~~~~~~~~~~~~~~~~~~~~~
-
-When writing custom site-specific policy scripts, it can sometimes be useful
-to know in which order the scripts are loaded (the BroControl "scripts" command
-shows the load order of every script loaded by Bro).  For example, if more than
-one script sets a value for the same global variable, then the value that
-takes effect is the one set by the last such script loaded.
-
-When BroControl starts Bro, the first script loaded is init-bare.bro, followed
-by init-default.bro (keep in mind that each of these scripts loads many
-other scripts).
-
-Next, the local.bro script is loaded.  This provides for a common set of
-loaded scripts for all nodes.
-
-Next, the "broctl" script package is loaded.  This consists of some standard
-settings that BroControl needs.
-
-In a cluster setup, one of the following scripts are loaded:
-local-manager.bro, local-proxy.bro, or local-worker.bro.
-
-The next scripts loaded are ``local-networks.bro`` and ``broctl-config.bro``.
-These scripts are automatically generated by BroControl based on the
-contents of the ``networks.cfg`` and ``broctl.cfg`` files.
-
-The last scripts loaded are any node-specific scripts specified with the
-option ``aux_scripts`` in ``node.cfg``.  This option can be used to
-load additional scripts to individual nodes only.  For example, one could
-add a script ``experimental.bro`` to a single worker for trying out new
-experimental code.
-
-
-Mails
------
-
-There are several situations when BroControl sends mail to the address given in
-MailTo_ (note that BroControl will not be able to send any mail when the
-value of the SendMail_ option is an empty string):
-
-1. When the ``broctl cron`` command runs it performs various tasks (such as
-   checking available disk space, expiring old log files, etc.).  If
-   any problems occur, a mail will be sent containing a list of those issues.
-   Setting ``MailHostUpDown=0`` will disable some of this output.  Also,
-   setting ``StatsLogEnable=0`` will disable some functionality involving
-   writing to stats.log (which could also reduce the amount of email).
-
-2. When BroControl tries to start or stop (via any of these commands:
-   start, stop, restart, deploy, or cron) a node that has crashed,
-   a crash report is mailed (one for each crashed node).  The crash report
-   is essentially just the output of the ``broctl diag`` command.
-   When ``broctl cron`` is run with the ``--no-watch`` option, then it
-   will not attempt to start or stop Bro.
-
-3. When BroControl stops Bro or restarts a crashed Bro, if any log files
-   could not be archived, then an email will be sent.  This can be disabled
-   by setting ``MailArchiveLogFail=0``.
-
-4. If `trace-summary <http://www.bro.org/sphinx/components/trace-summary/README.html>`_
-   is installed, a traffic summary is mailed each rotation interval. This
-   can be disabled by setting ``MailConnectionSummary=0``.
+Finally, a few BroControl commands (such as "print" and "peerstatus") rely
+on broccoli to communicate with Bro.  This means that for those commands to
+function, BroControl needs to connect to each Bro instance.
 
 Command Reference
 -----------------
 
 The following summary lists all commands supported by BroControl.
-All commands may be either entered interactively or specified on the
-shell's command line. If not specified otherwise, commands taking
+If not specified otherwise, commands taking
 *[<nodes>]* as arguments apply their action either to the given set of
 nodes, to the manager node if "manager" is given, to all proxy nodes if
 "proxies" is given, to all worker nodes if "workers" is given, or to all

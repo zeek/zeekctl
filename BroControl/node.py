@@ -29,38 +29,41 @@ class Node:
             type must be one of: ``logger``, ``manager``, ``proxy``,
             or ``worker``.
 
-        ``env_vars`` (string)
-            A comma-separated list of environment variables to set when
-            running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``). These
-            node-specific values override any global values specified in
-            the ``broctl.cfg`` file.
-
         ``host`` (string)
-            The hostname (or the IP address) of the system the node is
-            running on.
+            The hostname or IP address of the system the node is
+            running on.  Every node must specify a host.
 
         ``interface`` (string)
-            The network interface for Bro to use; empty if not set.
+            The network interface for the Bro worker (or standalone node) to
+            use; empty if not set.
 
         ``lb_procs`` (integer)
-            The number of clustered Bro workers you'd like to start up. This
-            number must be greater than zero.
+            The number of clustered Bro workers you'd like to start up.  If
+            specified, this number must be greater than zero and a load
+            balancing method must also be specified.  This option is valid only
+            for worker nodes.
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
-            processes.  This must be one of: ``pf_ring``, ``myricom``, ``custom``,
-            or ``interfaces``.
+            Bro workers.  This must be one of: ``pf_ring``, ``myricom``,
+            ``custom``, or ``interfaces``.  This option can have a value
+            only if the ``lb_procs`` option has a value.
 
         ``lb_interfaces`` (string)
-            If the load balancing method is ``interfaces``, then this is
-            a comma-separated list of network interface names to use.
+            A comma-separated list of network interface names for the Bro
+            worker to use.  The number of interfaces in this list must
+            equal the value of the ``lb_procs`` option.
+
+            This option can be specified only when the load balancing method
+            is ``interfaces``.
 
         ``pin_cpus`` (string)
             A comma-separated list of CPU numbers to which the node's Bro
-            processes will be pinned (if not specified, then CPU pinning will
-            not be used for this node).  This option is only supported on
-            Linux and FreeBSD (it is ignored on all other platforms).  CPU
-            numbering starts at zero (e.g.,
+            processes will be pinned.  If not specified, then CPU pinning will
+            not be used for this node.  This option is supported only on
+            Linux and FreeBSD, and is ignored on all other platforms.
+
+            CPU numbering starts at zero (e.g.,
             the only valid CPU numbers for a machine with one dual-core
             processor would be 0 and 1).  If the length of this list does not
             match the number of Bro processes for this node, then some CPUs
@@ -68,6 +71,12 @@ class Node:
             than one (if not enough CPU numbers are specified) Bro processes
             pinned to them.  Only the specified CPU numbers will be used,
             regardless of whether additional CPU cores exist.
+
+        ``env_vars`` (string)
+            A comma-separated list of environment variables to set when
+            running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``).  These
+            node-specific values override any global values specified in
+            the ``broctl.cfg`` file.
 
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
