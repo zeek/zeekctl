@@ -24,3 +24,12 @@ broctl diag worker-2 > onenode.out 2>&1
 
 broctl stop
 
+# On FreeBSD, "ulimit -d unlimited" always fails for non-root users, so
+# we need to filter out that error message.
+os=`uname`
+if [ "$os" = "FreeBSD" ]; then
+    grep -v "ulimit: data seg size: cannot modify limit" all.out > all.out2
+    mv all.out2 all.out
+    grep -v "ulimit: data seg size: cannot modify limit" onenode.out > onenode.out2
+    mv onenode.out2 onenode.out
+fi

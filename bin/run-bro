@@ -44,6 +44,10 @@ if [ ! -f "${bro}" ]; then
     exit 1
 fi
 
+# Note: on FreeBSD, "ulimit -d unlimited" outputs an error message for a
+# non-root user and never does anything else.  For root user, it just
+# raises the limit up to the system maximum (32GB, by default).  Increasing
+# that value requires editing /boot/loader.conf and rebooting.
 LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
 ulimit -d $LIMIT
