@@ -103,6 +103,7 @@ if livemode:
             envval = os.getenv(envvar, "")
             # output for testing purposes (Bro doesn't do this)
             print("%s=%s" % (envvar, envval), file=sys.stderr)
+        sys.stderr.flush()
 
     # Unlike bro, just wait long enough so that the slowest test case has time
     # to finish, and then just exit to avoid having unwanted processes
