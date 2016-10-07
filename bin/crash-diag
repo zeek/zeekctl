@@ -36,16 +36,18 @@ gdb=`which gdb 2> /dev/null`
 if [ -f .status ]; then
     if [ -n "$gdb" ]; then
         if [ -z "$core" ]; then
-            # Check if the system allows core files.
+            # Check if the system allows setting core file size to unlimited,
+            # because this is what the run-bro script does when it starts bro.
             ulimit -c unlimited 2> /dev/null
             coresize=`ulimit -c`
-            msg=""
+
             if [ "$coresize" != "unlimited" ]; then
-                msg="  You may also need to change your\nsystem settings to allow core files."
+                echo "No core file found.  You may need to change your system settings to"
+                echo "allow core files."
+            else
+                echo "No core file found."
             fi
 
-            echo "No core file found.  The most likely explanation is that Bro either"
-            echo -e "terminated on its own or was killed.${msg}"
             echo
         fi
     else
@@ -70,8 +72,14 @@ fi
 echo Bro $bro_version
 uname -sr
 echo
-echo "Bro plugins:"
-"${bro}" -N | grep -v "(built-in)"
+
+broplugins=`"${bro}" -N | grep -v "(built-in)"`
+if [ -z "$broplugins" ]; then
+    echo "Bro plugins: (none found)"
+else
+    echo "Bro plugins:"
+    echo "$broplugins"
+fi
 
 # Output a backtrace, if possible.
 if [ -n "$gdb" ]; then

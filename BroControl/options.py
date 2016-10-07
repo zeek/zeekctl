@@ -108,11 +108,13 @@ options = [
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for manager."),
+           "Space-separated list of local policy files for manager.  This option is deprecated."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for workers."),
+           "Space-separated list of local policy files for workers.  This option is deprecated."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for all Bro instances."),
+           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts.  This option is deprecated (please use SitePolicyScripts instead)."),
+    Option("SitePolicyScripts", "local.bro", "string", Option.USER, False,
+           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts."),
 
     Option("StatusCmdShowAll", 0, "bool", Option.USER, False,
            "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),

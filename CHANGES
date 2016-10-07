@@ -1,4 +1,26 @@
 
+1.5-beta-31 | 2016-10-07 14:55:07 -0400
+
+  * Improve diag command output (Daniel Thayer)
+
+  * Add new option SitePolicyScripts to replace SitePolicyStandalone
+
+    If a user tries to use SitePolicyStandalone in broctl.cfg, then the
+    value will be copied to SitePolicyScripts.
+
+    Also marked SitePolicyManager, SitePolicyWorker, and SitePolicyStandalone
+    as deprecated in the documentation. (Daniel Thayer)
+
+  * Fix a couple of failing tests (Daniel Thayer)
+
+  * Fix a failing test on FreeBSD (Daniel Thayer)
+
+  * Improve documentation
+
+    Improved the documentation, especially documentation of node attributes,
+    documentation of broctl commands, and added a section about Bro/BroControl
+    communication. (Daniel Thayer)
+
 1.5-beta-24 | 2016-09-26 16:24:21 -0400
 
   * Don't show a stack trace when it's not useful

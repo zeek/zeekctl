@@ -17,3 +17,10 @@ broctl diag > out 2>&1
 
 broctl stop
 
+# On FreeBSD, "ulimit -d unlimited" always fails for non-root users, so
+# we need to filter out that error message.
+os=`uname`
+if [ "$os" = "FreeBSD" ]; then
+    grep -v "ulimit: data seg size: cannot modify limit" out > out2
+    mv out2 out
+fi
