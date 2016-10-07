@@ -61,7 +61,7 @@ def _make_bro_params(node, live):
     #    settings that override the previously loaded node-specific scripts.
     #    (e.g. Log::default_rotation_interval is set in logger.bro,
     #    but overrided by broctl.cfg)
-    args += config.Config.sitepolicystandalone.split()
+    args += config.Config.sitepolicyscripts.split()
     args += ["broctl"]
     if node.type == "standalone":
         args += ["broctl/standalone"]
