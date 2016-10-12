@@ -1,0 +1,26 @@
+# Test that the stop command writes correct values to state database for
+# a standalone configuration.
+#
+# @TEST-REQUIRES: which sqlite3
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-state-db btest-diff out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+set -e
+
+test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
+
+broctl install
+broctl start
+broctl stop
+
+sqlite3 $BROCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
+
+# Produce "key = value" output from the database dump.
+awk -F \' '{ if (NF == 5) { print $2, "=", $4 } }' dump.out > out
