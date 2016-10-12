@@ -1,0 +1,7 @@
+configchksum = "a6d6e5d7bfe958ebc91dc97e2128eb92"
+confignodechksum = "754db8253db4ebd1262762895fefd5ca"
+cronenabled = true
+broversion = "2.5-beta-67"
+bro-port = 47760
+hash-broctlcfg = "a1ccd732731385c068fce5e4b90674c4"
+hash-nodecfg = "3091f532e7c0e58879c1fc637f40d8e1"

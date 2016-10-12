@@ -1,0 +1,10 @@
+configchksum = "eadf41a798184949bad8e96800cded49"
+confignodechksum = "d70faff8af7baa5fd57c48eeca5f94a2"
+cronenabled = true
+broversion = "2.5-beta-67"
+manager-port = 47761
+proxy-1-port = 47762
+worker-1-port = 47763
+worker-2-port = 47764
+hash-broctlcfg = "9dfcdf611f8af6bfbf37b73f66c73fda"
+hash-nodecfg = "854ed1984314e3981e66533554755aa5"
