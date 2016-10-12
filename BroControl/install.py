@@ -104,14 +104,23 @@ def make_broctl_config_sh(cmdout):
 def make_layout(path, cmdout, silent=False):
     class Port:
         def __init__(self, startport):
+            # This is the first port number to use.
             self.p = startport
 
-        def next_port(self, node):
+        # Record the port number that the specified node will use (if node is
+        # None, then don't record it) and return that port number.
+        def use_port(self, node):
+            port = self.p
+            # Increment the port number, since we're using the current one.
             self.p += 1
-            node.setPort(self.p)
-            return self.p
+
+            if node is not None:
+                node.setPort(port)
+
+            return port
 
     manager = config.Config.manager()
+    broport = Port(config.Config.broport)
 
     if config.Config.nodes("standalone"):
         if not silent:
@@ -122,7 +131,7 @@ def make_layout(path, cmdout, silent=False):
         ostr = "# Automatically generated. Do not edit.\n"
         # This is the port that standalone nodes listen on for remote
         # control by default.
-        ostr += "redef Communication::listen_port = %s/tcp;\n" % config.Config.broport
+        ostr += "redef Communication::listen_port = %s/tcp;\n" % broport.use_port(manager)
         ostr += "redef Communication::nodes += {\n"
         ostr += "\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id)
         ostr += "};\n"
@@ -132,7 +141,6 @@ def make_layout(path, cmdout, silent=False):
             cmdout.info("generating cluster-layout.bro ...")
 
         filename = os.path.join(path, "cluster-layout.bro")
-        broport = Port(config.Config.broport)
         workers = config.Config.nodes("workers")
         proxies = config.Config.nodes("proxies")
         loggers = config.Config.nodes("loggers")
@@ -152,14 +160,14 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
-        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, config.Config.broport)
+        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.use_port(None))
 
         # Logger definition
         if loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.next_port(logger))
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.use_port(logger))
 
         # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.next_port(manager), loggerstr)
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), loggerstr)
         for s in workers:
             ostr += '"%s"' % s.name
             if s != workers[-1]:
@@ -168,7 +176,7 @@ def make_layout(path, cmdout, silent=False):
 
         # Proxies definition
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.next_port(p), loggerstr, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), loggerstr, manager.name)
             for s in workers:
                 ostr += '"%s"' % s.name
                 if s != workers[-1]:
@@ -178,7 +186,7 @@ def make_layout(path, cmdout, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.next_port(w), w.interface, loggerstr, manager.name, proxies[p].name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name, proxies[p].name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
