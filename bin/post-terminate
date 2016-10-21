@@ -136,6 +136,7 @@ find_cmd="find -E"
 if [ "${os}" = "Linux" ]; then
     find_cmd=find
 elif [ "${os}" = "OpenBSD" ]; then
+    # OpenBSD find command doesn't have "-regex" option.
     find_cmd=gfind
 fi
 

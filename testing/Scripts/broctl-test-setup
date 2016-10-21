@@ -149,7 +149,7 @@ installbro() {
     # to help setup environment for running broctl manually.
     if [ -n "${BROCTL_TEST_DEBUG}" ]; then
         how2run=${BROCTL_INSTALL_PREFIX}/how_to_run_broctl
-        echo "# In order to run broctl in this directory, first type '. how_to_run_broctl'" >> $how2run
+        echo "# In order to run broctl in this directory, first type '. ./how_to_run_broctl'" >> $how2run
         echo "export PATH=$BROCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
     fi
 }

@@ -130,6 +130,7 @@ else
 
     find_cmd=find
     if [ "${os}" = "OpenBSD" ]; then
+        # OpenBSD find command doesn't have "-delete" option.
         find_cmd=gfind
     fi
     # Only delete if too large (>100MB).
