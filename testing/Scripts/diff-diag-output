@@ -6,7 +6,7 @@
 
 awk '{
     if ( skip == 0 ) {
-        if ( $0 ~ /^(Darwin|Linux|FreeBSD)/ ) {
+        if ( $0 ~ /^(Darwin|Linux|[A-Z][a-z]*BSD)/ ) {
             print "<...OS version...>"
         }
         else if ( $0 ~ /^No core / ) {
