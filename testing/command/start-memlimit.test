@@ -13,19 +13,22 @@ EOF
 stdoutlog=$BROCTL_INSTALL_PREFIX/spool/bro/stdout.log
 
 ret=0
+new_memlimit=123456
 
-# test using the default value of memlimit
+# Test that the new value is not set by default (if it is, then the test fails
+# because we can't verify that the new value is being set by broctl)
 broctl install
 broctl start
-grep kbytes ${stdoutlog} | grep unlimited || ret=1
+grep kbytes ${stdoutlog} | grep $new_memlimit && ret=1
 broctl stop
 
-# test using a custom value of memlimit
-echo "memlimit=123456" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+# Set a new memlimit value
+echo "memlimit=$new_memlimit" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
+# Test that the new value is set
 broctl install
 broctl start
-grep kbytes ${stdoutlog} | grep 123456 || ret=1
+grep kbytes ${stdoutlog} | grep $new_memlimit || ret=1
 broctl stop
 
 exit $ret
