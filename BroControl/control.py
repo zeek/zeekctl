@@ -927,7 +927,10 @@ class Controller:
                 self.ui.info("failed to update %s: %s" % (tag, "\n".join(output)))
                 results.set_node_fail(node)
             else:
-                self.ui.info("%s: %s" % (tag, "\n".join(output)))
+                out = ""
+                if output:
+                    out = output[0]
+                self.ui.info("%s: %s" % (tag, out))
                 results.set_node_success(node)
 
         return results
