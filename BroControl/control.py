@@ -69,6 +69,8 @@ def _make_bro_params(node, live):
         args += ["base/frameworks/cluster"]
         if node.type == "manager":
             args += config.Config.sitepolicymanager.split()
+        elif node.type == "logger":
+            args += config.Config.sitepolicylogger.split()
         elif node.type == "proxy":
             args += ["local-proxy"]
         elif node.type == "worker":

@@ -1,4 +1,12 @@
 
+1.5-beta-41 | 2016-11-01 09:34:19 -0700
+
+  * Add support for local-logger.bro site policy script. (Daniel Thayer)
+
+  * Add a few clarifications to broctl documentation. (Daniel Thayer)
+
+  * Update broctl.rst using "make doc". (Daniel Thayer)
+
 1.5-beta-31 | 2016-10-07 14:55:07 -0400
 
   * Improve diag command output (Daniel Thayer)
