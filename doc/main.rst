@@ -44,8 +44,7 @@ Running BroControl requires the following prerequisites:
 
   - A Unix system. FreeBSD, Linux, and Mac OS X are supported and
     should work out of the box. Other Unix systems will quite likely
-    require some tweaking. Note that in a cluster setup, all systems
-    must be running exactly the *same* operating system.
+    require some tweaking.
 
   - A version of *Python* >= 2.6 (on FreeBSD, the package "py27-sqlite3" must
     also be installed).
@@ -63,6 +62,9 @@ Running BroControl requires the following prerequisites:
 
 For a cluster setup that spans more than one machine, there are
 additional requirements:
+
+  - All machines in the cluster must be running exactly the *same* operating
+    system (even the version must be the same).
 
   - Every host in the cluster must have *rsync* installed.
 
@@ -208,12 +210,20 @@ will be restarted automatically.
 For example, to setup a cron job that runs once every
 five minutes, insert the following entry into the crontab of the
 user running BroControl (change the path to the actual location of broctl
-on your system)::
+on your system) by running the ``crontab -e`` command::
 
       */5 * * * * /usr/local/bro/bin/broctl cron
 
 It is important to make sure that the cron job runs as the same user that
-normally runs broctl on your system.
+normally runs broctl on your system.  For a cluster configuration, this
+should be run only on the manager host.
+
+Note that on some systems, the default PATH for cron jobs might not include
+the directory where python or bash are installed (the symptoms of this
+problem would be that "broctl cron" works when run directly by the user,
+but does not work from a cron job).  The simplest fix for this problem
+would be to redefine PATH on a line immediately before the line that
+runs broctl in your crontab.
 
 If the ``"broctl cron disable"`` command is run, then broctl cron will be
 disabled (i.e., broctl cron won't do anything) until the
