@@ -109,6 +109,8 @@ options = [
 
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for manager.  This option is deprecated."),
+    Option("SitePolicyLogger", "local-logger.bro", "string", Option.USER, False,
+           "Space-separated list of local policy files for logger.  This option is deprecated."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
            "Space-separated list of local policy files for workers.  This option is deprecated."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
