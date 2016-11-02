@@ -51,7 +51,10 @@ fi
 LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
 ulimit -d $LIMIT
-ulimit -v $LIMIT
+# Note: on OpenBSD, attempting to adjust virtual memory size always fails.
+if [ "${os}" != "OpenBSD" ]; then
+    ulimit -v $LIMIT
+fi
 ulimit -c unlimited
 
 # show current limits (visible in crash reports and "broctl diag")

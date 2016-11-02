@@ -48,7 +48,10 @@ export PYTHONPATH=${libdirinternal}:$PYTHONPATH
 # If ${memlimit} is not set, then use 1.5GB.
 LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
-ulimit -v $LIMIT
+# Note: on OpenBSD, attempting to adjust virtual memory size always fails.
+if [ "${os}" != "OpenBSD" ]; then
+    ulimit -v $LIMIT
+fi
 
 summary_options="-c -r"
 

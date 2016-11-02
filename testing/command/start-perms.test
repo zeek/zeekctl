@@ -1,5 +1,8 @@
-# Test that the start command fails immediately when there is a permissions
-# problem with the bro working directory, and gives a useful error message.
+# Test that the start command fails immediately when broctl lacks the needed
+# permissions to the bro working directory, and gives a useful error message.
+#
+# Skip this test if running as the superuser.
+# @TEST-REQUIRES: test `id -u` -ne 0
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff start.out

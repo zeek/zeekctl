@@ -1,4 +1,11 @@
 
+1.5-beta-56 | 2016-11-02 13:44:41 -0400
+
+  * Portability fixes (Daniel Thayer)
+
+    A number of portability fixes, mostly related to OpenBSD.
+
+
 1.5-beta-48 | 2016-11-02 13:38:34 -0400
 
   * Fix bug where standalone bro port isn't recorded to state.db (Daniel Thayer)

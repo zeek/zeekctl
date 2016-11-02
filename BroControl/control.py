@@ -926,10 +926,13 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.info("failed to update %s: %s" % (tag, output[0]))
+                self.ui.info("failed to update %s: %s" % (tag, "\n".join(output)))
                 results.set_node_fail(node)
             else:
-                self.ui.info("%s: %s" % (tag, output[0]))
+                out = ""
+                if output:
+                    out = output[0]
+                self.ui.info("%s: %s" % (tag, out))
                 results.set_node_success(node)
 
         return results
