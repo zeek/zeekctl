@@ -1358,6 +1358,7 @@ class Controller:
     # Triggers all activity which is to be done regularly via cron.
     def cron(self, watch):
         if not self.config.cronenabled:
+            logging.debug("cron is disabled")
             return
 
         # Check if "broctl install" has been run.

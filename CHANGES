@@ -1,4 +1,14 @@
 
+1.5-beta-48 | 2016-11-02 13:38:34 -0400
+
+  * Fix bug where standalone bro port isn't recorded to state.db (Daniel Thayer)
+
+    Fixed a bug that was introduced in commit f02be954.  The bro port
+    number must be saved to the state database, otherwise the broctl
+    commands that rely on broccoli (peerstatus, etc.) won't work.
+
+    Add more test cases to prevent any similar bug in the future
+
 1.5-beta-41 | 2016-11-01 09:34:19 -0700
 
   * Add support for local-logger.bro site policy script. (Daniel Thayer)

@@ -1,5 +1,6 @@
 # Test that the initial default cron state is correct, and that the state
-# can be set to either disabled or enabled.
+# can be set to either disabled or enabled, and that cron doesn't do
+# anything when it is disabled.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff disable.out
@@ -7,6 +8,12 @@
 # @TEST-EXEC: btest-diff out
 
 . broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__debug
+EOF
+
+set -e
 
 broctl install
 
@@ -16,6 +23,11 @@ broctl cron ? > out 2>&1
 # test that the state can be set to disabled
 broctl cron disable > disable.out 2>&1
 broctl cron ? >> out 2>&1
+
+# test that cron doesn't do anything
+rm $BROCTL_INSTALL_PREFIX/spool/debug.log
+broctl cron
+grep -q "cron is disabled" $BROCTL_INSTALL_PREFIX/spool/debug.log
 
 # test that the state can be set to enabled
 broctl cron enable > enable.out 2>&1
