@@ -5,20 +5,12 @@
 
 1.5-beta-56 | 2016-11-02 13:44:41 -0400
 
-  * Portability fixes (Daniel Thayer)
-
-    A number of portability fixes, mostly related to OpenBSD.
-
+  * A number of portability fixes, mostly related to OpenBSD. (Daniel Thayer)
 
 1.5-beta-48 | 2016-11-02 13:38:34 -0400
 
-  * Fix bug where standalone bro port isn't recorded to state.db (Daniel Thayer)
-
-    Fixed a bug that was introduced in commit f02be954.  The bro port
-    number must be saved to the state database, otherwise the broctl
-    commands that rely on broccoli (peerstatus, etc.) won't work.
-
-    Add more test cases to prevent any similar bug in the future
+  * Fix bug where standalone bro port isn't recorded to state.db, and
+    add more test cases. (Daniel Thayer)
 
 1.5-beta-41 | 2016-11-01 09:34:19 -0700
 
@@ -26,45 +18,30 @@
 
   * Add a few clarifications to broctl documentation. (Daniel Thayer)
 
-  * Update broctl.rst using "make doc". (Daniel Thayer)
-
 1.5-beta-31 | 2016-10-07 14:55:07 -0400
 
-  * Improve diag command output (Daniel Thayer)
+  * Improve diag command output. (Daniel Thayer)
 
-  * Add new option SitePolicyScripts to replace SitePolicyStandalone
-
-    If a user tries to use SitePolicyStandalone in broctl.cfg, then the
-    value will be copied to SitePolicyScripts.
-
+  * Add new option SitePolicyScripts to replace SitePolicyStandalone.
     Also marked SitePolicyManager, SitePolicyWorker, and SitePolicyStandalone
     as deprecated in the documentation. (Daniel Thayer)
 
-  * Fix a couple of failing tests (Daniel Thayer)
+  * Fix a couple of failing tests. (Daniel Thayer)
 
-  * Fix a failing test on FreeBSD (Daniel Thayer)
+  * Fix a failing test on FreeBSD. (Daniel Thayer)
 
-  * Improve documentation
-
-    Improved the documentation, especially documentation of node attributes,
+  * Improved the documentation, especially documentation of node attributes,
     documentation of broctl commands, and added a section about Bro/BroControl
     communication. (Daniel Thayer)
 
 1.5-beta-24 | 2016-09-26 16:24:21 -0400
 
-  * Don't show a stack trace when it's not useful
-
-    BroControl exceptions are now defined in the new exceptions.py file.
-    The broctl client will handle only those exceptions (showing a useful
-    error message), because they are expected to occur in various
-    predictable situations (bad user input, bad config file, etc.).
-    In these situations, a stack trace is not useful, because the cause
-    of the problem is well-understood (and should be explained by the
-    error message).
-
-    If a standard Python exception is raised (this is not expected to occur),
-    then broctl will terminate with a stack trace, which is useful to help
-    debug the problem. (Daniel Thayer)
+  * Define all BroControl exceptions in the new exceptions.py file.
+    The broctl client will now handle only those exceptions, showing a
+    useful error message instead of a stack trace.  As before, if a
+    standard Python exception is raised (this is not expected to occur),
+    then broctl will terminate with a stack trace, which is useful to
+    help debug the problem. (Daniel Thayer)
 
 1.5-beta-22 | 2016-09-26 16:11:21 -0400
 
@@ -79,8 +56,6 @@
 
 1.5-beta-19 | 2016-09-26 15:50:22 -0400
 
- The "Case sensitivity bugs are fun" release.
-
   * Fix a bug where broctl loses state of running Bro nodes
 
     If a node name contains uppercase letters, then restarting broctl while
@@ -91,22 +66,16 @@
 
     Addresses BIT-1676. (Daniel Thayer)
 
-  * Add a (case-insensitive) check for duplicate node names
-
-    Report an error if a user defines node names differing only by case (such
+  * Report an error if a user defines node names differing only by case (such
     as "worker-1" and "Worker-1").  This check is needed because keys
     in the state db are converted to lowercase. (Daniel Thayer)
 
   * Improve error messages for plugin API functions (Daniel Thayer)
 
-  * Do not restrict plugin state var. to string type
-
-    Removed the restriction that plugin state variables must be string
+  * Removed the restriction that plugin state variables must be string
     type, because normal state variables have no such restriction. (Daniel Thayer)
 
-  * Fix the plugin getGlobalOption() function
-
-    Fixed the getGlobalOption() function in the plugin API.  It did not
+  * Fixed the getGlobalOption() function in the plugin API.  It did not
     convert its argument to lowercase, and could return the value of a
     state variable.
 
