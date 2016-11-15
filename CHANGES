@@ -1,4 +1,10 @@
 
+1.5 | 2016-11-15 13:24:00 -0800
+
+  * Pruning CHANGES a bit. (Daniel Thayer)
+
+  * Update broctl.rst using "make doc". (Daniel Thayer)
+
 1.5-beta2 | 2016-11-02 11:08:45 -0700
 
   * Release 1.5-beta2.
