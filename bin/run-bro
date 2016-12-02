@@ -44,21 +44,24 @@ if [ ! -f "${bro}" ]; then
     exit 1
 fi
 
-# Note: on FreeBSD, "ulimit -d unlimited" outputs an error message for a
-# non-root user and never does anything else.  For root user, it just
+# Note: on FreeBSD and OpenBSD, "ulimit -d unlimited" outputs an error message
+# for a non-root user and doesn't increase the limit.  For root user, it just
 # raises the limit up to the system maximum (32GB, by default).  Increasing
-# that value requires editing /boot/loader.conf and rebooting.
+# that value on FreeBSD requires editing /boot/loader.conf and rebooting.
 LIMIT=${memlimit:-1572864}
 ulimit -m $LIMIT
 ulimit -d $LIMIT
-# Note: on OpenBSD, attempting to adjust virtual memory size always fails.
+
+# Don't attempt to adjust virtual memory size on OpenBSD, because it always
+# fails.
 if [ "${os}" != "OpenBSD" ]; then
     ulimit -v $LIMIT
+    ulimit_v="-v"
 fi
 ulimit -c unlimited
 
-# show current limits (visible in crash reports and "broctl diag")
-ulimit -m -d -v -c
+# Show current limits (visible in crash reports and "broctl diag")
+ulimit -m -d $ulimit_v -c
 
 echo "PATH=${PATH}" >.env_vars
 echo "BROPATH=${BROPATH}" >>.env_vars
