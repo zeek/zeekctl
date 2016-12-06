@@ -1,4 +1,9 @@
 
+1.5-2 | 2016-12-06 12:35:40 -0800
+
+  * Don't show output of "ulimit -v" in crash reports on OpenBSD; adjusting
+    it always fails and showing the value only creates confusion. (Daniel Thayer)
+
 1.5 | 2016-11-16 14:51:05 -0800
 
   * Pruning CHANGES a bit. (Daniel Thayer)
