@@ -55,10 +55,10 @@ Running BroControl requires the following prerequisites:
     setup, it would be needed on the manager only).  Otherwise, BroControl
     will not attempt to send mail.
 
-  - If *gdb* is installed and if Bro crashes with a core dump, then BroControl
-    can include a backtrace in its crash report (that can be helpful for
-    debugging problems with Bro).  Otherwise, crash reports will not include
-    a backtrace.
+  - If *gdb* (*lldb* on Mac OS X, which is included with Xcode) is installed
+    and if Bro crashes with a core dump, then BroControl can include
+    a backtrace in its crash report (that can be helpful for debugging
+    problems with Bro).  Otherwise, crash reports will not include a backtrace.
 
 For a cluster setup that spans more than one machine, there are
 additional requirements:
