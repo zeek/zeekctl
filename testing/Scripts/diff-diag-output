@@ -2,27 +2,41 @@
 #
 # Remove content from "broctl diag" output that is too system-dependent
 # (currently, this includes the contents of stderr.log, stdout.log, PATH,
-# bro version, and system information).
+# BROPATH, OS version, and the system-dependent "No core file" message).
 
 awk '{
-    if ( $0 ~ /^==== std(err|out)\.log/ ) {
-        print; skip=1
-    } else if ( $0 ~ /^====/ ) {
-        print; skip=0
-    } else if ( $0 ~ /^$/ ) {
-        print
-    } else if ( skip == 0 ) {
-        if ( $0 ~ /^PATH=/ ) {
+    if ( skip == 0 ) {
+        if ( $0 ~ /^(Darwin|Linux|[A-Z][a-z]*BSD)/ ) {
+            print "<...OS version...>"
+        }
+        else if ( $0 ~ /^No core / ) {
+            print "<...skipped...>"
+            skip=1
+            skipcount=1
+        }
+        else if ( $0 ~ /^==== std(err|out)\.log/ ) {
+            print
+            skip=1
+            skipcount=0
+        }
+        else if ( $0 ~ /^PATH=/ ) {
             print "PATH=<...>"
         }
         else if ( $0 ~ /^BROPATH=/ ) {
             print "BROPATH=<...>"
         }
-        else if ( $0 ~ /^Bro / ) {
-            skip=1
-        }
         else {
             print
+        }
+    }
+    else {
+        if ( $0 ~ /^$/ ) {
+            print
+            skip=0
+        }
+        else if ( skipcount == 0 ) {
+            print "<...skipped...>"
+            ++skipcount
         }
     }
 }'

@@ -50,7 +50,8 @@ function expire_log()
     fi
 
     find_cmd=find
-    if [ "${os}" = "openbsd" ]; then
+    if [ "${os}" = "OpenBSD" ]; then
+        # OpenBSD find command doesn't have "-regex" or "-delete" options.
         find_cmd=gfind
     fi
 

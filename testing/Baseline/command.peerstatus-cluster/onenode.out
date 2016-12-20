@@ -1,5 +1,5 @@
    worker-2
-1365197157.616340 peer=datanode-1 ip=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
-1365197157.616340 peer=manager ip=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
-1365197157.616340 peer= ip=127.0.0.1 events_in=208 events_out=208 ops_in=0 ops_out=24 bytes_in=? bytes_out=?
+1463526588.246569 peer=datanode-1 host=::1
+1463526588.246569 peer= host=::1
+1463526588.246569 peer=manager host=::1
 

@@ -108,13 +108,17 @@ options = [
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
     Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for manager."),
+           "Space-separated list of local policy files for manager.  This option is deprecated."),
+    Option("SitePolicyLogger", "local-logger.bro", "string", Option.USER, False,
+           "Space-separated list of local policy files for logger.  This option is deprecated."),
     Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for workers."),
+           "Space-separated list of local policy files for workers.  This option is deprecated."),
     Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for all Bro instances."),
+           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts.  This option is deprecated (please use SitePolicyScripts instead)."),
+    Option("SitePolicyScripts", "local.bro", "string", Option.USER, False,
+           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts."),
 
-    Option("StatusCmdShowAll", 1, "bool", Option.USER, False,
+    Option("StatusCmdShowAll", 0, "bool", Option.USER, False,
            "True to have the status command show all output, or False to show only some of the output (peer information will not be collected or shown, so the command will run faster)."),
 
     Option("CronCmd", "", "string", Option.USER, False,
@@ -131,13 +135,6 @@ options = [
            "Number of bytes per packet to capture from live interfaces via libpcap."),
     Option("PcapBufsize", 128, "int", Option.AUTOMATIC, False,
            "Number of Mbytes to provide as buffer space when capturing from live interfaces via libpcap."),
-
-    Option("CFlowAddress", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the address of the device (format: <ip>:<port>)."),
-    Option("CFlowUser", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the user name for accessing its configuration interface."),
-    Option("CFlowPassword", "", "string", Option.USER, False,
-           "If a cFlow load-balancer is used, the password for accessing its configuration interface."),
 
     Option("TimeMachineHost", "", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the address of the host it is running on."),
@@ -193,7 +190,9 @@ options = [
     Option("StatsDir", "${LogDir}/stats", "string", Option.AUTOMATIC, False,
            "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
-           "Directory where standard plugins are located."),
+           "Directory where standard broctl plugins are located."),
+    Option("PluginBroDir", "${BroBase}/lib/bro/plugins", "string", Option.AUTOMATIC, False,
+           "Directory where Bro plugins are located.  BroControl will search this directory tree for broctl plugins that are provided by any Bro plugin."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
            "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary reports."),

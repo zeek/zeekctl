@@ -1,40 +1,255 @@
 
+1.5-2 | 2016-12-06 12:35:40 -0800
+
+  * Don't show output of "ulimit -v" in crash reports on OpenBSD; adjusting
+    it always fails and showing the value only creates confusion. (Daniel Thayer)
+
+1.5 | 2016-11-16 14:51:05 -0800
+
+  * Pruning CHANGES a bit. (Daniel Thayer)
+
+  * Update broctl.rst using "make doc". (Daniel Thayer)
+
+1.5-beta2 | 2016-11-02 11:08:45 -0700
+
+  * Release 1.5-beta2.
+
+1.5-beta-56 | 2016-11-02 13:44:41 -0400
+
+  * A number of portability fixes, mostly related to OpenBSD. (Daniel Thayer)
+
+1.5-beta-48 | 2016-11-02 13:38:34 -0400
+
+  * Fix bug where standalone bro port isn't recorded to state.db, and
+    add more test cases. (Daniel Thayer)
+
+1.5-beta-41 | 2016-11-01 09:34:19 -0700
+
+  * Add support for local-logger.bro site policy script. (Daniel Thayer)
+
+  * Add a few clarifications to broctl documentation. (Daniel Thayer)
+
+1.5-beta-31 | 2016-10-07 14:55:07 -0400
+
+  * Improve diag command output. (Daniel Thayer)
+
+  * Add new option SitePolicyScripts to replace SitePolicyStandalone.
+    Also marked SitePolicyManager, SitePolicyWorker, and SitePolicyStandalone
+    as deprecated in the documentation. (Daniel Thayer)
+
+  * Fix a couple of failing tests. (Daniel Thayer)
+
+  * Fix a failing test on FreeBSD. (Daniel Thayer)
+
+  * Improved the documentation, especially documentation of node attributes,
+    documentation of broctl commands, and added a section about Bro/BroControl
+    communication. (Daniel Thayer)
+
+1.5-beta-24 | 2016-09-26 16:24:21 -0400
+
+  * Define all BroControl exceptions in the new exceptions.py file.
+    The broctl client will now handle only those exceptions, showing a
+    useful error message instead of a stack trace.  As before, if a
+    standard Python exception is raised (this is not expected to occur),
+    then broctl will terminate with a stack trace, which is useful to
+    help debug the problem. (Daniel Thayer)
+
+1.5-beta-22 | 2016-09-26 16:11:21 -0400
+
+  * Fix crash-diag script to not confuse log files with core files
+
+    Fixed the crash-diag script to not include any log filenames that
+    contain the word "core" in the list of core files. (Daniel Thayer)
+
+  * Improve crash-diag script's handling of core filenames
+
+    Fixed the script to handle filenames that contain a space. (Daniel Thayer)
+
+1.5-beta-19 | 2016-09-26 15:50:22 -0400
+
+  * Fix a bug where broctl loses state of running Bro nodes
+
+    If a node name contains uppercase letters, then restarting broctl while
+    that node is running results in a confusing warning about that node still
+    running, and broctl discards the PID of that node.  Fixed by converting
+    the node name to lowercase before checking the state database (where all
+    keys are converted to lowercase).
+
+    Addresses BIT-1676. (Daniel Thayer)
+
+  * Report an error if a user defines node names differing only by case (such
+    as "worker-1" and "Worker-1").  This check is needed because keys
+    in the state db are converted to lowercase. (Daniel Thayer)
+
+  * Improve error messages for plugin API functions (Daniel Thayer)
+
+  * Removed the restriction that plugin state variables must be string
+    type, because normal state variables have no such restriction. (Daniel Thayer)
+
+  * Fixed the getGlobalOption() function in the plugin API.  It did not
+    convert its argument to lowercase, and could return the value of a
+    state variable.
+
+    Also simplified some code by replacing the config has_attr() function
+    with a new function get_option(), which helps reduce the number of places
+    in the code where keys are converted to lowercase. (Daniel Thayer)
+
+  * Do not set a plugin state var. with invalid name (Daniel Thayer)
+
+  * Improve code that sets plugin option values
+
+    Improved error messages to include the name of the plugin, and fixed a
+    problem where any option with an invalid name was being set (now such
+    options are skipped). (Daniel Thayer)
+
+  * Simplify some broctl cron-related code by using get_state() (Daniel Thayer)
+
+  * Fix the subst() function for non-string data types (Daniel Thayer)
+
+  * Code simplification involving the config get_state() function
+
+    Added an optional default parameter to the config get_state() function,
+    and changed that function to convert the key to lowercase.  These changes
+    help simplify some code by reducing the number of conversions to lowercase. (Daniel Thayer)
+
+  * Simplify code by not converting option values to lowercase (Daniel Thayer)
+
+  * Fix problem with custom node keys that are not lowercase (Daniel Thayer)
+
+  * Improve documentation of case-sensitive issues in broctl (Daniel Thayer)
+
+  * Remove redundant lowercase conversions of state var. names (Daniel Thayer)
+
+
+1.5-beta-2 | 2016-09-01 12:03:46 -0400
+
+  * Improve crash reports by showing Bro plugin info (Daniel Thayer)
+
+
+1.5-beta | 2016-08-12 13:20:27 -0700
+
+  * Release 1.5-beta.
+
+  * Fix rsync error message to not show ssh login banner. (Daniel Thayer)
+
+  * Run "make doc" to update broctl.rst (Daniel Thayer)
+
+  * Pruning CHANGES a bit (Daniel Thayer)
+
+1.4-150 | 2016-08-09 13:38:17 -0400
+
+  * Show python stack trace if unexpected exception is raised.
+    (Daniel Thayer)
+
+  * Improve broctl error messages and error handling across the board.
+    (Daniel Thayer)
+
+  * Add a new optional node type "logger" that will handle logging
+    instead of the manager. (Daniel Thayer)
+
+1.4-132 | 2016-07-14 18:23:27 -0400
+
+  * Don't run capstats on interfaces with packet source prefix. (Daniel Thayer)
+
+1.4-130 | 2016-07-13 14:36:34 -0400
+
+  * Improve the text of crash reports with instructions on how to
+    get a backtrace, which should reduce the amount of useless crash
+    reports mailed to the Bro team. (Daniel Thayer)
+
+1.4-127 | 2016-07-06 08:58:18 -0500
+
+  * Ignore packet source prefix of interface name when using capstats. (Jan Grashoefer)
+
+1.4-125 | 2016-07-02 17:53:42 -0500
+
+  * New plugin function "broctl_config" so plugin authors can add their own
+    script code to the autogenerated broctl-config.bro script. (Seth Hall)
+
+1.4-122 | 2016-07-02 12:05:23 -0500
+
+  * Follow symlinks to directories when searching for plugins. (Jon Siwek)
+
+1.4-119 | 2016-06-28 11:11:19 -0400
+
+  * Fix race condition in reading/writing broctl-config.sh (Daniel Thayer)
+
+1.4-117 | 2016-06-22 12:14:37 -0400
+
+  * Improve broctl behavior when unable to stop a node. (Daniel Thayer)
+
+1.4-112 | 2016-06-14 16:14:52 -0700
+
+  * Fix a failing test on some platforms and improve its error
+     message. (Daniel Thayer)
+
+  * Add Bro plugin directory to broctl plugin search path. (Daniel Thayer)
+
+  * Update test baselines. (Daniel Thayer)
+
+  * Changed the default value of the StatusCmdShowAll option so that
+    the broctl status command runs faster. (Daniel Thayer)
+
+  * Changed the status-timefmt test so that it can be run in parallel
+    with the other tests. (Daniel Thayer)
+
+  * Remove dead code and update docs. (Daniel Thayer)
+
+  * Rename serialization set for cluster tests. (Daniel Thayer)
+
+  * Change node hostname resolution to be more consistent. (Daniel Thayer)
+
+  * Add another test for broctl start command. (Daniel Thayer)
+
+  * Prevent start helper from getting in infinite loop. (Daniel Thayer)
+
+1.4-100 | 2016-05-17 16:22:25 -0700
+
+  * Updating baseline for Bro control framework change. (Robin Sommer)
+
+  * Fix for running broctl tests on OS X 10.11 (Daniel Thayer)
+
+1.4-96 | 2016-04-28 13:43:22 -0400
+
+  * Fix inconsistent return value data type for some commands, so that
+    they always return a CmdResult. (Daniel Thayer)
+
+1.4-94 | 2016-04-28 13:29:34 -0400
+
+  * Fix the top command on OS X 10.10 or newer. (Daniel Thayer)
+
+  * Fix build-bro script for running broctl tests on FreeBSD. (Daniel Thayer)
+
 1.4-91 | 2016-03-31 15:08:24 -0500
 
-  * Explicitly close the Broccoli connection to avoid resource leak (Aaron Eppert)
+  * Explicitly close the Broccoli connection to avoid resource leak. (Aaron Eppert)
 
 1.4-89 | 2016-03-31 12:02:19 -0500
 
-  * Prevent ssh login banners from appearing in broctl output (Jon Schipp)
+  * Prevent ssh login banners from appearing in broctl output. (Jon Schipp)
 
 1.4-87 | 2016-03-31 10:35:47 -0400
 
-  * Eliminate unnecessary writes to the state db (Daniel Thayer)
+  * Eliminate unnecessary writes to the state db. (Daniel Thayer)
 
 1.4-84 | 2016-03-11 16:32:46 -0600
 
-  * Support ip command for getting local IP addrs (Jon Schipp)
+  * Support ip command for getting local IP addrs. (Jon Schipp)
 
 1.4-77 | 2016-01-20 14:44:36 -0500
 
-  * Allow users to specify a more granular log expire interval (Daniel Thayer)
+  * Changed LogExpireInterval to allow users to specify a more
+    granular log expire interval, which is a number followed by
+    a unit: "day", "hr", or "min".  An integer value with no unit
+    is still allowed and interpreted the same as before. (Daniel Thayer)
 
-    Changed LogExpireInterval to be an arbitrary time interval instead
-    of just an integer number of days.  The time interval is specified
-    just like time interval literals in Bro scripts (except that negative
-    values are not allowed, and only time units "day", "hr", and "min" are
-    recognized).
+  * More verbose error message for logexpireinterval value. (Daniel Thayer)
 
-    For backward compatibility, an integer value without a time unit is
-    still interpreted as a number of days. (Daniel Thayer)
+  * Prevent log expire interval from being less than rotation interval. (Daniel Thayer)
 
-  * More verbose error message for logexpireinterval value (Daniel Thayer)
+  * Improve the ps test diff canonifier. (Daniel Thayer)
 
-  * Prevent log expire interval from being less than rotation interval (Daniel Thayer)
-
-  * Improve the ps test diff canonifier (Daniel Thayer)
-
-  * Improve the cron-expire test script (Daniel Thayer)
+  * Improve the cron-expire test script. (Daniel Thayer)
 
 
 1.4-70 | 2016-01-19 22:42:10 -0600
@@ -46,83 +261,44 @@
 1.4-61 | 2015-12-19 13:39:47 -0800
 
    * Add broctl.cfg options PcapSnaplen and PcapBuflen to set pcap's
-     packet snap length and buffer size, respectively. (Jan
-     Grashoefer).
+     packet snap length and buffer size, respectively. (Jan Grashoefer)
 
 1.4-57 | 2015-12-11 12:00:07 -0500
 
-  * Simplify some code and fix a test that can fail on OS X (Daniel Thayer)
+  * Simplify some code and fix a test that can fail on OS X. (Daniel Thayer)
 
-  * Improvements to broctl documentation (Daniel Thayer)
+  * Improvements to broctl documentation. (Daniel Thayer)
 
-  * Improve diagnostic and  error messages (Daniel Thayer)
+  * Improve diagnostic and error messages. (Daniel Thayer)
 
   * Add more private IP space to etc/networks.cfg (Daniel Thayer)
 
-  * Add a new broctl option to control sending log archive mail (Daniel Thayer)
+  * Add a new broctl option, MailArchiveLogFail, to control sending
+    log archive mail. (Daniel Thayer)
 
-    Added a new broctl option MailArchiveLogFail that controls whether or
-    not to send mail when there is a failure to archive log files.
+  * Check for invalid option names and values more carefully. (Daniel Thayer)
 
-  * Check for invalid option names and values more carefully (Daniel Thayer)
+  * Fix use of ssh to always use IP address to avoid host key verification
+    failures, and use BatchMode consistently to avoid a misleading
+    error message when rsync fails. (Daniel Thayer)
 
-  * Fix use of ssh to always use IP address (Daniel Thayer)
+  * Changed post-terminate to attempt to archive logs that have already
+    been rotated.  Also changed crash-diag output file extension to no
+    longer use ".log" in order to avoid post-terminate trying to
+    archive it. (Daniel Thayer)
 
-    Changed all uses of ssh to use IP address instead of hostname.
-    This ensures that the ssh host key lookup always succeeds (assuming tha
-    the user did the manual setup first).  This avoids confusion when a user
-    uses different combinations of IP addr, hostname, or FQDN when setting
-    up the ssh host keys and the broctl node.cfg.  For example, if a user
-    specifies the FQDN in node.cfg, but then manually does an ssh to each
-    worker machine using just the hostname (not the FQDN) when setting up
-    the ssh host keys, then "broctl install" would fail because ssh can'
-    find the host key.  The simplest solution in this case is to have
-    broctl always use IP addresses with ssh.
+  * Send email if post-terminate fails to archive logs, and changed
+    the post-terminate script to run archive-log serially instead
+    of multiple instances simultaneously in the background.
+    (Daniel Thayer)
 
-    Also changed ssh to use BatchMode consistently to avoid a misleading
-    error message (can't find ssh-askpass) when the rsync fails.
+  * Rename logs in the spool/tmp/post-terminate directory to indicate
+    they were successfully archived when archive-log is run with the "-c"
+    option.  (Daniel Thayer)
 
-  * Improve post-terminate script's ability to archive logs (Daniel Thayer)
-
-    Changed post-terminate to attempt to archive logs that have already
-    been rotated.  Presumably, the archival of such logs was previously
-    attempted and failed, but now post-terminate will at least send an
-    email when it fails to archive them.
-
-    Also changed crash-diag output file extension to no longer use ".log"
-    in order to avoid post-terminate trying to archive it.
-
-  * Send email if post-terminate fails to archive logs
-
-    Changed the post-terminate script to run archive-log serially instead
-    of multiple instances simultaneously in the background, in order to
-    reduce the load on the system.  Also changed post-terminate to send an
-    email if it fails to archive one or more logs (the email contains the
-    name of the specific spool/tmp/post-terminate directory so that the user
-    can check for error messages or manually archive any logs there). (Daniel Thayer)
-
-  * Rename logs when archive-log is run with "-c" option (Daniel Thayer)
-
-    When the post-terminate script is dealing with a crashed Bro node,
-    it runs archive-log with the "-c" flag to indicate that the logs
-    should be archived but the originals should not be removed.
-    As a result, a user may be confused when seeing log files in
-    a spool/tmp/post-terminate directory because it is not clear
-    which ones were successfully archived.
-
-    To avoid confusion, now the original log files will be renamed
-    (e.g., conn.log --> conn.log_archived) after being successfully
-    archived.
-
-  * Capture output of background post-terminate script (Daniel Thayer)
-
-    If a spool/tmp/post-terminate directory doesn't get removed, then there
-    will be a new file "post-terminate.out" which might contain error
-    messages from the part of the post-terminate script that was run
-    in the background (these messages would most likely be from the
-    archive-log script that was executed by post-terminate).
-    This might be helpful when trying to diagnose a failure to archive
-    log files.
+  * Capture output of background post-terminate script to file
+    "post-terminate.out" which might be helpful for debugging
+    problems with log archival. (Daniel Thayer)
 
   * Add bro node type to post-terminate dir name (Daniel Thayer)
 
@@ -180,15 +356,8 @@
 
   * Check config file contents rather than timestamp (Daniel Thayer)
 
-  * Add ability for broctl to reload its configuration (Daniel Thayer)
-
-    Added the ability for broctl to reload its configuration (both
-    broctl.cfg and node.cfg).  Each time a user runs a broctl command
-    a check of the broctl config files is performed to determine if the
-    config has changed since the last time the config was loaded.  If a
-    change is detected, then before doing anything else, broctl will either
-    reload the config (for the "deploy" command) or warn the user to run
-    the "deploy" command (for any other command).
+  * Add ability for broctl to reload its configuration, which the
+    deploy command will do if a config file change is detected. (Daniel Thayer)
 
   * Avoid caching config values because config might change (Daniel Thayer)
 
@@ -233,7 +402,7 @@
 
   * Improve and extend tests. (Daniel Thayer)
 
-  * Improve error messages related to the env_vars option.
+  * Improve error messages related to the env_vars option. (Daniel Thayer)
 
   * Remove code that was automatically removing quoted values of the
     env_vars option. (Daniel Thayer)
@@ -847,7 +1016,7 @@
 
 1.1-150 | 2013-07-14 08:00:44 -0700
 
-  * Fix broken link in README. (Bernhard Amann, thanks kraigu)
+  * Fix broken link in README. (Johanna Amann, thanks kraigu)
 
 1.1-148 | 2013-07-03 17:06:44 -0700
 

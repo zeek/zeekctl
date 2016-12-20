@@ -1,10 +1,12 @@
 # Test that the install command installs the cluster-layout.bro file, and
-# that the contents of that file are affected by certain broctl options.
+# that the contents of that file are correct.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff cluster-layout.bro
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff no-logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff logger
 
 . broctl-test-setup
+set -e
 
 while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster
@@ -12,20 +14,18 @@ EOF
 
 clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
 
-ret=0
+broctl install
+cp ${clusterlayout} no-logger
+
+# Verify that there is no time machine info by default.
+if grep -q time-machine ${clusterlayout} ; then
+    exit 1
+fi
+
+# Install a cluster config with a logger node.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__logger
+EOF
 
 broctl install
-
-# verify that there is no time machine info by default
-grep -q time-machine ${clusterlayout}
-test $? -ne 0 || ret=1
-
-echo "TimeMachineHost=192.168.0.11" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
-echo "TimeMachinePort=12345/tcp" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
-
-broctl install
-
-cp ${clusterlayout} cluster-layout.bro
-
-exit $ret
-
+cp ${clusterlayout} logger

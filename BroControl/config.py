@@ -9,6 +9,7 @@ import re
 from BroControl import py3bro
 from BroControl import node as node_mod
 from BroControl import options
+from BroControl.exceptions import ConfigurationError, RuntimeEnvironmentError
 from .state import SqliteState
 from .version import VERSION
 
@@ -23,11 +24,32 @@ from .version import VERSION
 
 Config = None # Globally accessible instance of Configuration.
 
-# all possible node types
-possible_types = ("manager", "lognode", "datanode", "worker", "standalone")
+class NodeStore:
+    def __init__(self):
+        self.nodestore = {}
+        self.nodenameslower = []
 
-class ConfigurationError(Exception):
-    pass
+    def add_node(self, node):
+        # Add a node to the nodestore, but first check for duplicate node
+        # names. This check is not case-sensitive, because names are stored
+        # lowercase in the state db, and some filesystems are not
+        # case-sensitive (working dir name is node name).
+        # Duplicate node names can occur either because the user defined two
+        # nodes that differ only by case (e.g. "Worker-1" and "worker-1"), or
+        # if a user defines a node name that conflicts with an auto-generated
+        # one (e.g. "worker-1" with lb_procs=2 and "worker-1-2").
+        namelower = node.name.lower()
+        if namelower in self.nodenameslower:
+            matchname = ""
+            for nn in self.nodestore:
+                if nn.lower() == namelower:
+                    matchname = nn
+                    break
+            raise ConfigurationError('node name "%s" is a duplicate of "%s"' % (node.name, matchname))
+
+        self.nodestore[node.name] = node
+        self.nodenameslower.append(namelower)
+
 
 class Configuration:
     def __init__(self, basedir, cfgfile, broscriptdir, ui, state=None):
@@ -68,42 +90,46 @@ class Configuration:
         from BroControl import execute
 
         # Set defaults for options we get passed in.
-        self._set_option("brobase", self.basedir)
-        self._set_option("broscriptdir", self.broscriptdir)
-        self._set_option("version", VERSION)
+        self.init_option("brobase", self.basedir)
+        self.init_option("broscriptdir", self.broscriptdir)
+        self.init_option("version", VERSION)
 
         # Initialize options that are not already set.
         for opt in options.options:
             if not opt.dontinit:
-                self._set_option(opt.name, opt.default)
+                self.init_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
-        self._set_option("mailto", "%s" % os.getenv("USER"))
-        self._set_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
-        self._set_option("mailalarmsto", self.config["mailto"])
+        self.init_option("mailto", "%s" % os.getenv("USER"))
+        self.init_option("mailfrom", "Big Brother <bro@%s>" % socket.gethostname())
+        self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
         if not success:
-            raise RuntimeError("cannot run uname")
-        self._set_option("os", output[0].lower().strip())
+            raise RuntimeEnvironmentError("failed to run uname: %s" % output)
+        self.init_option("os", output[0].strip())
 
-        if self.config["os"] == "linux":
-            self._set_option("pin_command", "taskset -c")
-        elif self.config["os"] == "freebsd":
-            self._set_option("pin_command", "cpuset -l")
-        else:
-            self._set_option("pin_command", "")
+        # Determine the CPU pinning command.
+        pin_cmd = ""
+        if self.config["os"] == "Linux":
+            pin_cmd = "taskset -c"
+        elif self.config["os"] == "FreeBSD":
+            pin_cmd = "cpuset -l"
+
+        self.init_option("pin_command", pin_cmd)
 
         # Find the time command (should be a GNU time for best results).
+        time_cmd = ""
         (success, output) = execute.run_localcmd("which time")
         if success:
-            self._set_option("time", output[0].lower().strip())
-        else:
-            self._set_option("time", "")
+            time_cmd = output[0].strip()
 
+        self.init_option("time", time_cmd)
+
+        # Calculate the log expire interval (in minutes).
         minutes = self._get_interval_minutes("logexpireinterval")
-        self._set_option("logexpireminutes", minutes)
+        self.init_option("logexpireminutes", minutes)
 
     # Do a basic sanity check on broctl options.
     def _check_options(self):
@@ -115,7 +141,7 @@ class Configuration:
 
         for key, value in self.config.items():
             if re.match(allowedchars, key) is None:
-                raise ConfigurationError('broctl option name "%s" contains invalid characters' % key)
+                raise ConfigurationError('broctl option name "%s" contains invalid characters (allowed characters: a-z, 0-9, ., and _)' % key)
             if re.match(nostartdigit, key) is None:
                 raise ConfigurationError('broctl option name "%s" cannot start with a number' % key)
 
@@ -196,7 +222,7 @@ class Configuration:
         if len(self.nodestore) == 1:
             standalone = True
 
-        self._set_option("standalone", standalone)
+        self.init_option("standalone", standalone)
 
     # Provides access to the configuration options via the dereference operator.
     # Lookup the attribute in broctl options first, then in the dynamic state
@@ -207,14 +233,6 @@ class Configuration:
         if attr in self.state:
             return self.state[attr]
         raise AttributeError("unknown config attribute %s" % attr)
-
-    # Returns True if attribute is defined.
-    def has_attr(self, attr):
-        if attr in self.config:
-            return True
-        if attr in self.state:
-            return True
-        return False
 
     # Returns a sorted list of all broctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
@@ -232,6 +250,7 @@ class Configuration:
     # - If tag is None, all Nodes are returned.
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
+    # - If tag is "loggers", all logger Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
     # - If tag is "datanode", the datanode Node is returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
@@ -250,6 +269,9 @@ class Configuration:
 
         elif tag == "standalone":
             nodetype = "standalone"
+
+        elif tag == "loggers":
+            nodetype = "logger"
 
         elif tag == "manager":
             nodetype = "manager"
@@ -312,13 +334,12 @@ class Configuration:
                 return text
 
             key = match.group(2).lower()
-            if self.has_attr(key):
-                value = self.__getattr__(key)
-            else:
+            try:
+                value = str(self.__getattr__(key))
+            except AttributeError:
                 value = match.group(4)
-
-            if not value:
-                value = ""
+                if value is None:
+                    value = ""
 
             text = text[0:match.start(1)] + value + text[match.end(1):]
 
@@ -352,11 +373,11 @@ class Configuration:
                 try:
                     (key, val) = keyval.split("=", 1)
                 except ValueError:
-                    raise ConfigurationError("missing '=' in env_vars option: %s" % keyval)
+                    raise ConfigurationError("missing '=' in env_vars option value: %s" % keyval)
 
                 key = key.strip()
                 if not key:
-                    raise ConfigurationError("missing environment variable name in env_vars option: %s" % keyval)
+                    raise ConfigurationError("env_vars option value must contain at least one environment variable name: %s" % keyval)
 
                 env_vars[key] = val.strip()
 
@@ -372,36 +393,37 @@ class Configuration:
         except py3bro.configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
-        nodestore = {}
+        nodestore = NodeStore()
 
         for sec in config.sections():
             node = node_mod.Node(self, sec)
 
+            # Note that the keys are converted to lowercase by configparser.
             for (key, val) in config.items(sec):
 
                 key = key.replace(".", "_")
-
-                node.__dict__[key] = val
 
                 if key not in node_mod.Node._keys:
                     self.ui.warn("ignoring unrecognized node config option '%s' given for node '%s'" % (key, sec))
                     continue
 
-            self._check_node(node, nodestore)
+                node.__dict__[key] = val
 
-            if node.name in nodestore:
-                raise ConfigurationError("duplicate node name '%s'" % node.name)
-            nodestore[node.name] = node
+            # Perform a sanity check on the node, and update nodestore.
+            self._check_node(node, nodestore, counts)
 
-        self._check_nodestore(nodestore)
-        return nodestore
+        # Perform a sanity check on the nodestore (make sure we have a valid
+        # cluster config, etc.).
+        self._check_nodestore(nodestore.nodestore)
+
+        return nodestore.nodestore
 
     def _check_node(self, node, nodestore):
         if not node.type:
             raise ConfigurationError("no type given for node %s" % node.name)
 
-        if node.type not in possible_types:
-            raise ConfigurationError("Unknown node type '%s' given for node '%s'" % (node.type, node.name))
+        if node.type not in ("logger", "manager", "datanode", "worker", "standalone"):
+            raise ConfigurationError("unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
             raise ConfigurationError("no host given for node '%s'" % node.name)
@@ -409,13 +431,14 @@ class Configuration:
         try:
             addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
         except socket.gaierror as e:
-            raise ConfigurationError("unknown host '%s' given for node '%s' [%s]" % (node.host, node.name, e.args[1]))
+            raise ConfigurationError("hostname lookup failed for '%s' in node config [%s]" % (node.host, e.args[1]))
 
         addrs = [ addr[4][0] for addr in addrinfo ]
 
+        # By default, just use the first IP addr in the list.
         addr_str = addrs[0]
 
-        # Choose the first IPv4 addr in the list.
+        # Choose the first IPv4 addr (if any) in the list.
         for ip in addrs:
             if ":" not in ip:
                 addr_str = ip
@@ -434,7 +457,7 @@ class Configuration:
 
         if node.lb_procs:
             if node.type != "worker":
-                raise ConfigurationError("load balancing node config options are only for worker nodes")
+                raise ConfigurationError("node '%s' config: load balancing node config options are only for worker nodes" % node.name)
             try:
                 numprocs = int(node.lb_procs)
             except ValueError:
@@ -477,25 +500,29 @@ class Configuration:
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
-                # only the node name, and pin_cpus need to be changed
+
+                # Update the node attrs that need to be changed
                 newname = "%s-%d" % (origname, num)
                 newnode.name = newname
-                if newname in nodestore:
-                    raise ConfigurationError("duplicate node name '%s'" % newname)
-                nodestore[newname] = newnode
+                counts[node.type] += 1
+                newnode.count = counts[node.type]
                 if pin_cpus:
                     newnode.pin_cpus = pin_cpus[num-1]
 
                 if newnode.lb_method == "interfaces":
                     newnode.interface = netifs.pop().strip()
 
+                nodestore.add_node(newnode)
+
+        nodestore.add_node(node)
+
     def _check_nodestore(self, nodestore):
         if not nodestore:
             raise ConfigurationError("no nodes found in node config")
 
         standalone = False
+        logger = False
         manager = False
-        lognode = False
         datanode = False
 
         manageronlocalhost = False
@@ -503,20 +530,20 @@ class Configuration:
         localhostaddrs = ("127.0.0.1", "::1")
 
         for n in nodestore.values():
-            if n.type == "manager":
+            if n.type == "logger":
+                if logger:
+                    raise ConfigurationError("only one logger can be defined")
+                logger = True
+
+            elif n.type == "manager":
                 if manager:
-                    raise ConfigurationError("only one manager can be defined")
+                    raise ConfigurationError("only one manager can be defined in node config")
                 manager = True
                 if n.addr in localhostaddrs:
                     manageronlocalhost = True
 
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
-
-            elif n.type == "lognode":
-                if lognode:
-                    raise ConfigurationError("only one lognode can be defined")
-                lognode = True
 
             elif n.type == "datanode":
                 if datanode:
@@ -567,6 +594,7 @@ class Configuration:
                     raise ConfigurationError("broctl config syntax error: %s" % line)
 
                 (key, val) = args
+                # Option names are not case-sensitive.
                 key = key.strip().lower()
 
                 # if the key already exists, just overwrite with new value
@@ -574,6 +602,7 @@ class Configuration:
 
         # Convert option values to correct data type
         for opt in options.options:
+            # Convert key to lowercase because keys are stored in lowercase.
             key = opt.name.lower()
             if key in config:
                 try:
@@ -581,16 +610,38 @@ class Configuration:
                 except ValueError:
                     raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
 
+        # If someone uses a deprecated option in broctl.cfg, then convert it
+        # to the new option, but only if the new option is not specified in
+        # the config file.
+        if "sitepolicystandalone" in config:
+            self.ui.warn("the SitePolicyStandalone option is deprecated (use SitePolicyScripts instead).")
+            if "sitepolicyscripts" not in config:
+                config["sitepolicyscripts"] = config["sitepolicystandalone"]
+
         return config
 
     # Initialize a global option if not already set.
-    def _set_option(self, key, val):
+    def init_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
         key = key.lower()
+
         if key not in self.config:
             if isinstance(val, str):
                 self.config[key] = self.subst(val)
             else:
                 self.config[key] = val
+
+    # Set a global option (regardless of whether or not it is already set).
+    def set_option(self, key, val):
+        # Store option names in lowercase, because they are not case-sensitive.
+        key = key.lower()
+
+        self.config[key] = val
+
+    # Returns value of an option, or None if the option is not defined.
+    def get_option(self, key):
+        # Convert key to lowercase because keys are stored in lowercase.
+        return self.config.get(key.lower())
 
     # Set a dynamic state variable.
     def set_state(self, key, val):
@@ -601,15 +652,16 @@ class Configuration:
         self.state[key] = val
         self.state_store.set(key, val)
 
-    # Returns value of state variable, or None if it's not defined.
-    def get_state(self, key):
-        return self.state.get(key)
+    # Returns value of state variable, or the specified default value if the
+    # state variable is not defined.
+    def get_state(self, key, default=None):
+        return self.state.get(key.lower(), default)
 
     # Read dynamic state variables.
     def read_state(self):
         self.state = dict(self.state_store.items())
 
-    # Use ifconfig command to find local IP addrs.
+    # Use the ifconfig command to find local IP addrs.
     def _get_local_addrs_ifconfig(self):
         try:
             # On Linux, ifconfig is often not in the user's standard PATH.
@@ -617,51 +669,92 @@ class Configuration:
             # is consistent regardless of which locale the system is using.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin LANG=C ifconfig", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # The output of ifconfig varies by OS and by IPv4 vs IPv6.
+        # Linux example:
+        #   inet addr:127.0.0.1
+        #   inet6 addr: ::1/128
+        # BSD (and OS X) example:
+        #   inet 127.0.0.1
+        #   inet6 ::1
+        #   inet6 fe80::1%lo0
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                addrfield = False
-                for field in fields:
-                    if field == "inet" or field == "inet6":
-                        addrfield = True
-                    elif addrfield and field != "addr:":
-                        locaddr = field
-                        # remove "addr:" prefix (if any)
-                        if field.startswith("addr:"):
-                            locaddr = field[5:]
-                        # remove everything after "/" or "%" (if any)
-                        locaddr = locaddr.split("/")[0]
-                        locaddr = locaddr.split("%")[0]
-                        localaddrs.append(locaddr)
-                        break
+            if len(fields) < 3:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+
+            if addrstr[-1] == ":" and addrstr.count(":") == 1:
+                addrstr = fields[2]
+
+            if addrstr.count(":") == 1:
+                # Remove "addr:" prefix (if any).
+                addrstr = addrstr.split(":")[1]
+
+            # Remove everything after "/" or "%" (if any)
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.warn('failed to extract IP addresses from the "ifconfig -a" command output')
+
         return localaddrs
 
-    # Use ip command to find local IP addrs.
+    # Use the ip command to find local IP addrs.
     def _get_local_addrs_ip(self):
         try:
+            # On Linux, "ip" is sometimes not in the user's standard PATH.
             proc = subprocess.Popen(["PATH=$PATH:/sbin:/usr/sbin ip address"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = proc.communicate()
-            success = proc.returncode == 0
         except OSError:
+            return False
+
+        success = proc.returncode == 0
+        if not success:
             return False
 
         localaddrs = []
         if py3bro.using_py3:
             out = out.decode()
+
+        # Here is an example portion of "ip" command output:
+        #    inet 127.0.0.1/8
+        #    inet6 ::1/128
         for line in out.splitlines():
             fields = line.split()
-            if "inet" in fields or "inet6" in fields:
-                locaddr = fields[1]
-                locaddr = locaddr.split("/")[0]
-                locaddr = locaddr.split("%")[0]
-                localaddrs.append(locaddr)
+            if len(fields) < 2:
+                continue
+
+            if fields[0] != "inet" and fields[0] != "inet6":
+                continue
+
+            addrstr = fields[1]
+            addrstr = addrstr.split("/")[0]
+            addrstr = addrstr.split("%")[0]
+
+            if _is_valid_addr(addrstr):
+                localaddrs.append(addrstr)
+
+        if not localaddrs:
+            self.ui.warn('failed to extract IP addresses from the "ip address" command output')
+
         return localaddrs
 
     # Return a list of the IP addresses associated with local interfaces.
@@ -676,6 +769,8 @@ class Configuration:
 
         # Fallback to localhost if we did not find any IP addrs.
         if not localaddrs:
+            self.ui.warn('failed to find local IP addresses with "ifconfig -a" or "ip address" commands')
+
             localaddrs = ["127.0.0.1", "::1"]
             try:
                 addrinfo = socket.getaddrinfo(socket.gethostname(), None, 0, 0, socket.SOL_TCP)
@@ -684,8 +779,6 @@ class Configuration:
 
             for ai in addrinfo:
                 localaddrs.append(ai[4][0])
-
-            self.ui.error("failed to find local IP addresses (found: %s)" % ", ".join(localaddrs))
 
         return localaddrs
 
@@ -701,13 +794,17 @@ class Configuration:
 
     # Returns True if the broctl config files have changed since last reload.
     def is_cfg_changed(self):
-        if "configchksum" in self.state:
-            if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
-                return True
+        try:
+            if "configchksum" in self.state:
+                if self.state["configchksum"] != self._get_broctlcfg_hash(filehash=True):
+                    return True
 
-        if "confignodechksum" in self.state:
-            if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
-                return True
+            if "confignodechksum" in self.state:
+                if self.state["confignodechksum"] != self._get_nodecfg_hash(filehash=True):
+                    return True
+        except IOError:
+            # If we can't read the config files, then do nothing.
+            pass
 
         return False
 
@@ -717,9 +814,8 @@ class Configuration:
 
     # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables
-    # are missing.  If the "isinstall" parameter is True, then we're running
-    # the install or deploy command, so some of the warnings are skipped.
-    def warn_broctl_install(self, isinstall):
+    # are missing.
+    def warn_broctl_install(self):
         missingstate = False
 
         # Check if node config has changed since last install.
@@ -727,18 +823,11 @@ class Configuration:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                # If running the install/deploy cmd, then skip this warning
-                if not isinstall:
-                    self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
 
                 return
         else:
             missingstate = True
-
-        # If we're running the install or deploy commands, then skip the
-        # rest of the checks.
-        if isinstall:
-            return
 
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
@@ -781,7 +870,9 @@ class Configuration:
     def _warn_dangling_bro(self):
         nodes = {}
         for n in self.nodes():
-            nodes[n.name] = n.host
+            # Convert node name to lowercase because below we are using
+            # node names from the state db (which is lowercase).
+            nodes[n.name.lower()] = n.host
 
         for key in self.state.keys():
             # Look for a PID associated with a Bro node
@@ -864,14 +955,14 @@ class Configuration:
         if success and output:
             version = output[-1]
         else:
-            msg = ""
+            msg = " with no output"
             if output:
                 msg = " with output:\n%s" % "\n".join(output)
-            raise ConfigurationError("running \"bro -v\" failed%s" % msg)
+            raise RuntimeEnvironmentError('running "bro -v" failed%s' % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
-            raise ConfigurationError("cannot determine Bro version [%s]" % version.strip())
+            raise RuntimeEnvironmentError('cannot determine Bro version ("bro -v" output: %s)' % version.strip())
 
         version = match.group(1)
         # If bro is built with the "--enable-debug" configure option, then it
@@ -880,3 +971,17 @@ class Configuration:
             version = version[:-6]
 
         return version
+
+
+# Check if a string is a valid representation of an IP address or not.
+def _is_valid_addr(ipstr):
+    try:
+        if ":" in ipstr:
+            socket.inet_pton(socket.AF_INET6, ipstr)
+        else:
+            socket.inet_pton(socket.AF_INET, ipstr)
+    except socket.error:
+        return False
+
+    return True
+

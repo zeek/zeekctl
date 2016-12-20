@@ -1,0 +1,35 @@
+# Test that the start command fails immediately when broctl lacks the needed
+# permissions to the bro working directory, and gives a useful error message.
+#
+# Skip this test if running as the superuser.
+# @TEST-REQUIRES: test `id -u` -ne 0
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff start.out
+# @TEST-EXEC: btest-diff status.out
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+ret=0
+broctl install
+# need to create the working dir
+broctl start
+broctl stop
+
+# Remove write access to working dir.
+chmod ugo-w $BROCTL_INSTALL_PREFIX/spool/bro
+
+# Verify that the start command returns non-zero.
+broctl start > start.out 2>&1
+test $? -eq 0 && ret=1
+
+# Verify that the status is "stopped".
+broctl status > status.out 2>&1
+
+exit $ret
+

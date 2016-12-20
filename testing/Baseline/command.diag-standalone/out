@@ -1,24 +1,30 @@
 [bro]
 
-Bro 2.2-1
-Linux 3.2.0-48-generic
+No core file found and gdb is not installed.  It is recommended to
+install gdb so that BroControl can output a backtrace if Bro crashes.
 
+Bro 2.5-1
+Darwin 14.5.0
+
+Bro plugins:
+Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
 
 ==== stderr.log
 
 ==== stdout.log
-unlimited
-unlimited
-unlimited
+max memory size         (kbytes, -m) unlimited
+data seg size           (kbytes, -d) unlimited
+virtual memory          (kbytes, -v) unlimited
+core file size          (blocks, -c) unlimited
 
 ==== .cmdline
 -i eth0 -U .status -p broctl -p broctl-live -p standalone -p local -p bro local.bro broctl broctl/standalone broctl/auto
 
 ==== .env_vars
-PATH=/tmp/broctltest/test.5050/bin:/tmp/broctltest/test.5050/share/broctl/scripts:/tmp/broctltest/test.5050/bin:/home/repo/bro/aux/broctl/testing/btest/../scripts:/home/repo/bro/aux/broctl/testing/btest/../../../btest:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
-BROPATH=/tmp/broctltest/test.5050/spool/installed-scripts-do-not-touch/site::/tmp/broctltest/test.5050/spool/installed-scripts-do-not-touch/auto:/tmp/broctltest/test.5050/share/bro:/tmp/broctltest/test.5050/share/bro/policy:/tmp/broctltest/test.5050/share/bro/site
+PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+BROPATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/site::/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/auto:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/share/bro:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/share/bro/policy:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/share/bro/site
 CLUSTER_NODE=
 
 ==== .status

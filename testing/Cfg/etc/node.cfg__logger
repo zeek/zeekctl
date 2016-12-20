@@ -1,0 +1,24 @@
+# Cluster configuration with a logger node.
+
+[logger]
+type=logger
+host=localhost
+
+[manager]
+type=manager
+host=localhost
+
+[datanode-1]
+type=datanode
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+
+[worker-2]
+type=worker
+host=localhost
+interface=eth1
+

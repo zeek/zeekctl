@@ -16,6 +16,8 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status5.out
 # @TEST-EXEC: btest-diff stop-all.out
 # @TEST-EXEC: btest-diff status6.out
+# @TEST-EXEC: btest-diff start-logger.out
+# @TEST-EXEC: btest-diff stop-logger.out
 
 . broctl-test-setup
 
@@ -59,6 +61,21 @@ broctl stop > stop-all.out 2>&1
 test $? -eq 0 || ret=1
 
 broctl status > status6.out 2>&1
+
+# Setup a cluster with a logger node.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__logger
+EOF
+
+broctl install
+
+# start all nodes (verify that nodes start in correct order)
+broctl start > start-logger.out 2>&1
+test $? -eq 0 || ret=1
+
+# stop all nodes (verify that nodes stop in correct order)
+broctl stop > stop-logger.out 2>&1
+test $? -eq 0 || ret=1
 
 exit $ret
 

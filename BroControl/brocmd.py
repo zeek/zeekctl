@@ -2,6 +2,7 @@ from __future__ import print_function
 import cmd
 
 from BroControl import py3bro
+from BroControl.exceptions import CommandSyntaxError, InvalidNodeError, LockError
 
 class ExitValueCmd(cmd.Cmd):
     def cmdloop(self, intro=None):
@@ -47,9 +48,13 @@ class ExitValueCmd(cmd.Cmd):
                 line = self.precmd(line)
                 try:
                     success = self.onecmd(line)
-                except Exception as e:
+                except (CommandSyntaxError, InvalidNodeError, LockError) as err:
+                    # Note that here we do not attempt to catch all BroControl
+                    # exceptions; letting some just terminate the program to
+                    # avoid getting in an unknown state (e.g. error while
+                    # reloading the config).
                     success = False
-                    print("Error: %s" % e)
+                    print("Error: %s" % err)
                 self.postcmd(False, line)
             self.postloop()
         finally:

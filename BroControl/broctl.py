@@ -7,13 +7,12 @@ import logging
 
 from BroControl import util
 from BroControl import config
+from BroControl import cmdresult
 from BroControl import execute
 from BroControl import control
 from BroControl import version
 from BroControl import pluginreg
-
-class InvalidNodeError(Exception):
-    pass
+from BroControl.exceptions import *
 
 class TermUI:
     def info(self, txt):
@@ -77,7 +76,11 @@ class BroCtl(object):
         self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
 
     def setup(self):
-        for pdir in self.config.sitepluginpath.split(":") + [self.config.plugindir]:
+        plugindirs = self.config.sitepluginpath.split(":")
+        plugindirs.append(self.config.plugindir)
+        plugindirs.append(self.config.pluginbrodir)
+
+        for pdir in plugindirs:
             if pdir:
                 self.plugins.addDir(pdir)
 
@@ -89,6 +92,8 @@ class BroCtl(object):
         self.plugins.initPluginCmds()
         util.enable_signals()
         os.chdir(self.config.brobase)
+        if self.config.get_state("cronenabled") is None:
+            self.config.set_state("cronenabled", True)
 
     def reload_cfg(self):
         self.config.reload_cfg()
@@ -108,8 +113,8 @@ class BroCtl(object):
         self.executor.finish()
         self.plugins.finishPlugins()
 
-    def warn_broctl_install(self, isinstall):
-        self.config.warn_broctl_install(isinstall)
+    def warn_broctl_install(self):
+        self.config.warn_broctl_install()
 
     # Turns node name arguments into a list of nodes.  If "get_hosts" is True,
     # then only one node per host is chosen.  If "get_types" is True, then
@@ -162,7 +167,7 @@ class BroCtl(object):
     def lock(self, showwait=True):
         lockstatus = util.lock(self.ui, showwait)
         if not lockstatus:
-            raise RuntimeError("Unable to get lock")
+            raise LockError("Unable to get lock")
 
         self.config.read_state()
 
@@ -175,28 +180,39 @@ class BroCtl(object):
     @expose
     @check_config
     def nodes(self):
-        nodes = []
+        results = cmdresult.CmdResult()
+
         if self.plugins.cmdPre("nodes"):
-            nodes = [ n.describe() for n in self.config.nodes() ]
+            for n in self.config.nodes():
+                results.set_node_data(n, True, n.to_dict())
+        else:
+            results.ok = False
+
         self.plugins.cmdPost("nodes")
-        return nodes
+
+        return results
 
     @expose
     @check_config
     def get_config(self):
-        configlist = []
+        results = cmdresult.CmdResult()
+
         if self.plugins.cmdPre("config"):
-            configlist = self.config.options()
+            results.keyval = self.config.options()
+        else:
+            results.ok = False
+
         self.plugins.cmdPost("config")
-        return configlist
+        return results
 
     @expose
     @check_config
     @lock_required
     def install(self, local=False):
-        results = None
         if self.plugins.cmdPre("install"):
             results = self.controller.install(local)
+        else:
+            results = cmdresult.CmdResult(ok=False)
 
         self.plugins.cmdPost("install")
         return results
@@ -264,8 +280,8 @@ class BroCtl(object):
     @expose
     @lock_required
     def deploy(self):
-        results = None
         if not self.plugins.cmdPre("deploy"):
+            results = cmdresult.CmdResult(ok=False)
             return results
 
         if self.config.is_cfg_changed():
@@ -347,8 +363,6 @@ class BroCtl(object):
     def cronenabled(self):
         results = False
         if self.plugins.cmdPre("cron", "?", False):
-            if not self.config.has_attr("cronenabled"):
-                self.config.set_state("cronenabled", True)
             results = self.config.cronenabled
         self.plugins.cmdPost("cron", "?", False)
         return results
@@ -460,9 +474,11 @@ class BroCtl(object):
     def execute(self, cmd):
         nodes = self.node_args(get_hosts=True)
 
-        results = None
         if self.plugins.cmdPre("exec", cmd):
             results = self.controller.execute_cmd(nodes, cmd)
+        else:
+            results = cmdresult.CmdResult(ok=False)
+
         self.plugins.cmdPost("exec", cmd)
 
         return results
@@ -483,9 +499,11 @@ class BroCtl(object):
     @check_config
     @lock_required
     def process(self, trace, options, scripts):
-        results = None
         if self.plugins.cmdPre("process", trace, options, scripts):
             results = self.controller.process(trace, options, scripts)
+        else:
+            results = cmdresult.CmdResult(ok=False)
+
         self.plugins.cmdPost("process", trace, options, scripts, results.ok)
 
         return results

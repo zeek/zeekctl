@@ -8,23 +8,25 @@
 
 . `dirname $0`/../broctl-config.sh
 
-cmd_linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
+cmd_Linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
 
 # Note: On non-SMP FreeBSD, the 9th column (the "C" column) is missing, so the
 # awk command here accounts for this.
 # Note: When myricom drivers are in use, there could be a space in the 8th
 # column (the STATE column), so here the awk command accounts for this.
-cmd_freebsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{c11=11; c12=12; if(NF==11) {c11--; c12--;} else if(NF==13) {c11++; c12++;} printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$c11, \$c12)}"'
+cmd_FreeBSD='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{c11=11; c12=12; if(NF==11) {c11--; c12--;} else if(NF==13) {c11++; c12++;} printf(\"%d %s %s %d %s\\n\", \$1, \$6, \$7, \$c11, \$c12)}"'
 
-cmd_openbsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
-cmd_netbsd='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
+cmd_OpenBSD='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
+cmd_NetBSD='top -u -b all | tail -n +5 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$10, \$11)}"'
 
 # top on Mac OS X is different.  It doesn't give CPU utilization until the
 # second sample so we are getting two samples with zero delay between them.
 # The awk command removes the first sample from the output and converts the
 # CPU percentages to integers.  The sed command removes the trailing + or -
 # signs that sometimes occur with the memory statistics.
-cmd_darwin='top -l 2 -s0 -stats pid,vprvt,rsize,cpu,command | awk -v c=0 "{ if(\$1 == \"PID\") c++; else if(c>1) printf(\"%d %s %s %d %s\n\", \$1, \$2, \$3, \$4, \$5)}" | sed "s/[+-] / /g"'
+# NOTE: on OS X 10.10 or newer, the top "vprvt" option no longer works,
+# so "mem" is used here instead.
+cmd_Darwin='top -l 2 -s0 -stats pid,mem,rsize,cpu,command | awk -v c=0 "{ if(\$1 == \"PID\") c++; else if(c>1) printf(\"%d %s %s %d %s\n\", \$1, \$2, \$3, \$4, \$5)}" | sed "s/[+-] / /g"'
 
 eval cmd="\$cmd_${os}"
 

@@ -6,6 +6,7 @@ import os
 import logging
 
 from BroControl import config
+from BroControl import cmdresult
 from BroControl import node
 from BroControl import plugin
 
@@ -143,12 +144,11 @@ class PluginRegistry:
 
     def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
-        a CmdResult object which contains the command results, or None if
-        the command doesn't exist."""
+        a CmdResult object which contains the command results."""
         try:
             (myplugin, usage, descr) = self._cmds[cmd]
         except LookupError:
-            return None
+            return cmdresult.CmdResult(ok=False, unknowncmd=True)
 
         prefix = myplugin.prefix()
 
@@ -156,6 +156,29 @@ class PluginRegistry:
             cmd = cmd[len(prefix)+1:]
 
         return myplugin.cmd_custom(cmd, args, cmdout)
+
+    def getBroctlConfig(self):
+        """Call the broctl_config method on all plugins in case a plugin
+        needs to add some custom script code to broctl-config.bro.  Returns
+        a string containing Bro script code from the plugins.
+        """
+
+        extra_code = []
+
+        for p in self._activeplugins():
+            code = p.broctl_config()
+            if code:
+                # Make sure first character of returned string is a newline
+                extra_code.append("")
+                extra_code.append("# Begin code from %s plugin" % p.name())
+                extra_code.append(code)
+                extra_code.append("# End code from %s plugin" % p.name())
+
+        if extra_code:
+            # Make sure last character of returned string is a newline
+            extra_code.append("")
+
+        return "\n".join(extra_code)
 
     def allCustomCommands(self):
         """Returns a list of string tuples *(cmd, descr)* listing all commands
@@ -180,8 +203,26 @@ class PluginRegistry:
                 node.Node.addKey(key)
 
     def _loadPlugins(self, cmdout):
+        # Don't visit the same dir twice (this also prevents infinite
+        # recursion when following symlinks).
+        visited_dirs = set()
+
         for path in self._dirs:
-            for root, dirs, files in os.walk(os.path.abspath(path)):
+
+            for root, dirs, files in os.walk(os.path.abspath(path),
+                                             followlinks=True):
+                stat = os.stat(root)
+                visited_dirs.add((stat.st_dev, stat.st_ino))
+                dirs_to_visit_next = []
+
+                for dir in dirs:
+                    stat = os.stat(os.path.join(root, dir))
+
+                    if (stat.st_dev, stat.st_ino) not in visited_dirs:
+                        dirs_to_visit_next.append(dir)
+
+                dirs[:] = dirs_to_visit_next
+
                 for name in files:
                     if name.endswith(".py") and not name.startswith("__"):
                         self._importPlugin(os.path.join(root, name[:-3]), cmdout)
@@ -234,12 +275,19 @@ class PluginRegistry:
                 if "." in p.prefix() or " " in p.prefix():
                     cmdout.warn("failed to load plugin %s because prefix contains dots or spaces" % p.name())
 
+                # Need to convert prefix to lowercase here, because a plugin
+                # can override the prefix() method and might not return a
+                # lowercase string.  Also, we don't allow two plugins to have
+                # prefixes that differ only by case (due to the fact that
+                # plugin option names include the prefix and are converted
+                # to lowercase).
                 pluginprefix = p.prefix().lower()
+
                 sameprefix = False
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("failed to load plugin %s due to another plugin having the same plugin prefix" % p.name())
+                        cmdout.warn("failed to load plugin %s (prefix %s) due to plugin %s (prefix %s) having the same prefix" % (p.name(), p.prefix(), i.name(), i.prefix()))
                         break
 
                 if not sameprefix:

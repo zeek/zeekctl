@@ -11,7 +11,7 @@ import logging
 sys.path.insert(0, "@PREFIX@/lib/broctl")
 sys.path.insert(0, "@PREFIX@/lib/python")
 
-from BroControl.broctl import BroCtl
+from BroControl.broctl import BroCtl, BroControlError, CommandSyntaxError
 from BroControl import brocmd
 from BroControl import util
 from BroControl import utilcurses
@@ -27,9 +27,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         self.interactive = interactive
 
         # Warn user to do broctl install, if needed.  Skip this check when
-        # running cron to avoid receiving annoying emails.
-        if cmd != "cron":
-            self.broctl.warn_broctl_install(cmd in ("install", "deploy"))
+        # running cron to avoid receiving annoying emails.  Also skip if the
+        # install or deploy commands are running.
+        if cmd not in ("cron", "install", "deploy"):
+            self.broctl.warn_broctl_install()
 
     def finish(self):
         self.broctl.finish()
@@ -53,16 +54,13 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.plugincmd(cmd, cmdargs)
 
-        if results:
-            success = results.ok
-        else:
-            success = False
+        if results.unknowncmd:
             self.error("unknown command '%s'" % cmd)
 
             if not self.interactive:
                 self.do_help(None)
 
-        return success
+        return results.ok
 
     def emptyline(self):
         pass
@@ -90,38 +88,51 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         return True
 
     def do_nodes(self, args):
-        """Prints a list of all configured nodes."""
+        """Prints a list of all configured nodes.
+
+        Note that the env_vars attribute includes the set of environment
+        variables from the 'env_vars' option in both 'node.cfg' and
+        'broctl.cfg' and also those set by any plugins."""
+
         if args:
-            raise SyntaxError("nodes does not take any arguments")
+            raise CommandSyntaxError("the nodes command does not take any arguments")
 
-        for node in self.broctl.nodes():
-            self.info(node)
+        results = self.broctl.nodes()
+        for (node, success, data) in results.get_node_data():
+            self.info(data["description"])
 
-        return True
+        return results.ok
 
     def do_config(self, args):
         """Prints all configuration options with their current values."""
         if args:
-            raise SyntaxError("config does not take any arguments")
+            raise CommandSyntaxError("the config command does not take any arguments")
 
-        for (key, val) in self.broctl.get_config():
+        results = self.broctl.get_config()
+        for (key, val) in results.keyval:
             self.info("%s = %s" % (key, val))
 
-        return True
+        return results.ok
 
     def do_install(self, args):
         """- [--local]
 
-        Reinstalls on all nodes (unless the ``--local`` option is given, in
-        which case nothing will be propagated to other nodes), including all
-        configuration files and local policy scripts.  Usually all nodes
+        Reinstalls on all nodes, including all configuration files and
+        local policy scripts.
+
+        The ``--local`` option is intended for testing or debugging.  It
+        causes only the local host to be installed (i.e., no changes pushed
+        out to any other hosts in the Bro cluster).  Normally all nodes
         should be reinstalled at the same time, as any inconsistencies between
-        them will lead to strange effects.  This command must be
-        executed after *all* changes to any part of the broctl configuration
-        (and after upgrading to a new version of Bro or BroControl),
-        otherwise the modifications will not take effect.  Before executing
-        ``install``, it is recommended to verify the configuration
-        with check_."""
+        them will lead to strange effects.
+
+        This command must be executed after *all* changes to any part of
+        the BroControl configuration or after upgrading to a new version
+        of Bro or BroControl, otherwise the modifications will not take effect.
+        Before executing ``install``, it is recommended to verify the
+        configuration with check_.  Note that when using the deploy command
+        there is no need to first use the install command, because deploy
+        automatically runs install before restarting the nodes."""
 
         local = False
 
@@ -129,7 +140,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if arg == "--local":
                 local = True
             else:
-                raise SyntaxError("Invalid argument: %s" % arg)
+                raise CommandSyntaxError("invalid argument for the install command: %s" % arg)
 
         results = self.broctl.install(local)
         return results.ok
@@ -148,8 +159,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_stop(self, args):
         """- [<nodes>]
 
-        Stops the given nodes, or all nodes if none are specified. Nodes not
-        running are left untouched.
+        Stops the given nodes, or all nodes if none are specified. Nodes that
+        are in the "crashed" state are reset to the "stopped" state, and 
+        nodes that are "stopped" are left untouched.
         """
         results = self.broctl.stop(node_list=args)
 
@@ -186,7 +198,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         restart_ commands, in that order.
         """
         if args:
-            raise SyntaxError("deploy does not take any arguments")
+            raise CommandSyntaxError("the deploy command does not take any arguments")
 
         results = self.broctl.deploy()
 
@@ -195,7 +207,14 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_status(self, args):
         """- [<nodes>]
 
-        Prints the current status of the given nodes."""
+        Prints the current status of the given nodes.
+
+        For each node, the information shown includes the node's name and type,
+        the host where the node will run, the status, the PID, and the
+        date/time when the node was started.  The status column will usually
+        show a status of either "stopped" or "running".  A status of
+        "crashed" means that BroControl verified that Bro is no longer
+        running, but was expected to be running."""
 
         success = True
         results = self.broctl.status(node_list=args)
@@ -203,12 +222,15 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        if data[0][2]["type"] == "standalone":
+        if data and data[0][2]["type"] == "standalone":
             # In standalone mode, we need a wider "type" column.
             typewidth = 10
             hostwidth = 13
 
-        showall = "peers" in data[0][2]
+        showall = False
+        if data:
+            showall = "peers" in data[0][2]
+
         if showall:
             colfmt = "{name:<12} {type:<{0}} {host:<{1}} {status:<9} {pid:<6} {peers:<6} {started}"
         else:
@@ -241,11 +263,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         typewidth = 7
         hostwidth = 16
         data = results.get_node_data()
-        proclist = data[0][2]["procs"]
-        if proclist[0]["type"] == "standalone":
-            # In standalone mode, we need a wider "type" column.
-            typewidth = 10
-            hostwidth = 13
+        if data:
+            proclist = data[0][2]["procs"]
+            if proclist[0]["type"] == "standalone":
+                # In standalone mode, we need a wider "type" column.
+                typewidth = 10
+                hostwidth = 13
 
         lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-4s %-5s %s" % ("Name",
                 typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
@@ -375,15 +398,18 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         """- [<nodes>]
 
         Verifies a modified configuration in terms of syntactical correctness
-        (most importantly correct syntax in policy scripts). This command
-        should be executed for each configuration change *before*
-        install_ is used to put the change into place.
-        The ``check`` command uses the policy files as found in SitePolicyPath_
-        to make sure they compile correctly. If they do, install_
-        will then copy them over to an internal place from where the nodes
-        will read them at the next start_. This approach
-        ensures that new errors in a policy script will not affect currently
-        running nodes, even when one or more of them needs to be restarted."""
+        (most importantly correct syntax in policy scripts).
+
+        Note that this command checks the site-specific policy files as found
+        in SitePolicyPath_ rather than the ones installed by the install_
+        command.  Therefore, new errors in a policy script can be detected
+        before affecting currently running nodes, even when they need to be
+        restarted.
+
+        This command should be executed for each configuration change *before*
+        using install_ to put the change into place.  However, when using the
+        deploy command there is no need to first run check, because deploy
+        automatically runs check before installing the policy scripts."""
 
         results = self.broctl.check(node_list=args)
 
@@ -399,15 +425,16 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_cleanup(self, args):
         """- [--all] [<nodes>]
 
-        Clears the nodes' spool directories (if they are not running
-        currently). This implies that their persistent state is flushed. Nodes
-        that were crashed are reset into *stopped* state. If ``--all`` is
-        specified, this command also removes the content of the node's
-        TmpDir_, in particular deleteing any data
+        Clears the nodes' spool directories, but only for nodes that are not
+        running. This implies that their persistent state is flushed. Nodes
+        that were crashed are reset into the "stopped" state.
+
+        If ``--all`` is specified, this command also removes the content of
+        the node's TmpDir_, in particular deleting any data
         potentially saved there for reference from previous crashes.
         Generally, if you want to reset the installation back into a clean
         state, you can first stop_ all nodes, then execute
-        ``cleanup --all``, and finally start_ all nodes
+        ``cleanup --all``, then install_, and finally start_ all nodes
         again."""
 
         cleantmp = False
@@ -469,7 +496,11 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.capstats(interval=interval, node_list=args)
 
-        outputcapstats("Interface", results.get_node_data())
+        nodedata = results.get_node_data()
+        if nodedata:
+            outputcapstats("Interface", nodedata)
+        else:
+            self.info("No network interfaces suitable for use with capstats were found.")
 
         return results.ok
 
@@ -503,15 +534,14 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         expected, or (2) confirm that configuration changes have in fact been
         applied.  Note that IDs defined inside a Bro namespace must be
         prefixed with ``<namespace>::`` (e.g.,
-        ``print HTTP::mime_types_extensions`` to print the corresponding
-        table from ``file-ident.bro``)."""
+        ``print Log::enable_remote_logging``)."""
 
         args = args.split()
         try:
             id = args[0]
             args = " ".join(args[1:])
         except IndexError:
-            raise SyntaxError("no id given to print")
+            raise CommandSyntaxError("no id given to print")
 
         results = self.broctl.print_id(id=id, node_list=args)
 
@@ -576,7 +606,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         Primarily for debugging Bro configurations, the ``scripts``
         command lists all the Bro scripts loaded by each of the nodes in the
-        order they will be parsed by the node at startup.
+        order they will be parsed by the node at startup.  The pathnames
+        of each script are indented such that it is possible to determine
+        from where a script was loaded based on the amount of indentation.
+
         If ``-c`` is given, the command operates as check_ does: it reads
         the policy files from their *original* location, not the copies
         installed by install_. The latter option is useful to check a
@@ -595,7 +628,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                     # Check non-installed policies.
                     check = True
                 else:
-                    raise SyntaxError("Unknown option: %s" % opt)
+                    raise CommandSyntaxError("invalid argument for the scripts command: %s" % opt)
 
                 args = args[1:]
 
@@ -647,7 +680,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
             if arg == "--":
                 if in_scripts:
-                    raise SyntaxError("cannot parse arguments")
+                    raise CommandSyntaxError('cannot parse the arguments of the process command (too many "--")')
 
                 in_scripts = True
                 continue
@@ -659,7 +692,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 scripts += [arg]
 
         if not trace:
-            raise SyntaxError("no trace file given")
+            raise CommandSyntaxError("the process command requires the pathname of a trace file")
 
         results = self.broctl.process(trace, options, scripts)
 
@@ -741,7 +774,7 @@ def main():
 
     try:
         loop = BroCtlCmdLoop(BroCtl, interactive, cmd)
-    except Exception as e:
+    except BroControlError as e:
         print("Error: %s" % e, file=sys.stderr)
         return 1
 
@@ -750,20 +783,25 @@ def main():
         loop.precmd(cmdline)
         try:
             cmdsuccess = loop.onecmd(cmdline)
-        except Exception as e:
+            loop.postcmd(False, cmdline)
+        except BroControlError as e:
             cmdsuccess = False
             print("Error: %s" % e, file=sys.stderr)
         except KeyboardInterrupt:
             cmdsuccess = False
+        finally:
+            loop.finish()
 
-        loop.postcmd(False, cmdline)
     else:
         try:
             cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+        except BroControlError as e:
+            cmdsuccess = False
+            print("Error: %s" % e, file=sys.stderr)
         except KeyboardInterrupt:
             cmdsuccess = False
-
-    loop.finish()
+        finally:
+            loop.finish()
 
     return not cmdsuccess
 

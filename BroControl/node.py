@@ -10,9 +10,10 @@ from BroControl import doc
 class Node:
     """Class representing one node of the BroControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
-    a cluster setup, there is exactly one of type ``manager``, one of type
-    ``datanode``, zero or one of type ``lognode``, and zero or more of
-    type ``worker``.
+    a cluster setup, there is zero or one of type ``logger``, exactly one of
+    type ``manager``, one of type ``datanode``, and zero or more of
+    type ``worker``.  The manager will handle writing logs if there is no
+    logger defined in a cluster.
 
     A ``Node`` object has a number of keys with values that are set
     via the ``node.cfg`` file and can be accessed directly (from a plugin)
@@ -23,41 +24,46 @@ class Node:
             section in ``node.cfg``.
 
         ``type`` (string)
-            The type of the node, which will be one of ``standalone``,
-            ``manager``, ``datanode``, ``lognode``, or ``worker``.
-
-        ``env_vars`` (string)
-            A comma-separated list of environment variables to set when
-            running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``). These
-            node-specific values override any global values specified in
-            the ``broctl.cfg`` file.
+            The type of the node.  In a standalone configuration, the only
+            allowed type is ``standalone``.  In a cluster configuration, the
+            type must be one of: ``logger``, ``manager``, ``datanode``,
+            or ``worker``.
 
         ``host`` (string)
-            The hostname (or the IP address) of the system the node is
-            running on.
+            The hostname or IP address of the system the node is
+            running on.  Every node must specify a host.
 
         ``interface`` (string)
-            The network interface for Bro to use; empty if not set.
+            The network interface for the Bro worker (or standalone node) to
+            use; empty if not set.
 
         ``lb_procs`` (integer)
-            The number of clustered Bro workers you'd like to start up. This
-            number must be greater than zero.
+            The number of clustered Bro workers you'd like to start up.  If
+            specified, this number must be greater than zero and a load
+            balancing method must also be specified.  This option is valid only
+            for worker nodes.
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
-            processes.  This must be one of: ``pf_ring``, ``myricom``, ``custom``,
-            or ``interfaces``.
+            Bro workers.  This must be one of: ``pf_ring``, ``myricom``,
+            ``custom``, or ``interfaces``.  This option can have a value
+            only if the ``lb_procs`` option has a value.
 
         ``lb_interfaces`` (string)
-            If the load balancing method is ``interfaces``, then this is
-            a comma-separated list of network interface names to use.
+            A comma-separated list of network interface names for the Bro
+            worker to use.  The number of interfaces in this list must
+            equal the value of the ``lb_procs`` option.
+
+            This option can be specified only when the load balancing method
+            is ``interfaces``.
 
         ``pin_cpus`` (string)
             A comma-separated list of CPU numbers to which the node's Bro
-            processes will be pinned (if not specified, then CPU pinning will
-            not be used for this node).  This option is only supported on
-            Linux and FreeBSD (it is ignored on all other platforms).  CPU
-            numbering starts at zero (e.g.,
+            processes will be pinned.  If not specified, then CPU pinning will
+            not be used for this node.  This option is supported only on
+            Linux and FreeBSD, and is ignored on all other platforms.
+
+            CPU numbering starts at zero (e.g.,
             the only valid CPU numbers for a machine with one dual-core
             processor would be 0 and 1).  If the length of this list does not
             match the number of Bro processes for this node, then some CPUs
@@ -65,6 +71,12 @@ class Node:
             than one (if not enough CPU numbers are specified) Bro processes
             pinned to them.  Only the specified CPU numbers will be used,
             regardless of whether additional CPU cores exist.
+
+        ``env_vars`` (string)
+            A comma-separated list of environment variables to set when
+            running Bro (e.g., ``env_vars=VAR1=1,VAR2=2``).  These
+            node-specific values override any global values specified in
+            the ``broctl.cfg`` file.
 
         ``aux_scripts`` (string)
             Any node-specific Bro script configured for this node.
@@ -132,7 +144,7 @@ class Node:
         return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())]
 
     def sortorder(self):
-        typeorder = ("standalone", "manager", "lognode", "datanode", "worker")
+        typeorder = ("standalone", "manager", "logger", "datanode", "worker")
 
         if self.type in typeorder:
             return typeorder.index(self.type)
@@ -179,7 +191,7 @@ class Node:
     def getPID(self):
         """Returns the process ID of the node's Bro process if running, and
         None otherwise."""
-        key = "%s-pid" % self.name.lower()
+        key = "%s-pid" % self.name
         return self._config.get_state(key)
 
     def clearPID(self):
@@ -202,19 +214,19 @@ class Node:
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
-        key = "%s-crashed" % self.name.lower()
+        key = "%s-crashed" % self.name
         return self._config.get_state(key)
 
     def getExpectRunning(self):
         """Returns True if we expect the node's Bro process to be running."""
-        key = "%s-expect-running" % self.name.lower()
+        key = "%s-expect-running" % self.name
         val = self._config.get_state(key)
         if val is None:
             val = False
         return val
 
     def setExpectRunning(self, val):
-        key = "%s-expect-running" % self.name.lower()
+        key = "%s-expect-running" % self.name
         self._config.set_state(key, val)
 
     def setPort(self, port):
@@ -228,7 +240,7 @@ class Node:
         system is listening on for incoming connections, or -1 if no such port
         has been set yet.
         """
-        key = "%s-port" % self.name.lower()
+        key = "%s-port" % self.name
         return self._config.get_state(key) or -1
 
     @staticmethod
@@ -236,4 +248,6 @@ class Node:
         """Adds a supported node key. This is used by the PluginRegistry to
         register custom keys."""
 
-        Node._keys[kw] = 1
+        # We need to convert to lowercase here because Python's configparser
+        # automatically converts keys to lowercase when reading node.cfg.
+        Node._keys[kw.lower()] = 1

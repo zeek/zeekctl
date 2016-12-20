@@ -31,13 +31,31 @@ if [ $# -lt 3 ]; then
     exit 1
 fi
 
-cd "$1"
+workingdir="$1"
+
+cd "$workingdir"
 if [ $? -ne 0 ]; then
     exit 1
 fi
 shift
 
 rm -f .pid
+
+# Make sure .test does not exist
+rm -f .test > /dev/null 2>&1
+if [ -e .test ]; then
+    echo "start: cannot remove files in Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
+    exit 1
+fi
+
+# Create and remove a test file to ensure that the run-bro script will be able
+# to create a pid file.
+touch .test > /dev/null 2>&1
+rm .test > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "start: problem with Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
+    exit 1
+fi
 
 if [ ! -f "${scriptsdir}"/run-bro ]; then
     echo "start: file not found: ${scriptsdir}/run-bro" >&2
