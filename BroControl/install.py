@@ -284,9 +284,9 @@ def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
         ostr += '@endif\n'
 
     if config.Config.ipv6comm:
-        ostr += 'redef Communication::listen_ipv6 = T;\n'
+        ostr += 'redef Broker::listen_ipv6 = T;\n'
     else:
-        ostr += 'redef Communication::listen_ipv6 = F;\n'
+        ostr += 'redef Broker::listen_ipv6 = F;\n'
 
     ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
     ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize

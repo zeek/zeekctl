@@ -252,7 +252,7 @@ class Configuration:
     #     If "expand_all" is false, returns an empty list in this case.
     # - If tag is "loggers", all logger Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
-    # - If tag is "datanode", the datanode Node is returned.
+    # - If tag is "datanodes", all datanode Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
     #     the standalone Node is returned (standalone config).
     # - If tag is "standalone", the standalone Node is returned.
@@ -276,7 +276,7 @@ class Configuration:
         elif tag == "manager":
             nodetype = "manager"
 
-        elif tag == "datanode":
+        elif tag == "datanodes":
             nodetype = "datanode"
 
         elif tag == "workers":
@@ -395,6 +395,7 @@ class Configuration:
 
         nodestore = NodeStore()
 
+        counts = {}
         for sec in config.sections():
             node = node_mod.Node(self, sec)
 
@@ -418,7 +419,7 @@ class Configuration:
 
         return nodestore.nodestore
 
-    def _check_node(self, node, nodestore):
+    def _check_node(self, node, nodestore, counts):
         if not node.type:
             raise ConfigurationError("no type given for node %s" % node.name)
 
@@ -452,6 +453,14 @@ class Configuration:
             node.env_vars = self._get_env_var_dict(node.env_vars)
         except ConfigurationError as err:
             raise ConfigurationError("node '%s' config: %s" % (node.name, err))
+
+        # Each node gets a number unique across its type.
+        try:
+            counts[node.type] += 1
+        except KeyError:
+            counts[node.type] = 1
+
+        node.count = counts[node.type]
 
         numprocs = 0
 
