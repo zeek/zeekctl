@@ -19,15 +19,15 @@
 # BroControl terminated Bro forcefully (but intentionally) by SIGKILL while
 # trying to stop Bro.
 
-function sendfailuremail
+sendfailuremail()
 {
     if [ "${mailarchivelogfail}" = "0" ]; then
         return
     fi
 
-    $scriptdir/send-mail "archive log failure" <<_EOF_
+    $scriptdir/send-mail "archive log failure on node $nodename" <<_EOF_
 Unable to archive one or more logs in directory:
-${tmp}
+${postdir}
 Check the post-terminate.out file in that directory for any error messages.
 _EOF_
 }
@@ -37,8 +37,9 @@ if [ $# -lt 2 -o $# -gt 3 ]; then
     exit 1
 fi
 
-ntype=$1
+nodetype=$1
 dir=$2
+nodename=`basename $dir`
 
 if [ ! -d "$dir" ]; then
     echo "post-terminate: directory not found: $dir"
@@ -53,10 +54,6 @@ elif [ "$3" = "killed" ]; then
     killed=1
 fi
 
-# Compute both timestamps here so we get consistent results.
-tmpdirtimestamp=`date +%Y-%m-%d-%H-%M-%S`
-archivelogtime=`date +%y-%m-%d_%H.%M.%S`
-
 scriptdir=`dirname $0`
 . $scriptdir/broctl-config.sh
 
@@ -69,20 +66,23 @@ if [ ! -d "${tmpdir}" ]; then
     mkdir "${tmpdir}"
 fi
 
-tmp=${tmpdir}/post-terminate-$ntype-$tmpdirtimestamp-$$
+tmpdirtimestamp=`date +%Y-%m-%d-%H-%M-%S`
+postterminatetime=`date +%y-%m-%d_%H.%M.%S`
+
+postdir=${tmpdir}/post-terminate-$nodetype-$tmpdirtimestamp-$$
 
 if [ $crash -eq 1 ]; then
-    tmp=$tmp-crash
+    postdir=$postdir-crash
 fi
 
-mv "$dir" "$tmp"
+mv "$dir" "$postdir"
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
 mkdir "$dir"
 
-cd "$tmp"
+cd "$postdir"
 
 if [ -d .state ]; then
     mv .state "$dir"
@@ -90,7 +90,7 @@ fi
 
 if [ $crash -eq 1 ]; then
     # output the crash report
-    "${scriptsdir}"/crash-diag "$tmp"
+    "${scriptsdir}"/crash-diag "$postdir"
 
     mybro=${bro}
     if [ "${havenfs}" = "1" ]; then
@@ -104,88 +104,108 @@ if [ ! -f .startup ]; then
     exit 1
 fi
 
-# Execute the remaining part of this script in the background so that broctl
-# doesn't need to wait for it to finish.  Stdout/stderr is redirected to a
-# file to capture error messages.
-(
-
-# Gather list of all archive-log PID files.
-pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
-
-# Wait for any archive-log processes to finish, so that we can either
-# launch new ones (below) or remove this directory.
-while [ -n "$pidfiles" ]; do
-    for pfile in $pidfiles ; do
-        # If PID file is empty, then check it again later.
-        if [ -s $pfile ]; then
-            # Check if a process with given PID exists
-            ps -p $(cat $pfile) > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                # No such process exists, so remove PID file
-                rm -f $pfile
-            fi
-        fi
-    done
-
-    sleep 1
-
-    pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
-done
-
-find_cmd="find -E"
-if [ "${os}" = "Linux" ]; then
-    find_cmd=find
-elif [ "${os}" = "OpenBSD" ]; then
-    # OpenBSD find command doesn't have "-regex" option.
-    find_cmd=gfind
-fi
-
-startuptime=`cat .startup | tail -1`
-flags=
-failed=0
-
-function archivelogs
+wait_for_archivelog()
 {
-    # Note: this assumes the user is using the default ".log" file extension.
-    if [ "$1" = "rotated" ]; then
-        # Rotated logs always have more than one period in the filename.
-        logfiles=$(find . -maxdepth 1 -type f -name '*.*.log')
-    else
-        # Unrotated logs have only one period in the filename.
-        logfiles=$($find_cmd . -maxdepth 1 -type f -regex '\./[^.]+\.log')
-    fi
+    # Gather list of all archive-log PID files.
+    pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
 
-    for i in $logfiles; do
-        # Strip off the leading "./"
-        logname=`echo $i | sed 's#^\./##'`
-
-        # Get the basename (such as "conn").
-        basename=`echo $logname | sed 's/\..*//'`
-
-        # Try to figure out a reasonable start time for the log.
-        if [ "$1" = "rotated" ]; then
-            # Get the start time from log filename
-            ts=`echo $logname | sed 's/[^.]*\.//' | sed 's/\.[^.]*$//'`
-            if echo $ts | grep -q '\.' ; then
-                # Timestamp is already in the required format
-                strt=$ts
-            else
-                # Convert time from YYYY-MM-DD-HH-MM-SS to YY-MM-DD_HH.MM.SS
-                strt=`echo $ts | awk -F '-' '{ printf("%s-%s-%s_%s.%s.%s",substr($1,3,2),$2,$3,$4,$5,$6) }'`
+    # Wait for any archive-log processes to finish, so that we can either
+    # launch new ones (below) or remove this directory.
+    while [ -n "$pidfiles" ]; do
+        for pfile in $pidfiles ; do
+            # If PID file is empty, then check it again later.
+            if [ -s $pfile ]; then
+                # Check if a process with given PID exists
+                ps -p $(cat $pfile) > /dev/null 2>&1
+                if [ $? -ne 0 ]; then
+                    # No such process exists, so remove PID file
+                    rm -f $pfile
+                fi
             fi
-        else
-            # Note: there is a possibility that the start time computed here
-            # might be later than the end time.
+        done
+
+        sleep 1
+
+        pidfiles=$(find . -maxdepth 1 -type f -name '.archive-log.*.tmp')
+    done
+}
+
+parse_filename()
+{
+    filename=$1
+
+    # Try to extract a timestamp from the filename, and adjust the base name
+    # accordingly.  If the filename doesn't contain any recognized timestamp
+    # format, then just assume the whole thing is the base name.
+
+    # Try to remove suffix ".YYYY-MM-DD-HH-MM-SS" (this format is specified in
+    # Log::default_rotation_date_format and is used by the ascii writer script
+    # to rename a log immediately after Bro rotates it).
+    tmp=`echo $filename | sed 's/[.][1-2][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]-[0-2][0-9]-[0-5][0-9]-[0-5][0-9]$//'`
+    if [ "$filename" != "$tmp" ]; then
+        basename=$tmp
+        # Remove the base name and '.' to get the timestamp.
+        ts=${filename#$basename.}
+        # Convert time from YYYY-MM-DD-HH-MM-SS to YY-MM-DD_HH.MM.SS
+        strt=`echo $ts | awk -F '-' '{ printf("%s-%s-%s_%s.%s.%s",substr($1,3,2),$2,$3,$4,$5,$6) }'`
+    else
+        # Try to remove suffix "-YY-MM-DD_HH.MM.SS" (this format is hard-coded
+        # in Bro, and is the format used by Bro when a log is rotated).
+        tmp=`echo $filename | sed 's/-[0-9][0-9]-[0-1][0-9]-[0-3][0-9]_[0-2][0-9][.][0-5][0-9][.][0-5][0-9]$//'`
+        if [ "$filename" != "$tmp" ]; then
+            basename=$tmp
+            # Remove the base name and '-' to get the timestamp.
+            strt=${filename#$basename-}
+        fi
+    fi
+}
+
+archivelogs()
+{
+    # Attempt to archive all log files.  Although stdout.log/stderr.log are
+    # not really Bro logs, we try to archive them anyway, because they might
+    # contain useful info, especially if Bro crashes.
+    for logname in *.log; do
+        # Get the base name (such as "conn") by removing the file extension.
+        basename=`basename "$logname" .log`
+
+        # Start time of log.
+        strt=
+
+        # If the filename contains a timestamp (i.e., a log that was rotated
+        # but not archived), then try to get the start time from the log
+        # filename.  If a timestamp is found, then the base name is also
+        # updated to not include the timestamp.
+        parse_filename "$basename"
+
+        # Assume the end time of the log is the time this script is run,
+        # because Bro stopped running before this script started.
+        end=$postterminatetime
+
+        if [ -z "$strt" ]; then
+            # We couldn't extract the start time from the log filename, likely
+            # because it isn't there (or possibly it's in an unrecognized
+            # format).
             strt=$startuptime
             if [ -f .rotated.$basename ]; then
+                # The time obtained here is always >= the startup time of Bro,
+                # so it's usually a more accurate guess of this log's start
+                # time.
                 strt=`cat .rotated.$basename`
+
+                # However, if archive-log archived a log with the same base
+                # name as this log, and if it did so after this script started,
+                # then the start time that we computed will be later than the
+                # end time.  If so, then reset the start time to equal the end
+                # time.
+                expr "$strt" ">" "$end" >/dev/null
+                if [ $? -eq 0 ]; then
+                    strt=$end
+                fi
             fi
         fi
 
-        # Just assume the end time of the log is the time this script is run.
-        end=$archivelogtime
-
-        # Note: here we assume the log is ascii
+        # Note: here we assume the log writer type is "ascii"
         "${scriptsdir}"/archive-log $flags $logname $basename $strt $end 1 ascii
         if [ $? -ne 0 ]; then
             failed=1
@@ -193,24 +213,27 @@ function archivelogs
     done
 }
 
-# Archive all rotated logs.  Presumably such logs exist only if a previous
-# attempt failed, but at least this time if it fails then an email will be
-# sent.
-archivelogs rotated
+# Execute the remaining part of this script in the background so that broctl
+# doesn't need to wait for it to finish.  Stdout/stderr is redirected to a
+# file to capture error messages.
+(
 
-# If Bro crashed or was killed, then we run log postprocessors here
-# on all unrotated logs (including stdout.log/stderr.log, as they might
-# have useful info in this situation).
-if [ $crash -eq 1 -o $killed -eq 1 ]; then
-    if [ $crash -eq 1 ]; then
-        # If Bro crashed, then we tell archive-log to not delete the log file
-        # (however, in this case the log file will be renamed to indicate it
-        # was successfully archived).
-        flags=-c
-    fi
+# Wait until all running archive-log processes have terminated.
+wait_for_archivelog
 
-    archivelogs unrotated
+startuptime=`cat .startup | tail -1`
+flags=
+failed=0
+
+if [ $crash -eq 1 ]; then
+    # If Bro crashed, then we tell archive-log to not delete the log file
+    # (however, in this case the log file will be renamed to indicate it
+    # was successfully archived).
+    flags=-c
 fi
+
+# Archive all logs.
+archivelogs
 
 # If one or more logs failed to be archived, then try to send an email.
 if [ $failed -ne 0 ]; then
@@ -218,7 +241,7 @@ if [ $failed -ne 0 ]; then
 fi
 
 # If Bro crashed, then we don't need to do anything else, because we don't
-# want to remove the tmp directory.
+# want to remove the directory.
 if [ $crash -eq 1 ]; then
     exit 0
 fi
@@ -227,8 +250,7 @@ fi
 # the directory.  If the directory is not removed, then an email was sent
 # to notify the user to look in this directory for logs.
 if [ $failed -eq 0 ]; then
-    rm -rf "$tmp"
+    rm -rf "$postdir"
 fi
 
 ) >post-terminate.out 2>&1 &
-
