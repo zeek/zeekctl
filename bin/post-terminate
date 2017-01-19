@@ -162,6 +162,8 @@ parse_filename()
 
 archivelogs()
 {
+    startuptime=`cat .startup | tail -1`
+
     # Attempt to archive all log files.  Although stdout.log/stderr.log are
     # not really Bro logs, we try to archive them anyway, because they might
     # contain useful info, especially if Bro crashes.
@@ -213,44 +215,50 @@ archivelogs()
     done
 }
 
+postterminate()
+{
+    # Wait until all running archive-log processes have terminated.
+    wait_for_archivelog
+
+    flags=
+    failed=0
+
+    if [ $crash -eq 1 ]; then
+        # If Bro crashed, then we tell archive-log to not delete the log file
+        # (however, in this case the log file will be renamed to indicate it
+        # was successfully archived).
+        flags=-c
+    fi
+
+    # Archive all logs.
+    archivelogs
+
+    # If one or more logs failed to be archived, then try to send an email.
+    if [ $failed -ne 0 ]; then
+        sendfailuremail
+    fi
+
+    # If Bro crashed, then we don't need to do anything else, because we don't
+    # want to remove the directory.
+    if [ $crash -eq 1 ]; then
+        exit 0
+    fi
+
+    # If no archive-log processes started from this script failed, then remove
+    # the directory.  If the directory is not removed, then an email was sent
+    # to notify the user to look in this directory for logs.
+    if [ $failed -eq 0 ]; then
+        rm -rf "$postdir"
+    fi
+}
+
 # Execute the remaining part of this script in the background so that broctl
 # doesn't need to wait for it to finish.  Stdout/stderr is redirected to a
 # file to capture error messages.
-(
+postterminate >post-terminate.out 2>&1 &
 
-# Wait until all running archive-log processes have terminated.
-wait_for_archivelog
-
-startuptime=`cat .startup | tail -1`
-flags=
-failed=0
-
-if [ $crash -eq 1 ]; then
-    # If Bro crashed, then we tell archive-log to not delete the log file
-    # (however, in this case the log file will be renamed to indicate it
-    # was successfully archived).
-    flags=-c
+# In some situations (such as testing), we may want the broctl stop command to
+# wait for the post-terminate script to finish.
+if [ "${stopwait}" = "1" ]; then
+    wait
 fi
-
-# Archive all logs.
-archivelogs
-
-# If one or more logs failed to be archived, then try to send an email.
-if [ $failed -ne 0 ]; then
-    sendfailuremail
-fi
-
-# If Bro crashed, then we don't need to do anything else, because we don't
-# want to remove the directory.
-if [ $crash -eq 1 ]; then
-    exit 0
-fi
-
-# If no archive-log processes started from this script failed, then remove
-# the directory.  If the directory is not removed, then an email was sent
-# to notify the user to look in this directory for logs.
-if [ $failed -eq 0 ]; then
-    rm -rf "$postdir"
-fi
-
-) >post-terminate.out 2>&1 &
