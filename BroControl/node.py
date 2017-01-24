@@ -11,7 +11,7 @@ class Node:
     """Class representing one node of the BroControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
     a cluster setup, there is zero or one of type ``logger``, exactly one of
-    type ``manager``, one of type ``datanode``, and zero or more of
+    type ``manager``, one or more of type ``datanode``, and zero or more of
     type ``worker``.  The manager will handle writing logs if there is no
     logger defined in a cluster.
 

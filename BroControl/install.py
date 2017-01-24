@@ -188,7 +188,12 @@ def make_layout(path, cmdout, silent=False):
 
         # Workers definition
         for w in workers:
-            ostr += '\t["%s"] = [$node_roles=set(Cluster::WORKER), $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $datanode="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name, datanodes[0].name)
+            ostr += '\t["%s"] = [$node_roles=set(Cluster::WORKER), $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $datanodes=set(' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name)
+            for s in datanodes:
+                ostr += '"%s"' % s.name
+                if s != datanodes[-1]:
+                    ostr += ", "
+            ostr += ")],\n"
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:

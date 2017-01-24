@@ -555,8 +555,6 @@ class Configuration:
                     raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
             elif n.type == "datanode":
-                if datanode:
-                    raise ConfigurationError("only one datanode can be defined")
                 datanode = True
 
             elif n.type == "standalone":
