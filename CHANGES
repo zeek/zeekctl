@@ -1,3 +1,54 @@
+1.5-9 | 2017-01-26 16:38:17 -0500
+
+  * Fix some failing tests
+
+    Added a new broctl option, called StopWait, to force the stop command
+    to wait for the post-terminate script to finish.  This is needed
+    because some tests were failing due to background log-archive processes
+    creating logs after "broctl stop" finished, which was preventing the
+    test directory from being deleted. (Daniel Thayer)
+
+  * Fix post-terminate to not generate invalid timestamps
+
+    Fixed the code that tries to extract the base name and timestamp
+    from a log filename, because it wasn't extracting them correctly
+    when the base name contained a period (this doesn't happen for any
+    of the standard Bro logs) or if the timestamp in the filename wasn't in
+    the format YYYY-MM-DD-HH-MM-SS (this could happen if Bro terminates
+    but for some reason doesn't execute the code in the writers/ascii.bro
+    script that renames the log, or if someone uses a different forma
+    by redefining Log::default_rotation_date_format).  The fix involves
+    first removing the log suffix, then trying to extract the timestamp
+    in one of the two default timestamp formats.  This procedure is more
+    reliable than the previous method of making assumptions about how many
+    period characters should be in a log filename.
+
+    Also, when Bro terminates normally, post-terminate now just tries to
+    archive all log files, instead of only those that were rotated.  This
+    is to avoid missing any logs.  This also means that the
+    stderr.log/stdout.log files are now archived when Bro terminates
+    normally (instead of only when Bro crashes), which is useful to
+    capture any error messages from archive-log or Bro.
+
+    Also fixed an issue that could occasionally occur when post-terminate
+    archives an unrotated log file (i.e., no timestamp in the filename)
+    and a different log with the same base name was archived after
+    post-terminate started, then the computed start time of the unrotated
+    log would be later than the end time.  Fixed by setting the start time
+    to equal the end time.
+
+    Also added the node name to the subject line in the email sent when
+    post-terminate fails to archive a log. (Daniel Thayer)
+
+  * Add error checking of archive-log timestamp parameters
+
+    Check if the format of the timestamp command-line parameters matches
+    the required format.  If not, exit with an error message.  This will
+    prevent archive-log from creating an archived log file with a corrup
+    filename or in a directory with a corrupt name.
+
+    Also simplified the code that gets the current century. (Daniel Thayer)
+
 1.5-5 | 2017-01-26 13:34:37 -0500
 
   * Fix crash-diag script to use the correct debugger

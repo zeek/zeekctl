@@ -54,9 +54,20 @@ to=$4
 terminating=$5
 writer=$6
 
-century=`date +%Y | sed 's/..$//'`
+# Verify if the given timestamp is in the correct format (YY-MM-DD_HH.MM.SS).
+check_timestamp() {
+    res=`echo $2 | sed 's/[0-9][0-9]-[0-1][0-9]-[0-3][0-9]_[0-2][0-9][.][0-5][0-9][.][0-5][0-9]/VALID/'`
+    if [ "$res" != "VALID" ]; then
+        echo "archive-log: $1 time must be in format YY-MM-DD_HH.MM.SS: $2" >&2
+        exit 1
+    fi
+}
 
-# Convert timestamps to the format YYYY-MM-DD-HH-MM-SS
+check_timestamp start $from
+check_timestamp end $to
+
+# Convert timestamp format from YY-MM-DD_HH.MM.SS to YYYY-MM-DD-HH-MM-SS
+century=`date +%C`
 from=`echo $century$from | sed 's/[_.]/-/g'`
 to=`echo $century$to | sed 's/[_.]/-/g'`
 
