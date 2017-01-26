@@ -29,12 +29,20 @@ echo
 # filenames contain the word "core" and do not end in ".log".
 core=`ls -t *core* 2> /dev/null | grep -v '\.log$'`
 
-gdb=`which gdb 2> /dev/null`
+# Choose which debugger to use.
+gdb_name="gdb"
+if [ "${os}" = "Darwin" ]; then
+    gdb_name="lldb"
+elif [ "${os}" = "OpenBSD" ]; then
+    # The default gdb fails when trying to read Bro core files.
+    gdb_name="egdb"
+fi
+gdb_path=`which $gdb_name 2> /dev/null`
 
 # If no backtrace can be generated, then output an explanation.  However,
 # skip this if there's no .status file, because in that case Bro didn't run.
 if [ -f .status ]; then
-    if [ -n "$gdb" ]; then
+    if [ -n "$gdb_path" ]; then
         if [ -z "$core" ]; then
             # Check if the system allows setting core file size to unlimited,
             # because this is what the run-bro script does when it starts bro.
@@ -52,12 +60,12 @@ if [ -f .status ]; then
         fi
     else
         if [ -n "$core" ]; then
-            echo "Unable to output a backtrace because gdb is not installed."
-            echo "It is recommended to install gdb so that BroControl can output a"
+            echo "Unable to output a backtrace because $gdb_name is not installed."
+            echo "It is recommended to install $gdb_name so that BroControl can output a"
             echo "backtrace the next time Bro crashes."
         else
-            echo "No core file found and gdb is not installed.  It is recommended to"
-            echo "install gdb so that BroControl can output a backtrace if Bro crashes."
+            echo "No core file found and $gdb_name is not installed.  It is recommended to"
+            echo "install $gdb_name so that BroControl can output a backtrace if Bro crashes."
         fi
         echo
     fi
@@ -82,16 +90,24 @@ else
 fi
 
 # Output a backtrace, if possible.
-if [ -n "$gdb" ]; then
+if [ -n "$gdb_path" ]; then
     if [ -n "$core" ]; then
-        echo "thread apply all bt" >.gdb_cmds
+        if [ "$gdb_name" = "gdb" -o "$gdb_name" = "egdb" ]; then
+            echo "thread apply all bt" >.gdb_cmds
+        elif [ "$gdb_name" = "lldb" ]; then
+            echo "bt all" >.gdb_cmds
+        fi
         for c in "$core"; do
             if [ -f "$c" ]; then
                 echo
                 # Note: broctl looks for this string in order to determine
                 # if a backtrace was output.
                 echo "Core file: $c"
-                gdb --batch -x .gdb_cmds "${bro}" "$c" 2>/dev/null
+                if [ "$gdb_name" = "gdb" -o "$gdb_name" = "egdb" ]; then
+                    $gdb_path --batch -x .gdb_cmds "${bro}" "$c" 2>/dev/null
+                elif [ "$gdb_name" = "lldb" ]; then
+                    $gdb_path --batch -s .gdb_cmds -f "${bro}" -c "$c" 2>/dev/null
+                fi
             fi
         done
         rm -f .gdb_cmds

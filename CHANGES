@@ -1,3 +1,9 @@
+1.5-5 | 2017-01-26 13:34:37 -0500
+
+  * Fix crash-diag script to use the correct debugger
+
+    On some systems, the correct debugger to use is not called "gdb"
+    (currently, this affects OS X and OpenBSD). (Daniel Thayer)
 
 1.5-2 | 2016-12-06 12:35:40 -0800
 
