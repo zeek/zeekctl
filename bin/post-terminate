@@ -89,14 +89,10 @@ if [ -d .state ]; then
 fi
 
 if [ $crash -eq 1 ]; then
-    # output the crash report
-    "${scriptsdir}"/crash-diag "$postdir"
-
-    mybro=${bro}
-    if [ "${havenfs}" = "1" ]; then
-        mybro=${tmpexecdir}/`basename "${bro}"`
-    fi
-    cp "$mybro" .
+    # Output the crash report and save it to disk in case the user doesn't
+    # receive the email.
+    "${scriptsdir}"/crash-diag -c "$postdir" > .crash-diag.out
+    cat .crash-diag.out
 fi
 
 if [ ! -f .startup ]; then
