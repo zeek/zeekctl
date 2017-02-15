@@ -126,9 +126,7 @@ class CronTasks:
         (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
         if not success:
-            self.ui.error("expire-logs failed\n")
-            for line in output:
-                self.ui.error(line)
+            self.ui.error("expire-logs failed\n%s" % output)
 
     def check_hosts(self):
         for host, status in self.executor.host_status():
@@ -167,14 +165,18 @@ class CronTasks:
                 meta.write("time %s\n" % time.asctime())
                 meta.write("version %s\n" % self.config.version)
 
-                try:
-                    meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
-                except IndexError:
+                success, output = execute.run_localcmd("uname -a")
+                if success and output:
+                    # Note: "output" already has a '\n'
+                    meta.write("os %s" % output)
+                else:
                     meta.write("os <error>\n")
 
-                try:
-                    meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
-                except IndexError:
+                success, output = execute.run_localcmd("hostname")
+                if success and output:
+                    # Note: "output" already has a '\n'
+                    meta.write("host %s" % output)
+                else:
                     meta.write("host <error>\n")
 
         except IOError as err:
@@ -196,9 +198,7 @@ class CronTasks:
         if success:
             shutil.copy(metadat, wwwdir)
         else:
-            self.ui.error("error reported by stats-to-csv")
-            for line in output:
-                self.ui.error(line)
+            self.ui.error("error reported by stats-to-csv\n%s" % output)
 
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
@@ -219,4 +219,3 @@ class CronTasks:
             (success, output) = execute.run_localcmd(self.config.croncmd)
             if not success:
                 self.ui.error("failure running croncmd: %s" % self.config.croncmd)
-

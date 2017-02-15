@@ -106,9 +106,9 @@ class Configuration:
 
         # Determine operating system.
         (success, output) = execute.run_localcmd("uname")
-        if not success:
+        if not success or not output:
             raise RuntimeEnvironmentError("failed to run uname: %s" % output)
-        self.init_option("os", output[0].strip())
+        self.init_option("os", output.strip())
 
         # Determine the CPU pinning command.
         pin_cmd = ""
@@ -122,8 +122,10 @@ class Configuration:
         # Find the time command (should be a GNU time for best results).
         time_cmd = ""
         (success, output) = execute.run_localcmd("which time")
-        if success:
-            time_cmd = output[0].strip()
+        if success and output:
+            # On redhat-based systems, path to cmd is prefixed with '\t' on 2nd
+            # line when alias is defined.
+            time_cmd = output.splitlines()[-1].strip()
 
         self.init_option("time", time_cmd)
 
@@ -960,11 +962,11 @@ class Configuration:
         version = ""
         (success, output) = execute.run_localcmd("%s -v" % bro)
         if success and output:
-            version = output[-1]
+            version = output.splitlines()[-1]
         else:
             msg = " with no output"
             if output:
-                msg = " with output:\n%s" % "\n".join(output)
+                msg = " with output:\n%s" % output
             raise RuntimeEnvironmentError('running "bro -v" failed%s' % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)

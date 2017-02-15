@@ -385,7 +385,7 @@ class Controller:
 
                 msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg)
                 if not msuccess:
-                    self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
+                    self.ui.error("error occurred while trying to send mail: %s" % moutput)
             else:
                 self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
 
@@ -396,8 +396,7 @@ class Controller:
             return True, ""
 
         cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
-        (success, output) = execute.run_localcmd(cmd, "", body)
-        return success, output
+        return execute.run_localcmd(cmd, inputtext=body)
 
     # Stop Bro processes on nodes.
     def stop(self, nodes):
@@ -698,7 +697,7 @@ class Controller:
             cmds += [((node, cwd), cmd, env, None)]
 
         for ((node, cwd), success, output) in execute.run_localcmds(cmds):
-            results.set_node_output(node, success, output)
+            results.set_node_output(node, success, output.splitlines())
             try:
                 shutil.rmtree(cwd)
             except OSError as err:
@@ -926,12 +925,12 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.info("failed to update %s: %s" % (tag, "\n".join(output)))
+                self.ui.info("failed to update %s: %s" % (tag, output))
                 results.set_node_fail(node)
             else:
                 out = ""
                 if output:
-                    out = output[0]
+                    out = output.splitlines()[0]
                 self.ui.info("%s: %s" % (tag, out))
                 results.set_node_success(node)
 
@@ -1215,15 +1214,13 @@ class Controller:
 
         self.ui.info(cmd)
 
-        (success, output) = execute.run_localcmd(cmd, env, donotcaptureoutput=True)
+        success, output = execute.run_localcmd(cmd, env=env)
 
         if not success:
             results.ok = False
 
-        for line in output:
-            self.ui.info(line)
-
-        self.ui.info("\n### Bro output in %s" % cwd)
+        self.ui.info(output)
+        self.ui.info("### Bro output in %s" % cwd)
 
         return results
 
@@ -1416,8 +1413,8 @@ class Controller:
         if output:
             success, out = self._sendmail("cron: " + output.splitlines()[0], output)
             if not success:
-                self.ui.error("broctl cron failed to send mail: %s" % out[0])
-                self.ui.info("\nOutput of broctl cron:\n%s" % output)
+                self.ui.error("broctl cron failed to send mail: %s" % out)
+                self.ui.info("Output of broctl cron:\n%s" % output)
 
         logging.debug("cron done")
 

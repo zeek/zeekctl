@@ -24,7 +24,7 @@ def _break_lock(cmdout):
         return -1
 
     (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
-    if success and output[0] == "running":
+    if success and output.strip() == "running":
         # Process still exists.
         try:
             return int(pid)
