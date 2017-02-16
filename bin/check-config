@@ -22,7 +22,7 @@ print_loaded_scripts=$2
 tmp_node_dir=$3
 shift 3
 
-source "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-bro-path
 if [ $? -ne 0 ]; then
     exit 1
 fi

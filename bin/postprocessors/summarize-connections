@@ -24,7 +24,7 @@ terminating=$5
 writer=$6
 
 # Only process ASCII conn.log.
-if [ "$base" != "conn" -o "$writer" != "ascii" ]; then
+if [ "$base" != "conn" ] || [ "$writer" != "ascii" ]; then
     exit 0
 fi
 

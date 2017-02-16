@@ -92,7 +92,7 @@ fi
 # Output a backtrace, if possible.
 if [ -n "$gdb_path" ]; then
     if [ -n "$core" ]; then
-        if [ "$gdb_name" = "gdb" -o "$gdb_name" = "egdb" ]; then
+        if [ "$gdb_name" = "gdb" ] || [ "$gdb_name" = "egdb" ]; then
             echo "thread apply all bt" >.gdb_cmds
         elif [ "$gdb_name" = "lldb" ]; then
             echo "bt all" >.gdb_cmds
@@ -103,7 +103,7 @@ if [ -n "$gdb_path" ]; then
                 # Note: broctl looks for this string in order to determine
                 # if a backtrace was output.
                 echo "Core file: $c"
-                if [ "$gdb_name" = "gdb" -o "$gdb_name" = "egdb" ]; then
+                if [ "$gdb_name" = "gdb" ] || [ "$gdb_name" = "egdb" ]; then
                     $gdb_path --batch -x .gdb_cmds "${bro}" "$c" 2>/dev/null
                 elif [ "$gdb_name" = "lldb" ]; then
                     $gdb_path --batch -s .gdb_cmds -f "${bro}" -c "$c" 2>/dev/null
@@ -118,7 +118,7 @@ fi
 #   show_log <filename> <num>
 # Output the last <num> lines of <filename>.  If <num> is -1, then output the
 # entire file.
-function show_log() {
+show_log() {
     filename=$1
     num=$2
 

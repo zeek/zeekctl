@@ -32,7 +32,7 @@ Check the post-terminate.out file in that directory for any error messages.
 _EOF_
 }
 
-if [ $# -lt 2 -o $# -gt 3 ]; then
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
     echo "post-terminate: wrong usage: $@"
     exit 1
 fi

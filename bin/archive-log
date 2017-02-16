@@ -21,7 +21,7 @@
 # Create a PID file so that the post-terminate script knows when we're done.
 echo $$ > .archive-log.running.$$.tmp
 
-function sig_handler
+sig_handler()
 {
     rm .archive-log.running.$$.tmp
 }

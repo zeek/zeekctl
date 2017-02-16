@@ -9,7 +9,7 @@
 
 child=""
 
-function sig_handler
+sig_handler()
 {
     if [ -n "$child" ]; then
         kill -15 $child 2>/dev/null
@@ -34,7 +34,7 @@ shift
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 use_installed_policies=1
-source "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-bro-path
 if [ $? -ne 0 ]; then
     exit 1
 fi
