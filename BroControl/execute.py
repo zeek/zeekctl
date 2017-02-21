@@ -150,10 +150,10 @@ class Executor:
     #
     # Returns a list of results: [(node, success, output), ...]
     #   where "success" is a boolean (True if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr) or an
-    #   error message if no result was received (this could occur upon failure
-    #   to communicate with remote host, or if the command being executed
-    #   did not finish before the timeout).
+    #   and "output" is a string containing the command's stdout followed by
+    #   stderr, or an error message if no result was received (this could occur
+    #   upon failure to communicate with remote host, or if the command being
+    #   executed did not finish before the timeout).
     def run_cmds(self, cmds, shell=False, helper=False):
         results = []
 
@@ -191,12 +191,12 @@ class Executor:
             bronode = nodecmd[0]
             if not isinstance(result, Exception):
                 res = result[0]
-                out = result[1].splitlines()
-                err = result[2].splitlines()
+                out = result[1]
+                err = result[2]
                 results.append((bronode, res == 0, out + err))
                 logging.debug("%s: exit code %d", bronode.host, res)
             else:
-                results.append((bronode, False, [str(result)]))
+                results.append((bronode, False, str(result)))
 
         return results
 

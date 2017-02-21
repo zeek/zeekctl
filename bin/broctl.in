@@ -342,8 +342,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, output) in results.get_node_output():
             self.info("[%s]" % node)
-            for line in output:
-                self.info(line)
+            self.info(output)
 
         return results.ok
 
@@ -417,7 +416,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.info("%s scripts are ok." % node)
             else:
                 self.info("%s scripts failed." % node)
-                self.info("\n".join(output))
+                self.info(output)
 
         return results.ok
 
@@ -565,11 +564,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.print_id(id=id, node_list=args)
 
-        for (node, success, args) in results.get_node_output():
+        for (node, success, msg) in results.get_node_output():
             if success:
-                self.info("%12s   %s = %s" % (node, args[0], args[1]))
+                out = msg.splitlines()
+                self.info("%12s   %s = %s" % (node, out[0], out[1]))
             else:
-                self.info("%12s   <error: %s>" % (node, args))
+                self.info("%12s   <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -616,7 +616,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            out = "\n> ".join(output)
+            outlines = output.splitlines()
+            out = "\n> ".join(outlines)
             self.info("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
 
         return results.ok
@@ -662,11 +663,11 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         for (node, success, output) in results.get_node_output():
             if success:
                 self.info("%s scripts are ok." % node)
-                for line in output:
+                for line in output.splitlines():
                     self.info("  %s" % line)
             else:
                 self.info("%s scripts failed." % node)
-                self.info("\n".join(output))
+                self.info(output)
 
         return results.ok
 

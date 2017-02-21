@@ -210,13 +210,26 @@ class Controller:
         # might contain quoted arguments.
         for (node, success, output) in self.executor.run_helper(cmds, shell=True):
             if success:
+                if not output:
+                    self.ui.error("failed to get PID of %s" % node.name)
+                    results.set_node_fail(node)
+                    continue
+
+                pidstr = output.splitlines()[0]
+                try:
+                    pid = int(pidstr)
+                except ValueError:
+                    self.ui.error("invalid PID for %s: %s" % (node.name, pidstr))
+                    results.set_node_fail(node)
+                    continue
+
                 nodes += [node]
-                node.setPID(int(output[0]))
+                node.setPID(pid)
             else:
                 self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
                 results.set_node_fail(node)
                 if output:
-                    self.ui.error("\n".join(output))
+                    self.ui.error(output)
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -268,7 +281,7 @@ class Controller:
                 self.ui.error("failed to run check-pid on node %s" % node.name)
                 continue
 
-            running = output[0] == "running" and True or False
+            running = output.strip() == "running" and True or False
 
             results += [(node, running)]
 
@@ -308,10 +321,10 @@ class Controller:
                 cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
-                if not success or not output[0]:
+                if not success or not output:
                     continue
 
-                fields = output[0].split()
+                fields = output.split()
                 if len(fields) == 2:
                     if status in fields[0]:
                         # Status reached. Cool.
@@ -372,7 +385,7 @@ class Controller:
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
-                crashreport = "\n".join(output)
+                crashreport = output
 
                 # Note: here it is assumed that the crash-diag script outputs
                 # this string only when there's a backtrace.
@@ -387,7 +400,7 @@ class Controller:
                 if not msuccess:
                     self.ui.error("error occurred while trying to send mail: %s" % moutput)
             else:
-                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
+                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
 
             node.clearCrashed()
 
@@ -481,7 +494,7 @@ class Controller:
             if not success:
                 # Give up on this node.  Most likely either we cannot connect
                 # to the host, or we don't have permission to kill the process.
-                self.ui.error("unable to stop %s: %s" % (node.name, output[0]))
+                self.ui.error("unable to stop %s: %s" % (node.name, output))
                 results.set_node_fail(node)
                 running.remove(node)
 
@@ -559,7 +572,7 @@ class Controller:
             if success:
                 self._log_action(node, "stopped")
             else:
-                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
+                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
                 self._log_action(node, "stopped (failed)")
 
             node.clearPID()
@@ -589,8 +602,16 @@ class Controller:
         startups = {}
         statuses = {}
         for (n, success, output) in self.executor.run_helper(cmds):
-            startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
-            statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
+            out = output.splitlines()
+            try:
+                startups[n.name] = (success and out[0]) and util.fmttime(out[0]) or "???"
+            except (IndexError, ValueError):
+                startups[n.name] = "???"
+
+            try:
+                statuses[n.name] = (success and out[1]) and out[1].split()[0].lower() or "???"
+            except IndexError:
+                statuses[n.name] = "???"
 
         if showall:
             self.ui.info("Getting peer status ...")
@@ -697,7 +718,7 @@ class Controller:
             cmds += [((node, cwd), cmd, env, None)]
 
         for ((node, cwd), success, output) in execute.run_localcmds(cmds):
-            results.set_node_output(node, success, output.splitlines())
+            results.set_node_output(node, success, output)
             try:
                 shutil.rmtree(cwd)
             except OSError as err:
@@ -781,7 +802,7 @@ class Controller:
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
-                errmsgs = ["error running crash-diag for %s" % node.name]
+                errmsgs = "error running crash-diag for %s\n" % node.name
                 errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
@@ -842,9 +863,14 @@ class Controller:
         for (node, success, output) in outputs:
             netif = self._capstats_interface(node)
 
+            if output:
+                # Grab the first output line, because we might log this to
+                # stats.log later.
+                outputline = output.splitlines()[0]
+
             if not success:
                 if output:
-                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, output[0]))]
+                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, outputline))]
                 else:
                     results += [(node, netif, False, "%s: cannot execute capstats" % node.name)]
                 continue
@@ -853,10 +879,10 @@ class Controller:
                 results += [(node, netif, False, "%s: no capstats output" % node.name)]
                 continue
 
-            fields = output[0].split()[1:]
+            fields = outputline.split()[1:]
 
             if not fields:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
                 continue
 
             vals = {}
@@ -872,10 +898,11 @@ class Controller:
                     else:
                         totals[key] = val
 
-                results += [(node, netif, True, vals)]
-
             except ValueError:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
+                continue
+
+            results += [(node, netif, True, vals)]
 
         # Add pseudo-node for totals
         if len(nodes) > 1:
@@ -963,31 +990,33 @@ class Controller:
 
                 cmds += [(node, "df", [path])]
 
-        res = self.executor.run_helper(cmds)
-
-        for (node, success, output) in res:
+        for (node, success, output) in self.executor.run_helper(cmds):
             if success:
-                if not output:
-                    df[node.name]["FAIL"] = "no output from df helper"
+                fields = output.split()
+                if len(fields) != 4:
+                    df[node.name]["FAIL"] = "wrong number of fields from df helper"
                     continue
-
-                fields = output[0].split()
 
                 fs = fields[0]
                 # Ignore NFS mounted volumes.
                 if ":" in fs:
                     continue
 
-                total = float(fields[1])
-                used = float(fields[2])
-                avail = float(fields[3])
+                try:
+                    total = float(fields[1])
+                    used = float(fields[2])
+                    avail = float(fields[3])
+                except ValueError as err:
+                    df[node.name]["FAIL"] = "bad output from df helper: %s" % err
+                    continue
+
                 perc = used * 100.0 / (used + avail)
                 df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
             else:
                 if output:
-                    msg = output[0]
+                    msg = output
                 else:
-                    msg = "unknown failure"
+                    msg = "no output"
                 df[node.name]["FAIL"] = msg
 
         for node in nodes:
@@ -1027,12 +1056,17 @@ class Controller:
             return results
 
         for (node, success, output) in self.executor.run_helper(cmds):
-
             if not success:
                 results += [(node, "cannot get child pids", [{}])]
                 continue
 
-            pids[node.name] += [int(line) for line in output]
+            try:
+                pidlist = [int(line) for line in output.splitlines()]
+            except ValueError as err:
+                results += [(node, "invalid PID: %s" % err, [{}])]
+                continue
+
+            pids[node.name] += pidlist
 
         cmds = []
         hosts = {}
@@ -1064,14 +1098,26 @@ class Controller:
             success, output = res[node.host]
 
             if not success:
-                results += [(node, "top failed: %s" % output[0], [{}])]
+                if output:
+                    # The error msg gets written to stats.log, so we only want
+                    # the first line.
+                    errmsg = output.splitlines()[0]
+                else:
+                    errmsg = ""
+                results += [(node, "top failed: %s" % errmsg, [{}])]
                 continue
 
             if not output:
                 results += [(node, "no output from top", [{}])]
                 continue
 
-            procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
+            # Get a list of all bro processes, where each bro process is a list
+            # of fields from the "top" helper.
+            try:
+                procs = [line.split() for line in output.splitlines() if int(line.split()[0]) in pids[node.name]]
+            except (IndexError, ValueError) as err:
+                results += [(node, "bad output from top: %s" % err, [{}])]
+                continue
 
             if not procs:
                 # It's possible that the process is no longer there.
@@ -1133,7 +1179,11 @@ class Controller:
 
         results = cmdresult.CmdResult()
         for (node, success, args) in events.send_events_parallel(eventlist):
-            results.set_node_output(node, success, args)
+            if success:
+                out = "\n".join(args)
+            else:
+                out = args
+            results.set_node_output(node, success, out)
 
         return results
 
@@ -1340,7 +1390,8 @@ class Controller:
         for (node, success, output) in self.executor.mkdirs(dirs):
             if not success:
                 self.ui.error("cannot create a directory on node %s" % node.name)
-                self.ui.error("\n".join(output))
+                if output:
+                    self.ui.error(output)
                 results.ok = False
                 return results
 

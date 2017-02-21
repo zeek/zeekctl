@@ -50,12 +50,12 @@ class CmdResult:
 
     def get_node_output(self):
         """Return a list of tuples (node, success, output), where node is a
-        Bro node, success is a boolean, and output is a list.
+        Bro node, success is a boolean, and output is a string.
         """
 
         results = []
         for node, success, out in self.nodes:
-            output = out.get("_output", [])
+            output = out.get("_output", "")
             results.append((node, success, output))
 
         if not self._sorted:
@@ -80,15 +80,10 @@ class CmdResult:
     def set_node_output(self, node, success, output):
         """Records the success status of the given node, and stores some
         output messages.  The node parameter is a Bro node, success is a
-        boolean, and output is a list.
+        boolean, and output is a string.
         """
 
-        if output is None:
-            # this is needed because runCmdsParallel can return None
-            outlines = []
-        else:
-            outlines = output
-        self.nodes.append((node, success, {"_output": outlines}))
+        self.nodes.append((node, success, {"_output": output}))
         if success:
             self.success_count += 1
         else:
