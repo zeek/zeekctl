@@ -832,7 +832,7 @@ class Configuration:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn('broctl node config has changed (run the broctl "deploy" command)')
 
                 return
         else:
@@ -841,7 +841,7 @@ class Configuration:
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
         if not self.is_broctl_installed():
-            self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
+            self.ui.info('Hint: Run the broctl "deploy" command to get started.')
             return
 
         # Check if Bro version is different from the previously-installed
@@ -852,7 +852,7 @@ class Configuration:
             version = self._get_bro_version()
 
             if version != oldversion:
-                self.ui.warn("new bro version detected (run the broctl \"deploy\" command)")
+                self.ui.warn('new bro version detected (run the broctl "deploy" command)')
                 return
         else:
             missingstate = True
@@ -861,7 +861,7 @@ class Configuration:
         if "hash-broctlcfg" in self.state:
             cfghash = self._get_broctlcfg_hash()
             if cfghash != self.state["hash-broctlcfg"]:
-                self.ui.warn("broctl config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn('broctl config has changed (run the broctl "deploy" command)')
                 return
         else:
             missingstate = True
@@ -870,7 +870,7 @@ class Configuration:
         # (this would most likely indicate an upgrade install was performed
         # over an old version that didn't have the state.db file).
         if missingstate:
-            self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
+            self.ui.warn('state database needs updating (run the broctl "deploy" command)')
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
@@ -902,7 +902,7 @@ class Configuration:
             # If node is not a known node or if host has changed, then
             # we must warn about dangling Bro node.
             if nname not in nodes or hname != nodes[nname]:
-                self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nname, hname, pid))
+                self.ui.warn('Bro node "%s" possibly still running on host "%s" (PID %s)' % (nname, hname, pid))
                 # Set the "expected running" flag to False so cron doesn't try
                 # to start this node.
                 expectkey = key.replace("-pid", "-expect-running")

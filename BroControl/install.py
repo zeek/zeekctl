@@ -133,7 +133,7 @@ def make_layout(path, cmdout, silent=False):
         # control by default.
         ostr += "redef Communication::listen_port = %s/tcp;\n" % broport.use_port(manager)
         ostr += "redef Communication::nodes += {\n"
-        ostr += "\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id)
+        ostr += '\t["control"] = [$host=%s, $zone_id="%s", $class="control", $events=Control::controller_events],\n' % (util.format_bro_addr(manager.addr), manager.zone_id)
         ostr += "};\n"
 
     else:

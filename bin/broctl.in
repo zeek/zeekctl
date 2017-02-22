@@ -757,7 +757,7 @@ BroControl Version %s
   cleanup [--all] [<nodes>]        - Delete working dirs (flush state) on nodes
   config                           - Print broctl configuration
   cron [--no-watch]                - Perform jobs intended to run from cron
-  cron enable|disable|?            - Enable/disable \"cron\" jobs
+  cron enable|disable|?            - Enable/disable "cron" jobs
   deploy                           - Check, install, and restart
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
@@ -816,7 +816,7 @@ def main():
 
     else:
         try:
-            cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+            cmdsuccess = loop.cmdloop('\nWelcome to BroControl %s\n\nType "help" for help.\n' % version.VERSION)
         except BroControlError as e:
             cmdsuccess = False
             print("Error: %s" % e, file=sys.stderr)

@@ -226,7 +226,7 @@ class Controller:
                 nodes += [node]
                 node.setPID(pid)
             else:
-                self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
+                self.ui.error('cannot start %s; check output of "diag"' % node.name)
                 results.set_node_fail(node)
                 if output:
                     self.ui.error(output)
@@ -248,7 +248,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.info("%s terminated immediately after starting; check output with \"diag\"" % node.name)
+                self.ui.info('%s terminated immediately after starting; check output with "diag"' % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
