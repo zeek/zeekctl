@@ -105,8 +105,8 @@ class CronTasks:
                     # so we don't need to output the error message.
                     continue
 
-                fs = df[0]
-                perc = df[4]
+                fs = df.fs
+                perc = df.percent
                 key = ("disk-space-%s%s" % (host, fs.replace("/", "-")))
 
                 if perc > 100 - minspace:

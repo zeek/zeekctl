@@ -234,6 +234,9 @@ def make_local_networks(path, cmdout, silent=False):
 
     try:
         nets = read_networks(netcfg)
+    except IndexError:
+        cmdout.error("invalid CIDR notation in file: %s" % netcfg)
+        return False
     except IOError as e:
         cmdout.error("failed to read file: %s" % e)
         return False

@@ -928,6 +928,10 @@ class Plugin(object):
 
             optname = "%s.%s" % (self.prefix(), name)
 
+            if ty not in pytype:
+                self.error('plugin option %s has invalid type "%s"' % (optname, ty))
+                continue
+
             if not isinstance(default, pytype[ty]):
                 self.error("plugin option %s default value must be type %s" % (optname, ty))
                 continue

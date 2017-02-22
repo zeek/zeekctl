@@ -618,14 +618,15 @@ class Controller:
             peers = {}
             nodes = [n for n in running if statuses[n.name] == "running"]
             for (node, success, args) in self._query_peerstatus(nodes):
-                if success:
+                if success and args:
                     peers[node.name] = []
                     for f in args[0].split():
-                        keyval = f.split("=")
-                        if len(keyval) > 1:
-                            (key, val) = keyval
-                            if key == "peer" and val != "":
-                                peers[node.name] += [val]
+                        if not f.startswith("peer="):
+                            continue
+                        # Get everything after the '=' character.
+                        val = f[5:]
+                        if val:
+                            peers[node.name] += [val]
 
         for (node, isrunning) in nodestatus:
             node_info = {
@@ -1137,7 +1138,7 @@ class Controller:
                     d["cpu"] = p[3]
                     d["cmd"] = " ".join(p[4:])
                     vals += [d]
-            except ValueError as err:
+            except (IndexError, ValueError) as err:
                 results += [(node, "unexpected top output: %s" % err, [{}])]
                 continue
 
@@ -1202,7 +1203,10 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_peerstatus(nodes):
             if success:
-                out = args[0]
+                if args:
+                    out = args[0]
+                else:
+                    out = ""
             else:
                 out = args
             results.set_node_output(node, success, out)
@@ -1213,7 +1217,10 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_netstats(nodes):
             if success:
-                out = args[0].strip()
+                if args:
+                    out = args[0].strip()
+                else:
+                    out = ""
             else:
                 out = args
             results.set_node_output(node, success, out)
