@@ -23,7 +23,7 @@ def _break_lock(cmdout):
         cmdout.error("failed to read lock file: %s" % err)
         return -1
 
-    (success, output) = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
+    success, output = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
     if success and output.strip() == "running":
         # Process still exists.
         try:

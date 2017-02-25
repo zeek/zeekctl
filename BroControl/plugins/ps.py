@@ -86,7 +86,7 @@ class PsBro(BroControl.plugin.Plugin):
 
                 m = line.split()
                 try:
-                    (pid, ppid) = (int(m[1]), int(m[2]))
+                    pid, ppid = int(m[1]), int(m[2])
                 except IndexError:
                     cmdout.error("unexpected output from ps command: %s" % line)
                     results.ok = False

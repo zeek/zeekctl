@@ -57,7 +57,7 @@ def print_class(cls, tag="", header=True):
     for name in sorted(methods.keys()):
         func = methods[name]
 
-        (args, varargs, keywords, defaults) = inspect.getargspec(func)
+        args, varargs, keywords, defaults = inspect.getargspec(func)
 
         out += print_indented(".. _%s.%s:" % (cls.__name__, name), 1)
         out += print_indented("**%s** (%s)" % (name, ", ".join(args)), 1)

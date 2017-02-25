@@ -123,7 +123,7 @@ class CronTasks:
         if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
             return
 
-        (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+        success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
         if not success:
             self.ui.error("expire-logs failed\n%s" % output)
@@ -194,7 +194,7 @@ class CronTasks:
         # Update the WWW data
         statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
 
-        (success, output) = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        success, output = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
         if success:
             shutil.copy(metadat, wwwdir)
         else:
@@ -216,6 +216,6 @@ class CronTasks:
     def run_cron_cmd(self):
         # Run external command if we have one.
         if self.config.croncmd:
-            (success, output) = execute.run_localcmd(self.config.croncmd)
+            success, output = execute.run_localcmd(self.config.croncmd)
             if not success:
                 self.ui.error("failure running croncmd: %s" % self.config.croncmd)

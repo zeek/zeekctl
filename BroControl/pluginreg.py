@@ -146,7 +146,7 @@ class PluginRegistry:
         """Runs a custom command *cmd* with string *args* as argument. Returns
         a CmdResult object which contains the command results."""
         try:
-            (myplugin, usage, descr) = self._cmds[cmd]
+            myplugin, usage, descr = self._cmds[cmd]
         except LookupError:
             return cmdresult.CmdResult(ok=False, unknowncmd=True)
 
@@ -187,7 +187,7 @@ class PluginRegistry:
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            (myplugin, args, descr) = self._cmds[cmd]
+            myplugin, args, descr = self._cmds[cmd]
             cmds += [(cmd, args, descr)]
 
         return cmds

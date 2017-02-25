@@ -39,14 +39,14 @@ def send_events_parallel(events):
             results += [(node, False, "no Python bindings for Broccoli installed")]
             continue
 
-        (success, bc) = _send_event_init(node, event, args, result_event)
+        success, bc = _send_event_init(node, event, args, result_event)
         if success and result_event:
             sent += [(node, result_event, bc)]
         else:
             results += [(node, success, bc)]
 
     for (node, result_event, bc) in sent:
-        (success, result_args) = _send_event_wait(node, result_event, bc)
+        success, result_args = _send_event_wait(node, result_event, bc)
         bc.connDelete()
         results += [(node, success, result_args)]
 

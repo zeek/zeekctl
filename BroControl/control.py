@@ -890,7 +890,7 @@ class Controller:
 
             try:
                 for field in fields:
-                    (key, val) = field.split("=")
+                    key, val = field.split("=")
                     val = float(val)
                     vals[key] = val
 
@@ -1089,7 +1089,7 @@ class Controller:
 
         res = {}
         for (node, success, output) in self.executor.run_helper(cmds):
-            res[node.host] = (success, output)
+            res[node.host] = success, output
 
         # Gather results for all the nodes that are running
         for node in nodes:
@@ -1132,7 +1132,7 @@ class Controller:
                     d = {}
                     pid = int(p[0])
                     d["pid"] = pid
-                    d["proc"] = (pid == parents[node.name] and "parent" or "child")
+                    d["proc"] = "parent" if pid == parents[node.name] else "child"
                     d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
                     d["rss"] = int(float(p[2]))
                     d["cpu"] = p[3]
@@ -1365,7 +1365,7 @@ class Controller:
             return results
 
         # Make sure we install each remote host only once.
-        nodes = self.config.hosts(nolocal=True)
+        nodes = self.config.hosts(exclude_local=True)
 
         # If there are no remote hosts, then we're done.
         if not nodes:

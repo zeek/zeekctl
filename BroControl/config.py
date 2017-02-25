@@ -105,7 +105,7 @@ class Configuration:
         self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
-        (success, output) = execute.run_localcmd("uname")
+        success, output = execute.run_localcmd("uname")
         if not success or not output:
             raise RuntimeEnvironmentError("failed to run uname: %s" % output)
         self.init_option("os", output.strip())
@@ -121,7 +121,7 @@ class Configuration:
 
         # Find the time command (should be a GNU time for best results).
         time_cmd = ""
-        (success, output) = execute.run_localcmd("which time")
+        success, output = execute.run_localcmd("which time")
         if success and output:
             # On redhat-based systems, path to cmd is prefixed with '\t' on 2nd
             # line when alias is defined.
@@ -150,11 +150,12 @@ class Configuration:
             # No broctl option ever requires the entire value to be wrapped in
             # quotes, and since doing so can cause problems, we don't allow it.
             if isinstance(value, str):
-                if ( (value.startswith('"') and value.endswith('"')) or
-                     (value.startswith("'") and value.endswith("'")) ):
+                if (value.startswith('"') and value.endswith('"') or
+                    value.startswith("'") and value.endswith("'")):
                     raise ConfigurationError('value of broctl option "%s" cannot be wrapped in quotes' % key)
 
-        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
+        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir",
+                "bindir", "libdirinternal", "plugindir", "scriptsdir")
         files = ("makearchivename", )
 
         for d in dirs:
@@ -312,17 +313,20 @@ class Configuration:
 
     # Returns a list of nodes which is a subset of the result a similar call to
     # nodes() would yield but within which each host appears only once.
-    # If "nolocal" parameter is True, then exclude the local host from results.
-    def hosts(self, tag=None, nolocal=False):
+    # If "exclude_local" is True, then the returned list will not include
+    # nodes that are on the local host.
+    def hosts(self, tag=None, exclude_local=False):
         hosts = {}
         nodelist = []
         for node in self.nodes(tag):
             if node.host in hosts:
                 continue
 
-            if (not nolocal) or (nolocal and node.addr not in self.localaddrs):
-                hosts[node.host] = 1
-                nodelist.append(node)
+            if exclude_local and node.addr in self.localaddrs:
+                continue
+
+            hosts[node.host] = 1
+            nodelist.append(node)
 
         return nodelist
 
@@ -373,7 +377,7 @@ class Configuration:
         if text:
             for keyval in text.split(","):
                 try:
-                    (key, val) = keyval.split("=", 1)
+                    key, val = keyval.split("=", 1)
                 except ValueError:
                     raise ConfigurationError("missing '=' in env_vars option value: %s" % keyval)
 
@@ -538,7 +542,7 @@ class Configuration:
 
         manageronlocalhost = False
         # Note: this is a subset of localaddrs
-        localhostaddrs = ("127.0.0.1", "::1")
+        localhostaddrs = "127.0.0.1", "::1"
 
         for n in nodestore.values():
             if n.type == "logger":
@@ -602,7 +606,7 @@ class Configuration:
                 if len(args) != 2:
                     raise ConfigurationError("broctl config syntax error: %s" % line)
 
-                (key, val) = args
+                key, val = args
                 # Option names are not case-sensitive.
                 key = key.strip().lower()
 
@@ -960,7 +964,7 @@ class Configuration:
             raise ConfigurationError("cannot find Bro binary: %s" % bro)
 
         version = ""
-        (success, output) = execute.run_localcmd("%s -v" % bro)
+        success, output = execute.run_localcmd("%s -v" % bro)
         if success and output:
             version = output.splitlines()[-1]
         else:

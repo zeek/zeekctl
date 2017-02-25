@@ -83,7 +83,7 @@ def run_localcmds(cmds):
         running += [(id, proc, inputtext)]
 
     for (id, proc, inputtext) in running:
-        (success, output) = _run_localcmd_wait(proc, inputtext)
+        success, output = _run_localcmd_wait(proc, inputtext)
         results += [(id, success, output)]
 
     return results

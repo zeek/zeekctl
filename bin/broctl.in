@@ -380,7 +380,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.broctl.setcronenabled(False)
             elif args == "?":
                 results = self.broctl.cronenabled()
-                self.info("cron " + (results and "enabled" or "disabled"))
+                cron_state = "enabled" if results else "disabled"
+                self.info("cron " + cron_state)
             else:
                 self.error("invalid cron argument")
                 return False
@@ -616,9 +617,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            outlines = output.splitlines()
-            out = "\n> ".join(outlines)
-            self.info("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
+            out = "\n> ".join(output.splitlines())
+            error = " " if success else "error"
+            self.info("[%s/%s] %s\n> %s" % (node.name, node.host, error, out))
 
         return results.ok
 

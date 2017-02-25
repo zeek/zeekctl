@@ -51,7 +51,7 @@ def make_broctl_config_sh(cmdout):
     for (varname, value) in config.Config.options(dynamic=False):
         if isinstance(value, bool):
             # Convert bools to the string "1" or "0"
-            value = (value and "1" or "0")
+            value = "1" if value else "0"
         else:
             value = str(value)
 
