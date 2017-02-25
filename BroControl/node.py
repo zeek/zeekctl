@@ -173,7 +173,7 @@ class Node:
         return os.path.join(self._config.spooldir, self.name)
 
     def setPID(self, pid):
-        """Stores the process ID for the node's Bro process."""
+        """Stores the process ID of the node's Bro process."""
         key = "%s-pid" % self.name
         self._config.set_state(key, pid)
         key = "%s-host" % self.name
@@ -207,7 +207,10 @@ class Node:
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
         key = "%s-crashed" % self.name
-        return self._config.get_state(key)
+        val = self._config.get_state(key)
+        if val is None:
+            val = False
+        return val
 
     def getExpectRunning(self):
         """Returns True if we expect the node's Bro process to be running."""
@@ -228,9 +231,9 @@ class Node:
 
     @doc.api
     def getPort(self):
-        """Returns an integer with the port that this node's communication
-        system is listening on for incoming connections, or -1 if no such port
-        has been set yet.
+        """Returns an integer with the port number that this node's
+        communication system is listening on for incoming connections, or -1 if
+        no such port has been set yet.
         """
         key = "%s-port" % self.name
         return self._config.get_state(key) or -1

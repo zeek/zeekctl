@@ -91,7 +91,7 @@ class PluginRegistry:
         for p in self._activeplugins():
             func = getattr(p, method)
             new_nodes = func(nodes, *args)
-            if new_nodes != None:
+            if new_nodes is not None:
                 nodes = new_nodes
 
         return nodes

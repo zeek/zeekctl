@@ -690,7 +690,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         """
         options = []
         scripts = []
-        trace = None
+        trace = ""
         in_scripts = False
 
         for arg in args.split():
