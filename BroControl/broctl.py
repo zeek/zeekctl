@@ -293,7 +293,7 @@ class BroCtl(object):
             for (node, success, output) in results.get_node_output():
                 if not success:
                     self.ui.info("%s scripts failed." % node)
-                    self.ui.info("\n".join(output))
+                    self.ui.info(output)
 
             return results
 
