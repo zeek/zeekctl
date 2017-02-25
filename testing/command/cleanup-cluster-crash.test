@@ -16,7 +16,7 @@
 . broctl-test-setup
 
 while read line; do installcfgfile "$line"; done << EOF
-etc/broctl.cfg__no_email
+etc/broctl.cfg__quickstatus
 etc/node.cfg__cluster
 bin/bro__test
 EOF
@@ -53,7 +53,7 @@ test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
 
 # restart crashed node and then stop all other nodes
 broctl start worker-1
-broctl stop manager proxy-1 worker-2
+broctl stop manager datanode-1 worker-2
 
 # verify one node crashed and all others are stopped
 broctl status > status3.out 2>&1

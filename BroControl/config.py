@@ -251,8 +251,8 @@ class Configuration:
     # - If tag is "all", all Nodes are returned if "expand_all" is true.
     #     If "expand_all" is false, returns an empty list in this case.
     # - If tag is "loggers", all logger Nodes are returned.
-    # - If tag is "proxies", all proxy Nodes are returned.
     # - If tag is "workers", all worker Nodes are returned.
+    # - If tag is "datanodes", all datanode Nodes are returned.
     # - If tag is "manager", the manager Node is returned (cluster config) or
     #     the standalone Node is returned (standalone config).
     # - If tag is "standalone", the standalone Node is returned.
@@ -276,21 +276,21 @@ class Configuration:
         elif tag == "manager":
             nodetype = "manager"
 
-        elif tag == "proxies":
-            nodetype = "proxy"
+        elif tag == "datanodes":
+            nodetype = "datanode"
 
         elif tag == "workers":
             nodetype = "worker"
 
         for n in self.nodestore.values():
             if nodetype:
-                if nodetype == n.type:
+                if n.type == nodetype:
                     nodes += [n]
 
             elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.sortorder(), n.name))
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -423,7 +423,7 @@ class Configuration:
         if not node.type:
             raise ConfigurationError("no type given for node %s" % node.name)
 
-        if node.type not in ("logger", "manager", "proxy", "worker", "standalone"):
+        if node.type not in ("logger", "manager", "datanode", "worker", "standalone"):
             raise ConfigurationError("unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
@@ -532,7 +532,7 @@ class Configuration:
         standalone = False
         logger = False
         manager = False
-        proxy = False
+        datanode = False
 
         manageronlocalhost = False
         # Note: this is a subset of localaddrs
@@ -554,8 +554,8 @@ class Configuration:
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
-            elif n.type == "proxy":
-                proxy = True
+            elif n.type == "datanode":
+                datanode = True
 
             elif n.type == "standalone":
                 standalone = True
@@ -568,8 +568,8 @@ class Configuration:
         else:
             if not manager:
                 raise ConfigurationError("no manager defined in node config")
-            elif not proxy:
-                raise ConfigurationError("no proxy defined in node config")
+            elif not datanode:
+                raise ConfigurationError("no datanode defined in node config")
 
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:

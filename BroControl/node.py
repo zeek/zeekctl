@@ -11,7 +11,7 @@ class Node:
     """Class representing one node of the BroControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
     a cluster setup, there is zero or one of type ``logger``, exactly one of
-    type ``manager``, one or more of type ``proxy``, and zero or more of
+    type ``manager``, one or more of type ``datanode``, and zero or more of
     type ``worker``.  The manager will handle writing logs if there is no
     logger defined in a cluster.
 
@@ -26,7 +26,7 @@ class Node:
         ``type`` (string)
             The type of the node.  In a standalone configuration, the only
             allowed type is ``standalone``.  In a cluster configuration, the
-            type must be one of: ``logger``, ``manager``, ``proxy``,
+            type must be one of: ``logger``, ``manager``, ``datanode``,
             or ``worker``.
 
         ``host`` (string)
@@ -107,7 +107,6 @@ class Node:
              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
              "pin_cpus": 1, "env_vars": 1}
 
-
     def __init__(self, config, name):
         """Instantiates a new node of the given name."""
         self.name = name
@@ -143,6 +142,15 @@ class Node:
                 return str(v)
 
         return [(k, tostr(self.__dict__[k])) for k in sorted(self.__dict__.keys())]
+
+    def sortorder(self):
+        typeorder = ("standalone", "manager", "logger", "datanode", "worker")
+
+        if self.type in typeorder:
+            return typeorder.index(self.type)
+        else:
+            return len(typeorder)
+
 
     @doc.api
     def describe(self):

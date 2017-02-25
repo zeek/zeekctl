@@ -131,9 +131,9 @@ def make_layout(path, cmdout, silent=False):
         ostr = "# Automatically generated. Do not edit.\n"
         # This is the port that standalone nodes listen on for remote
         # control by default.
-        ostr += "redef Communication::listen_port = %s/tcp;\n" % broport.use_port(manager)
-        ostr += "redef Communication::nodes += {\n"
-        ostr += "\t[\"control\"] = [$host=%s, $zone_id=\"%s\", $class=\"control\", $events=Control::controller_events],\n" % (util.format_bro_addr(manager.addr), manager.zone_id)
+        ostr += "redef Broker::listen_port = %s/tcp;\n" % broport.use_port(manager)
+        ostr += "redef Broker::nodes += {\n"
+        ostr += "\t[\"control\"] = [$ip=%s, $zone_id=\"%s\"],\n" % (util.format_bro_addr(manager.addr), manager.zone_id)
         ostr += "};\n"
 
     else:
@@ -142,7 +142,7 @@ def make_layout(path, cmdout, silent=False):
 
         filename = os.path.join(path, "cluster-layout.bro")
         workers = config.Config.nodes("workers")
-        proxies = config.Config.nodes("proxies")
+        datanodes = config.Config.nodes("datanodes")
         loggers = config.Config.nodes("loggers")
 
         if loggers:
@@ -160,23 +160,26 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
-        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.use_port(None))
+        ostr += '\t["control"] = [$node_roles=set(Cluster::CONTROL), $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.use_port(None))
 
         # Logger definition
         if loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.use_port(logger))
+            ostr += '\t["%s"] = [$node_roles=set(Cluster::LOGGER), $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.use_port(logger))
 
         # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), loggerstr)
+        managerroles = "Cluster::MANAGER"
+        if manager_is_logger == "T":
+            managerroles += ", Cluster::LOGGER"
+        ostr += '\t["%s"] = [$node_roles=set(%s), $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, managerroles, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), loggerstr)
         for s in workers:
             ostr += '"%s"' % s.name
             if s != workers[-1]:
                 ostr += ", "
         ostr += ")],\n"
 
-        # Proxies definition
-        for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), loggerstr, manager.name)
+        # Datanode definition
+        for p in datanodes:
+            ostr += '\t["%s"] = [$node_roles=set(Cluster::DATANODE), $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), loggerstr, manager.name)
             for s in workers:
                 ostr += '"%s"' % s.name
                 if s != workers[-1]:
@@ -185,12 +188,16 @@ def make_layout(path, cmdout, silent=False):
 
         # Workers definition
         for w in workers:
-            p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name, proxies[p].name)
+            ostr += '\t["%s"] = [$node_roles=set(Cluster::WORKER), $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $datanodes=set(' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name)
+            for s in datanodes:
+                ostr += '"%s"' % s.name
+                if s != datanodes[-1]:
+                    ostr += ", "
+            ostr += ")],\n"
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
-            ostr += '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
+            ostr += '\t["time-machine"] = [$node_roles=set(Cluster::TIME_MACHINE), $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
 
         ostr += "};\n"
 
@@ -282,9 +289,9 @@ def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
         ostr += '@endif\n'
 
     if config.Config.ipv6comm:
-        ostr += 'redef Communication::listen_ipv6 = T;\n'
+        ostr += 'redef Broker::listen_ipv6 = T;\n'
     else:
-        ostr += 'redef Communication::listen_ipv6 = F;\n'
+        ostr += 'redef Broker::listen_ipv6 = F;\n'
 
     ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
     ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize

@@ -1,5 +1,5 @@
    worker-2
-1463526588.246569 peer=proxy-1 host=::1
+1463526588.246569 peer=datanode-1 host=::1
 1463526588.246569 peer= host=::1
 1463526588.246569 peer=manager host=::1
 

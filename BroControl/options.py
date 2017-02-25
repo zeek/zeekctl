@@ -45,7 +45,7 @@ options = [
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
     Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
-    Option("BroPort", 47760, "int", Option.USER, False,
+    Option("BroPort", 9999, "int", Option.USER, False,
            "The TCP port number that Bro will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", 3600, "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Bro script variable Log::default_rotation_interval."),
@@ -144,7 +144,7 @@ options = [
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
     Option("IPv6Comm", 1, "bool", Option.USER, False,
-           "Enable IPv6 communication between cluster nodes (and also between them and BroControl). This overrides the Bro script variable Communication::listen_ipv6."),
+           "Enable IPv6 communication between cluster nodes (and also between them and BroControl). This overrides the Bro script variable Broker::listen_ipv6."),
     Option("ZoneID", "", "string", Option.USER, False,
            "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what :rfc:`4007` zone_id to append to node addresses when communicating with them."),
 
@@ -259,4 +259,3 @@ def print_options(category):
         out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
     return (out, err)
-

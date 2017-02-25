@@ -8,13 +8,6 @@
 #       extraction loop.
 @load frameworks/control/controllee
 
-## All nodes allow remote control from loopback.  This solves an occasional
-## problem in some all-local installations.
-redef Communication::nodes += {
-	# We're waiting for connections from this host for control.
-	["local-control"] = [$host=127.0.0.1, $class="control", $events=Control::controller_events],
-};
-
 ## Reconfigure the reporter framework to stop printing to STDERR
 ## because STDERR is redirected and not normally visible when through
 ## BroControl.  The logs will still be available through the normal

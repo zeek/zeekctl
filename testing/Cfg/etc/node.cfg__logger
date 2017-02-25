@@ -8,8 +8,8 @@ host=localhost
 type=manager
 host=localhost
 
-[proxy-1]
-type=proxy
+[datanode-1]
+type=datanode
 host=localhost
 
 [worker-1]

@@ -5,7 +5,7 @@ type=manager
 host=localhost
 
 [communicator]
-type=proxy
+type=datanode
 host=localhost
 
 [gatherer]

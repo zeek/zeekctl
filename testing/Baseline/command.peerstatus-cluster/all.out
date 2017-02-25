@@ -1,22 +1,22 @@
     manager
 1463526586.140468 peer=worker-1 host=::1
 1463526586.140468 peer= host=::1
-1463526586.140468 peer=proxy-1 host=::1
+1463526586.140468 peer=datanode-1 host=::1
 1463526586.140468 peer=worker-2 host=::1
 
-    proxy-1
+ datanode-1
 1463526586.341453 peer= host=::1
 1463526586.341453 peer=manager host=::1
 1463526586.341453 peer=worker-1 host=::1
 1463526586.341453 peer=worker-2 host=::1
 
    worker-1
-1463526586.543063 peer=proxy-1 host=::1
+1463526586.543063 peer=datanode-1 host=::1
 1463526586.543063 peer=manager host=::1
 1463526586.543063 peer= host=::1
 
    worker-2
-1463526586.743768 peer=proxy-1 host=::1
+1463526586.743768 peer=datanode-1 host=::1
 1463526586.743768 peer= host=::1
 1463526586.743768 peer=manager host=::1
 

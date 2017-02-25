@@ -13,7 +13,7 @@
 . broctl-test-setup
 
 while read line; do installcfgfile "$line"; done << EOF
-etc/broctl.cfg__no_email
+etc/broctl.cfg__quickstatus
 etc/node.cfg__cluster
 bin/bro__test
 EOF

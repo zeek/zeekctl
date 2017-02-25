@@ -7,8 +7,9 @@ import sys
 import time
 import logging
 
-# This is needed so that we can import BroControl.
+# This is needed so that we can import BroControl and pybroker.
 sys.path.insert(0, "@PREFIX@/lib/broctl")
+sys.path.insert(0, "@PREFIX@/lib/python")
 
 from BroControl.broctl import BroCtl, BroControlError, CommandSyntaxError
 from BroControl import brocmd
@@ -503,27 +504,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         return results.ok
 
-    def do_update(self, args):
-        """- [<nodes>]
-
-        After a change to Bro policy scripts, this command updates the Bro
-        processes on the given nodes *while they are running* (i.e., without
-        requiring a restart_). However, such dynamic
-        updates work only for a *subset* of Bro's full configuration. The
-        following changes can be applied on the fly:  The value of all
-        const variables defined with the ``&redef`` attribute can be changed.
-        More extensive script changes are not possible during runtime and
-        always require a restart; if you change more than just the values of
-        ``&redef``-able consts and still issue ``update``, the results are
-        undefined and can lead to crashes. Also note that before running
-        ``update``, you still need to do an install_ (preferably after
-        check_), as otherwise ``update`` will not see the changes and it will
-        resend the old configuration."""
-
-        results = self.broctl.update(node_list=args)
-
-        return results.ok
-
     def do_df(self, args):
         """- [<nodes>]
 
@@ -722,7 +702,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         # Commands that take a "<nodes>" argument.
         nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats",
                       "print", "restart", "start", "status", "stop", "top",
-                      "update", "peerstatus", "scripts"]
+                      "peerstatus", "scripts"]
 
         args = line.split()
 
@@ -775,7 +755,6 @@ BroControl Version %s
   status [<nodes>]                 - Summarize node status
   stop [<nodes>]                   - Stop processing
   top [<nodes>]                    - Show Bro processes ala top
-  update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (version.VERSION, plugin_help))
 
 def main():

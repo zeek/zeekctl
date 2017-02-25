@@ -133,7 +133,7 @@ class Plugin(object):
                 notnodes.append(arg)
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=lambda n: (n.sortorder(), n.name))
 
         return (nodes, notnodes)
 
@@ -608,28 +608,6 @@ class Plugin(object):
     def cmd_status_post(self, nodes):
         """Called just after the ``status`` command has finished.  Arguments
         are as with the ``pre`` method.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_update_pre(self, nodes):
-        """Called just before the ``update`` command is run. It receives the
-        list of nodes, and returns the list of nodes that should proceed with
-        the command.
-
-        This method can be overridden by derived classes. The default
-        implementation does nothing.
-        """
-        pass
-
-    @doc.api("override")
-    def cmd_update_post(self, results):
-        """Called just after the ``update`` command has finished. It receives
-        the list of 2-tuples ``(node, bool)`` indicating the nodes the command
-        was executed for, along with their success status.
 
         This method can be overridden by derived classes. The default
         implementation does nothing.

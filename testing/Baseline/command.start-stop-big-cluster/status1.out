@@ -1,7 +1,6 @@
 Name         Type    Host             Status    Pid    Started
 manager      manager localhost        running   22404  21 Nov 20:17:06
-proxy-1      proxy   localhost        running   22443  21 Nov 20:17:08
-proxy-2      proxy   localhost        running   22442  21 Nov 20:17:08
+datanode-1   datanode localhost        running   22443  21 Nov 20:17:08
 worker-1-1   worker  localhost        running   22741  21 Nov 20:17:10
 worker-1-10  worker  localhost        running   22734  21 Nov 20:17:10
 worker-1-2   worker  localhost        running   22744  21 Nov 20:17:10

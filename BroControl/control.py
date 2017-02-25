@@ -71,8 +71,8 @@ def _make_bro_params(node, live):
             args += config.Config.sitepolicymanager.split()
         elif node.type == "logger":
             args += config.Config.sitepolicylogger.split()
-        elif node.type == "proxy":
-            args += ["local-proxy"]
+        elif node.type == "datanode":
+            args += ["local-datanode"]
         elif node.type == "worker":
             args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
@@ -116,7 +116,7 @@ class Controller:
         results = cmdresult.CmdResult()
         logger = []
         manager = []
-        proxies = []
+        datanodes = []
         workers = []
 
         for n in nodes:
@@ -124,19 +124,19 @@ class Controller:
 
             if n.type == "worker":
                 workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
+            elif n.type == "datanode":
+                datanodes += [n]
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
                 logger += [n]
 
-        # Start nodes. Do it in the order logger, manager, proxies, workers.
+        # Start nodes. Do it in the order logger, manager, datanodes, workers.
         if logger:
             self._start_nodes(logger, results)
 
             if not results.ok:
-                for n in (manager + proxies + workers):
+                for n in (manager + datanodes + workers):
                     results.set_node_fail(n)
                 return results
 
@@ -144,12 +144,12 @@ class Controller:
             self._start_nodes(manager, results)
 
             if not results.ok:
-                for n in (proxies + workers):
+                for n in (datanodes + workers):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._start_nodes(proxies, results)
+        if datanodes:
+            self._start_nodes(datanodes, results)
 
             if not results.ok:
                 for n in workers:
@@ -404,7 +404,7 @@ class Controller:
         results = cmdresult.CmdResult()
         logger = []
         manager = []
-        proxies = []
+        datanodes = []
         workers = []
 
         for n in nodes:
@@ -412,26 +412,26 @@ class Controller:
 
             if n.type == "worker":
                 workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
+            elif n.type == "datanode":
+                datanodes += [n]
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
                 logger += [n]
 
 
-        # Stop nodes. Do it in the order workers, proxies, manager, logger
+        # Stop nodes. Do it in the order workers, datanodes, manager, logger
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager + logger):
+                for n in (datanodes + manager + logger):
                     results.set_node_fail(n)
                 return results
 
-        if proxies:
-            self._stop_nodes(proxies, results)
+        if datanodes:
+            self._stop_nodes(datanodes, results)
 
             if not results.ok:
                 for n in (manager + logger):
@@ -903,39 +903,6 @@ class Controller:
         return netif
 
 
-    # Update the configuration of a running instance on the fly.
-    def update(self, nodes):
-        results = cmdresult.CmdResult()
-
-        running = self._isrunning(nodes)
-        zone = self.config.zoneid
-        if not zone:
-            zone = "NOZONE"
-
-        cmds = []
-        for (node, isrunning) in running:
-            if isrunning:
-                env = _make_env_params(node)
-                env += " BRO_DNS_FAKE=1"
-                args = " ".join(_make_bro_params(node, False))
-                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.format_bro_addr(node.addr), zone, node.getPort(), args), env, None)]
-                self.ui.info("updating %s ..." % node.name)
-
-        res = execute.run_localcmds(cmds)
-
-        for (tag, success, output) in res:
-            node = self.config.nodes(tag=tag)[0]
-            if not success:
-                self.ui.info("failed to update %s: %s" % (tag, "\n".join(output)))
-                results.set_node_fail(node)
-            else:
-                out = ""
-                if output:
-                    out = output[0]
-                self.ui.info("%s: %s" % (tag, out))
-                results.set_node_success(node)
-
-        return results
 
     # Gets disk space on all volumes relevant to broctl installation.
     # Returns a list of the form:  [ (host, diskinfo), ...]
@@ -956,8 +923,8 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and node.type not in ("manager", "standalone"):
-                    # Don't need this on the workers/proxies.
+                if key == "logdir" and node.type != "manager" and node.type != "standalone":
+                    # Don't need this on the workers/datanodes.
                     continue
 
                 path = self.config.config[key]
@@ -1420,4 +1387,3 @@ class Controller:
                 self.ui.info("\nOutput of broctl cron:\n%s" % output)
 
         logging.debug("cron done")
-
