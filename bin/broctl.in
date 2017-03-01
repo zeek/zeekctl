@@ -243,10 +243,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for data in results.get_node_data():
             node_info = data[2]
-            if node_info["pid"]:
-                mycolfmt = colfmt
-            else:
-                mycolfmt = colfmtstopped
+            mycolfmt = colfmt if node_info["pid"] else colfmtstopped
 
             self.info(mycolfmt.format(typewidth, hostwidth, **node_info))
 

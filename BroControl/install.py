@@ -218,9 +218,7 @@ def read_networks(fname):
             fields = line.split(None, 1)
 
             cidr = util.format_bro_prefix(fields[0])
-            tag = ""
-            if len(fields) == 2:
-                tag = fields[1]
+            tag = fields[1] if len(fields) == 2 else ""
 
             nets += [(cidr, tag)]
 
@@ -272,10 +270,7 @@ def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
     ostr += 'redef Notice::mail_from = "%s";\n' % config.Config.mailfrom
     if manager.type != "standalone":
         loggers = config.Config.nodes("loggers")
-        if loggers:
-            ntype = "LOGGER"
-        else:
-            ntype = "MANAGER"
+        ntype = "LOGGER" if loggers else "MANAGER"
         ostr += '@if ( Cluster::local_node_type() == Cluster::%s )\n' % ntype
 
     ostr += 'redef Log::default_rotation_interval = %s secs;\n' % config.Config.logrotationinterval

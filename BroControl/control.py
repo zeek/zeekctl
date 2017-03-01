@@ -281,7 +281,7 @@ class Controller:
                 self.ui.error("failed to run check-pid on node %s" % node.name)
                 continue
 
-            running = output.strip() == "running" and True or False
+            running = output.strip() == "running"
 
             results += [(node, running)]
 
@@ -562,9 +562,7 @@ class Controller:
         cmds = []
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         for node in cleanup:
-            crashflag = ""
-            if node in kill:
-                crashflag = "killed"
+            crashflag = "killed" if node in kill else ""
 
             cmds += [(node, postterminate, [node.type, node.cwd(), crashflag])]
 
@@ -597,21 +595,25 @@ class Controller:
         for (node, isrunning) in nodestatus:
             if isrunning:
                 running += [node]
-                cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.status" % node.cwd(), "%s/.startup" % node.cwd()])]
 
-        startups = {}
         statuses = {}
+        startups = {}
         for (n, success, output) in self.executor.run_helper(cmds):
             out = output.splitlines()
             try:
-                startups[n.name] = (success and out[0]) and util.fmttime(out[0]) or "???"
-            except (IndexError, ValueError):
-                startups[n.name] = "???"
+                val = out[0].split()[0].lower() if (success and out[0]) else "???"
+            except IndexError:
+                val = "???"
+
+            statuses[n.name] = val
 
             try:
-                statuses[n.name] = (success and out[1]) and out[1].split()[0].lower() or "???"
-            except IndexError:
-                statuses[n.name] = "???"
+                val = util.fmttime(out[1]) if (success and out[1]) else "???"
+            except (IndexError, ValueError):
+                val = "???"
+
+            startups[n.name] = val
 
         if showall:
             self.ui.info("Getting peer status ...")
@@ -699,8 +701,8 @@ class Controller:
 
             env = _make_env_params(node)
 
-            installed_policies = installed and "1" or "0"
-            print_scripts = list_scripts and "1" or "0"
+            installed_policies = "1" if installed else "0"
+            print_scripts = "1" if list_scripts else "0"
 
             if not install.make_layout(cwd, self.ui, True):
                 results.ok = False
@@ -956,9 +958,7 @@ class Controller:
                 self.ui.info("failed to update %s: %s" % (tag, output))
                 results.set_node_fail(node)
             else:
-                out = ""
-                if output:
-                    out = output.splitlines()[0]
+                out = output.splitlines()[0] if output else ""
                 self.ui.info("%s: %s" % (tag, out))
                 results.set_node_success(node)
 
@@ -1014,11 +1014,7 @@ class Controller:
                 perc = used * 100.0 / (used + avail)
                 df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
             else:
-                if output:
-                    msg = output
-                else:
-                    msg = "no output"
-                df[node.name]["FAIL"] = msg
+                df[node.name]["FAIL"] = output if output else "no output"
 
         for node in nodes:
             success = "FAIL" not in df[node.name]
@@ -1099,12 +1095,9 @@ class Controller:
             success, output = res[node.host]
 
             if not success:
-                if output:
-                    # The error msg gets written to stats.log, so we only want
-                    # the first line.
-                    errmsg = output.splitlines()[0]
-                else:
-                    errmsg = ""
+                # The error msg gets written to stats.log, so we only want
+                # the first line.
+                errmsg = output.splitlines()[0] if output else ""
                 results += [(node, "top failed: %s" % errmsg, [{}])]
                 continue
 
@@ -1235,11 +1228,7 @@ class Controller:
             results.ok = False
             return results
 
-        if self.config.standalone:
-            tag = "standalone"
-        else:
-            tag = "workers"
-
+        tag = "standalone" if self.config.standalone else "workers"
         node = self.config.nodes(tag=tag)[0]
 
         cwd = os.path.join(self.config.tmpdir, "testing")

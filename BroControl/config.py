@@ -221,9 +221,7 @@ class Configuration:
         self._warn_dangling_bro()
 
         # Set the standalone config option.
-        standalone = False
-        if len(self.nodestore) == 1:
-            standalone = True
+        standalone = len(self.nodestore) == 1
 
         self.init_option("standalone", standalone)
 

@@ -2,10 +2,7 @@
 
 import sys
 
-if sys.version_info[0] == 3:
-    using_py3 = True
-else:
-    using_py3 = False
+using_py3 = sys.version_info[0] >= 3
 
 ####################
 # Built-in functions that were renamed in Python 3

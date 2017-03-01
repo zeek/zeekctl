@@ -105,7 +105,7 @@ def _run_localcmd_init(id, cmd, env):
     return proc
 
 def _run_localcmd_wait(proc, inputtext):
-    if inputtext and py3bro.using_py3:
+    if py3bro.using_py3 and inputtext:
         inputtext = inputtext.encode()
 
     # Note: "output" is combined stdout/stderr output.
