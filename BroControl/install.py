@@ -100,6 +100,26 @@ def make_broctl_config_sh(cmdout):
     return True
 
 
+class Logger:
+    # The "loggers" parameter is a list of logger nodes.
+    def __init__(self, loggers):
+        self.loggerlist = [ll.name for ll in loggers]
+        self._ct = 0
+        self._template_str = '$logger="%s", '
+        # This is the most recently used logger (empty string if no loggers).
+        self.logger = ""
+
+    # Return a string containing the name of the next logger (at end of list,
+    # return first logger in the list).  If the list of loggers is empty, then
+    # just return the most recently used one (which might be an empty string).
+    def next_logger(self):
+        num = len(self.loggerlist)
+        if num:
+            self.logger = self._template_str % self.loggerlist[self._ct % num]
+            self._ct += 1
+        return self.logger
+
+
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
     class Port:
@@ -145,15 +165,10 @@ def make_layout(path, cmdout, silent=False):
         proxies = config.Config.nodes("proxies")
         loggers = config.Config.nodes("loggers")
 
-        if loggers:
-            # Use the first logger in list, since only one logger is allowed.
-            logger = loggers[0]
-            manager_is_logger = "F"
-            loggerstr = '$logger="%s", ' % logger.name
-        else:
-            # If no logger exists, then manager does the logging.
-            manager_is_logger = "T"
-            loggerstr = ""
+        mylogger = Logger(loggers)
+
+        # If no loggers are defined, then manager does the logging.
+        manager_is_logger = "F" if loggers else "T"
 
         ostr = "# Automatically generated. Do not edit.\n"
         ostr += "redef Cluster::manager_is_logger = %s;\n" % manager_is_logger
@@ -162,21 +177,21 @@ def make_layout(path, cmdout, silent=False):
         # Control definition.  For now just reuse the manager information.
         ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.use_port(None))
 
-        # Logger definition
-        if loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (logger.name, util.format_bro_addr(logger.addr), logger.zone_id, broport.use_port(logger))
+        # Loggers definition
+        for lognode in loggers:
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (lognode.name, util.format_bro_addr(lognode.addr), lognode.zone_id, broport.use_port(lognode))
 
         # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), loggerstr)
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), mylogger.next_logger())
         for s in workers:
             ostr += '"%s"' % s.name
             if s != workers[-1]:
                 ostr += ", "
         ostr += ")],\n"
 
-        # Proxies definition
+        # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), loggerstr, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), mylogger.logger, manager.name)
             for s in workers:
                 ostr += '"%s"' % s.name
                 if s != workers[-1]:
@@ -186,7 +201,7 @@ def make_layout(path, cmdout, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, loggerstr, manager.name, proxies[p].name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, mylogger.next_logger(), manager.name, proxies[p].name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:

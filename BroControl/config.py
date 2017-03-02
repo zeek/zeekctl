@@ -534,7 +534,6 @@ class Configuration:
             raise ConfigurationError("no nodes found in node config")
 
         standalone = False
-        logger = False
         manager = False
         proxy = False
 
@@ -543,12 +542,7 @@ class Configuration:
         localhostaddrs = "127.0.0.1", "::1"
 
         for n in nodestore.values():
-            if n.type == "logger":
-                if logger:
-                    raise ConfigurationError("only one logger can be defined")
-                logger = True
-
-            elif n.type == "manager":
+            if n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined in node config")
                 manager = True

@@ -114,7 +114,7 @@ class Controller:
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
-        logger = []
+        loggers = []
         manager = []
         proxies = []
         workers = []
@@ -129,11 +129,11 @@ class Controller:
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
-                logger += [n]
+                loggers += [n]
 
-        # Start nodes. Do it in the order logger, manager, proxies, workers.
-        if logger:
-            self._start_nodes(logger, results)
+        # Start nodes. Do it in the order loggers, manager, proxies, workers.
+        if loggers:
+            self._start_nodes(loggers, results)
 
             if not results.ok:
                 for n in (manager + proxies + workers):
@@ -414,7 +414,7 @@ class Controller:
     # Stop Bro processes on nodes.
     def stop(self, nodes):
         results = cmdresult.CmdResult()
-        logger = []
+        loggers = []
         manager = []
         proxies = []
         workers = []
@@ -429,16 +429,16 @@ class Controller:
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
-                logger += [n]
+                loggers += [n]
 
 
-        # Stop nodes. Do it in the order workers, proxies, manager, logger
+        # Stop nodes. Do it in the order workers, proxies, manager, loggers
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager + logger):
+                for n in (proxies + manager + loggers):
                     results.set_node_fail(n)
                 return results
 
@@ -446,7 +446,7 @@ class Controller:
             self._stop_nodes(proxies, results)
 
             if not results.ok:
-                for n in (manager + logger):
+                for n in (manager + loggers):
                     results.set_node_fail(n)
                 return results
 
@@ -454,12 +454,12 @@ class Controller:
             self._stop_nodes(manager, results)
 
             if not results.ok:
-                for n in logger:
+                for n in loggers:
                     results.set_node_fail(n)
                 return results
 
-        if logger:
-            self._stop_nodes(logger, results)
+        if loggers:
+            self._stop_nodes(loggers, results)
 
         return results
 
@@ -1332,7 +1332,7 @@ class Controller:
 
         loggers = self.config.nodes("loggers")
         if loggers:
-            # Currently, only one logger node is allowed.
+            # Just use the first logger that is defined.
             node_cwd = loggers[0].cwd()
         else:
             node_cwd = manager.cwd()
