@@ -291,7 +291,7 @@ class Configuration:
             elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=node_mod.sortnode)
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")

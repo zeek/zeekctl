@@ -105,7 +105,7 @@ class Node:
     _keys = {"type": 1, "host": 1, "interface": 1, "aux_scripts": 1,
              "brobase": 1, "ether": 1, "zone_id": 1,
              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
-             "pin_cpus": 1, "env_vars": 1}
+             "pin_cpus": 1, "env_vars": 1, "count": 1}
 
 
     def __init__(self, config, name):
@@ -246,3 +246,13 @@ class Node:
         # We need to convert to lowercase here because Python's configparser
         # automatically converts keys to lowercase when reading node.cfg.
         Node._keys[kw.lower()] = 1
+
+
+# Sorting key function for a list of nodes.
+def sortnode(n):
+    return n.type, n.count
+
+# Sorting key function for a list of tuples, where the first tuple element is
+# a node.
+def sorttuple(t):
+    return t[0].type, t[0].count

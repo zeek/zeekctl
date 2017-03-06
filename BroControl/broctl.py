@@ -12,6 +12,7 @@ from BroControl import execute
 from BroControl import control
 from BroControl import version
 from BroControl import pluginreg
+from BroControl import node as node_mod
 from BroControl.exceptions import *
 
 class TermUI:
@@ -139,7 +140,7 @@ class BroCtl(object):
                 nodes = newlist
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=node_mod.sortnode)
 
         if get_hosts:
             hosts = {}

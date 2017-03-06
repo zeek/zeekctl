@@ -1,5 +1,7 @@
 # Store results of a broctl command.
 
+from BroControl import node as node_mod
+
 class CmdResult:
     """Class representing the result of a broctl command."""
 
@@ -43,7 +45,7 @@ class CmdResult:
         results = self.nodes
 
         if not self._sorted:
-            results.sort(key=lambda n: (n[0].type, n[0].name))
+            results.sort(key=node_mod.sorttuple)
             self._sorted = True
 
         return results
@@ -59,7 +61,7 @@ class CmdResult:
             results.append((node, success, output))
 
         if not self._sorted:
-            results.sort(key=lambda n: (n[0].type, n[0].name))
+            results.sort(key=node_mod.sorttuple)
             self._sorted = True
 
         return results
