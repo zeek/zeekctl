@@ -70,6 +70,11 @@ done
 
 pid=`cat .pid`
 
+if [ -z "$pid" ]; then
+    echo "start: failed to get PID of Bro" >&2
+    exit 1
+fi
+
 # The "run-bro" script uses a value of -1 to indicate an error occurred.
 if [ "$pid" = "-1" ]; then
     exit 1
