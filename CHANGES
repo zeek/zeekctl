@@ -1,3 +1,21 @@
+
+1.5-12 | 2017-03-13 13:43:43 -0400
+
+  * Prevent the broctl check and scripts commands from hanging
+
+    Changed the check-config script to run bro with the "-a" option
+    when running "broctl check" in the hope that this will prevent broctl
+    from hanging for any reason.  The "-a" option prevents bro
+    from running any bro script statements (previously, "check" would
+    cause bro to exit after handling the bro_init event) but should still
+    be able to identify the same bro scripting errors as before.
+
+    Also, to prevent "broctl scripts" from hanging, set the value
+    of "exit_only_after_terminate" to False (in broctl/check.bro) in case
+    another script sets the value of that constant to True.  Since "bro -a"
+    prevents bro from creating the loaded_scripts.log file, that option
+    cannot be used with "broctl scripts". (Daniel Thayer)
+
 1.5-9 | 2017-01-26 16:38:17 -0500
 
   * Fix some failing tests

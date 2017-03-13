@@ -30,7 +30,7 @@ optlist, args = getopt.getopt(sys.argv[1:], "abde:f:ghi:p:r:s:t:vw:x:z:CFG:H:I:L
 for (opt, val) in optlist:
     if opt == "-v":
         # broctl doesn't care which version bro reports
-        print("bro version 2.5-1", file=sys.stderr)
+        print("bro version 2.5-1")
         sys.exit(0)
     elif opt == "-N":
         print("Bro::ARP - ARP Parsing (built-in)")
