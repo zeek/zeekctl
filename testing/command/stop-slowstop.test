@@ -36,8 +36,6 @@ broctl status > status2.out 2>&1
 
 # verify that the log file was archived
 test ! -e $BROCTL_INSTALL_PREFIX/spool/bro/loaded_scripts.log || ret=1
-# wait for archive-log to finish in the background
-sleep 5
 find $BROCTL_INSTALL_PREFIX/logs/2* -type f > find.out
 grep -q loaded_scripts find.out || ret=1
 

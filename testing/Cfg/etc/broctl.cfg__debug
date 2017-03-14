@@ -2,3 +2,4 @@
 sendmail=
 tracesummary=
 debug=1
+stopwait=1
