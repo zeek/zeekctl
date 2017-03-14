@@ -3,4 +3,5 @@
 sendmail=
 tracesummary=
 debug=1
+stopwait=1
 pfringclusterid=21
