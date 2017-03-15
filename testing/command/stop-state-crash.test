@@ -25,4 +25,4 @@ broctl stop
 sqlite3 $BROCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
 
 # Produce "key = value" output from the database dump.
-awk -F \' '{ if (NF == 5) { print $2, "=", $4 } }' dump.out > out
+awk -F \' '{ if (NF == 5) { print $2, "=", $4 } }' dump.out | sort > out

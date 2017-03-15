@@ -1,7 +1,7 @@
-configchksum = "a6d6e5d7bfe958ebc91dc97e2128eb92"
+bro-port = 47760
+broversion = "2.5-106"
+configchksum = "1eb6bce0153209acedd006a884e7fb9c"
 confignodechksum = "754db8253db4ebd1262762895fefd5ca"
 cronenabled = true
-broversion = "2.5-beta-67"
-bro-port = 47760
-hash-broctlcfg = "a1ccd732731385c068fce5e4b90674c4"
+hash-broctlcfg = "b54c0a4b82e1aa3e209019859b49d02f"
 hash-nodecfg = "3091f532e7c0e58879c1fc637f40d8e1"

@@ -58,7 +58,7 @@ class CronTasks:
                     if not error:
                         for proc in vals:
                             parentchild = proc["proc"]
-                            for (val, key) in proc.items():
+                            for (val, key) in sorted(proc.items()):
                                 if val != "proc":
                                     out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
                     else:
@@ -69,7 +69,7 @@ class CronTasks:
                         out.write("%s %s error error %s\n" % (t, node, vals))
                         continue
 
-                    for (key, val) in vals.items():
+                    for (key, val) in sorted(vals.items()):
                         out.write("%s %s interface %s %s\n" % (t, node, key, val))
 
                         if key == "pkts" and str(node) != "$total":

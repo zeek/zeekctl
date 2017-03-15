@@ -311,13 +311,15 @@ class Controller:
                 results += [(node, False)]
 
         while True:
-            # Determine  whether process is still running. We need to do this
+            # Determine whether process is still running. We need to do this
             # before we get the state to avoid a race condition.
-            running = self._isrunning(todo.values(), setcrashed=False)
+
+            nodelist = sorted(todo.values(), key=node_mod.sortnode)
+            running = self._isrunning(nodelist, setcrashed=False)
 
             # Check nodes' .status file
             cmds = []
-            for node in todo.values():
+            for node in nodelist:
                 cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
@@ -532,7 +534,8 @@ class Controller:
 
         while True:
 
-            running = self._isrunning(todo.values(), setcrashed=False)
+            nodelist = sorted(todo.values(), key=node_mod.sortnode)
+            running = self._isrunning(nodelist, setcrashed=False)
 
             for (node, isrunning) in running:
                 if node.name in todo and not isrunning:
