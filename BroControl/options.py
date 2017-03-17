@@ -83,9 +83,11 @@ options = [
            "True to enable sending mail when broctl cron notices the availability of a host in the cluster to have changed."),
     Option("MailArchiveLogFail", 1, "bool", Option.USER, False,
            "True to enable sending mail when log files fail to be archived."),
+    Option("MailReceivingPackets", 1, "bool", Option.USER, False,
+           "True to enable sending mail when broctl cron notices that an interface is not receiving any packets (note that such mail is not sent when StatsLogEnable is 0)."),
 
     Option("MinDiskSpace", 5, "int", Option.USER, False,
-           "Percentage of minimum disk space available before warning is mailed."),
+           "Minimum percentage of disk space available before broctl cron mails a warning.  If this value is 0, then no warning will be sent."),
     Option("StatsLogEnable", 1, "bool", Option.USER, False,
            "True to enable BroControl to write statistics to the stats.log file."),
     Option("StatsLogExpireInterval", 0, "int", Option.USER, False,

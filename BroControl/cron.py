@@ -78,11 +78,12 @@ class CronTasks:
 
                             last = self.config.get_state(tag, default=-1.0)
 
-                            if val == 0.0 and last != 0.0:
-                                self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
+                            if self.config.mailreceivingpackets:
+                                if val == 0.0 and last != 0.0:
+                                    self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
-                            if val != 0.0 and last == 0.0:
-                                self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
+                                if val != 0.0 and last == 0.0:
+                                    self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
                             self.config.set_state(tag, val)
 

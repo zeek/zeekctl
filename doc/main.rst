@@ -355,9 +355,9 @@ value of the SendMail_ option is an empty string):
 1. When the "broctl cron" command runs it performs various tasks (such as
    checking available disk space, expiring old log files, etc.).  If
    any problems occur, a mail will be sent containing a list of those issues.
-   Setting ``MailHostUpDown=0`` will disable some of this output.  Also,
-   setting ``StatsLogEnable=0`` will disable some functionality involving
-   writing to stats.log (which could also help reduce the amount of mail sent).
+   In order to reduce the amount of mail, the value of the following options
+   can be changed (see documentation of each option):  MailHostUpDown_,
+   MinDiskSpace_, StatsLogEnable_, MailReceivingPackets_.
 
 2. When BroControl tries to start or stop (via any of these commands:
    start, stop, restart, deploy, or cron) a node that has crashed,
