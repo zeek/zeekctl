@@ -2,9 +2,8 @@
 #
 # Bro postprocessor script to archive log files.
 #
-# archive-log [-c] <file_name> <base_name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+# archive-log <file_name> <base_name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
 #
-#  -c:  if "-c" is specified, then don't delete log file after it's archived
 #  file_name:  the rotated log filename that we need to archive (the filename
 #              format doesn't really matter).
 #  base_name:  base name of the log (e.g. "conn").
@@ -34,12 +33,6 @@ trap sig_handler 0
 now=`date +%y-%m-%d_%H.%M.%S`
 
 . `dirname $0`/broctl-config.sh
-
-delete=1
-if [ "$1" = "-c" ]; then
-    delete=0
-    shift
-fi
 
 # Make sure all parameters are supplied.
 if [ $# -ne 6 ]; then
@@ -124,7 +117,7 @@ if [ "${compresslogs}" = "1" -a "$writer" = "ascii" -a -n "${compresscmd}" ]; th
     dest="$dest.${compressextension}"
     nice ${compresscmd} < $file_name > "$dest"
 else
-    nice cp $file_name "$dest"
+    nice mv $file_name "$dest"
 fi
 
 if [ $? -ne 0 ]; then
@@ -132,19 +125,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "$delete" = "1" ]; then
-    rm -f $file_name
-else
-    # Rename the file to indicate that it has been archived
-    new_fname=$file_name"_archived"
-    mv $file_name $new_fname
-
-    find_cmd=find
-    if [ "${os}" = "OpenBSD" ]; then
-        # OpenBSD find command doesn't have "-delete" option.
-        find_cmd=gfind
-    fi
-    # Only delete if too large (>100MB).
-    $find_cmd $new_fname -size +104857600c -delete
-fi
-
+rm -f $file_name

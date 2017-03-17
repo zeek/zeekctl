@@ -1,0 +1,41 @@
+# Test that the broctl cron command does not expire crash dirs by default.
+# Also test that broctl cron expires crash dirs when the crashexpireinterval
+# option is set to a non-zero value.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__no_email
+EOF
+
+set -e
+
+testcrashdir1=$BROCTL_INSTALL_PREFIX/spool/tmp/post-terminate-test-1-crash
+testcrashdir2=$BROCTL_INSTALL_PREFIX/spool/tmp/post-terminate-test-2-crash
+broctl install
+
+# Verify that crash expire is off by default
+broctl config | sed 's/ //g' | grep '^crashexpireinterval=0$'
+
+# Create a crash dir with a recent timestamp and one with very old timestamp
+mkdir ${testcrashdir1}
+mkdir ${testcrashdir2}
+touch -t 201210311030 ${testcrashdir1}
+
+broctl cron
+
+# Verify that broctl cron did not remove any crash dirs
+test -e ${testcrashdir1}
+test -e ${testcrashdir2}
+
+# Update the configuration by changing the "crashexpireinterval" option
+echo "crashexpireinterval=30" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+broctl install
+
+broctl cron
+
+# Verify that broctl cron removed the old crash dir (and not the recent one)
+test ! -e ${testcrashdir1}
+test -e ${testcrashdir2}

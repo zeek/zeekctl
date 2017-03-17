@@ -129,6 +129,19 @@ class CronTasks:
         if not success:
             self.ui.error("expire-logs failed\n%s" % output)
 
+    def expire_crash(self):
+        if self.config.crashexpireinterval == 0:
+            return
+
+        expirecrash = os.path.join(self.config.scriptsdir, "expire-crash")
+        cmds = [(node, expirecrash, []) for node in self.config.hosts()]
+
+        for (node, success, output) in self.executor.run_cmds(cmds):
+            if not success:
+                self.ui.error("expire-crash failed for node %s\n" % node)
+                for line in output:
+                    self.ui.error(line)
+
     def check_hosts(self):
         for host, status in self.executor.host_status():
             tag = "alive-%s" % host

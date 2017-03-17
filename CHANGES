@@ -1,3 +1,37 @@
+1.5-21 | 2017-03-17 13:18:58 -0400
+
+  * Fix some tests to make sure the test tmp dir is removed (Daniel Thayer)
+
+  * Fix crash-diag script to get Bro version from stdout
+
+    Due to a recent change, "bro -v" now outputs the version to stdout.
+
+    Also fixed crash-diag to not show stderr output (if any) from
+    running "bro -N". (Daniel Thayer)
+
+  * Add a new broctl option to expire crash directories
+
+    Added functionality to broctl cron to remove crash directories older than
+    the number of days specified in the new option CrashExpireInterval (the
+    default value is 0, which means crash directories never expire). (Daniel Thayer)
+
+  * Add a test for expiration of crash directories (Daniel Thayer)
+
+  * Reduce disk usage of post-terminate and crash-diag
+
+    Changed post-terminate and crash-diag so that the bro binary is no
+    copied when there is no core file.  Also, the crash report is now
+    saved to disk only when crash-diag is run from post-terminate (i.e.,
+    the "diag" command will no longer create any files). (Daniel Thayer)
+
+  * Change archive-log to use "mv" instead of "cp"
+
+    Changed archive-log to "mv" (rather than "cp") logs when not using gzip
+    for better efficiency.  This means we will not have the logs in the tmp
+    directory when Bro crashes, so the scripts have now been simplified to
+    never attempt to keep a copy of archived logs in the tmp dir (previously,
+    logs >100MB were always being deleted anyway). (Daniel Thayer)
+
 
 1.5-12 | 2017-03-13 13:43:43 -0400
 

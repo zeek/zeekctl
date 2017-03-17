@@ -1,10 +1,18 @@
 #! /usr/bin/env bash
 #
-# crash-diag <dir>
+# crash-diag [-c] <dir>
 #
+# -c: if this flag is present, then this script was run from post-terminate
+#     because Bro crashed.
 # <dir> is the node's working directory.
 
 . `dirname $0`/broctl-config.sh
+
+postterminate=0
+if [ "$1" = "-c" ]; then
+    postterminate=1
+    shift
+fi
 
 if [ $# -ne 1 ]; then
     echo "crash-diag: wrong number of arguments"
@@ -21,10 +29,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-(
-
-echo
-
 # Identify all core files in the current directory.  We assume these
 # filenames contain the word "core" and do not end in ".log".
 core=`ls -t *core* 2> /dev/null | grep -v '\.log$'`
@@ -38,6 +42,27 @@ elif [ "${os}" = "OpenBSD" ]; then
     gdb_name="egdb"
 fi
 gdb_path=`which $gdb_name 2> /dev/null`
+
+if [ -f "${bro}" ];then
+    bro_version=`"${bro}" -v 2>/dev/null | awk '{print $3}'`
+else
+    bro_version="(file not found: ${bro})"
+fi
+
+# If Bro crashed and if a core file exists, then copy the Bro binary so that
+# the user has the ability to generate a backtrace in the future.
+if [ $postterminate -eq 1 ]; then
+    if [ -n "$core" ]; then
+        mybro=${bro}
+        if [ "${havenfs}" = "1" ]; then
+            mybro=${tmpexecdir}/`basename "${bro}"`
+        fi
+        cp "$mybro" .
+    fi
+fi
+
+# Output the crash report.
+echo
 
 # If no backtrace can be generated, then output an explanation.  However,
 # skip this if there's no .status file, because in that case Bro didn't run.
@@ -71,12 +96,6 @@ if [ -f .status ]; then
     fi
 fi
 
-if [ -f "${bro}" ];then
-    bro_version=`"${bro}" -v 2>/dev/null | awk '{print $3}'`
-else
-    bro_version="(file not found: ${bro})"
-fi
-
 echo Bro $bro_version
 uname -sr
 echo
@@ -89,7 +108,7 @@ else
     echo "$broplugins"
 fi
 
-# Output a backtrace, if possible.
+# Output a backtrace if we have a debugger and a core file.
 if [ -n "$gdb_path" ]; then
     if [ -n "$core" ]; then
         if [ "$gdb_name" = "gdb" ] || [ "$gdb_name" = "egdb" ]; then
@@ -145,7 +164,3 @@ show_log .status 10
 show_log prof.log 10
 show_log packet_filter.log 30
 show_log loaded_scripts.log -1
-
-) >.crash-diag.out
-
-cat .crash-diag.out
