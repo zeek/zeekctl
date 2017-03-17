@@ -139,8 +139,8 @@ class CronTasks:
         for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
                 self.ui.error("expire-crash failed for node %s\n" % node)
-                for line in output:
-                    self.ui.error(line)
+                if output:
+                    self.ui.error(output)
 
     def check_hosts(self):
         for host, status in self.executor.host_status():
