@@ -6,6 +6,7 @@ import sys
 import logging
 
 from BroControl import util
+from BroControl import lock
 from BroControl import config
 from BroControl import cmdresult
 from BroControl import execute
@@ -91,7 +92,6 @@ class BroCtl(object):
         self.config.initPostPlugins()
         self.plugins.initPlugins(self.ui)
         self.plugins.initPluginCmds()
-        util.enable_signals()
         os.chdir(self.config.brobase)
         if self.config.get_state("cronenabled") is None:
             self.config.set_state("cronenabled", True)
@@ -165,14 +165,14 @@ class BroCtl(object):
         return nodes
 
     def lock(self, showwait=True):
-        lockstatus = util.lock(self.ui, showwait)
+        lockstatus = lock.lock(self.ui, showwait)
         if not lockstatus:
             raise LockError("Unable to get lock")
 
         self.config.read_state()
 
     def unlock(self):
-        util.unlock(self.ui)
+        lock.unlock(self.ui)
 
     def node_names(self):
         return [ n.name for n in self.config.nodes() ]

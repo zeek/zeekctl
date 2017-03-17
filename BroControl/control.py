@@ -101,6 +101,10 @@ def _make_env_params(node, returnlist=False):
     return " ".join(envs)
 
 
+def fmttime(t):
+    return time.strftime(config.Config.timefmt, time.localtime(float(t)))
+
+
 class Controller:
     def __init__(self, config, ui, executor, pluginregistry):
         self.config = config
@@ -612,7 +616,7 @@ class Controller:
             statuses[n.name] = val
 
             try:
-                val = util.fmttime(out[1]) if (success and out[1]) else "???"
+                val = fmttime(out[1]) if (success and out[1]) else "???"
             except (IndexError, ValueError):
                 val = "???"
 
