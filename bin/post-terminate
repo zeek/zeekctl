@@ -89,14 +89,10 @@ if [ -d .state ]; then
 fi
 
 if [ $crash -eq 1 ]; then
-    # output the crash report
-    "${scriptsdir}"/crash-diag "$postdir"
-
-    mybro=${bro}
-    if [ "${havenfs}" = "1" ]; then
-        mybro=${tmpexecdir}/`basename "${bro}"`
-    fi
-    cp "$mybro" .
+    # Output the crash report and save it to disk in case the user doesn't
+    # receive the email.
+    "${scriptsdir}"/crash-diag -c "$postdir" > .crash-diag.out
+    cat .crash-diag.out
 fi
 
 if [ ! -f .startup ]; then
@@ -208,7 +204,7 @@ archivelogs()
         fi
 
         # Note: here we assume the log writer type is "ascii"
-        "${scriptsdir}"/archive-log $flags $logname $basename $strt $end 1 ascii
+        "${scriptsdir}"/archive-log $logname $basename $strt $end 1 ascii
         if [ $? -ne 0 ]; then
             failed=1
         fi
@@ -220,15 +216,7 @@ postterminate()
     # Wait until all running archive-log processes have terminated.
     wait_for_archivelog
 
-    flags=
     failed=0
-
-    if [ $crash -eq 1 ]; then
-        # If Bro crashed, then we tell archive-log to not delete the log file
-        # (however, in this case the log file will be renamed to indicate it
-        # was successfully archived).
-        flags=-c
-    fi
 
     # Archive all logs.
     archivelogs

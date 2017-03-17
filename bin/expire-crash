@@ -1,0 +1,28 @@
+#! /usr/bin/env bash
+#
+# Delete crash directories older than ${crashexpireinterval} days.
+
+. `dirname $0`/broctl-config.sh
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+expire_crash()
+{
+    if [ ${crashexpireinterval} -eq 0 ]; then
+        return 0
+    fi
+
+    cd "${tmpdir}"
+    if [ $? -ne 0 ]; then
+        echo "expire-crash: cannot chdir to directory: ${tmpdir}"
+        return 1
+    fi
+
+    # Remove old crash directories.
+    find . -name "post-terminate-*-crash" -type d -maxdepth 1 -mtime +${crashexpireinterval} -exec rm -rf {} ';'
+}
+
+if [ -n "${crashexpireinterval}" ]; then
+    expire_crash
+fi
