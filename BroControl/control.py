@@ -714,11 +714,11 @@ class Controller:
             if not install.make_layout(cwd, self.ui, True):
                 results.ok = False
                 return results
-            if not install.make_local_networks(cwd, self.ui, True):
+            if not install.make_local_networks(cwd, self.ui):
                 results.ok = False
                 return results
 
-            if not install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry, True):
+            if not install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry):
                 results.ok = False
                 return results
 
@@ -1257,7 +1257,7 @@ class Controller:
 
         env = _make_env_params(node)
 
-        bro_args =  " ".join(bro_options + _make_bro_params(node, False))
+        bro_args = " ".join(bro_options + _make_bro_params(node, False))
         bro_args += " broctl/process-trace"
 
         if bro_scripts:

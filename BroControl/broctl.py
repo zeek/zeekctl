@@ -5,7 +5,6 @@ import os
 import sys
 import logging
 
-from BroControl import util
 from BroControl import lock
 from BroControl import config
 from BroControl import cmdresult
@@ -248,7 +247,6 @@ class BroCtl(object):
         nodes = self.node_args(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
-        args = " ".join([ str(n) for n in nodes ])
 
         self.ui.info("stopping ...")
         results = self.stop(node_list)

@@ -5,7 +5,6 @@ import sys
 import os
 import logging
 
-from BroControl import config
 from BroControl import cmdresult
 from BroControl import node
 from BroControl import plugin

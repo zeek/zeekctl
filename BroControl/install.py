@@ -241,7 +241,7 @@ def read_networks(fname):
 
 
 # Create Bro script which contains a list of local networks.
-def make_local_networks(path, cmdout, silent=False):
+def make_local_networks(path, cmdout):
 
     netcfg = config.Config.localnetscfg
 
@@ -274,7 +274,7 @@ def make_local_networks(path, cmdout, silent=False):
     return True
 
 
-def make_broctl_config_policy(path, cmdout, plugin_reg, silent=False):
+def make_broctl_config_policy(path, cmdout, plugin_reg):
     manager = config.Config.manager()
 
     ostr = '# Automatically generated. Do not edit.\n'
