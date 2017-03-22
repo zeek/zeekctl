@@ -206,7 +206,7 @@ class Executor:
     #
     # Return value is same as run_cmds.
     def run_shell_cmds(self, cmdlines):
-        cmds = [ (node, cmdline, []) for node, cmdline in cmdlines ]
+        cmds = [(node, cmdline, []) for node, cmdline in cmdlines]
 
         return self.run_cmds(cmds, shell=True)
 

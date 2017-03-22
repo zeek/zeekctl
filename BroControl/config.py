@@ -362,7 +362,7 @@ class Configuration:
         # Make sure list is at least as long as number of worker processes.
         cpulen = len(cpulist)
         if numprocs > cpulen:
-            cpulist = [ cpulist[i % cpulen] for i in range(numprocs) ]
+            cpulist = [cpulist[i % cpulen] for i in range(numprocs)]
 
         return cpulist
 
@@ -438,7 +438,7 @@ class Configuration:
         except socket.gaierror as e:
             raise ConfigurationError("hostname lookup failed for '%s' in node config [%s]" % (node.host, e.args[1]))
 
-        addrs = [ addr[4][0] for addr in addrinfo ]
+        addrs = [addr[4][0] for addr in addrinfo]
 
         # By default, just use the first IP addr in the list.
         addr_str = addrs[0]
@@ -585,7 +585,7 @@ class Configuration:
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
-        type_converters = { "bool": self._to_bool, "int": int, "string": str }
+        type_converters = {"bool": self._to_bool, "int": int, "string": str}
         config = {}
 
         with open(fname, "r") as f:

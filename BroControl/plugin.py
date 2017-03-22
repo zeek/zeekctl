@@ -181,7 +181,7 @@ class Plugin(object):
         of configured nodes."""
 
         if not nodes:
-            return [ n for n in config.Config.hosts() ]
+            return [n for n in config.Config.hosts()]
 
         result = []
         h = {}
@@ -914,8 +914,8 @@ class Plugin(object):
 
 
     def _registerOptions(self):
-        type_converters = { "bool": self._to_bool, "int": int, "string": str }
-        pytype = { "bool": bool, "int": int, "string": str }
+        type_converters = {"bool": self._to_bool, "int": int, "string": str}
+        pytype = {"bool": bool, "int": int, "string": str}
 
         for (name, ty, default, descr) in self.options():
             if not name:
