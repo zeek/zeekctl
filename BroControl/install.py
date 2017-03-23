@@ -183,19 +183,13 @@ def make_layout(path, cmdout, silent=False):
 
         # Manager definition
         ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), mylogger.next_logger())
-        for s in workers:
-            ostr += '"%s"' % s.name
-            if s != workers[-1]:
-                ostr += ", "
+        ostr += ", ".join('"%s"' % s.name for s in workers)
         ostr += ")],\n"
 
         # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
             ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), mylogger.logger, manager.name)
-            for s in workers:
-                ostr += '"%s"' % s.name
-                if s != workers[-1]:
-                    ostr += ", "
+            ostr += ", ".join('"%s"' % s.name for s in workers)
             ostr += ")],\n"
 
         # Workers definition
