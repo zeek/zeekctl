@@ -89,7 +89,7 @@ if [ "${havenfs}" = "1" ]; then
     fi
 fi
 
-if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
+if [ -n "${pin_command}" ] && [ $pin_cpu -ge 0 ]; then
     # Test if the specified pin_command works, and if not, then output a more
     # useful error message (but let the pin_command output its own error
     # message just in case there's some other reason for the failure).
