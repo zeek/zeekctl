@@ -1372,6 +1372,9 @@ class Controller:
         # Expire old log files.
         tasks.expire_logs()
 
+        # Expire old crash directories.
+        tasks.expire_crash()
+
         # Update the HTTP stats directory.
         tasks.update_http_stats()
 

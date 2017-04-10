@@ -40,8 +40,8 @@ LogExpireInterval = 0
 StatsLogEnable = 1
 
 # Number of days that entries in the stats.log file are kept.  Entries older
-# than this many days will be removed upon running "broctl cron".  A value of 0
-# means that entries never expire.
+# than this many days will be removed by "broctl cron".  A value of 0 means
+# that entries never expire.
 StatsLogExpireInterval = 0
 
 ###############################################
@@ -51,6 +51,11 @@ StatsLogExpireInterval = 0
 # is shown.  If set to 0, then broctl status will not collect or show the peer
 # information (and the command will run faster).
 StatusCmdShowAll = 0
+
+# Number of days that crash directories are kept.  Crash directories older
+# than this many days will be removed by "broctl cron".  A value of 0 means
+# that crash directories never expire.
+CrashExpireInterval = 0
 
 # Site-specific policy script to load. Bro will look for this in
 # $PREFIX/share/bro/site. A default local.bro comes preinstalled

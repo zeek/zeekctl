@@ -1,3 +1,55 @@
+1.5-21 | 2017-03-17 13:18:58 -0400
+
+  * Fix some tests to make sure the test tmp dir is removed (Daniel Thayer)
+
+  * Fix crash-diag script to get Bro version from stdout
+
+    Due to a recent change, "bro -v" now outputs the version to stdout.
+
+    Also fixed crash-diag to not show stderr output (if any) from
+    running "bro -N". (Daniel Thayer)
+
+  * Add a new broctl option to expire crash directories
+
+    Added functionality to broctl cron to remove crash directories older than
+    the number of days specified in the new option CrashExpireInterval (the
+    default value is 0, which means crash directories never expire). (Daniel Thayer)
+
+  * Add a test for expiration of crash directories (Daniel Thayer)
+
+  * Reduce disk usage of post-terminate and crash-diag
+
+    Changed post-terminate and crash-diag so that the bro binary is no
+    copied when there is no core file.  Also, the crash report is now
+    saved to disk only when crash-diag is run from post-terminate (i.e.,
+    the "diag" command will no longer create any files). (Daniel Thayer)
+
+  * Change archive-log to use "mv" instead of "cp"
+
+    Changed archive-log to "mv" (rather than "cp") logs when not using gzip
+    for better efficiency.  This means we will not have the logs in the tmp
+    directory when Bro crashes, so the scripts have now been simplified to
+    never attempt to keep a copy of archived logs in the tmp dir (previously,
+    logs >100MB were always being deleted anyway). (Daniel Thayer)
+
+
+1.5-12 | 2017-03-13 13:43:43 -0400
+
+  * Prevent the broctl check and scripts commands from hanging
+
+    Changed the check-config script to run bro with the "-a" option
+    when running "broctl check" in the hope that this will prevent broctl
+    from hanging for any reason.  The "-a" option prevents bro
+    from running any bro script statements (previously, "check" would
+    cause bro to exit after handling the bro_init event) but should still
+    be able to identify the same bro scripting errors as before.
+
+    Also, to prevent "broctl scripts" from hanging, set the value
+    of "exit_only_after_terminate" to False (in broctl/check.bro) in case
+    another script sets the value of that constant to True.  Since "bro -a"
+    prevents bro from creating the loaded_scripts.log file, that option
+    cannot be used with "broctl scripts". (Daniel Thayer)
+
 1.5-9 | 2017-01-26 16:38:17 -0500
 
   * Fix some failing tests

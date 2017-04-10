@@ -2,6 +2,7 @@
 sendmail=
 tracesummary=
 debug=1
+stopwait=1
 
 env_vars=myVar1 = "some Global;val",MyVar2=anotherglobal, myvar5=$PATH:/mydir
 

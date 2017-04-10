@@ -2,3 +2,4 @@
 sendmail=
 tracesummary=
 statuscmdshowall=1
+stopwait=1

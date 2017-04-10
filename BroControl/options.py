@@ -90,6 +90,8 @@ options = [
            "True to enable BroControl to write statistics to the stats.log file."),
     Option("StatsLogExpireInterval", 0, "int", Option.USER, False,
            "Number of days entries in the stats.log file are kept (zero means never expire)."),
+    Option("CrashExpireInterval", 0, "int", Option.USER, False,
+           "Number of days that crash directories are kept (zero means never expire)."),
     Option("LogExpireInterval", "0", "string", Option.USER, False,
            "Time interval that archived log files are kept (a value of 0 means log files never expire).  The time interval is expressed as an integer followed by one of the following time units: day, hr, min."),
     Option("KeepLogs", "", "string", Option.USER, False,

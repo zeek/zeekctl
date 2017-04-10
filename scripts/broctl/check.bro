@@ -17,3 +17,6 @@ event bro_init() &priority=-10
     Log::remove_filter(LoadedScripts::LOG, "default");
     Log::add_filter(LoadedScripts::LOG, f);
     }
+
+# This prevents "broctl scripts" from hanging.
+redef exit_only_after_terminate = F;
