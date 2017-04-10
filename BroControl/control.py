@@ -923,7 +923,7 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and node.type != "manager" and node.type != "standalone":
+                if key == "logdir" and node.type not in ("manager", "standalone"):
                     # Don't need this on the workers/datanodes.
                     continue
 

@@ -284,7 +284,7 @@ class Configuration:
 
         for n in self.nodestore.values():
             if nodetype:
-                if n.type == nodetype:
+                if nodetype == n.type:
                     nodes += [n]
 
             elif tag == n.name or not tag:
