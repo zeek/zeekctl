@@ -5,13 +5,14 @@ import os
 import sys
 import logging
 
-from BroControl import util
+from BroControl import lock
 from BroControl import config
 from BroControl import cmdresult
 from BroControl import execute
 from BroControl import control
 from BroControl import version
 from BroControl import pluginreg
+from BroControl import node as node_mod
 from BroControl.exceptions import *
 
 class TermUI:
@@ -90,7 +91,6 @@ class BroCtl(object):
         self.config.initPostPlugins()
         self.plugins.initPlugins(self.ui)
         self.plugins.initPluginCmds()
-        util.enable_signals()
         os.chdir(self.config.brobase)
         if self.config.get_state("cronenabled") is None:
             self.config.set_state("cronenabled", True)
@@ -139,7 +139,7 @@ class BroCtl(object):
                 nodes = newlist
 
         # Sort the list so that it doesn't depend on initial order of arguments
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=node_mod.sortnode)
 
         if get_hosts:
             hosts = {}
@@ -164,14 +164,14 @@ class BroCtl(object):
         return nodes
 
     def lock(self, showwait=True):
-        lockstatus = util.lock(self.ui, showwait)
+        lockstatus = lock.lock(self.ui, showwait)
         if not lockstatus:
             raise LockError("Unable to get lock")
 
         self.config.read_state()
 
     def unlock(self):
-        util.unlock(self.ui)
+        lock.unlock(self.ui)
 
     def node_names(self):
         return [ n.name for n in self.config.nodes() ]
@@ -247,7 +247,6 @@ class BroCtl(object):
         nodes = self.node_args(node_list)
 
         nodes = self.plugins.cmdPreWithNodes("restart", nodes, clean)
-        args = " ".join([ str(n) for n in nodes ])
 
         self.ui.info("stopping ...")
         results = self.stop(node_list)
@@ -293,7 +292,7 @@ class BroCtl(object):
             for (node, success, output) in results.get_node_output():
                 if not success:
                     self.ui.info("%s scripts failed." % node)
-                    self.ui.info("\n".join(output))
+                    self.ui.info(output)
 
             return results
 

@@ -28,9 +28,7 @@ def print_commands(cls):
             args = ""
 
         if args:
-            args = (" *%s*" % args)
-        else:
-            args = ""
+            args = " *%s*" % args
 
         output = ""
         for line in docstr.splitlines():

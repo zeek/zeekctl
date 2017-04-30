@@ -20,7 +20,7 @@
 # Create a PID file so that the post-terminate script knows when we're done.
 echo $$ > .archive-log.running.$$.tmp
 
-function sig_handler
+sig_handler()
 {
     rm .archive-log.running.$$.tmp
 }
@@ -113,7 +113,7 @@ if [ ! -f $file_name ]; then
     exit 0
 fi
 
-if [ "${compresslogs}" = "1" -a "$writer" = "ascii" -a -n "${compresscmd}" ]; then
+if [ "${compresslogs}" = "1" ] && [ "$writer" = "ascii" ] && [ -n "${compresscmd}" ]; then
     dest="$dest.${compressextension}"
     nice ${compresscmd} < $file_name > "$dest"
 else

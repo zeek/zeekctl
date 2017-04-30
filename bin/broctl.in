@@ -243,10 +243,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for data in results.get_node_data():
             node_info = data[2]
-            if node_info["pid"]:
-                mycolfmt = colfmt
-            else:
-                mycolfmt = colfmtstopped
+            mycolfmt = colfmt if node_info["pid"] else colfmtstopped
 
             self.info(mycolfmt.format(typewidth, hostwidth, **node_info))
 
@@ -342,8 +339,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, output) in results.get_node_output():
             self.info("[%s]" % node)
-            for line in output:
-                self.info(line)
+            self.info(output)
 
         return results.ok
 
@@ -381,7 +377,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.broctl.setcronenabled(False)
             elif args == "?":
                 results = self.broctl.cronenabled()
-                self.info("cron " + (results and "enabled" or "disabled"))
+                cron_state = "enabled" if results else "disabled"
+                self.info("cron " + cron_state)
             else:
                 self.error("invalid cron argument")
                 return False
@@ -417,7 +414,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.info("%s scripts are ok." % node)
             else:
                 self.info("%s scripts failed." % node)
-                self.info("\n".join(output))
+                self.info(output)
 
         return results.ok
 
@@ -565,11 +562,12 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         results = self.broctl.print_id(id=id, node_list=args)
 
-        for (node, success, args) in results.get_node_output():
+        for (node, success, msg) in results.get_node_output():
             if success:
-                self.info("%12s   %s = %s" % (node, args[0], args[1]))
+                out = msg.splitlines()
+                self.info("%12s   %s = %s" % (node, out[0], out[1]))
             else:
-                self.info("%12s   <error: %s>" % (node, args))
+                self.info("%12s   <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -616,8 +614,9 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         results = self.broctl.execute(cmd=args)
 
         for node, success, output in results.get_node_output():
-            out = "\n> ".join(output)
-            self.info("[%s/%s] %s\n> %s" % (node.name, node.host, (success and " " or "error"), out))
+            out = "\n> ".join(output.splitlines())
+            error = " " if success else "error"
+            self.info("[%s/%s] %s\n> %s" % (node.name, node.host, error, out))
 
         return results.ok
 
@@ -662,11 +661,11 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         for (node, success, output) in results.get_node_output():
             if success:
                 self.info("%s scripts are ok." % node)
-                for line in output:
+                for line in output.splitlines():
                     self.info("  %s" % line)
             else:
                 self.info("%s scripts failed." % node)
-                self.info("\n".join(output))
+                self.info(output)
 
         return results.ok
 
@@ -689,7 +688,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         """
         options = []
         scripts = []
-        trace = None
+        trace = ""
         in_scripts = False
 
         for arg in args.split():
@@ -756,7 +755,7 @@ BroControl Version %s
   cleanup [--all] [<nodes>]        - Delete working dirs (flush state) on nodes
   config                           - Print broctl configuration
   cron [--no-watch]                - Perform jobs intended to run from cron
-  cron enable|disable|?            - Enable/disable \"cron\" jobs
+  cron enable|disable|?            - Enable/disable "cron" jobs
   deploy                           - Check, install, and restart
   df [<nodes>]                     - Print nodes' current disk usage
   diag [<nodes>]                   - Output diagnostics for nodes
@@ -783,6 +782,10 @@ def main():
     if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
         from BroControl import printdoc
         printdoc.print_broctl_docs(sys.argv[2], BroCtlCmdLoop)
+        return 0
+
+    if len(sys.argv) == 2 and sys.argv[1] == "--version":
+        print("BroControl version %s" % version.VERSION)
         return 0
 
     interactive = True
@@ -815,7 +818,7 @@ def main():
 
     else:
         try:
-            cmdsuccess = loop.cmdloop("\nWelcome to BroControl %s\n\nType \"help\" for help.\n" % version.VERSION)
+            cmdsuccess = loop.cmdloop('\nWelcome to BroControl %s\n\nType "help" for help.\n' % version.VERSION)
         except BroControlError as e:
             cmdsuccess = False
             print("Error: %s" % e, file=sys.stderr)

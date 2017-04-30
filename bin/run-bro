@@ -9,7 +9,7 @@
 
 child=""
 
-function sig_handler
+sig_handler()
 {
     if [ -n "$child" ]; then
         kill -15 $child 2>/dev/null
@@ -34,7 +34,7 @@ shift
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 use_installed_policies=1
-source "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-bro-path
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -89,7 +89,7 @@ if [ "${havenfs}" = "1" ]; then
     fi
 fi
 
-if [ -n "${pin_command}" -a $pin_cpu -ge 0 ]; then
+if [ -n "${pin_command}" ] && [ $pin_cpu -ge 0 ]; then
     # Test if the specified pin_command works, and if not, then output a more
     # useful error message (but let the pin_command output its own error
     # message just in case there's some other reason for the failure).

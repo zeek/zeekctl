@@ -36,6 +36,7 @@ RUNNING [net_run]
 
 ==== loaded_scripts.log
 Node manager: This is the contents of loaded_scripts.log for broctl testing.
+
 [proxy-1]
 
 No core file found and gdb is not installed.  It is recommended to
@@ -74,6 +75,7 @@ RUNNING [net_run]
 
 ==== loaded_scripts.log
 Node proxy-1: This is the contents of loaded_scripts.log for broctl testing.
+
 [worker-1]
 
 No core file found and gdb is not installed.  It is recommended to
@@ -112,6 +114,7 @@ RUNNING [net_run]
 
 ==== loaded_scripts.log
 Node worker-1: This is the contents of loaded_scripts.log for broctl testing.
+
 [worker-2]
 
 No core file found and gdb is not installed.  It is recommended to
@@ -150,3 +153,4 @@ RUNNING [net_run]
 
 ==== loaded_scripts.log
 Node worker-2: This is the contents of loaded_scripts.log for broctl testing.
+

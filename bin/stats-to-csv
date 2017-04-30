@@ -3,7 +3,7 @@
 # stats-to-csv <stats.log> <meta.dat> <wwwdir>
 #
 # Reads information from stats log and outputs csv files
-# <wwwdir>/<node>.<type>.csv.
+# <wwwdir>/<node>.<datatype>.csv.
 # If any of these files already exists, we append (without writing the header
 # line again).
 
@@ -11,28 +11,40 @@ from __future__ import print_function
 import os
 import sys
 
-Workers = set()
-Proxies = set()
 
+# Read the meta.dat file, and extract node names from it.
 def readNodes(meta):
+    manager = ""
+    proxies = set()
+    workers = set()
+
     with open(meta, "r") as f:
         for line in f:
             m = line.split()
+            if not m:
+                continue
 
             if m[0] == "node":
                 if len(m) < 3:
                     print("error: 'node' line in meta.dat is missing some fields")
-                    sys.exit(1)
+                    continue
 
                 if m[2] == "worker":
-                    Workers.add(m[1])
+                    workers.add(m[1])
 
                 if m[2] == "proxy":
-                    Workers.add(m[1])
+                    proxies.add(m[1])
 
-def processNode(stats, wwwdir, node, iface, use_cflow=False):
+                if m[2] == "manager":
+                    manager = m[1]
 
-    print(node, "...")
+    return (manager, proxies, workers)
+
+
+# Read the stats.log file, and create/append CSV files for one node.
+def processNode(stats, wwwdir, node, iface):
+
+    print("%s ..." % node)
 
     def openFile(tag, columns):
 
@@ -46,35 +58,26 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
 
         return f
 
-    if use_cflow:
-        cflow = openFile("in", ["MBits/sec"])
-    else:
-        cpu = openFile("cpu", ["CPU"])
-        mem = openFile("mem", ["Memory"])
-        if iface:
-            iface_mbps = openFile("mbps", ["MBits/sec"])
-            iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
+    cpu = openFile("cpu", ["CPU"])
+    mem = openFile("mem", ["Memory"])
+    if iface:
+        iface_mbps = openFile("mbps", ["MBits/sec"])
+        iface_pkts = openFile("pkts", ["TCP", "UDP", "ICMP", "Other"])
 
     def printEntry(t, entry):
         if not entry:
             return
 
-        if use_cflow:
-            e = entry.get("in-mbps")
-            if e:
-                cflow.write("%s,%s\n" % (t, e))
-            return
-
         try:
             val = int(entry["parent-cpu"]) + int(entry["child-cpu"])
             cpu.write("%s,%s\n" % (t, val))
-        except KeyError:
+        except (ValueError, KeyError):
             pass
 
         try:
             val = int(entry["parent-vsize"]) + int(entry["child-vsize"])
             mem.write("%s,%s\n" % (t, val))
-        except KeyError:
+        except (ValueError, KeyError):
             pass
 
         if iface:
@@ -101,7 +104,7 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
 
             if len(m) < 2:
                 print("error: line in stats.log has less than two fields")
-                sys.exit(1)
+                continue
 
             if m[1] != node:
                 continue
@@ -110,8 +113,9 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
                 t = float(m[0])
             except ValueError:
                 print("error: line in stats.log has no timestamp")
-                sys.exit(1)
+                continue
 
+            # Write all available data for one time value.
             if t != first and first >= 0:
                 printEntry(t, entry)
                 entry = {}
@@ -124,40 +128,46 @@ def processNode(stats, wwwdir, node, iface, use_cflow=False):
     if first >= 0:
         printEntry(t, entry)
 
-    if use_cflow:
-        cflow.close()
-    else:
-        cpu.close()
-        mem.close()
-        if iface:
-            iface_mbps.close()
-            iface_pkts.close()
+    cpu.close()
+    mem.close()
+    if iface:
+        iface_mbps.close()
+        iface_pkts.close()
 
-if len(sys.argv) != 4:
-    print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
-    sys.exit(1)
+def main():
+    if len(sys.argv) != 4:
+        print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
+        sys.exit(1)
 
-stats = sys.argv[1]
-meta = sys.argv[2]
-wwwdir = sys.argv[3]
+    stats = sys.argv[1]
+    meta = sys.argv[2]
+    wwwdir = sys.argv[3]
 
-try:
-    os.mkdir(wwwdir)
-except OSError:
-    pass
+    try:
+        if not os.path.exists(wwwdir):
+            os.mkdir(wwwdir)
+    except OSError as err:
+        print("Error: failed to create directory: %s" % err)
+        sys.exit(1)
 
-readNodes(meta)
+    try:
+        manager, proxies, workers = readNodes(meta)
+    except IOError as err:
+        print("Error: failed to read file: %s" % err)
+        sys.exit(1)
 
-try:
-    for w in Workers:
-        processNode(stats, wwwdir, w, True)
+    try:
+        for w in workers:
+            processNode(stats, wwwdir, w, True)
 
-    for p in Proxies:
-        processNode(stats, wwwdir, p, False)
+        for p in proxies:
+            processNode(stats, wwwdir, p, False)
 
-    processNode(stats, wwwdir, "manager", False)
-    processNode(stats, wwwdir, "cflow", False, use_cflow=True)
-except IOError as err:
-    print("Error: %s" % err)
-    sys.exit(1)
+        if manager:
+            processNode(stats, wwwdir, manager, False)
+    except IOError as err:
+        print("Error: %s" % err)
+        sys.exit(1)
 
+if __name__ == "__main__":
+    main()

@@ -58,7 +58,7 @@ class CronTasks:
                     if not error:
                         for proc in vals:
                             parentchild = proc["proc"]
-                            for (val, key) in proc.items():
+                            for (val, key) in sorted(proc.items()):
                                 if val != "proc":
                                     out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
                     else:
@@ -69,7 +69,7 @@ class CronTasks:
                         out.write("%s %s error error %s\n" % (t, node, vals))
                         continue
 
-                    for (key, val) in vals.items():
+                    for (key, val) in sorted(vals.items()):
                         out.write("%s %s interface %s %s\n" % (t, node, key, val))
 
                         if key == "pkts" and str(node) != "$total":
@@ -78,11 +78,12 @@ class CronTasks:
 
                             last = self.config.get_state(tag, default=-1.0)
 
-                            if val == 0.0 and last != 0.0:
-                                self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
+                            if self.config.mailreceivingpackets:
+                                if val == 0.0 and last != 0.0:
+                                    self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
 
-                            if val != 0.0 and last == 0.0:
-                                self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
+                                if val != 0.0 and last == 0.0:
+                                    self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
 
                             self.config.set_state(tag, val)
 
@@ -105,8 +106,8 @@ class CronTasks:
                     # so we don't need to output the error message.
                     continue
 
-                fs = df[0]
-                perc = df[4]
+                fs = df.fs
+                perc = df.percent
                 key = ("disk-space-%s%s" % (host, fs.replace("/", "-")))
 
                 if perc > 100 - minspace:
@@ -123,12 +124,10 @@ class CronTasks:
         if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
             return
 
-        (success, output) = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+        success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
         if not success:
-            self.ui.error("expire-logs failed\n")
-            for line in output:
-                self.ui.error(line)
+            self.ui.error("expire-logs failed\n%s" % output)
 
     def expire_crash(self):
         if self.config.crashexpireinterval == 0:
@@ -140,8 +139,8 @@ class CronTasks:
         for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
                 self.ui.error("expire-crash failed for node %s\n" % node)
-                for line in output:
-                    self.ui.error(line)
+                if output:
+                    self.ui.error(output)
 
     def check_hosts(self):
         for host, status in self.executor.host_status():
@@ -153,7 +152,8 @@ class CronTasks:
                 if alive != previous:
                     self.pluginregistry.hostStatusChanged(host, alive)
                     if self.config.mailhostupdown:
-                        self.ui.info("host %s %s" % (host, alive and "up" or "down"))
+                        up_or_down = "up" if alive else "down"
+                        self.ui.info("host %s %s" % (host, up_or_down))
 
             self.config.set_state(tag, alive)
 
@@ -180,14 +180,18 @@ class CronTasks:
                 meta.write("time %s\n" % time.asctime())
                 meta.write("version %s\n" % self.config.version)
 
-                try:
-                    meta.write("os %s\n" % execute.run_localcmd("uname -a")[1][0])
-                except IndexError:
+                success, output = execute.run_localcmd("uname -a")
+                if success and output:
+                    # Note: "output" already has a '\n'
+                    meta.write("os %s" % output)
+                else:
                     meta.write("os <error>\n")
 
-                try:
-                    meta.write("host %s\n" % execute.run_localcmd("hostname")[1][0])
-                except IndexError:
+                success, output = execute.run_localcmd("hostname")
+                if success and output:
+                    # Note: "output" already has a '\n'
+                    meta.write("host %s" % output)
+                else:
                     meta.write("host <error>\n")
 
         except IOError as err:
@@ -205,13 +209,11 @@ class CronTasks:
         # Update the WWW data
         statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
 
-        (success, output) = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        success, output = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
         if success:
             shutil.copy(metadat, wwwdir)
         else:
-            self.ui.error("error reported by stats-to-csv")
-            for line in output:
-                self.ui.error(line)
+            self.ui.error("error reported by stats-to-csv\n%s" % output)
 
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
@@ -229,7 +231,6 @@ class CronTasks:
     def run_cron_cmd(self):
         # Run external command if we have one.
         if self.config.croncmd:
-            (success, output) = execute.run_localcmd(self.config.croncmd)
+            success, output = execute.run_localcmd(self.config.croncmd)
             if not success:
                 self.ui.error("failure running croncmd: %s" % self.config.croncmd)
-

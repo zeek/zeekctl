@@ -15,7 +15,7 @@ EOF
 replaceprefix etc/broctl.cfg
 
 # Check if a low disk space email was received.  Return 0 if yes, and 1 if no.
-function check_email() {
+check_email() {
     email=$BROCTL_INSTALL_PREFIX/sendmail.out
     test ! -e $email && return 1
 

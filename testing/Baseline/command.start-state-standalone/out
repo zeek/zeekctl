@@ -1,10 +1,10 @@
-configchksum = "b8fd46ee483ca1de3a9e6b05ffa8acdd"
+bro-expect-running = true
+bro-host = "localhost"
+bro-pid = 73780
+bro-port = 47760
+broversion = "2.5-1"
+configchksum = "28326c2bf70bb7eb2b0854f8ed6b720d"
 confignodechksum = "754db8253db4ebd1262762895fefd5ca"
 cronenabled = true
-broversion = "2.5-1"
-bro-port = 47760
-hash-broctlcfg = "8344aa634b5356c261f9a720b6c0e7b5"
+hash-broctlcfg = "a80c1263a5f85aad19ff9f9259917949"
 hash-nodecfg = "3091f532e7c0e58879c1fc637f40d8e1"
-bro-expect-running = true
-bro-pid = 45282
-bro-host = "localhost"

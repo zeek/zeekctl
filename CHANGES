@@ -1,3 +1,91 @@
+1.5-49 | 2017-04-30 12:53:44 -0400
+
+New features:
+
+  * Allow more than one logger to be defined (Daniel Thayer)
+
+    This adds initial support for running a Bro cluster with multiple logger
+    proesses.  This is primarily useful for installations that use something
+    like Kafka or Logstash to aggregate logs.
+
+  * Add a "--version" option to show broctl version (Daniel Thayer)
+
+  * Add a new option to turn off some broctl cron mail (Daniel Thayer)
+
+    Added a new option MailReceivingPackets which controls whether or not
+    broctl cron sends a warning that no packets were seen on an interface
+    (note that broctl cron does not send these warnings when StatsLogEnable
+    is 0).  Such emails can be annoying when monitoring a low-bandwidth
+    network.
+
+Code cleanups and bug fixes:
+
+  * A large number of unused code removal and code cleanups (Daniel Thayer)
+
+  * Fix some failing tests when using python 3 (Daniel Thayer)
+
+    Added sorting in a few places in broctl so that stats.log is sorted
+    (which also helps with readability).  Also added sorting of the
+    output file in some tests that dump the state database.
+
+  * Check for existence of Bro PID in the "start" script (Daniel Thayer)
+
+    Before sending the Bro PID back to broctl, the "start" script now fails
+    with an error message if the PID string is empty.
+
+    This might help address BIT-1773.
+
+  * Fix sorting of node names (Daniel Thayer)
+
+    Fixed the sorting of node names.  Previously, a node such as "worker-10"
+    would be output after "worker-1" and before "worker-2".  Now the order
+    of names is based on the "count" node attribute instead of the name,
+    so the order of nodes (of a specific type) in node.cfg can affect the
+    order shown in the output.
+
+  * Fix the stats-to-csv script (Daniel Thayer)
+
+    Fixed a couple of bugs (proxies were being handled like workers, and
+    it was assuming that the manager is named "manager").  Also added
+    more error checking, and removed unused code.  Also changed the script
+    so that it ignores bad lines in stats.log and meta.dat (but still
+    prints an error message) instead of exiting.
+
+  * Fix a few more potential cases of IndexError (Daniel Thayer)
+
+  * Fix usage of run_cmds() (Daniel Thayer)
+
+    Fixed several places in the code where an IndexError could potentially
+    be raised if no output is returned from run_cmds(), and also fixed
+    a few potential ValueError cases if broctl gets unexpected output from
+    a command.
+
+    Fixed a few other uses of run_cmds() to check and handle the output
+    string correctly.
+
+    Also, instead of returning the output as a list of strings, now it returns
+    the output as a string.
+
+    Also fixed a few cases where the ps plugin didn't return non-zero when an
+    error occurred.
+
+  * Fix shell scripts to no longer depend on bash (Daniel Thayer)
+
+  * Fix usage of run_localcmd() (Daniel Thayer)
+
+    Fixed several places in the code where an IndexError could potentially
+    be raised if no output is returned from run_localcmd().
+
+    Fixed a few other uses of run_localcmd() to check and handle the outpu
+    string correctly.
+
+    Also simplified the function to no longer take an optional argumen
+    "donotcaptureoutput", and removed some debug output that didn't really
+    show useful info.  Also, instead of returning the output as a list of
+    strings, now it returns the output as a string.
+
+    These changes make the code slightly simpler and more robust.
+
 1.5-21 | 2017-03-17 13:18:58 -0400
 
   * Fix some tests to make sure the test tmp dir is removed (Daniel Thayer)

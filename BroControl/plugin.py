@@ -156,10 +156,17 @@ class Plugin(object):
     def execute(self, node, cmd):
         """Executes a command on the host for the given *node* of type
         `Node`_. Returns a tuple ``(success, output)`` in which ``success`` is
-        True if the command ran successfully and ``output`` is the combined
-        stdout/stderr output."""
-        result = self.executor.run_shell_cmds([(node, cmd)])[0]
-        return (result[1], result[2])
+        True if the command ran successfully, and ``output`` is a string
+        which contains the combined stdout/stderr output."""
+
+        resultlist = self.executor.run_shell_cmds([(node, cmd)])
+        if resultlist:
+            _, success, output = resultlist[0]
+        else:
+            success = False
+            output = ""
+
+        return (success, output)
 
     @doc.api
     def nodes(self):
@@ -174,7 +181,7 @@ class Plugin(object):
         of configured nodes."""
 
         if not nodes:
-            return [ n for n in config.Config.hosts() ]
+            return [n for n in config.Config.hosts()]
 
         result = []
         h = {}
@@ -192,8 +199,10 @@ class Plugin(object):
         is a list of tuples ``(node, cmd)``, in which the *node* is a `Node`_
         instance and *cmd* is a string with the command to execute for it. The
         method returns a list of tuples ``(node, success, output)``, in which
-        ``success`` is True if the command ran successfully and ``output`` is
-        the combined stdout/stderr output for the corresponding ``node``."""
+        ``success`` is True if the command ran successfully, and ``output`` is
+        a string containing the combined stdout/stderr output for the
+        corresponding ``node``."""
+
         return self.executor.run_shell_cmds(cmds)
 
     ### Methods that must be overridden by plugins.
@@ -905,8 +914,8 @@ class Plugin(object):
 
 
     def _registerOptions(self):
-        type_converters = { "bool": self._to_bool, "int": int, "string": str }
-        pytype = { "bool": bool, "int": int, "string": str }
+        type_converters = {"bool": self._to_bool, "int": int, "string": str}
+        pytype = {"bool": bool, "int": int, "string": str}
 
         for (name, ty, default, descr) in self.options():
             if not name:
@@ -918,6 +927,10 @@ class Plugin(object):
                 continue
 
             optname = "%s.%s" % (self.prefix(), name)
+
+            if ty not in pytype:
+                self.error('plugin option %s has invalid type "%s"' % (optname, ty))
+                continue
 
             if not isinstance(default, pytype[ty]):
                 self.error("plugin option %s default value must be type %s" % (optname, ty))

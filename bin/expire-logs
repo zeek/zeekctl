@@ -5,7 +5,7 @@
 
 . `dirname $0`/broctl-config.sh
 
-function expire_statslog()
+expire_statslog()
 {
     if [ ${statslogexpireinterval} -eq 0 ]; then
         return 0
@@ -43,7 +43,7 @@ function expire_statslog()
     fi
 }
 
-function expire_log()
+expire_log()
 {
     if [ ${logexpireminutes} -eq 0 ]; then
         return 0

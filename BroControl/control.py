@@ -101,6 +101,10 @@ def _make_env_params(node, returnlist=False):
     return " ".join(envs)
 
 
+def fmttime(t):
+    return time.strftime(config.Config.timefmt, time.localtime(float(t)))
+
+
 class Controller:
     def __init__(self, config, ui, executor, pluginregistry):
         self.config = config
@@ -114,7 +118,7 @@ class Controller:
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
-        logger = []
+        loggers = []
         manager = []
         proxies = []
         workers = []
@@ -129,11 +133,11 @@ class Controller:
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
-                logger += [n]
+                loggers += [n]
 
-        # Start nodes. Do it in the order logger, manager, proxies, workers.
-        if logger:
-            self._start_nodes(logger, results)
+        # Start nodes. Do it in the order loggers, manager, proxies, workers.
+        if loggers:
+            self._start_nodes(loggers, results)
 
             if not results.ok:
                 for n in (manager + proxies + workers):
@@ -210,13 +214,26 @@ class Controller:
         # might contain quoted arguments.
         for (node, success, output) in self.executor.run_helper(cmds, shell=True):
             if success:
+                if not output:
+                    self.ui.error("failed to get PID of %s" % node.name)
+                    results.set_node_fail(node)
+                    continue
+
+                pidstr = output.splitlines()[0]
+                try:
+                    pid = int(pidstr)
+                except ValueError:
+                    self.ui.error("invalid PID for %s: %s" % (node.name, pidstr))
+                    results.set_node_fail(node)
+                    continue
+
                 nodes += [node]
-                node.setPID(int(output[0]))
+                node.setPID(pid)
             else:
-                self.ui.error("cannot start %s; check output of \"diag\"" % node.name)
+                self.ui.error('cannot start %s; check output of "diag"' % node.name)
                 results.set_node_fail(node)
                 if output:
-                    self.ui.error("\n".join(output))
+                    self.ui.error(output)
 
         # Check whether processes did indeed start up.
         hanging = []
@@ -235,7 +252,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.info("%s terminated immediately after starting; check output with \"diag\"" % node.name)
+                self.ui.info('%s terminated immediately after starting; check output with "diag"' % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
@@ -268,7 +285,7 @@ class Controller:
                 self.ui.error("failed to run check-pid on node %s" % node.name)
                 continue
 
-            running = output[0] == "running" and True or False
+            running = output.strip() == "running"
 
             results += [(node, running)]
 
@@ -298,20 +315,22 @@ class Controller:
                 results += [(node, False)]
 
         while True:
-            # Determine  whether process is still running. We need to do this
+            # Determine whether process is still running. We need to do this
             # before we get the state to avoid a race condition.
-            running = self._isrunning(todo.values(), setcrashed=False)
+
+            nodelist = sorted(todo.values(), key=node_mod.sortnode)
+            running = self._isrunning(nodelist, setcrashed=False)
 
             # Check nodes' .status file
             cmds = []
-            for node in todo.values():
+            for node in nodelist:
                 cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
 
             for (node, success, output) in self.executor.run_helper(cmds):
-                if not success or not output[0]:
+                if not success or not output:
                     continue
 
-                fields = output[0].split()
+                fields = output.split()
                 if len(fields) == 2:
                     if status in fields[0]:
                         # Status reached. Cool.
@@ -372,7 +391,7 @@ class Controller:
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if success:
-                crashreport = "\n".join(output)
+                crashreport = output
 
                 # Note: here it is assumed that the crash-diag script outputs
                 # this string only when there's a backtrace.
@@ -385,9 +404,9 @@ class Controller:
 
                 msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg)
                 if not msuccess:
-                    self.ui.error("error occurred while trying to send mail: %s" % moutput[0])
+                    self.ui.error("error occurred while trying to send mail: %s" % moutput)
             else:
-                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
+                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
 
             node.clearCrashed()
 
@@ -396,13 +415,12 @@ class Controller:
             return True, ""
 
         cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
-        (success, output) = execute.run_localcmd(cmd, "", body)
-        return success, output
+        return execute.run_localcmd(cmd, inputtext=body)
 
     # Stop Bro processes on nodes.
     def stop(self, nodes):
         results = cmdresult.CmdResult()
-        logger = []
+        loggers = []
         manager = []
         proxies = []
         workers = []
@@ -417,16 +435,16 @@ class Controller:
             elif n.type in ("manager", "standalone"):
                 manager += [n]
             elif n.type == "logger":
-                logger += [n]
+                loggers += [n]
 
 
-        # Stop nodes. Do it in the order workers, proxies, manager, logger
+        # Stop nodes. Do it in the order workers, proxies, manager, loggers
         # (the reverse of "start").
         if workers:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager + logger):
+                for n in (proxies + manager + loggers):
                     results.set_node_fail(n)
                 return results
 
@@ -434,7 +452,7 @@ class Controller:
             self._stop_nodes(proxies, results)
 
             if not results.ok:
-                for n in (manager + logger):
+                for n in (manager + loggers):
                     results.set_node_fail(n)
                 return results
 
@@ -442,12 +460,12 @@ class Controller:
             self._stop_nodes(manager, results)
 
             if not results.ok:
-                for n in logger:
+                for n in loggers:
                     results.set_node_fail(n)
                 return results
 
-        if logger:
-            self._stop_nodes(logger, results)
+        if loggers:
+            self._stop_nodes(loggers, results)
 
         return results
 
@@ -482,7 +500,7 @@ class Controller:
             if not success:
                 # Give up on this node.  Most likely either we cannot connect
                 # to the host, or we don't have permission to kill the process.
-                self.ui.error("unable to stop %s: %s" % (node.name, output[0]))
+                self.ui.error("unable to stop %s: %s" % (node.name, output))
                 results.set_node_fail(node)
                 running.remove(node)
 
@@ -520,7 +538,8 @@ class Controller:
 
         while True:
 
-            running = self._isrunning(todo.values(), setcrashed=False)
+            nodelist = sorted(todo.values(), key=node_mod.sortnode)
+            running = self._isrunning(nodelist, setcrashed=False)
 
             for (node, isrunning) in running:
                 if node.name in todo and not isrunning:
@@ -550,9 +569,7 @@ class Controller:
         cmds = []
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
         for node in cleanup:
-            crashflag = ""
-            if node in kill:
-                crashflag = "killed"
+            crashflag = "killed" if node in kill else ""
 
             cmds += [(node, postterminate, [node.type, node.cwd(), crashflag])]
 
@@ -560,7 +577,7 @@ class Controller:
             if success:
                 self._log_action(node, "stopped")
             else:
-                self.ui.error("error running post-terminate for %s: %s" % (node.name, output[0]))
+                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
                 self._log_action(node, "stopped (failed)")
 
             node.clearPID()
@@ -585,27 +602,40 @@ class Controller:
         for (node, isrunning) in nodestatus:
             if isrunning:
                 running += [node]
-                cmds += [(node, "first-line", ["%s/.startup" % node.cwd(), "%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", ["%s/.status" % node.cwd(), "%s/.startup" % node.cwd()])]
 
-        startups = {}
         statuses = {}
+        startups = {}
         for (n, success, output) in self.executor.run_helper(cmds):
-            startups[n.name] = (success and output[0]) and util.fmttime(output[0]) or "???"
-            statuses[n.name] = (success and output[1]) and output[1].split()[0].lower() or "???"
+            out = output.splitlines()
+            try:
+                val = out[0].split()[0].lower() if (success and out[0]) else "???"
+            except IndexError:
+                val = "???"
+
+            statuses[n.name] = val
+
+            try:
+                val = fmttime(out[1]) if (success and out[1]) else "???"
+            except (IndexError, ValueError):
+                val = "???"
+
+            startups[n.name] = val
 
         if showall:
             self.ui.info("Getting peer status ...")
             peers = {}
             nodes = [n for n in running if statuses[n.name] == "running"]
             for (node, success, args) in self._query_peerstatus(nodes):
-                if success:
+                if success and args:
                     peers[node.name] = []
                     for f in args[0].split():
-                        keyval = f.split("=")
-                        if len(keyval) > 1:
-                            (key, val) = keyval
-                            if key == "peer" and val != "":
-                                peers[node.name] += [val]
+                        if not f.startswith("peer="):
+                            continue
+                        # Get everything after the '=' character.
+                        val = f[5:]
+                        if val:
+                            peers[node.name] += [val]
 
         for (node, isrunning) in nodestatus:
             node_info = {
@@ -678,17 +708,17 @@ class Controller:
 
             env = _make_env_params(node)
 
-            installed_policies = installed and "1" or "0"
-            print_scripts = list_scripts and "1" or "0"
+            installed_policies = "1" if installed else "0"
+            print_scripts = "1" if list_scripts else "0"
 
             if not install.make_layout(cwd, self.ui, True):
                 results.ok = False
                 return results
-            if not install.make_local_networks(cwd, self.ui, True):
+            if not install.make_local_networks(cwd, self.ui):
                 results.ok = False
                 return results
 
-            if not install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry, True):
+            if not install.make_broctl_config_policy(cwd, self.ui, self.pluginregistry):
                 results.ok = False
                 return results
 
@@ -782,7 +812,7 @@ class Controller:
 
         for (node, success, output) in self.executor.run_cmds(cmds):
             if not success:
-                errmsgs = ["error running crash-diag for %s" % node.name]
+                errmsgs = "error running crash-diag for %s\n" % node.name
                 errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
@@ -843,9 +873,14 @@ class Controller:
         for (node, success, output) in outputs:
             netif = self._capstats_interface(node)
 
+            if output:
+                # Grab the first output line, because we might log this to
+                # stats.log later.
+                outputline = output.splitlines()[0]
+
             if not success:
                 if output:
-                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, output[0]))]
+                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, outputline))]
                 else:
                     results += [(node, netif, False, "%s: cannot execute capstats" % node.name)]
                 continue
@@ -854,17 +889,17 @@ class Controller:
                 results += [(node, netif, False, "%s: no capstats output" % node.name)]
                 continue
 
-            fields = output[0].split()[1:]
+            fields = outputline.split()[1:]
 
             if not fields:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
                 continue
 
             vals = {}
 
             try:
                 for field in fields:
-                    (key, val) = field.split("=")
+                    key, val = field.split("=")
                     val = float(val)
                     vals[key] = val
 
@@ -873,10 +908,11 @@ class Controller:
                     else:
                         totals[key] = val
 
-                results += [(node, netif, True, vals)]
-
             except ValueError:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, output[0]))]
+                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
+                continue
+
+            results += [(node, netif, True, vals)]
 
         # Add pseudo-node for totals
         if len(nodes) > 1:
@@ -926,12 +962,10 @@ class Controller:
         for (tag, success, output) in res:
             node = self.config.nodes(tag=tag)[0]
             if not success:
-                self.ui.info("failed to update %s: %s" % (tag, "\n".join(output)))
+                self.ui.info("failed to update %s: %s" % (tag, output))
                 results.set_node_fail(node)
             else:
-                out = ""
-                if output:
-                    out = output[0]
+                out = output.splitlines()[0] if output else ""
                 self.ui.info("%s: %s" % (tag, out))
                 results.set_node_success(node)
 
@@ -964,32 +998,30 @@ class Controller:
 
                 cmds += [(node, "df", [path])]
 
-        res = self.executor.run_helper(cmds)
-
-        for (node, success, output) in res:
+        for (node, success, output) in self.executor.run_helper(cmds):
             if success:
-                if not output:
-                    df[node.name]["FAIL"] = "no output from df helper"
+                fields = output.split()
+                if len(fields) != 4:
+                    df[node.name]["FAIL"] = "wrong number of fields from df helper"
                     continue
-
-                fields = output[0].split()
 
                 fs = fields[0]
                 # Ignore NFS mounted volumes.
                 if ":" in fs:
                     continue
 
-                total = float(fields[1])
-                used = float(fields[2])
-                avail = float(fields[3])
+                try:
+                    total = float(fields[1])
+                    used = float(fields[2])
+                    avail = float(fields[3])
+                except ValueError as err:
+                    df[node.name]["FAIL"] = "bad output from df helper: %s" % err
+                    continue
+
                 perc = used * 100.0 / (used + avail)
                 df[node.name][fs] = DiskInfo(fs, total, used, avail, perc)
             else:
-                if output:
-                    msg = output[0]
-                else:
-                    msg = "unknown failure"
-                df[node.name]["FAIL"] = msg
+                df[node.name]["FAIL"] = output if output else "no output"
 
         for node in nodes:
             success = "FAIL" not in df[node.name]
@@ -1028,12 +1060,17 @@ class Controller:
             return results
 
         for (node, success, output) in self.executor.run_helper(cmds):
-
             if not success:
                 results += [(node, "cannot get child pids", [{}])]
                 continue
 
-            pids[node.name] += [int(line) for line in output]
+            try:
+                pidlist = [int(line) for line in output.splitlines()]
+            except ValueError as err:
+                results += [(node, "invalid PID: %s" % err, [{}])]
+                continue
+
+            pids[node.name] += pidlist
 
         cmds = []
         hosts = {}
@@ -1055,7 +1092,7 @@ class Controller:
 
         res = {}
         for (node, success, output) in self.executor.run_helper(cmds):
-            res[node.host] = (success, output)
+            res[node.host] = success, output
 
         # Gather results for all the nodes that are running
         for node in nodes:
@@ -1065,14 +1102,23 @@ class Controller:
             success, output = res[node.host]
 
             if not success:
-                results += [(node, "top failed: %s" % output[0], [{}])]
+                # The error msg gets written to stats.log, so we only want
+                # the first line.
+                errmsg = output.splitlines()[0] if output else ""
+                results += [(node, "top failed: %s" % errmsg, [{}])]
                 continue
 
             if not output:
                 results += [(node, "no output from top", [{}])]
                 continue
 
-            procs = [line.split() for line in output if int(line.split()[0]) in pids[node.name]]
+            # Get a list of all bro processes, where each bro process is a list
+            # of fields from the "top" helper.
+            try:
+                procs = [line.split() for line in output.splitlines() if int(line.split()[0]) in pids[node.name]]
+            except (IndexError, ValueError) as err:
+                results += [(node, "bad output from top: %s" % err, [{}])]
+                continue
 
             if not procs:
                 # It's possible that the process is no longer there.
@@ -1086,13 +1132,13 @@ class Controller:
                     d = {}
                     pid = int(p[0])
                     d["pid"] = pid
-                    d["proc"] = (pid == parents[node.name] and "parent" or "child")
+                    d["proc"] = "parent" if pid == parents[node.name] else "child"
                     d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
                     d["rss"] = int(float(p[2]))
                     d["cpu"] = p[3]
                     d["cmd"] = " ".join(p[4:])
                     vals += [d]
-            except ValueError as err:
+            except (IndexError, ValueError) as err:
                 results += [(node, "unexpected top output: %s" % err, [{}])]
                 continue
 
@@ -1134,7 +1180,11 @@ class Controller:
 
         results = cmdresult.CmdResult()
         for (node, success, args) in events.send_events_parallel(eventlist):
-            results.set_node_output(node, success, args)
+            if success:
+                out = "\n".join(args)
+            else:
+                out = args
+            results.set_node_output(node, success, out)
 
         return results
 
@@ -1153,7 +1203,10 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_peerstatus(nodes):
             if success:
-                out = args[0]
+                if args:
+                    out = args[0]
+                else:
+                    out = ""
             else:
                 out = args
             results.set_node_output(node, success, out)
@@ -1164,7 +1217,10 @@ class Controller:
         results = cmdresult.CmdResult()
         for (node, success, args) in self._query_netstats(nodes):
             if success:
-                out = args[0].strip()
+                if args:
+                    out = args[0].strip()
+                else:
+                    out = ""
             else:
                 out = args
             results.set_node_output(node, success, out)
@@ -1179,11 +1235,7 @@ class Controller:
             results.ok = False
             return results
 
-        if self.config.standalone:
-            tag = "standalone"
-        else:
-            tag = "workers"
-
+        tag = "standalone" if self.config.standalone else "workers"
         node = self.config.nodes(tag=tag)[0]
 
         cwd = os.path.join(self.config.tmpdir, "testing")
@@ -1205,7 +1257,7 @@ class Controller:
 
         env = _make_env_params(node)
 
-        bro_args =  " ".join(bro_options + _make_bro_params(node, False))
+        bro_args = " ".join(bro_options + _make_bro_params(node, False))
         bro_args += " broctl/process-trace"
 
         if bro_scripts:
@@ -1215,15 +1267,13 @@ class Controller:
 
         self.ui.info(cmd)
 
-        (success, output) = execute.run_localcmd(cmd, env, donotcaptureoutput=True)
+        success, output = execute.run_localcmd(cmd, env=env)
 
         if not success:
             results.ok = False
 
-        for line in output:
-            self.ui.info(line)
-
-        self.ui.info("\n### Bro output in %s" % cwd)
+        self.ui.info(output)
+        self.ui.info("### Bro output in %s" % cwd)
 
         return results
 
@@ -1289,7 +1339,7 @@ class Controller:
 
         loggers = self.config.nodes("loggers")
         if loggers:
-            # Currently, only one logger node is allowed.
+            # Just use the first logger that is defined.
             node_cwd = loggers[0].cwd()
         else:
             node_cwd = manager.cwd()
@@ -1311,7 +1361,7 @@ class Controller:
             return results
 
         # Make sure we install each remote host only once.
-        nodes = self.config.hosts(nolocal=True)
+        nodes = self.config.hosts(exclude_local=True)
 
         # If there are no remote hosts, then we're done.
         if not nodes:
@@ -1343,7 +1393,8 @@ class Controller:
         for (node, success, output) in self.executor.mkdirs(dirs):
             if not success:
                 self.ui.error("cannot create a directory on node %s" % node.name)
-                self.ui.error("\n".join(output))
+                if output:
+                    self.ui.error(output)
                 results.ok = False
                 return results
 
@@ -1419,8 +1470,8 @@ class Controller:
         if output:
             success, out = self._sendmail("cron: " + output.splitlines()[0], output)
             if not success:
-                self.ui.error("broctl cron failed to send mail: %s" % out[0])
-                self.ui.info("\nOutput of broctl cron:\n%s" % output)
+                self.ui.error("broctl cron failed to send mail: %s" % out)
+                self.ui.info("Output of broctl cron:\n%s" % output)
 
         logging.debug("cron done")
 

@@ -1,3 +1,4 @@
 Error: cannot start bro; check output of "diag"
 Error: start: problem with Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: /home/repo/bro/aux/broctl/testing/../build/testing/test.10863/spool/bro)
+
 starting bro ...

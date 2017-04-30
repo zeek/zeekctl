@@ -46,7 +46,7 @@ def sync(nodes, paths, cmdout):
     result = True
     cmds = []
     for n in nodes:
-        args = ["-rRl", "--delete", "--rsh=\"ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30\""]
+        args = ['-rRl', '--delete', '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"']
         dst = ["%s:/" % util.format_rsync_addr(util.scope_addr(n.addr))]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
@@ -54,7 +54,7 @@ def sync(nodes, paths, cmdout):
 
     for (id, success, output) in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.addr), "\n".join(output)))
+            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.addr), output))
             result = False
 
     return result
@@ -62,12 +62,15 @@ def sync(nodes, paths, cmdout):
 
 # Runs command locally and returns tuple (success, output)
 # with success being true if the command terminated with exit code 0,
-# and output being the combined stdout/stderr output of the command.
-def run_localcmd(cmd, env="", inputtext=None, donotcaptureoutput=False):
-    proc = _run_localcmd_init("single", cmd, env, donotcaptureoutput)
+# and output is a string containing the combined stdout/stderr output of the
+# command.
+# The "env" is a space-separated string of environment variables to set,
+# and "inputtext" is a string to send to stdin.
+def run_localcmd(cmd, env=None, inputtext=None):
+    proc = _run_localcmd_init("single", cmd, env)
     return _run_localcmd_wait(proc, inputtext)
 
-# Same as above but runs a set of local commands in parallel.
+# Same as run_localcmd() but runs a set of local commands in parallel.
 # Cmds is a list of (id, cmd, envs, inputtext) tuples, where id is
 # an arbitrary cookie identifying each command.
 # Returns a list of (id, success, output) tuples.
@@ -80,12 +83,12 @@ def run_localcmds(cmds):
         running += [(id, proc, inputtext)]
 
     for (id, proc, inputtext) in running:
-        (success, output) = _run_localcmd_wait(proc, inputtext)
+        success, output = _run_localcmd_wait(proc, inputtext)
         results += [(id, success, output)]
 
     return results
 
-def _run_localcmd_init(id, cmd, env, donotcaptureoutput=False):
+def _run_localcmd_init(id, cmd, env):
 
     if env:
         cmdline = env + " " + cmd
@@ -94,33 +97,23 @@ def _run_localcmd_init(id, cmd, env, donotcaptureoutput=False):
 
     logging.debug(cmdline)
 
-    if donotcaptureoutput:
-        stdout = None
-    else:
-        stdout = subprocess.PIPE
-
     # os.setsid makes sure that the child process doesn't receive our CTRL-Cs.
-    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE, stdout=stdout,
-                            stderr=subprocess.STDOUT, close_fds=True,
-                            shell=True, preexec_fn=os.setsid)
+    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            close_fds=True, shell=True, preexec_fn=os.setsid)
 
     return proc
 
 def _run_localcmd_wait(proc, inputtext):
-    if inputtext and py3bro.using_py3:
+    if py3bro.using_py3 and inputtext:
         inputtext = inputtext.encode()
 
-    (out, err) = proc.communicate(inputtext)
+    # Note: "output" is combined stdout/stderr output.
+    output, _ = proc.communicate(inputtext)
     rc = proc.returncode
 
-    output = []
-    if out:
-        if py3bro.using_py3:
-            out = out.decode()
-        output = out.splitlines()
-
-    for line in output:
-        logging.debug("    > %s", line)
+    if py3bro.using_py3:
+        output = output.decode()
 
     logging.debug("exit status: %d", rc)
 
@@ -157,10 +150,10 @@ class Executor:
     #
     # Returns a list of results: [(node, success, output), ...]
     #   where "success" is a boolean (True if command's exit status was zero),
-    #   and "output" is a list of strings (stdout followed by stderr) or an
-    #   error message if no result was received (this could occur upon failure
-    #   to communicate with remote host, or if the command being executed
-    #   did not finish before the timeout).
+    #   and "output" is a string containing the command's stdout followed by
+    #   stderr, or an error message if no result was received (this could occur
+    #   upon failure to communicate with remote host, or if the command being
+    #   executed did not finish before the timeout).
     def run_cmds(self, cmds, shell=False, helper=False):
         results = []
 
@@ -198,12 +191,12 @@ class Executor:
             bronode = nodecmd[0]
             if not isinstance(result, Exception):
                 res = result[0]
-                out = result[1].splitlines()
-                err = result[2].splitlines()
+                out = result[1]
+                err = result[2]
                 results.append((bronode, res == 0, out + err))
                 logging.debug("%s: exit code %d", bronode.host, res)
             else:
-                results.append((bronode, False, [str(result)]))
+                results.append((bronode, False, str(result)))
 
         return results
 
@@ -213,7 +206,7 @@ class Executor:
     #
     # Return value is same as run_cmds.
     def run_shell_cmds(self, cmdlines):
-        cmds = [ (node, cmdline, []) for node, cmdline in cmdlines ]
+        cmds = [(node, cmdline, []) for node, cmdline in cmdlines]
 
         return self.run_cmds(cmds, shell=True)
 

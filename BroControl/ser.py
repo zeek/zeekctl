@@ -1,5 +1,4 @@
 import json
-from json import dumps as json_dumps, loads
 
 from BroControl import node
 from BroControl import cmdresult

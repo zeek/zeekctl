@@ -105,7 +105,7 @@ class Node:
     _keys = {"type": 1, "host": 1, "interface": 1, "aux_scripts": 1,
              "brobase": 1, "ether": 1, "zone_id": 1,
              "lb_procs": 1, "lb_method": 1, "lb_interfaces": 1,
-             "pin_cpus": 1, "env_vars": 1}
+             "pin_cpus": 1, "env_vars": 1, "count": 1}
 
 
     def __init__(self, config, name):
@@ -173,7 +173,7 @@ class Node:
         return os.path.join(self._config.spooldir, self.name)
 
     def setPID(self, pid):
-        """Stores the process ID for the node's Bro process."""
+        """Stores the process ID of the node's Bro process."""
         key = "%s-pid" % self.name
         self._config.set_state(key, pid)
         key = "%s-host" % self.name
@@ -207,7 +207,10 @@ class Node:
     def hasCrashed(self):
         """Returns True if the node's Bro process has exited abnormally."""
         key = "%s-crashed" % self.name
-        return self._config.get_state(key)
+        val = self._config.get_state(key)
+        if val is None:
+            val = False
+        return val
 
     def getExpectRunning(self):
         """Returns True if we expect the node's Bro process to be running."""
@@ -228,9 +231,9 @@ class Node:
 
     @doc.api
     def getPort(self):
-        """Returns an integer with the port that this node's communication
-        system is listening on for incoming connections, or -1 if no such port
-        has been set yet.
+        """Returns an integer with the port number that this node's
+        communication system is listening on for incoming connections, or -1 if
+        no such port has been set yet.
         """
         key = "%s-port" % self.name
         return self._config.get_state(key) or -1
@@ -243,3 +246,13 @@ class Node:
         # We need to convert to lowercase here because Python's configparser
         # automatically converts keys to lowercase when reading node.cfg.
         Node._keys[kw.lower()] = 1
+
+
+# Sorting key function for a list of nodes.
+def sortnode(n):
+    return n.type, n.count
+
+# Sorting key function for a list of tuples, where the first tuple element is
+# a node.
+def sorttuple(t):
+    return t[0].type, t[0].count

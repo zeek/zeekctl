@@ -105,10 +105,10 @@ class Configuration:
         self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
-        (success, output) = execute.run_localcmd("uname")
-        if not success:
+        success, output = execute.run_localcmd("uname")
+        if not success or not output:
             raise RuntimeEnvironmentError("failed to run uname: %s" % output)
-        self.init_option("os", output[0].strip())
+        self.init_option("os", output.strip())
 
         # Determine the CPU pinning command.
         pin_cmd = ""
@@ -121,9 +121,11 @@ class Configuration:
 
         # Find the time command (should be a GNU time for best results).
         time_cmd = ""
-        (success, output) = execute.run_localcmd("which time")
-        if success:
-            time_cmd = output[0].strip()
+        success, output = execute.run_localcmd("which time")
+        if success and output:
+            # On redhat-based systems, path to cmd is prefixed with '\t' on 2nd
+            # line when alias is defined.
+            time_cmd = output.splitlines()[-1].strip()
 
         self.init_option("time", time_cmd)
 
@@ -148,11 +150,12 @@ class Configuration:
             # No broctl option ever requires the entire value to be wrapped in
             # quotes, and since doing so can cause problems, we don't allow it.
             if isinstance(value, str):
-                if ( (value.startswith('"') and value.endswith('"')) or
-                     (value.startswith("'") and value.endswith("'")) ):
+                if (value.startswith('"') and value.endswith('"') or
+                    value.startswith("'") and value.endswith("'")):
                     raise ConfigurationError('value of broctl option "%s" cannot be wrapped in quotes' % key)
 
-        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir", "bindir", "libdirinternal", "plugindir", "scriptsdir")
+        dirs = ("brobase", "logdir", "spooldir", "cfgdir", "broscriptdir",
+                "bindir", "libdirinternal", "plugindir", "scriptsdir")
         files = ("makearchivename", )
 
         for d in dirs:
@@ -218,9 +221,7 @@ class Configuration:
         self._warn_dangling_bro()
 
         # Set the standalone config option.
-        standalone = False
-        if len(self.nodestore) == 1:
-            standalone = True
+        standalone = len(self.nodestore) == 1
 
         self.init_option("standalone", standalone)
 
@@ -290,7 +291,7 @@ class Configuration:
             elif tag == n.name or not tag:
                 nodes += [n]
 
-        nodes.sort(key=lambda n: (n.type, n.name))
+        nodes.sort(key=node_mod.sortnode)
 
         if not nodes and tag == "manager":
             nodes = self.nodes("standalone")
@@ -310,17 +311,20 @@ class Configuration:
 
     # Returns a list of nodes which is a subset of the result a similar call to
     # nodes() would yield but within which each host appears only once.
-    # If "nolocal" parameter is True, then exclude the local host from results.
-    def hosts(self, tag=None, nolocal=False):
+    # If "exclude_local" is True, then the returned list will not include
+    # nodes that are on the local host.
+    def hosts(self, tag=None, exclude_local=False):
         hosts = {}
         nodelist = []
         for node in self.nodes(tag):
             if node.host in hosts:
                 continue
 
-            if (not nolocal) or (nolocal and node.addr not in self.localaddrs):
-                hosts[node.host] = 1
-                nodelist.append(node)
+            if exclude_local and node.addr in self.localaddrs:
+                continue
+
+            hosts[node.host] = 1
+            nodelist.append(node)
 
         return nodelist
 
@@ -358,7 +362,7 @@ class Configuration:
         # Make sure list is at least as long as number of worker processes.
         cpulen = len(cpulist)
         if numprocs > cpulen:
-            cpulist = [ cpulist[i % cpulen] for i in range(numprocs) ]
+            cpulist = [cpulist[i % cpulen] for i in range(numprocs)]
 
         return cpulist
 
@@ -371,7 +375,7 @@ class Configuration:
         if text:
             for keyval in text.split(","):
                 try:
-                    (key, val) = keyval.split("=", 1)
+                    key, val = keyval.split("=", 1)
                 except ValueError:
                     raise ConfigurationError("missing '=' in env_vars option value: %s" % keyval)
 
@@ -434,7 +438,7 @@ class Configuration:
         except socket.gaierror as e:
             raise ConfigurationError("hostname lookup failed for '%s' in node config [%s]" % (node.host, e.args[1]))
 
-        addrs = [ addr[4][0] for addr in addrinfo ]
+        addrs = [addr[4][0] for addr in addrinfo]
 
         # By default, just use the first IP addr in the list.
         addr_str = addrs[0]
@@ -530,21 +534,15 @@ class Configuration:
             raise ConfigurationError("no nodes found in node config")
 
         standalone = False
-        logger = False
         manager = False
         proxy = False
 
         manageronlocalhost = False
         # Note: this is a subset of localaddrs
-        localhostaddrs = ("127.0.0.1", "::1")
+        localhostaddrs = "127.0.0.1", "::1"
 
         for n in nodestore.values():
-            if n.type == "logger":
-                if logger:
-                    raise ConfigurationError("only one logger can be defined")
-                logger = True
-
-            elif n.type == "manager":
+            if n.type == "manager":
                 if manager:
                     raise ConfigurationError("only one manager can be defined in node config")
                 manager = True
@@ -587,7 +585,7 @@ class Configuration:
 
     # Parses broctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
-        type_converters = { "bool": self._to_bool, "int": int, "string": str }
+        type_converters = {"bool": self._to_bool, "int": int, "string": str}
         config = {}
 
         with open(fname, "r") as f:
@@ -600,7 +598,7 @@ class Configuration:
                 if len(args) != 2:
                     raise ConfigurationError("broctl config syntax error: %s" % line)
 
-                (key, val) = args
+                key, val = args
                 # Option names are not case-sensitive.
                 key = key.strip().lower()
 
@@ -830,7 +828,7 @@ class Configuration:
             nodehash = self._get_nodecfg_hash()
 
             if nodehash != self.state["hash-nodecfg"]:
-                self.ui.warn("broctl node config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn('broctl node config has changed (run the broctl "deploy" command)')
 
                 return
         else:
@@ -839,7 +837,7 @@ class Configuration:
         # If this is a fresh install (i.e., broctl install not yet run), then
         # inform the user what to do.
         if not self.is_broctl_installed():
-            self.ui.info("Hint: Run the broctl \"deploy\" command to get started.")
+            self.ui.info('Hint: Run the broctl "deploy" command to get started.')
             return
 
         # Check if Bro version is different from the previously-installed
@@ -850,7 +848,7 @@ class Configuration:
             version = self._get_bro_version()
 
             if version != oldversion:
-                self.ui.warn("new bro version detected (run the broctl \"deploy\" command)")
+                self.ui.warn('new bro version detected (run the broctl "deploy" command)')
                 return
         else:
             missingstate = True
@@ -859,7 +857,7 @@ class Configuration:
         if "hash-broctlcfg" in self.state:
             cfghash = self._get_broctlcfg_hash()
             if cfghash != self.state["hash-broctlcfg"]:
-                self.ui.warn("broctl config has changed (run the broctl \"deploy\" command)")
+                self.ui.warn('broctl config has changed (run the broctl "deploy" command)')
                 return
         else:
             missingstate = True
@@ -868,7 +866,7 @@ class Configuration:
         # (this would most likely indicate an upgrade install was performed
         # over an old version that didn't have the state.db file).
         if missingstate:
-            self.ui.warn("state database needs updating (run the broctl \"deploy\" command)")
+            self.ui.warn('state database needs updating (run the broctl "deploy" command)')
             return
 
     # Warn if there might be any dangling Bro nodes (i.e., nodes that are
@@ -900,7 +898,7 @@ class Configuration:
             # If node is not a known node or if host has changed, then
             # we must warn about dangling Bro node.
             if nname not in nodes or hname != nodes[nname]:
-                self.ui.warn("Bro node \"%s\" possibly still running on host \"%s\" (PID %s)" % (nname, hname, pid))
+                self.ui.warn('Bro node "%s" possibly still running on host "%s" (PID %s)' % (nname, hname, pid))
                 # Set the "expected running" flag to False so cron doesn't try
                 # to start this node.
                 expectkey = key.replace("-pid", "-expect-running")
@@ -958,13 +956,13 @@ class Configuration:
             raise ConfigurationError("cannot find Bro binary: %s" % bro)
 
         version = ""
-        (success, output) = execute.run_localcmd("%s -v" % bro)
+        success, output = execute.run_localcmd("%s -v" % bro)
         if success and output:
-            version = output[-1]
+            version = output.splitlines()[-1]
         else:
             msg = " with no output"
             if output:
-                msg = " with output:\n%s" % "\n".join(output)
+                msg = " with output:\n%s" % output
             raise RuntimeEnvironmentError('running "bro -v" failed%s' % msg)
 
         match = re.search(".* version ([^ ]*).*$", version)

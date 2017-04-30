@@ -5,7 +5,6 @@ import sys
 import os
 import logging
 
-from BroControl import config
 from BroControl import cmdresult
 from BroControl import node
 from BroControl import plugin
@@ -91,7 +90,7 @@ class PluginRegistry:
         for p in self._activeplugins():
             func = getattr(p, method)
             new_nodes = func(nodes, *args)
-            if new_nodes != None:
+            if new_nodes is not None:
                 nodes = new_nodes
 
         return nodes
@@ -146,7 +145,7 @@ class PluginRegistry:
         """Runs a custom command *cmd* with string *args* as argument. Returns
         a CmdResult object which contains the command results."""
         try:
-            (myplugin, usage, descr) = self._cmds[cmd]
+            myplugin, usage, descr = self._cmds[cmd]
         except LookupError:
             return cmdresult.CmdResult(ok=False, unknowncmd=True)
 
@@ -187,7 +186,7 @@ class PluginRegistry:
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            (myplugin, args, descr) = self._cmds[cmd]
+            myplugin, args, descr = self._cmds[cmd]
             cmds += [(cmd, args, descr)]
 
         return cmds

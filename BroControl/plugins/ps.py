@@ -61,34 +61,40 @@ class PsBro(BroControl.plugin.Plugin):
 
         # Run them in parallel and print output.
 
-        def startNode(n, success, output, first_node):
-            # Note: output might be an empty list, in which case we
-            # still want the "failed" message below.
-            if first_node and output:
-                cmdout.info("        %s" % output[0])
-
-            if not success:
-                cmdout.error(">>> %s failed" % n.host)
-            else:
-                cmdout.info(">>> %s" % n.host)
-
-
         first_node = True
 
         for (n, success, output) in self.executeParallel(cmds):
+            outlines = output.splitlines()
             # Remove stderr output (if any)
-            while output and not output[0].startswith("USER"):
-                output = output[1:]
+            while outlines and not outlines[0].startswith("USER"):
+                outlines = outlines[1:]
 
-            startNode(n, success, output, first_node)
+            # Print the header line.
+            if first_node and outlines:
+                cmdout.info("        %s" % outlines[0])
 
-            if not output:
+            if success:
+                cmdout.info(">>> %s" % n.host)
+            else:
+                cmdout.error(">>> %s failed" % n.host)
+                results.ok = False
+
+            if not outlines:
                 continue
 
-            for line in output[1:]:
+            for line in outlines[1:]:
 
                 m = line.split()
-                (pid, ppid) = (int(m[1]), int(m[2]))
+                try:
+                    pid, ppid = int(m[1]), int(m[2])
+                except IndexError:
+                    cmdout.error("unexpected output from ps command: %s" % line)
+                    results.ok = False
+                    continue
+                except ValueError as err:
+                    cmdout.error("%s" % err)
+                    results.ok = False
+                    continue
                 try:
                     known = (pid in pids[n.host] or ppid in pids[n.host])
                 except KeyError:

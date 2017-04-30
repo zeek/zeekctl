@@ -22,7 +22,7 @@ print_loaded_scripts=$2
 tmp_node_dir=$3
 shift 3
 
-source "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-bro-path
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -32,9 +32,6 @@ if [ ! -f "${bro}" ]; then
     exit 1
 fi
 
-# Tell the BroControl script code that this is only a check.
-export BROCTL_CHECK=1
-
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 cd "$tmp_node_dir"
@@ -43,7 +40,6 @@ if [ $? -ne 0 ]; then
 fi
 
 echo $@ >.cmdline
-touch .checking
 
 check_option="-a"
 if [ "$print_loaded_scripts" = "1" ]; then
@@ -54,7 +50,7 @@ fi
 "${bro}" $check_option "$@"
 rc=$?
 
-if [ $rc -eq 0 -a "$print_loaded_scripts" = "1" ]; then
+if [ $rc -eq 0 ] && [ "$print_loaded_scripts" = "1" ]; then
     grep -v '^#' loaded_scripts*
 fi
 

@@ -223,9 +223,7 @@ class HostHandler(Thread):
 
     def ping(self):
         # Error message should indicate whether or not ssh is being used.
-        msgstr = "ssh "
-        if self.host in self.localaddrs:
-            msgstr = ""
+        msgstr = "" if self.host in self.localaddrs else "ssh "
 
         # Error message shows if a connection was previously established.
         if self.alive:
@@ -290,9 +288,7 @@ class HostHandler(Thread):
             resp = self.master.exec_commands(item, shell, self.timeout)
         except Exception as e:
             self.alive = False
-            msgstr = "ssh "
-            if self.host in self.localaddrs:
-                msgstr = ""
+            msgstr = "" if self.host in self.localaddrs else "ssh "
             msg = "Lost %sconnection while running command on host %s: %s" % (msgstr, self.host, e)
             logging.debug(msg)
             resp = [Exception(msg)] * len(item)
