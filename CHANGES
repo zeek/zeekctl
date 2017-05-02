@@ -1,113 +1,62 @@
 1.5-49 | 2017-04-30 12:53:44 -0400
 
-New features:
-
-  * Allow more than one logger to be defined (Daniel Thayer)
+  * Allow more than one logger to be defined.
 
     This adds initial support for running a Bro cluster with multiple logger
-    proesses.  This is primarily useful for installations that use something
-    like Kafka or Logstash to aggregate logs.
+    processes.  This is primarily useful for installations that use something
+    like Kafka or Logstash to aggregate logs.  (Daniel Thayer)
 
   * Add a "--version" option to show broctl version (Daniel Thayer)
 
-  * Add a new option to turn off some broctl cron mail (Daniel Thayer)
-
-    Added a new option MailReceivingPackets which controls whether or not
-    broctl cron sends a warning that no packets were seen on an interface
-    (note that broctl cron does not send these warnings when StatsLogEnable
-    is 0).  Such emails can be annoying when monitoring a low-bandwidth
-    network.
-
-Code cleanups and bug fixes:
+  * Added a new option MailReceivingPackets to allow users to disable
+    broctl cron mail that no packets were seen on an interface. (Daniel Thayer)
 
   * A large number of unused code removal and code cleanups (Daniel Thayer)
 
   * Fix some failing tests when using python 3 (Daniel Thayer)
 
-    Added sorting in a few places in broctl so that stats.log is sorted
-    (which also helps with readability).  Also added sorting of the
-    output file in some tests that dump the state database.
+  * The "start" helper script now reports error if PID string is empty (Daniel
+    Thayer)
 
-  * Check for existence of Bro PID in the "start" script (Daniel Thayer)
+  * Fixed the sorting of node names in command output (e.g. "worker-10"
+    should be output after "worker-2").  Now the order of names is based on
+    the "count" node attribute instead of the name.  (Daniel Thayer)
 
-    Before sending the Bro PID back to broctl, the "start" script now fails
-    with an error message if the PID string is empty.
+  * Fixed some bugs in stats-to-csv script (proxies were being handled like
+    workers, and it was assuming that the manager is named "manager").
+    Also added more error checking. (Daniel Thayer)
 
-    This might help address BIT-1773.
+  * Fix potential cases of unhandled IndexError and ValueError. (Daniel Thayer)
 
-  * Fix sorting of node names (Daniel Thayer)
-
-    Fixed the sorting of node names.  Previously, a node such as "worker-10"
-    would be output after "worker-1" and before "worker-2".  Now the order
-    of names is based on the "count" node attribute instead of the name,
-    so the order of nodes (of a specific type) in node.cfg can affect the
-    order shown in the output.
-
-  * Fix the stats-to-csv script (Daniel Thayer)
-
-    Fixed a couple of bugs (proxies were being handled like workers, and
-    it was assuming that the manager is named "manager").  Also added
-    more error checking, and removed unused code.  Also changed the script
-    so that it ignores bad lines in stats.log and meta.dat (but still
-    prints an error message) instead of exiting.
-
-  * Fix a few more potential cases of IndexError (Daniel Thayer)
-
-  * Fix usage of run_cmds() (Daniel Thayer)
-
-    Fixed several places in the code where an IndexError could potentially
-    be raised if no output is returned from run_cmds(), and also fixed
-    a few potential ValueError cases if broctl gets unexpected output from
-    a command.
-
-    Fixed a few other uses of run_cmds() to check and handle the output
-    string correctly.
-
-    Also, instead of returning the output as a list of strings, now it returns
-    the output as a string.
-
-    Also fixed a few cases where the ps plugin didn't return non-zero when an
-    error occurred.
+  * Fixed a few cases where the ps plugin didn't return non-zero when an
+    error occurred. (Daniel Thayer)
 
   * Fix shell scripts to no longer depend on bash (Daniel Thayer)
 
-  * Fix usage of run_localcmd() (Daniel Thayer)
-
-    Fixed several places in the code where an IndexError could potentially
-    be raised if no output is returned from run_localcmd().
-
-    Fixed a few other uses of run_localcmd() to check and handle the outpu
-    string correctly.
-
-    Also simplified the function to no longer take an optional argumen
-    "donotcaptureoutput", and removed some debug output that didn't really
-    show useful info.  Also, instead of returning the output as a list of
-    strings, now it returns the output as a string.
-
-    These changes make the code slightly simpler and more robust.
+  * Improve the run_cmds() and run_localcmd() functions by returning output
+    as a string (instead of list of strings) and check and handle output
+    string correctly in all cases. (Daniel Thayer)
 
 1.5-21 | 2017-03-17 13:18:58 -0400
 
   * Fix some tests to make sure the test tmp dir is removed (Daniel Thayer)
 
-  * Fix crash-diag script to get Bro version from stdout
-
-    Due to a recent change, "bro -v" now outputs the version to stdout.
-
-    Also fixed crash-diag to not show stderr output (if any) from
-    running "bro -N". (Daniel Thayer)
+  * Update crash-diag script due to recent change where "bro -v" now outputs
+    the version to stdout.  Also fixed crash-diag to not show stderr output
+    from running "bro -N". (Daniel Thayer)
 
   * Add a new broctl option to expire crash directories
 
     Added functionality to broctl cron to remove crash directories older than
     the number of days specified in the new option CrashExpireInterval (the
-    default value is 0, which means crash directories never expire). (Daniel Thayer)
+    default value is 0, which means crash directories never expire). (Daniel
+    Thayer)
 
   * Add a test for expiration of crash directories (Daniel Thayer)
 
   * Reduce disk usage of post-terminate and crash-diag
 
-    Changed post-terminate and crash-diag so that the bro binary is no
+    Changed post-terminate and crash-diag so that the bro binary is not
     copied when there is no core file.  Also, the crash report is now
     saved to disk only when crash-diag is run from post-terminate (i.e.,
     the "diag" command will no longer create any files). (Daniel Thayer)
@@ -191,10 +140,9 @@ Code cleanups and bug fixes:
 
 1.5-5 | 2017-01-26 13:34:37 -0500
 
-  * Fix crash-diag script to use the correct debugger
-
-    On some systems, the correct debugger to use is not called "gdb"
-    (currently, this affects OS X and OpenBSD). (Daniel Thayer)
+  * Fix crash-diag script to use the correct debugger, because on some systems
+    the correct debugger to use is not called "gdb" (currently, this
+    affects OS X and OpenBSD). (Daniel Thayer)
 
 1.5-2 | 2016-12-06 12:35:40 -0800
 
@@ -457,8 +405,8 @@ Code cleanups and bug fixes:
 
 1.4-61 | 2015-12-19 13:39:47 -0800
 
-   * Add broctl.cfg options PcapSnaplen and PcapBuflen to set pcap's
-     packet snap length and buffer size, respectively. (Jan Grashoefer)
+  * Add broctl.cfg options PcapSnaplen and PcapBuflen to set pcap's
+    packet snap length and buffer size, respectively. (Jan Grashoefer)
 
 1.4-57 | 2015-12-11 12:00:07 -0500
 
