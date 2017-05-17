@@ -1,11 +1,12 @@
 bro-crashed = false
 bro-expect-running = true
 bro-host = "localhost"
-bro-pid = 73448
+bro-pid = 3258
 bro-port = 47760
 broversion = "2.5-1"
 configchksum = "28326c2bf70bb7eb2b0854f8ed6b720d"
 confignodechksum = "754db8253db4ebd1262762895fefd5ca"
 cronenabled = true
-hash-broctlcfg = "b11b03c73659b3325aa5e8d7e8570bed"
+global-hash-seed = "a2522851"
+hash-broctlcfg = "529250290426627accadbe71ceed3beb"
 hash-nodecfg = "3091f532e7c0e58879c1fc637f40d8e1"
