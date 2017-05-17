@@ -917,7 +917,7 @@ class Configuration:
         if py3bro.using_py3:
             data = data.encode()
 
-        hh = hashlib.md5()
+        hh = hashlib.sha1()
         hh.update(data)
         return hh.hexdigest()
 
@@ -935,7 +935,7 @@ class Configuration:
         if py3bro.using_py3:
             data = data.encode()
 
-        hh = hashlib.md5()
+        hh = hashlib.sha1()
         hh.update(data)
         return hh.hexdigest()
 
