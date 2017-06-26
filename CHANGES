@@ -1,4 +1,18 @@
 
+1.6-3 | 2017-06-26 10:52:27 -0400
+
+  * Set a value for the global_hash_seed global constan
+
+    Upon broctl install or deploy, broctl now sets a random value for the Bro
+    script constant global_hash_seed.  This value is stored in the broctl
+    state database so that we can use the same value every time after it is
+    created.
+
+    This is needed for bloom filters to be mergeable across a bro cluster.
+
+    Addresses BIT-1819. (Daniel Thayer)
+
+
 1.6 | 2017-06-06 17:43:14 -0500
 
   * Release 1.6

@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+#
+# This script replaces values that change between test runs in
+# broctl-config.bro with the string XXXXXXXX.
+
+sed -e 's/global_hash_seed = "[0-9a-f]*"/global_hash_seed = "XXXXXXXX"/'
+
