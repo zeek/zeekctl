@@ -2,9 +2,9 @@
 # with the correct contents.
 #
 # @TEST-EXEC: bash %INPUT
-# @TEST-EXEC: btest-diff standalone
-# @TEST-EXEC: btest-diff no-logger
-# @TEST-EXEC: btest-diff logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-broctl-config btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-broctl-config btest-diff no-logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-broctl-config btest-diff logger
 
 . broctl-test-setup
 set -e

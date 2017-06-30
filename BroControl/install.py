@@ -1,9 +1,11 @@
 # Functions to install files on all nodes.
 
 import os
+import binascii
 
 from BroControl import util
 from BroControl import config
+from BroControl import py3bro
 
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
@@ -296,6 +298,9 @@ def make_broctl_config_policy(path, cmdout, plugin_reg):
     ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
     ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize
 
+    seed_str = make_global_hash_seed()
+    ostr += 'redef global_hash_seed = "%s";\n' % seed_str
+
     ostr += plugin_reg.getBroctlConfig()
 
     filename = os.path.join(path, "broctl-config.bro")
@@ -307,3 +312,24 @@ def make_broctl_config_policy(path, cmdout, plugin_reg):
         return False
 
     return True
+
+
+# Create a new random seed value if one is not found in the state database (this
+# ensures a consistent value after a restart).  Return a string representation.
+def make_global_hash_seed():
+    seed_str = config.Config.get_state("global-hash-seed")
+
+    if not seed_str:
+        # Get 4 bytes of random data (Bro uses 4 bytes to create an initial
+        # seed in the Hasher::MakeSeed() function if the Bro script constant
+        # global_hash_seed is an empty string).
+        seed = os.urandom(4)
+
+        # Convert each byte of seed value to a two-digit hex string.
+        seed_str = binascii.hexlify(seed)
+        if py3bro.using_py3:
+            seed_str = seed_str.decode()
+
+        config.Config.set_state("global-hash-seed", seed_str)
+
+    return seed_str
