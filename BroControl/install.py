@@ -1,6 +1,7 @@
 # Functions to install files on all nodes.
 
 import os
+import binascii
 
 from BroControl import util
 from BroControl import config
@@ -319,15 +320,15 @@ def make_global_hash_seed():
     seed_str = config.Config.get_state("global-hash-seed")
 
     if not seed_str:
-        # Get 4 bytes of random data (Bro uses 4 bytes to create an initial seed
-        # in the Hasher::MakeSeed() function if global_hash_seed is an empty string).
+        # Get 4 bytes of random data (Bro uses 4 bytes to create an initial
+        # seed in the Hasher::MakeSeed() function if the Bro script constant
+        # global_hash_seed is an empty string).
         seed = os.urandom(4)
 
-        # Convert each byte of seed value to a two-character hex string.
+        # Convert each byte of seed value to a two-digit hex string.
+        seed_str = binascii.hexlify(seed)
         if py3bro.using_py3:
-            seed_str = "".join(["%02x" % i for i in seed])
-        else:
-            seed_str = "".join(["%02x" % ord(s) for s in seed])
+            seed_str = seed_str.decode()
 
         config.Config.set_state("global-hash-seed", seed_str)
 
