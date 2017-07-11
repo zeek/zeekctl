@@ -1,10 +1,10 @@
-broversion = "2.5-134"
-configchksum = "2f1dd48f874f24cddc4af8f4072ab587"
-confignodechksum = "d70faff8af7baa5fd57c48eeca5f94a2"
+broversion = "2.5-156"
+configchksum = "95b90ba01c03b04c543bb46e55752967c6486ed1"
+confignodechksum = "773df710df35edacbb4b6b8aab7ba5f502357cca"
 cronenabled = true
-global-hash-seed = "0015b852"
-hash-broctlcfg = "115cded52d706581352640fcf8bc8438"
-hash-nodecfg = "854ed1984314e3981e66533554755aa5"
+global-hash-seed = "d1547404"
+hash-broctlcfg = "94f1f62c8b758c06289deb5c1c436b58fe5fe1aa"
+hash-nodecfg = "108ffebe85f812b1348530a85e685570d5190019"
 manager-port = 47761
 proxy-1-port = 47762
 worker-1-port = 47763

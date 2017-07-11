@@ -1,4 +1,9 @@
 
+1.7-5 | 2017-07-11 08:45:32 -0500
+
+  * Use SHA-1 instead of MD5 to compute config hash values. Addresses BIT-1817.
+    (Daniel Thayer)
+
 1.7 | 2017-06-26 15:55:09 -0700
 
   * Release 1.7.

@@ -1,8 +1,8 @@
 bro-port = 47760
-broversion = "2.5-134"
-configchksum = "bc795370a53003192f07e7ea6a3d4993"
-confignodechksum = "754db8253db4ebd1262762895fefd5ca"
+broversion = "2.5-156"
+configchksum = "ffb6969bdfdbfca35da7344107e283c30c82fb20"
+confignodechksum = "50d10c94dd5b9a4ee0bc7ab58800f3976e62dfc7"
 cronenabled = true
-global-hash-seed = "17c8c4ee"
-hash-broctlcfg = "091f5a10bef7524326280e5293d6cbbf"
-hash-nodecfg = "3091f532e7c0e58879c1fc637f40d8e1"
+global-hash-seed = "97c75b28"
+hash-broctlcfg = "7060b02c06db5614974199f353a61ed658c94af6"
+hash-nodecfg = "19ffee6539d2ae71d83f7acd4921ff0d48905ca2"

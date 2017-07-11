@@ -1,10 +1,10 @@
 broversion = "2.5-1"
-configchksum = "28326c2bf70bb7eb2b0854f8ed6b720d"
-confignodechksum = "d70faff8af7baa5fd57c48eeca5f94a2"
+configchksum = "5b2ab3fb357a3ff3512c0339cd3f947f8ee48fae"
+confignodechksum = "773df710df35edacbb4b6b8aab7ba5f502357cca"
 cronenabled = true
-global-hash-seed = "1084a946"
-hash-broctlcfg = "64fa213073ca79d65da2be3c995286aa"
-hash-nodecfg = "854ed1984314e3981e66533554755aa5"
+global-hash-seed = "74f6d888"
+hash-broctlcfg = "5d2b47141c0352d6d41e0f93aa4db6dfe33fa872"
+hash-nodecfg = "108ffebe85f812b1348530a85e685570d5190019"
 manager-crashed = false
 manager-expect-running = false
 manager-host = "localhost"
