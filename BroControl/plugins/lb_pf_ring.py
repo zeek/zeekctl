@@ -57,16 +57,26 @@ class LBPFRing(BroControl.plugin.Plugin):
             if pftype:
                 nn.env_vars.setdefault(pftype, "1")
 
-            if nn.interface.startswith("zc"):
-                # For the case where a user is running zbalance_ipc
+            if nn.interface.startswith("zc:"):
+                # For the case where a user is doing RSS with ZC or
+                # load-balancing with zbalance_ipc (through libpcap over
+                # pf_ring)
+                nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
+                nn.interface = "%s@%d" % (nn.interface, app_instance)
+
+            elif nn.interface.startswith("pf_ring::zc:"):
+                # For the case where a user is doing RSS with ZC or
+                # load-balancing with zbalance_ipc (through the bro::pf_ring
+                # plugin)
+                nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
             elif nn.interface.startswith("dnacl"):
-                # For the case where a user is running pfdnacluster_master
+                # For the case where a user is running pfdnacluster_master (deprecated)
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
             elif nn.interface.startswith("dna"):
-                # For the case where a user is doing symmetric RSS with DNA.
+                # For the case where a user is doing symmetric RSS with DNA (deprecated)
                 nn.env_vars.setdefault("PCAP_PF_RING_DNA_RSS", "1")
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
