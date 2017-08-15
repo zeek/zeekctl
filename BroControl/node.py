@@ -256,3 +256,20 @@ def sortnode(n):
 # a node.
 def sorttuple(t):
     return t[0].type, t[0].count
+
+# Given a list of nodes (all of the same type), return a string that describes
+# the list of nodes (in either singular or plural form).  For standalone node
+# type, the node name is returned instead.
+def nodes_describe(nodes):
+    nodetype = nodes[0].type
+
+    if nodetype == "standalone":
+        return nodes[0].name
+    elif nodetype == "manager":
+        return "manager"
+    elif nodetype == "logger":
+        return "logger%s" % ("" if len(nodes) == 1 else "s")
+    elif nodetype == "proxy":
+        return "prox%s" % ("y" if len(nodes) == 1 else "ies")
+    elif nodetype == "worker":
+        return "worker%s" % ("" if len(nodes) == 1 else "s")

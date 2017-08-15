@@ -168,23 +168,21 @@ class Controller:
 
     # Starts the given nodes.
     def _start_nodes(self, nodes, results):
+        self.ui.info("starting %s ..." % node_mod.nodes_describe(nodes))
+
         filtered = []
         # Ignore nodes which are still running.
         for (node, isrunning) in self._isrunning(nodes):
             if not isrunning:
                 filtered += [node]
-                if node.hasCrashed():
-                    self.ui.info("starting %s (was crashed) ..." % node.name)
-                else:
-                    self.ui.info("starting %s ..." % node.name)
-            else:
-                self.ui.info("%s still running" % node.name)
 
         nodes = filtered
 
         # Generate crash report for any crashed nodes.
         crashed = [node for node in nodes if node.hasCrashed()]
-        self._make_crash_reports(crashed)
+        if crashed:
+            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self._make_crash_reports(crashed)
 
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
@@ -470,22 +468,22 @@ class Controller:
         return results
 
     def _stop_nodes(self, nodes, results):
+        self.ui.info("stopping %s ..." % node_mod.nodes_describe(nodes))
 
         running = []
 
-        # Check for crashed nodes.
+        # Check which nodes are still running.
         for (node, isrunning) in self._isrunning(nodes):
             if isrunning:
                 running += [node]
-                self.ui.info("stopping %s ..." % node.name)
             else:
                 results.set_node_success(node)
 
-                if node.hasCrashed():
-                    self.ui.info("%s not running (was crashed)" % node.name)
-                    self._make_crash_reports([node])
-                else:
-                    self.ui.info("%s not running" % node.name)
+        # Generate crash report for any crashed nodes.
+        crashed = [node for node in nodes if node.hasCrashed()]
+        if crashed:
+            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self._make_crash_reports(crashed)
 
         # Helper function to stop nodes with given signal.
         def stop(nodes, signal):
