@@ -144,7 +144,7 @@ def make_layout(path, cmdout, silent=False):
     manager = config.Config.manager()
     broport = Port(config.Config.broport)
 
-    if config.Config.nodes("standalone"):
+    if config.Config.standalone:
         if not silent:
             cmdout.info("generating standalone-layout.bro ...")
 
@@ -163,9 +163,9 @@ def make_layout(path, cmdout, silent=False):
             cmdout.info("generating cluster-layout.bro ...")
 
         filename = os.path.join(path, "cluster-layout.bro")
-        workers = config.Config.nodes("workers")
-        proxies = config.Config.nodes("proxies")
-        loggers = config.Config.nodes("loggers")
+        workers = config.Config.workers()
+        proxies = config.Config.proxies()
+        loggers = config.Config.loggers()
 
         mylogger = Logger(loggers)
 
@@ -271,23 +271,21 @@ def make_local_networks(path, cmdout):
 
 
 def make_broctl_config_policy(path, cmdout, plugin_reg):
-    manager = config.Config.manager()
-
     ostr = '# Automatically generated. Do not edit.\n'
     ostr += 'redef Notice::mail_dest = "%s";\n' % config.Config.mailto
     ostr += 'redef Notice::mail_dest_pretty_printed = "%s";\n' % config.Config.mailalarmsto
     ostr += 'redef Notice::sendmail = "%s";\n' % config.Config.sendmail
     ostr += 'redef Notice::mail_subject_prefix = "%s";\n' % config.Config.mailsubjectprefix
     ostr += 'redef Notice::mail_from = "%s";\n' % config.Config.mailfrom
-    if manager.type != "standalone":
-        loggers = config.Config.nodes("loggers")
+    if not config.Config.standalone:
+        loggers = config.Config.loggers()
         ntype = "LOGGER" if loggers else "MANAGER"
         ostr += '@if ( Cluster::local_node_type() == Cluster::%s )\n' % ntype
 
     ostr += 'redef Log::default_rotation_interval = %s secs;\n' % config.Config.logrotationinterval
     ostr += 'redef Log::default_mail_alarms_interval = %s secs;\n' % config.Config.mailalarmsinterval
 
-    if manager.type != "standalone":
+    if not config.Config.standalone:
         ostr += '@endif\n'
 
     if config.Config.ipv6comm:
