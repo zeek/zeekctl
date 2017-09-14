@@ -144,6 +144,11 @@ class PluginRegistry:
     def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
         a CmdResult object which contains the command results."""
+
+        # Special case: if user specifies plugin prefix only, then add a dot.
+        if "." not in cmd:
+            cmd += "."
+
         try:
             myplugin, usage, descr = self._cmds[cmd]
         except LookupError:
@@ -180,13 +185,18 @@ class PluginRegistry:
         return "\n".join(extra_code)
 
     def allCustomCommands(self):
-        """Returns a list of string tuples *(cmd, descr)* listing all commands
-        defined by any plugin."""
+        """Returns a list of string tuples *(cmd, args, descr)* listing all
+        commands defined by any plugin."""
 
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
             myplugin, args, descr = self._cmds[cmd]
+
+            # Special case: don't show the dot when command is empty string.
+            if cmd == "%s." % myplugin.prefix():
+                cmd = cmd[:-1]
+
             cmds += [(cmd, args, descr)]
 
         return cmds
