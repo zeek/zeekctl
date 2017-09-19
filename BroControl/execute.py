@@ -27,10 +27,16 @@ def install(src, dstdir, cmdout):
     logging.debug("cp %s %s", src, dstdir)
 
     try:
-        if os.path.isfile(src):
+        if os.path.islink(src):
+            target = os.readlink(src)
+            os.symlink(target, dst)
+        elif os.path.isfile(src):
             shutil.copy2(src, dstdir)
         elif os.path.isdir(src):
-            shutil.copytree(src, dst)
+            shutil.copytree(src, dst, symlinks=True)
+        else:
+            cmdout.error("failed to copy %s: not a file, dir, or symlink" % src)
+            return False
     except OSError:
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
