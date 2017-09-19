@@ -11,9 +11,9 @@ from BroControl import ssh_runner
 from BroControl import util
 
 
-# Copies src to dst, preserving permission bits, but does not clobber existing
-# files/directories.
-# Works for files and directories (recursive).
+# Copy src to dstdir, preserving permission bits and file type.  The src
+# file type can be symlink, regular file, or directory (directories are copied
+# recursively).  If the target pathname already exists, it is not clobbered.
 def install(src, dstdir, cmdout):
     if not os.path.lexists(src):
         cmdout.error("pathname not found: %s" % src)
@@ -27,10 +27,16 @@ def install(src, dstdir, cmdout):
     logging.debug("cp %s %s", src, dstdir)
 
     try:
-        if os.path.isfile(src):
+        if os.path.islink(src):
+            target = os.readlink(src)
+            os.symlink(target, dst)
+        elif os.path.isfile(src):
             shutil.copy2(src, dstdir)
         elif os.path.isdir(src):
-            shutil.copytree(src, dst)
+            shutil.copytree(src, dst, symlinks=True)
+        else:
+            cmdout.error("failed to copy %s: not a file, dir, or symlink" % src)
+            return False
     except OSError:
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
