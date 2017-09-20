@@ -60,7 +60,8 @@ class PluginRegistry:
         self._cmds = {}
         for p in self._activeplugins():
             for (cmd, args, descr) in p.commands():
-                self._cmds["%s.%s" % (p.prefix(), cmd)] = (p, args, descr)
+                full_cmd = "%s.%s" % (p.prefix(), cmd) if cmd else p.prefix()
+                self._cmds[full_cmd] = (p, args, descr)
 
     def finishPlugins(self):
         """Shuts all plugins down."""
@@ -145,10 +146,6 @@ class PluginRegistry:
         """Runs a custom command *cmd* with string *args* as argument. Returns
         a CmdResult object which contains the command results."""
 
-        # Special case: if user specifies plugin prefix only, then add a dot.
-        if "." not in cmd:
-            cmd += "."
-
         try:
             myplugin, usage, descr = self._cmds[cmd]
         except LookupError:
@@ -191,12 +188,7 @@ class PluginRegistry:
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            myplugin, args, descr = self._cmds[cmd]
-
-            # Special case: don't show the dot when command is empty string.
-            if cmd == "%s." % myplugin.prefix():
-                cmd = cmd[:-1]
-
+            _, args, descr = self._cmds[cmd]
             cmds += [(cmd, args, descr)]
 
         return cmds
