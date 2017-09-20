@@ -1,3 +1,17 @@
+1.7-12 | 2017-09-20 17:18:40 -0400
+
+  * Fix archive-log to handle logs that are already compressed
+
+    When logs are already compressed, then archive-log needs to ge
+    the file extension preceding the ".gz" extension before running
+    the "make-archive-name" script (for example, for a log file named
+    "conn.2017-08-29-14-06-56.log.gz", we need to pass "conn.log" to
+    the "make-archive-name" script).
+
+    Also, changed the way archive-log decides whether or not to compress
+    a log.  It no longer checks the log writer type, since that information
+    by itself is not useful.  Instead, it now checks if a log has already
+    been gzipped. (Daniel Thayer)
 
 1.7-10 | 2017-09-19 17:06:27 -0500
 
