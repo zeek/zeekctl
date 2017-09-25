@@ -1,0 +1,34 @@
+# Test that the archive-log script correctly archives a log file that was
+# compressed by Bro.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+set -e
+
+archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
+logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
+archivedtestlog=${logdir}/broctltest.22:24:20-22:30:00.log.gz
+origtestlog=broctltest.2013-12-30-22-24-20.log.gz
+
+broctl install
+
+# Create Bro's working directory, chdir to that dir, and create rotated logs
+mkdir $BROCTL_INSTALL_PREFIX/spool/bro
+cd $BROCTL_INSTALL_PREFIX/spool/bro
+cat > ${origtestlog} << _EOF_
+# This is a test broctltest.log
+_EOF_
+
+# Verify that the log is not archived yet
+test ! -e ${archivedtestlog}
+
+${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# Verify that the log is now archived (with correct filename)
+test ! -e ${origtestlog}
+test -f ${archivedtestlog}
+
+# Verify that the log was not compressed by archive-log
+grep -q "This is a test" ${archivedtestlog}
