@@ -1,3 +1,19 @@
+
+1.7-16 | 2017-09-26 09:16:47 -0400
+
+  * Allow broctl plugin command names that don't contain a do
+
+    If a command provided by a broctl plugin has a name that is an
+    empty string, then allow the command to be run by typing just
+    the plugin prefix name (without a dot), and show the command name
+    in the output of "broctl help" as just the plugin prefix name (withou
+    a dot). (Daniel Thayer)
+
+  * Add tests to verify that some recent bugs are fixed
+
+    Added tests to verify that bugs fixed in the following commits
+    are actually fixed: 6bf5bb0f, 9f387354, and f472a05f. (Daniel Thayer)
+
 1.7-12 | 2017-09-20 17:18:40 -0400
 
   * Fix archive-log to handle logs that are already compressed

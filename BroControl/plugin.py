@@ -291,7 +291,8 @@ class Plugin(object):
             ``command``
                 A string with the command's name. Note that the command name
                 exposed to the user will be prefixed with the plugin's prefix
-                as returned by *prefix()* (e.g., ``myplugin.mycommand``).
+                as returned by *prefix()* (e.g., ``myplugin.mycommand``, or
+                just ``myplugin`` if the command name is an empty string).
 
             ``arguments``
                 A string describing the command's arguments in a textual form
