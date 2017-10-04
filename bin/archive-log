@@ -64,8 +64,15 @@ century=`date +%C`
 from=`echo $century$from | sed 's/[_.]/-/g'`
 to=`echo $century$to | sed 's/[_.]/-/g'`
 
-# Extract file extension from original filename
+# Extract file extension from filename
+gzipped=0
 ext=`echo $file_name | sed 's/^.*\.//'`
+if [ "$ext" = "gz" ]; then
+    # Log file is compressed, so get file extension before the ".gz" extension
+    gzipped=1
+    fname=${file_name%.$ext}
+    ext=`echo $fname | sed 's/^.*\.//'`
+fi
 
 if [ ! -f "${makearchivename}" ]; then
     echo "archive-log: broctl option makearchivename is not set correctly" >&2
@@ -76,6 +83,11 @@ dest=`"${makearchivename}" $base_name.$ext $writer $from $to`
 if [ -z "$dest" ]; then
     echo "archive-log: ${makearchivename} did not return a file name" >&2
     exit 1
+fi
+
+# If log is compressed, then preserve the ".gz" extension.
+if [ $gzipped -ne 0 ]; then
+    dest=$dest.gz
 fi
 
 # If $dest is a relative path, then add ${logdir}
@@ -113,7 +125,7 @@ if [ ! -f $file_name ]; then
     exit 0
 fi
 
-if [ "${compresslogs}" = "1" ] && [ "$writer" = "ascii" ] && [ -n "${compresscmd}" ]; then
+if [ "${compresslogs}" = "1" ] && [ -n "${compresscmd}" ] && [ $gzipped -eq 0 ]; then
     dest="$dest.${compressextension}"
     nice ${compresscmd} < $file_name > "$dest"
 else

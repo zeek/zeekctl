@@ -11,6 +11,7 @@
 while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
 etc/node.cfg__cluster_no_netifs
+etc/networks.cfg__ipv4
 EOF
 
 ret=0
@@ -18,11 +19,11 @@ ret=0
 broctl install
 broctl start
 
-# print value from all nodes
+# print a single-line value from all nodes
 broctl print Log::default_rotation_interval > all.out 2>&1
 
-# print value from one node
-broctl print Log::default_rotation_interval worker-2 > onenode.out 2>&1
+# print a multi-line value from one node
+broctl print Site::local_nets worker-2 > onenode.out 2>&1
 
 broctl stop
 

@@ -564,7 +564,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         for (node, success, msg) in results.get_node_output():
             if success:
-                out = msg.splitlines()
+                out = msg.split("\n", 1)
                 self.info("%12s   %s = %s" % (node, out[0], out[1]))
             else:
                 self.info("%12s   <error: %s>" % (node, msg))

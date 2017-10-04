@@ -60,7 +60,8 @@ class PluginRegistry:
         self._cmds = {}
         for p in self._activeplugins():
             for (cmd, args, descr) in p.commands():
-                self._cmds["%s.%s" % (p.prefix(), cmd)] = (p, args, descr)
+                full_cmd = "%s.%s" % (p.prefix(), cmd) if cmd else p.prefix()
+                self._cmds[full_cmd] = (p, args, descr)
 
     def finishPlugins(self):
         """Shuts all plugins down."""
@@ -144,6 +145,7 @@ class PluginRegistry:
     def runCustomCommand(self, cmd, args, cmdout):
         """Runs a custom command *cmd* with string *args* as argument. Returns
         a CmdResult object which contains the command results."""
+
         try:
             myplugin, usage, descr = self._cmds[cmd]
         except LookupError:
@@ -180,13 +182,13 @@ class PluginRegistry:
         return "\n".join(extra_code)
 
     def allCustomCommands(self):
-        """Returns a list of string tuples *(cmd, descr)* listing all commands
-        defined by any plugin."""
+        """Returns a list of string tuples *(cmd, args, descr)* listing all
+        commands defined by any plugin."""
 
         cmds = []
 
         for cmd in sorted(self._cmds.keys()):
-            myplugin, args, descr = self._cmds[cmd]
+            _, args, descr = self._cmds[cmd]
             cmds += [(cmd, args, descr)]
 
         return cmds
