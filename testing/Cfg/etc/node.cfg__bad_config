@@ -1,0 +1,4 @@
+# This config file contains errors.
+[something]
+this is a bad node config
+nodes=3

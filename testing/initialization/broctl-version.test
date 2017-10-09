@@ -1,0 +1,17 @@
+# Test that "broctl --version" works even if there is a bad configuration.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+set -e
+
+while read line; do installcfgfile "$line"; done << EOF
+etc/broctl.cfg__bad_config
+etc/node.cfg__bad_config
+EOF
+
+broctl --version > out
+
+# Verify that the version string was output to stdout and has correct format.
+grep "^BroControl version [0-9][0-9a-z.-]*$" out
