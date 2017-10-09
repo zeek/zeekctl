@@ -4,23 +4,20 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff no-logger
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff two-loggers
 
 . broctl-test-setup
 set -e
 
-while read line; do installcfgfile "$line"; done << EOF
-etc/node.cfg__cluster
-EOF
-
 clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+
+# Install a cluster config with no logger nodes.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__no_logger
+EOF
 
 broctl install
 cp ${clusterlayout} no-logger
-
-# Verify that there is no time machine info by default.
-if grep -q time-machine ${clusterlayout} ; then
-    exit 1
-fi
 
 # Install a cluster config with a logger node.
 while read line; do installcfgfile "$line"; done << EOF
@@ -29,3 +26,11 @@ EOF
 
 broctl install
 cp ${clusterlayout} logger
+
+# Install a cluster config with two logger nodes.
+while read line; do installcfgfile "$line"; done << EOF
+etc/node.cfg__two_loggers
+EOF
+
+broctl install
+cp ${clusterlayout} two-loggers

@@ -1,0 +1,20 @@
+# Cluster configuration.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=eth0
+
+[worker-2]
+type=worker
+host=localhost
+interface=eth1
+
