@@ -23,12 +23,9 @@ broctl install
 broctl start > start.out 2>&1
 
 # verify that one node is still initializing
-broctl status > status1.out 2>&1
+! broctl status > status1.out 2>&1
 
 broctl stop
 
 # verify that all nodes are stopped
-broctl status > status2.out 2>&1
-
-# broctl status returns non-zero if not all nodes are running
-exit 0
+! broctl status > status2.out 2>&1

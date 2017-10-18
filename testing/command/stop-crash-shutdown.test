@@ -22,7 +22,6 @@ cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
 crashshutdown=worker-1
 EOF
 
-ret=0
 broctl install
 broctl start
 
@@ -33,11 +32,11 @@ broctl status > status1.out 2>&1
 broctl stop > stop.out 2>&1
 
 # verify that the crashed node is in the crashed state
-broctl status > status2.out 2>&1
+! broctl status > status2.out 2>&1
 
 # the stop command should not cleanup the crashed node directory
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/worker-1/.cmdline
 spool/worker-1/.env_vars
@@ -48,10 +47,8 @@ spool/worker-1/stdout.log
 EOF
 
 # the crashed node should not be logged as "stopped" in stats.log
-grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log | grep worker-1 && ret=1
+grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp
+! grep worker-1 tmp
 
 # verify that a crash report was not sent
-test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out || ret=1
-
-exit $ret
-
+test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out

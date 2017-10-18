@@ -12,8 +12,6 @@ etc/broctl.cfg__no_email
 bin/bro__test
 EOF
 
-set -e
-
 test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
 
 broctl install

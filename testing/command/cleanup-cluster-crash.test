@@ -25,45 +25,43 @@ cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
 crash=worker-1
 EOF
 
-ret=0
-
 broctl install
-broctl start
+! broctl start
 touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 # verify one node crashed and all others are running
-broctl status > status1.out 2>&1
+! broctl status > status1.out 2>&1
 
 #########################
 # test cleanup (without any node arguments)
 broctl cleanup > cleanup.out 2>&1
 
 # verify that the crashed node's state was reset to "stopped"
-broctl status > status2.out 2>&1
+! broctl status > status2.out 2>&1
 
 # the node testfile should not exist
-test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 # the tmpdir testfile should still exist
-test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
+test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 #########################
 # test cleanup when no nodes are running (without any node arguments)
 
 # restart crashed node and then stop all other nodes
-broctl start worker-1
+! broctl start worker-1
 broctl stop manager proxy-1 worker-2
 
 # verify one node crashed and all others are stopped
-broctl status > status3.out 2>&1
+! broctl status > status3.out 2>&1
 
 broctl cleanup > cleanup-stopped.out 2>&1
 
 # verify that the crashed node's state was reset to "stopped"
-broctl status > status4.out 2>&1
+! broctl status > status4.out 2>&1
 
-broctl start
+! broctl start
 touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 #########################
@@ -71,13 +69,13 @@ touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 broctl cleanup worker-1 > cleanup-onenode.out 2>&1
 
 # the node testfile should not exist
-test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 # the tmpdir testfile should still exist
-test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
+test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 broctl stop
-broctl start
+! broctl start
 touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 ########################
@@ -85,13 +83,13 @@ touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 broctl cleanup --all > cleanup-all.out 2>&1
 
 # the node testfile should be gone
-test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 # the tmpdir testfile should be gone
-test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 broctl stop
-broctl start
+! broctl start
 touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
@@ -100,12 +98,9 @@ touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 broctl cleanup --all worker-1 > cleanup-all-onenode.out 2>&1
 
 # the node testfile should be gone
-test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
 
 # the tmpdir testfile should be gone
-test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 
 broctl stop
-
-exit $ret
-

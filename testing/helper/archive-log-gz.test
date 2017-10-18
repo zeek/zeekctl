@@ -5,8 +5,6 @@
 
 . broctl-test-setup
 
-set -e
-
 archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
 logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
 archivedtestlog=${logdir}/broctltest.22:24:20-22:30:00.log.gz

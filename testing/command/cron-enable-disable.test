@@ -13,8 +13,6 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__debug
 EOF
 
-set -e
-
 broctl install
 
 # check the initial default state
@@ -32,4 +30,3 @@ grep -q "cron is disabled" $BROCTL_INSTALL_PREFIX/spool/debug.log
 # test that the state can be set to enabled
 broctl cron enable > enable.out 2>&1
 broctl cron ? >> out 2>&1
-

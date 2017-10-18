@@ -23,7 +23,6 @@ echo "makearchivename=${testarchname}" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 sed "s/%s:%s:%s/%s_%s_%s/" ${makearchname} > ${testarchname}
 chmod 755 ${testarchname}
 
-ret=0
 broctl install
 
 # Create Bro's working directory, chdir to that dir, and create a rotated log
@@ -37,16 +36,13 @@ _EOF_
 # Test archive-log with an alternate make-archive-name
 
 # verify that broctltest.log was not archived yet
-test -f ${testlog} && ret=1
+test ! -f ${testlog}
 
 ${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
 # verify that broctltest.log was archived
-test -f ${origtestlog} && ret=1
-test ! -f ${testlog} && ret=1
+test ! -f ${origtestlog}
+test -f ${testlog}
 
 # verify that broctltest.log was compressed
-grep -q "This is a test" ${testlog} && ret=1
-
-exit $ret
-
+! grep -q "This is a test" ${testlog}

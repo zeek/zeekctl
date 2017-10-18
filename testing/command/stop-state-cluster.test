@@ -13,8 +13,6 @@ etc/node.cfg__cluster
 bin/bro__test
 EOF
 
-set -e
-
 test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
 
 broctl install

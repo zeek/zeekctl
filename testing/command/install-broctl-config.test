@@ -7,7 +7,6 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-broctl-config btest-diff logger
 
 . broctl-test-setup
-set -e
 
 broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
@@ -24,9 +23,7 @@ echo "IPv6Comm=0" >> ${broctlcfg}
 echo "PcapSnaplen=1212" >> ${broctlcfg}
 echo "PcapBufsize=256" >> ${broctlcfg}
 
-if [ -e ${broctlconfig} ]; then
-    exit 1
-fi
+test ! -e ${broctlconfig}
 
 broctl install
 cp ${broctlconfig} standalone

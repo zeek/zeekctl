@@ -25,8 +25,5 @@ debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
 broctl exit
 
 # verify that the test plugins were found
-grep "Found plugin broctltest" ${debuglog} | grep -q testplugins
-test $? -eq 0
-grep "Found plugin anothertest" ${debuglog} | grep -q moreplugins
-test $? -eq 0
-
+grep "Found plugin broctltest" ${debuglog} | grep testplugins
+grep "Found plugin anothertest" ${debuglog} | grep moreplugins

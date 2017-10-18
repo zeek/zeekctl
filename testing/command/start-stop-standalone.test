@@ -12,18 +12,17 @@ etc/broctl.cfg__no_email
 bin/bro__test
 EOF
 
-ret=0
 broctl install
 
 # verify that these files don't already exist before the start command runs
-test ! -e $BROCTL_INSTALL_PREFIX/spool/bro       || ret=1
-test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/bro
+test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log
 
 broctl start > start.out 2>&1
 
 # the start command creates some files (these are NOT created by bro itself)
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/bro/.cmdline
 spool/bro/.env_vars
@@ -34,14 +33,14 @@ spool/bro/stdout.log
 EOF
 
 # verify that starting the node was logged in stats.log
-grep started $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
+grep started $BROCTL_INSTALL_PREFIX/spool/stats.log
 
 
 broctl stop > stop.out 2>&1
 
 # the stop command should cleanup the node directory
 while read line; do
-    test ! -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test ! -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/bro/.cmdline
 spool/bro/.env_vars
@@ -52,7 +51,4 @@ spool/bro/stdout.log
 EOF
 
 # verify that stopping the node was logged in stats.log
-grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log || ret=1
-
-exit $ret
-
+grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log

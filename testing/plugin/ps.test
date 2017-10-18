@@ -18,13 +18,12 @@ broctl install
 broctl start
 
 # get status of all nodes
-broctl ps.bro > all.out 2>&1
+broctl ps.bro > all.out
 
 # get status of one node
-broctl ps.bro worker-2 > onenode.out 2>&1
+broctl ps.bro worker-2 > onenode.out
 
 broctl stop
 
 # no bro processes running
-broctl ps.bro > stopped.out 2>&1
-
+broctl ps.bro > stopped.out

@@ -12,8 +12,6 @@ etc/broctl.cfg__no_email
 etc/node.cfg__cluster_no_netifs
 EOF
 
-ret=0
-
 broctl install
 broctl start
 
@@ -27,7 +25,4 @@ broctl stop
 
 # no nodes are running, so no output is expected
 broctl update > stopped.out 2>&1
-test ! -s stopped.out || ret=1
-
-exit $ret
-
+test ! -s stopped.out

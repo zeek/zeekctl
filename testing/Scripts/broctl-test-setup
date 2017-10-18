@@ -129,10 +129,7 @@ installbro() {
         exit 1
     fi
 
-    # Cleanup the test directory only if BROCTL_TEST_DEBUG is not set.
-    if [ -z "${BROCTL_TEST_DEBUG}" ]; then
-        trap "cleanup" EXIT
-    fi
+    trap "cleanup" EXIT
 
     # Create test-specific bro installation directory
     export BROCTL_INSTALL_PREFIX=$basedir/test.$$
@@ -156,7 +153,17 @@ installbro() {
 
 cleanup() {
     set +x
-    test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
+    set +e
+
+    # Make sure all Bro instances started by this test are stopped.
+    # Hide the output to avoid user confusion if a test fails (for example,
+    # this command will fail if "broctl install" was not run).
+    broctl stop > /dev/null 2>&1
+
+    # Cleanup the test directory only if BROCTL_TEST_DEBUG is not set.
+    if [ -z "${BROCTL_TEST_DEBUG}" ]; then
+        test -n "$BROCTL_INSTALL_PREFIX" && rm -rf "$BROCTL_INSTALL_PREFIX"
+    fi
 }
 
 installbro
@@ -164,3 +171,5 @@ installbro
 # Output test commands (if a test fails, this might be useful for debugging)
 set -x
 
+# Halt the test if any command fails
+set -e

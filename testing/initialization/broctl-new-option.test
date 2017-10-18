@@ -9,5 +9,4 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__new_option
 EOF
 
-broctl config 2>&1 | grep foo1 > out
-
+broctl config | grep foo1 > out

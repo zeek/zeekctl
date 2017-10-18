@@ -18,10 +18,10 @@ cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
 crash=bro
 EOF
 
-test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db || exit 1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
 
 broctl install
-broctl start
+! broctl start
 
 sqlite3 $BROCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
 

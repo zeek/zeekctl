@@ -14,31 +14,27 @@ bin/capstats__test
 EOF
 
 logsstats=$BROCTL_INSTALL_PREFIX/logs/stats
-ret=0
 broctl install
 broctl start
 
 # verify that we start with no meta.dat file
-test -e $logsstats/meta.dat && ret=1
-test -e $logsstats/www/meta.dat && ret=1
+test ! -e $logsstats/meta.dat
+test ! -e $logsstats/www
 
 # verify that there are no *.csv files
-find $logsstats/www -name *.csv > find1.out
-test -s find1.out && ret=1
+#find $logsstats/www -name *.csv > find1.out
+#test ! -s find1.out
 
 broctl cron
 
 # verify that broctl cron created the meta.dat file
-test ! -e $logsstats/meta.dat && ret=1
-test ! -e $logsstats/www/meta.dat && ret=1
+test -e $logsstats/meta.dat
+test -e $logsstats/www/meta.dat
 
 cp $logsstats/meta.dat meta.out
 
 # verify that some *.csv files were created
 find $logsstats/www -name *.csv > find2.out
-test ! -s find2.out && ret=1
+test -s find2.out
 
 broctl stop
-
-exit $ret
-

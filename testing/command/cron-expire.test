@@ -12,8 +12,6 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
 EOF
 
-set -e
-
 testlogdir=$BROCTL_INSTALL_PREFIX/logs/2012-10-31
 broctl install
 
@@ -66,4 +64,3 @@ broctl cron
 test -e ${testlogdir}/recent.log
 test -e ${testlogdir}/old.log
 test ! -e ${testlogdir}/anotherold.log
-

@@ -10,7 +10,6 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/broctl.cfg__no_email
 EOF
 
-ret=0
 testlogdir=$BROCTL_INSTALL_PREFIX/logs/stats
 teststatslog=$testlogdir/stats.log
 broctl install
@@ -23,13 +22,13 @@ echo "${yesterday}.00 bro action old" >> ${teststatslog}
 echo "${now}.00 bro action new" >> ${teststatslog}
 
 # Verify that stats.log expire is off by default
-broctl config 2>&1 | sed 's/ //g' | grep -q statslogexpireinterval=0
-test $? -ne 0 && exit 1
+broctl config | sed 's/ //g' > tmp
+grep -q statslogexpireinterval=0 tmp
 
 broctl cron
 
 # Verify that broctl cron did not remove any log entries
-grep -q "action old" ${teststatslog} || ret=1
+grep -q "action old" ${teststatslog}
 
 # Update the configuration by changing the "statslogexpireinterval" option
 echo "statslogexpireinterval=1" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
@@ -38,8 +37,5 @@ broctl install
 broctl cron
 
 # Verify that broctl cron removed the old log entry (and not the recent one)
-grep -q "action old" ${teststatslog} && ret=1
-grep -q "action new" ${teststatslog} || ret=1
-
-exit $ret
-
+! grep -q "action old" ${teststatslog}
+grep -q "action new" ${teststatslog}

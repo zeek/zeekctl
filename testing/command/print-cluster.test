@@ -14,8 +14,6 @@ etc/node.cfg__cluster_no_netifs
 etc/networks.cfg__ipv4
 EOF
 
-ret=0
-
 broctl install
 broctl start
 
@@ -30,7 +28,4 @@ broctl stop
 # no nodes are running, so no value exists
 broctl print Log::default_rotation_interval > stopped.out 2>&1
 # the file size should be zero
-test ! -s stopped.out || ret=1
-
-exit $ret
-
+test ! -s stopped.out

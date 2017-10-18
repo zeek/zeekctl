@@ -27,29 +27,27 @@ etc/node.cfg__cluster
 bin/bro__test
 EOF
 
-ret=0
 broctl install
 
 # start all nodes
 broctl start > start-all.out 2>&1
-test $? -eq 0 || ret=1
 
 broctl status > status1.out 2>&1
 
 # stop one node
 broctl stop worker-1 > stop-one.out 2>&1
 
-broctl status > status2.out 2>&1
+! broctl status > status2.out 2>&1
 
 # stop all remaining running nodes
 broctl stop > stop-remaining.out 2>&1
 
-broctl status > status3.out 2>&1
+! broctl status > status3.out 2>&1
 
 # start one node
 broctl start manager > start-one.out 2>&1
 
-broctl status > status4.out 2>&1
+! broctl status > status4.out 2>&1
 
 # start all remaining stopped nodes
 broctl start > start-remaining.out 2>&1
@@ -58,9 +56,8 @@ broctl status > status5.out 2>&1
 
 # stop all nodes
 broctl stop > stop-all.out 2>&1
-test $? -eq 0 || ret=1
 
-broctl status > status6.out 2>&1
+! broctl status > status6.out 2>&1
 
 # Setup a cluster with a logger node.
 while read line; do installcfgfile "$line"; done << EOF
@@ -71,11 +68,6 @@ broctl install
 
 # start all nodes (verify that nodes start in correct order)
 broctl start > start-logger.out 2>&1
-test $? -eq 0 || ret=1
 
 # stop all nodes (verify that nodes stop in correct order)
 broctl stop > stop-logger.out 2>&1
-test $? -eq 0 || ret=1
-
-exit $ret
-

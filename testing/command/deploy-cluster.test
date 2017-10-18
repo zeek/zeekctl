@@ -18,23 +18,17 @@ etc/node.cfg__cluster
 bin/bro__test
 EOF
 
-ret=0
-
 # test that deploy works without first running any other broctl command
 broctl deploy > deploy1.out 2>&1
-test $? -eq 0 || ret=1
 
 broctl status > status1.out
 
 # stop one node
 broctl stop worker-1
-broctl status > status2.out
+! broctl status > status2.out
 
 # test that deploy works when there is a mix of running/stopped nodes
 broctl deploy > deploy2.out 2>&1
-test $? -eq 0 || ret=1
 broctl status > status3.out
 
 broctl stop
-exit $ret
-

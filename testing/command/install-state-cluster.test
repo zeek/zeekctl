@@ -11,8 +11,6 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__cluster
 EOF
 
-set -e
-
 test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
 
 broctl install

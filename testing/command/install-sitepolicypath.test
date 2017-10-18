@@ -7,8 +7,6 @@
 
 . broctl-test-setup
 
-ret=0
-
 echo "sitepolicypath=$BROCTL_INSTALL_PREFIX/doesnotexist:$BROCTL_INSTALL_PREFIX/test_site:$BROCTL_INSTALL_PREFIX/emptytestdir:$BROCTL_INSTALL_PREFIX/test_site2" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
 # Create directories and files specified in sitepolicypath
@@ -28,13 +26,13 @@ echo "my subfile2" > $BROCTL_INSTALL_PREFIX/test_site2/testsubdir/testsubfile
 echo "other subfile" > $BROCTL_INSTALL_PREFIX/test_site2/testsubdir/testsubfile2
 
 # Verify that the files aren't already installed
-test ! -e spool/installed-scripts-do-not-touch/site || ret=1
+test ! -e spool/installed-scripts-do-not-touch/site
 
 broctl install
 
 # Verify that the files and subdirectories were installed
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/installed-scripts-do-not-touch/site/testfile
 spool/installed-scripts-do-not-touch/site/testfile2
@@ -44,7 +42,7 @@ EOF
 
 # Verify that the symlinks were installed as symlinks
 while read line; do
-    test -h $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test -h $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/installed-scripts-do-not-touch/site/bro-test-package
 spool/installed-scripts-do-not-touch/site/testsubdir/testsymlink
@@ -52,14 +50,11 @@ EOF
 
 # Verify that for duplicate files, only the first one was installed
 while read line; do
-    grep -q 2 $BROCTL_INSTALL_PREFIX/$line && ret=1
+    ! grep -q 2 $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/installed-scripts-do-not-touch/site/testfile
 spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile
 EOF
 
 # Verify that for duplicate subdirs, only the first one was installed
-test -e $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile2 && ret=1
-
-exit $ret
-
+test ! -e $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/testsubdir/testsubfile2

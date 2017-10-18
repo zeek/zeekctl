@@ -22,7 +22,6 @@ connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log
 origconnlog=conn.2013-12-30-22-24-20.log
 origtestlog=broctltest.2013-12-30-22-24-20.log
 
-ret=0
 broctl install
 
 # Create Bro's working directory, chdir to that dir, and create rotated logs
@@ -41,28 +40,25 @@ _EOF_
 ${archivelog} ${origconnlog} conn 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
 # verify that the logs were archived
-test -f ${origconnlog} && ret=1
-test ! -f ${connlog} && ret=1
-test ! -f ${connsummarylog} && ret=1
+test ! -f ${origconnlog}
+test -f ${connlog}
+test -f ${connsummarylog}
 
 # verify that the logs were not compressed
-grep -q "This is a test" ${connlog} || ret=1
-grep -q ">== Total ===" ${connsummarylog} || ret=1
+grep -q "This is a test" ${connlog}
+grep -q ">== Total ===" ${connsummarylog}
 
 ###############################################
 # Test archive-log for a different log file
 
 # verify that the broctltest.log was not archived yet
-test -f ${testlog} && ret=1
+test ! -f ${testlog}
 
 ${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
 # verify that broctltest.log was archived
-test -f ${origtestlog} && ret=1
-test ! -f ${testlog} && ret=1
+test ! -f ${origtestlog}
+test -f ${testlog}
 
 # verify that broctltest.log was not compressed
-grep -q "This is a test" ${testlog} || ret=1
-
-exit $ret
-
+grep -q "This is a test" ${testlog}

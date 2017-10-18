@@ -9,7 +9,6 @@ while read line; do installcfgfile "$line"; done << EOF
 etc/node.cfg__node_names
 EOF
 
-broctl install || exit 1
+broctl install
 
-broctl nodes > out 2>&1
-
+broctl nodes > out
