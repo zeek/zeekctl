@@ -896,9 +896,13 @@ class Controller:
             netif = netif.split("@", 1)[0]
 
         elif "::" in netif:
-            # Strip the prefix so capstats actually works
-            # when a prefix is used.
-            netif = netif.split("::")[1]
+            # Check to see if it is af_packet since we know it works
+            # Otherwise disable it since we know netmap etc is broken.
+            
+            if "af_packet" in netif:
+                netif = netif.split("::")[1]
+            else
+                netif = None
 
         return netif
 
