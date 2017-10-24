@@ -1,14 +1,24 @@
 #! /usr/bin/env bash
 #
-# Usage:  build-bro [cleanall]
+# This script builds Bro, then creates a tar file of the Bro installation which
+# will be used by each broctl test case to have its own fresh install of Bro.
+# This script must be run before attempting to run any of the broctl tests.
 #
-# This script configures and builds Bro, and then creates a tar file of
-# the Bro installation so that each broctl test case will have its own
-# fresh install.  If Bro fails to build, then define BROCTL_TEST_BUILDARGS to
-# specify additional "configure" options needed to build Bro.
+# Usage:  build-bro [--clean]
 #
-# If the "cleanall" parameter is specified, then this script just removes
+# If the "--clean" parameter is specified, then this script just removes
 # the tar file and the broctl test build directory.
+#
+# A user can modify the behavior of this script by setting any of these
+# env. variables:
+#   BROCTL_TEST_USEBUILD  - If this is set (value doesn't matter), then Bro
+#                           will be built using the default Bro build directory
+#                           instead of building in a new directory (if Bro has
+#                           already been built, then using this option can save
+#                           time).
+#   BROCTL_TEST_BUILDARGS - Specify additional options that will be passed
+#                           to Bro's "configure" script (this option might be
+#                           useful if Bro fails to build).
 
 
 # This function builds Bro using a build directory specifically for broctl
@@ -30,10 +40,12 @@ build_bro() {
     cd ${BUILDPREFIX} && make && make install
 }
 
+# Replace the Bro install prefix directory path with the text "@PREFIX@".  This
+# is needed so that each BroControl test script can use its own install prefix.
 replaceprefix() {
     # First, fix the BROSCRIPTDIR path (this step is needed to avoid any
-    # unintended difference between PREFIX and BROSCRIPTDIR because on FreeBSD
-    # /home is actually a symlink to /usr/home).
+    # unintended difference between BROSCRIPTDIR and INSTALLPREFIX because on
+    # FreeBSD /home is actually a symlink to /usr/home).
     oldpath=`grep '^BROSCRIPTDIR' lib/broctl/BroControl/version.py | awk -F \" '{ print $2 }'`
     newpath=`canonicalpath "$oldpath"`
     if [ "$newpath" != "$oldpath" ]; then
@@ -50,74 +62,103 @@ replaceprefix() {
     done
 }
 
+# Normalize the specified pathname by resolving any symlinks in the path.
 canonicalpath() {
     newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
     test $? -ne 0 && exit 1
     echo $newpath
 }
 
-BROCTLSRCDIR=`dirname "$0"`/../..
-BROSRCDIR=${BROCTLSRCDIR}/../..
-BROCTLBUILDDIR=${BROCTLSRCDIR}/build
+# Remove the tar file and all test-specific Bro installation directories.
+clean() {
+    definevars
 
-# Absolute path of a directory where all of the broctl test files are located.
-BROCTL_TEST=`canonicalpath "${BROCTLBUILDDIR}/testing"`
-test -z "${BROCTL_TEST}" && exit 1
-
-if [ "$1" = "cleanall" ]; then
-    # verify the path is a directory (and exists) before attempting to remove
+    # Verify the path is a directory (and exists) before attempting to
+    # remove.
     test -d "${BROCTL_TEST}" && rm -rf "${BROCTL_TEST}"
 
-    # if the directory still exists, then something is wrong
+    # If the directory still exists, then something is wrong.
     if [ -d "${BROCTL_TEST}" ]; then
         exit 1
     fi
 
     exit 0
+}
+
+
+definevars() {
+    # Path to the top-level BroControl source code directory.
+    BROCTLSRCDIR=`dirname "$0"`/../..
+
+    # Path to the Bro source code directory.
+    BROSRCDIR=${BROCTLSRCDIR}/../..
+
+    # Path to the BroControl "build" directory.
+    BROCTLBUILDDIR=${BROCTLSRCDIR}/build
+
+    # Absolute path of parent directory where Bro will be installed.
+    BROCTL_TEST=`canonicalpath "${BROCTLBUILDDIR}/testing"`
+    test -z "${BROCTL_TEST}" && exit 1
+}
+
+
+# Create a tar file of the Bro installation.  The tar file will be used by
+# each broctl test script to create a test-specific Bro installation.
+create_tar() {
+    definevars
+
+    # Exit if any command fails.
+    set -e
+
+    # Verify that the entire Bro git repo was cloned (not just the broctl repo).
+    if [ ! -e "${BROSRCDIR}/configure" ]; then
+        echo "Error: in order to run the BroControl tests, you must clone the bro repo (not just the broctl repo)" 1>&2
+        exit 1
+    fi
+
+    # The tar file that all broctl test cases will use.
+    TARFILE=${BROCTL_TEST}/bro-test-install.tar
+
+    # Remove the tar file if it exists
+    if [ -e "${TARFILE}" ]; then
+        rm -f "${TARFILE}"
+    fi
+
+    mkdir -p ${BROCTL_TEST}
+    LOG=${BROCTL_TEST}/buildbro.log
+    rm -f "$LOG"
+
+    # Bro will be installed in this temporary directory.
+    INSTALLPREFIX=${BROCTL_TEST}/bro-install
+
+    # Remove the temporary directory if it exists.
+    if [ -e "${INSTALLPREFIX}" ]; then
+        rm -rf "${INSTALLPREFIX}"
+    fi
+
+    # Don't exit if a command fails.
+    set +e
+
+    # Build and install Bro in the temporary directory.
+    echo "Building Bro (log in $LOG) ..."
+    build_bro >>$LOG 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Bro build failed:" 1>&2
+        tail -n 20 $LOG 1>&2
+        exit 1
+    fi
+
+    # Create a tar file of the installation so each test case can start with a
+    # clean installation without needing to rebuild Bro.
+    (cd "${INSTALLPREFIX}" && replaceprefix && tar cf "${TARFILE}" * )
+    if [ $? -ne 0 ]; then
+        rm -rf "${INSTALLPREFIX}"
+        exit 1
+    fi
+}
+
+if [ "$1" = "--clean" ]; then
+    clean
+else
+    create_tar
 fi
-
-# The tar file that all broctl test cases will use.
-TARFILE=${BROCTL_TEST}/bro-test-install.tar
-
-# Remove the tar file if it exists
-if [ -e "${TARFILE}" ]; then
-    rm -f "${TARFILE}"
-    test $? -ne 0 && exit 1
-fi
-
-mkdir -p ${BROCTL_TEST} || exit 1
-LOG=${BROCTL_TEST}/buildbro.log
-rm -f "$LOG"
-
-# Verify that the entire Bro git repo was cloned (not just the broctl repo).
-if [ ! -e "${BROSRCDIR}/configure" ]; then
-    echo "Error: configure script not found. Did you remember to clone the bro repo?"
-    exit 1
-fi
-
-# Bro will be installed in this temporary directory.
-INSTALLPREFIX=${BROCTL_TEST}/bro-install
-
-# Remove the temporary directory if it exists.
-if [ -e "${INSTALLPREFIX}" ]; then
-    rm -rf "${INSTALLPREFIX}"
-    test $? -ne 0 && exit 1
-fi
-
-# Build and install Bro in a temporary directory.
-echo "Building Bro (log in $LOG) ..."
-build_bro >>$LOG 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: Bro build failed:"
-    tail -n 20 $LOG
-    exit 1
-fi
-
-# Create a tar file of the installation so each test case can use its own
-# install prefix without needing to rebuild Bro.
-(cd "${INSTALLPREFIX}" && replaceprefix && tar cf "${TARFILE}" * )
-if [ $? -ne 0 ]; then
-    rm -rf "${INSTALLPREFIX}"
-    exit 1
-fi
-
