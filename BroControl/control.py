@@ -901,7 +901,7 @@ class Controller:
             
             if "af_packet" in netif:
                 netif = netif.split("::")[1]
-            else
+            else:
                 netif = None
 
         return netif
