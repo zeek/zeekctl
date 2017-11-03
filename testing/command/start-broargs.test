@@ -1,4 +1,4 @@
-# Test that the start command starts a cluster and passes additional
+# Test that the start command passes additional
 # arguments to Bro as specified in the broargs broctl option.
 #
 # @TEST-EXEC: bash %INPUT
@@ -21,4 +21,3 @@ broctl start
 grep CLUSTER_NODE $BROCTL_INSTALL_PREFIX/spool/debug.log > debug.log
 
 broctl stop
-

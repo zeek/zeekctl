@@ -21,7 +21,7 @@ spool/installed-scripts-do-not-touch/auto/local-networks.bro
 spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
 EOF
 
-broctl install --local > out 2>&1
+broctl install --local > out
 
 test -h $BROCTL_INSTALL_PREFIX/logs/current
 

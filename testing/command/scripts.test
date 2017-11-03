@@ -35,4 +35,3 @@ eval ${rmpaths} tmp3.out > c-all.out
 # Test with "-c" for one node
 broctl scripts -c proxy-1 > tmp4.out 2>&1
 eval ${rmpaths} tmp4.out > c-onenode.out
-

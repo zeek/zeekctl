@@ -28,4 +28,3 @@ broctl capstats 4 > interval.out 2>&1
 
 # get capstats on one node over a specified time interval
 broctl capstats worker-2 3 > onenode-interval.out 2>&1
-

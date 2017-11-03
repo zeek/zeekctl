@@ -37,4 +37,3 @@ broctl stop
 broctl restart manager > start-one.out 2>&1
 
 broctl stop
-

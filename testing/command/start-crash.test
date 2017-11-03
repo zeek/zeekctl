@@ -1,5 +1,5 @@
-# Test that the start command starts a cluster and reports to the user
-# that a node crashed, and does not log the crashed node in the stats.log file.
+# Test that the start command reports to the user that a node crashed,
+# and does not log the crashed node in the stats.log file.
 # Test that the start command can start a node in the crashed state, and
 # that it sends a crash report.  Test that the start command returns nonzero
 # exit status when not all nodes start successfully.
