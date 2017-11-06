@@ -10,14 +10,14 @@
 #
 # This script provides these functions that can be used directly in
 # test scripts:
-#   installcfgfile    Installs files into the test-specific Bro install dir.
-#   replaceprefix     Replaces text "@PREFIX@" in a specified file with the
+#   installcfgfile    Install a file into the test-specific Bro install dir.
+#   replaceprefix     Replace text "@PREFIX@" in a specified file with the
 #                     test-specific directory path of the Bro install.
 #
 # This script automatically exports some environment variables that are needed
 # by test scripts:
 #   BROCTL_INSTALL_PREFIX - Test-specific directory path of the Bro install.
-#   PATH - Allows test scripts to run the correct copy of "broctl" without
+#   PATH - Enable test scripts to run the correct copy of "broctl" without
 #          specifying a path.
 #
 # A user can modify the behavior of this script by setting any of the
@@ -30,11 +30,17 @@
 
 # installcfgfile <rel.path> [--new]
 #
-# This function can be used to install a test-specific config file.
-# The <rel.path> is the relative pathname of the config file to install
+# Install a file to the test-specific Bro installation directory.
+#
+# The <rel.path> is the pathname (relative to the "Cfg" directory, which is
+# located in the btest base directory) of the file to be installed,
 # and it must follow a naming convention: <dir>/<dest.name>__<text>
 # where <dir> is the directory, <dest.name> is the destination filename, and
-# <text> is some descriptive text for the config file.
+# <text> is some descriptive text for the file (to allow choosing
+# among different variations of the same file).
+# The file will be copied to $BROCTL_INSTALL_PREFIX/<dir>/<dest.name>
+#
+# The destination directory and file must already exist.
 # If "--new" is given, then skip check for existence of destination file.
 installcfgfile() {
     set +x
@@ -59,12 +65,9 @@ installcfgfile() {
         exit 1
     fi
 
-    # Use the double-underscore delimiter to derive the destination filename
+    # Remove the optional double-underscore delimiter (and following text) to
+    # derive the destination filename
     relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
-    if [ "$origrelpath" = "$relpath" ]; then
-        echo "Error: source filename needs '__': $origrelpath" 1>&2
-        exit 1
-    fi
     destfile=$(basename "$relpath")
 
     # Derive the destination directory based on the original directory
@@ -83,7 +86,7 @@ installcfgfile() {
         # Make sure destination file exists (usually, we're overwriting an
         # existing file, so this is a good safety check to catch typos)
         if [ ! -f "$destpath" ]; then
-            echo "Error: destination file not found: $destpath (maybe try --new option?)" 1>&2
+            echo "Error: destination file not found: $destpath (if this is a new file, use the --new option)" 1>&2
             exit 1
         fi
     fi
