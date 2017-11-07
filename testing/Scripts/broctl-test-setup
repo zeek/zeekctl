@@ -10,7 +10,7 @@
 #
 # This script provides these functions that can be used directly in
 # test scripts:
-#   installcfgfile    Install a file into the test-specific Bro install dir.
+#   installfile       Install a file into the test-specific Bro install dir.
 #   replaceprefix     Replace text "@PREFIX@" in a specified file with the
 #                     test-specific directory path of the Bro install.
 #
@@ -28,7 +28,7 @@
 
 
 
-# installcfgfile <rel.path> [--new]
+# installfile <rel.path> [<destdir>] [--new]
 #
 # Install a file to the test-specific Bro installation directory.
 #
@@ -40,22 +40,30 @@
 # among different variations of the same file).
 # The file will be copied to $BROCTL_INSTALL_PREFIX/<dir>/<dest.name>
 #
+# If <destdir> is specified, then the file will be copied to
+# $BROCTL_INSTALL_PREFIX/<destdir>/<dest.name>
+#
 # The destination directory and file must already exist.
 # If "--new" is given, then skip check for existence of destination file.
-installcfgfile() {
+installfile() {
     set +x
 
     if [ -z "$1" ]; then
         return
     fi
 
-    # Split input into two cmd-line args.
-    origrelpath=`echo $1 | awk '{print $1}'`
-    newfile=`echo $1 | awk '{print $2}'`
-    if [ "$newfile" = "--new" ]; then
-        newfile="yes"
-    else
-        newfile="no"
+    newfile="no"
+    destdir=""
+    origrelpath=$1
+    if [ -n "$2" ]; then
+        if [ "$2" = "--new" ]; then
+            newfile="yes"
+        else
+            destdir=$2
+        fi
+        if [ "$3" = "--new" ]; then
+            newfile="yes"
+        fi
     fi
 
     # Make sure original file exists
@@ -70,8 +78,11 @@ installcfgfile() {
     relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
     destfile=$(basename "$relpath")
 
-    # Derive the destination directory based on the original directory
-    destdir=$(dirname "$relpath")
+    # Destination directory is either specified by user or is the original
+    # directory path
+    if [ -z "$destdir" ]; then
+        destdir=$(dirname "$relpath")
+    fi
 
     # Make sure destination directory exists
     if [ ! -d "$BROCTL_INSTALL_PREFIX/$destdir" ]; then
