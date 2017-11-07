@@ -11,7 +11,7 @@
 clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
 
 # Install a cluster config with no logger nodes.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__no_logger
 EOF
 
@@ -19,7 +19,7 @@ broctl install
 cp ${clusterlayout} no-logger
 
 # Install a cluster config with a logger node.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 
@@ -27,7 +27,7 @@ broctl install
 cp ${clusterlayout} logger
 
 # Install a cluster config with two logger nodes.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__two_loggers
 EOF
 

@@ -28,7 +28,7 @@ remove_errmsg() {
 
 ### Test using a standalone config
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
 bin/bro__test
 EOF
@@ -44,7 +44,7 @@ remove_errmsg standalone
 
 ### Test using a cluster config
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 

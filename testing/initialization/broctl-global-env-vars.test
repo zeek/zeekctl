@@ -10,7 +10,7 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__env_vars
 etc/node.cfg__cluster
 bin/bro__test

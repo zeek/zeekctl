@@ -29,7 +29,7 @@ broctl install
 cp ${broctlconfig} standalone
 
 # Install a cluster config.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
@@ -37,7 +37,7 @@ broctl install
 cp ${broctlconfig} no-logger
 
 # Install a cluster config with a logger node.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 

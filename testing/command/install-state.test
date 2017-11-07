@@ -28,7 +28,7 @@ rm $BROCTL_INSTALL_PREFIX/spool/state.db
 
 ### Test using a cluster config.
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
