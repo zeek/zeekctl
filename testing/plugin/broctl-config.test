@@ -1,0 +1,15 @@
+# Test that a plugin can add content to the broctl-config.bro file.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+plugins/broctlconfigtest.py lib/broctl/plugins --new
+EOF
+
+broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+
+broctl install
+sed -n '/Begin code from/,$p' ${broctlconfig} > out

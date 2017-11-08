@@ -1,0 +1,4 @@
+# Begin code from broctlconfigtest plugin
+redef TestVar = "this is a test";
+redef Test="another test";
+# End code from broctlconfigtest plugin

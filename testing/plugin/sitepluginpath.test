@@ -13,8 +13,8 @@ mkdir $BROCTL_INSTALL_PREFIX/emptydir
 # Install some test plugins
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__sitepluginpath
-plugins/broctltest.py__init_true testplugins --new
-plugins/anothertest.py__init_true moreplugins --new
+plugins/optionstest.py testplugins --new
+plugins/broctlconfigtest.py moreplugins --new
 EOF
 
 replaceprefix etc/broctl.cfg
@@ -24,5 +24,5 @@ debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
 broctl exit
 
 # Verify that the test plugins were found
-grep "Found plugin broctltest" ${debuglog} | grep testplugins
-grep "Found plugin anothertest" ${debuglog} | grep moreplugins
+grep "Found plugin optionstest from" ${debuglog} | grep testplugins
+grep "Found plugin broctlconfigtest from" ${debuglog} | grep moreplugins

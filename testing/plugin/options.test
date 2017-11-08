@@ -1,0 +1,25 @@
+# Test that plugins can define new config options.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff default.out
+# @TEST-EXEC: btest-diff custom.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+plugins/optionstest.py lib/broctl/plugins --new
+EOF
+
+# Test that default values are recognized.
+
+broctl exit
+mv options.out default.out
+
+# Test that custom (user-specified) values override default values.
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__plugin_opts
+EOF
+
+broctl exit
+mv options.out custom.out

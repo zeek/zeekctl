@@ -1,0 +1,17 @@
+# Test that plugins can define new state variables.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out1
+# @TEST-EXEC: btest-diff out2
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+plugins/statetest.py lib/broctl/plugins --new
+EOF
+
+broctl exit
+mv state.out out1
+
+broctl exit
+mv state.out out2

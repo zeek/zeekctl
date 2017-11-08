@@ -1,0 +1,20 @@
+# Test that commands can be added by a plugin.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff help.out
+# @TEST-EXEC: btest-diff cmd.out
+# @TEST-EXEC: btest-diff testcmd.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__debug
+plugins/commandtest.py lib/broctl/plugins --new
+EOF
+
+broctl install
+broctl help | grep commandtest > help.out
+
+broctl commandtest > cmd.out
+broctl commandtest.testcmd manager worker > testcmd.out
+! broctl commandtest.testcmd fail
