@@ -16,13 +16,13 @@ broctl install
 broctl start
 
 # update all nodes
-broctl update > all.out 2>&1
+broctl update > all.out
 
 # update one node
-broctl update worker-2 > onenode.out 2>&1
+broctl update worker-2 > onenode.out
 
 broctl stop
 
 # no nodes are running, so no output is expected
-broctl update > stopped.out 2>&1
+broctl update > stopped.out
 test ! -s stopped.out

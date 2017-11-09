@@ -19,7 +19,7 @@ bin/bro__test
 EOF
 
 # test that deploy works without first running any other broctl command
-broctl deploy > deploy1.out 2>&1
+broctl deploy > deploy1.out
 
 broctl status > status1.out
 
@@ -28,7 +28,7 @@ broctl stop worker-1
 ! broctl status > status2.out
 
 # test that deploy works when there is a mix of running/stopped nodes
-broctl deploy > deploy2.out 2>&1
+broctl deploy > deploy2.out
 broctl status > status3.out
 
 broctl stop

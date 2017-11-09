@@ -29,7 +29,7 @@ rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
 # test with the "--no-watch" option
 broctl cron --no-watch
 
-! broctl status > status1.out 2>&1
+! broctl status > status1.out
 
 rm $BROCTL_INSTALL_PREFIX/sendmail.out
 
@@ -39,6 +39,6 @@ broctl cron
 # verify that a crash report was sent
 grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out
 
-broctl status > status2.out 2>&1
+broctl status > status2.out
 
 broctl stop

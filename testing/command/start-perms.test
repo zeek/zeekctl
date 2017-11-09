@@ -27,4 +27,4 @@ chmod ugo-w $BROCTL_INSTALL_PREFIX/spool/bro
 ! broctl start > start.out 2>&1
 
 # Verify that the status is "stopped".
-! broctl status > status.out 2>&1
+! broctl status > status.out

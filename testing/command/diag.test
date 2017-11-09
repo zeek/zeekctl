@@ -36,7 +36,7 @@ EOF
 broctl install
 broctl start
 
-broctl diag > standalone 2>&1
+broctl diag > standalone
 
 broctl stop
 
@@ -52,10 +52,10 @@ broctl install
 broctl start
 
 # output diags for all nodes
-broctl diag > cluster 2>&1
+broctl diag > cluster
 
 # output diags for one node
-broctl diag worker-2 > onenode 2>&1
+broctl diag worker-2 > onenode
 
 broctl stop
 

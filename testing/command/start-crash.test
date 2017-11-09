@@ -28,14 +28,14 @@ EOF
 broctl install
 
 # start all nodes, and one will crash
-! broctl start > start1.out 2>&1
+! broctl start > start1.out
 
 # the crashed node should not be logged as "started" in stats.log
 grep started $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp
 ! grep worker-1 tmp
 
 # verify that a node is in the crashed state
-! broctl status > status1.out 2>&1
+! broctl status > status1.out
 
 # this time we don't want it to crash
 rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
@@ -44,12 +44,12 @@ rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
 test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out
 
 # try to start a node in the "crashed" state
-broctl start > start2.out 2>&1
+broctl start > start2.out
 
 # verify that a crash report was sent
 grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out
 
 # verify that all nodes are running
-broctl status > status2.out 2>&1
+broctl status > status2.out
 
 broctl stop

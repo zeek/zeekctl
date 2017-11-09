@@ -17,14 +17,14 @@ broctl install
 broctl start
 
 # get status of all nodes
-broctl netstats > all.out 2>&1
+broctl netstats > all.out
 
 # get status of one node
-broctl netstats worker-2 > onenode.out 2>&1
+broctl netstats worker-2 > onenode.out
 
 broctl stop
 
 # no nodes are running, so no status exists
-broctl netstats > stopped.out 2>&1
+broctl netstats > stopped.out
 # the file size should be zero
 test ! -s stopped.out

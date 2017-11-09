@@ -17,12 +17,12 @@ EOF
 
 broctl install
 
-broctl start > start.out 2>&1
+broctl start > start.out
 
 # verify that all nodes are started
-broctl status > status1.out 2>&1
+broctl status > status1.out
 
-broctl stop > stop.out 2>&1
+broctl stop > stop.out
 
 # verify that all nodes are stopped
-! broctl status > status2.out 2>&1
+! broctl status > status2.out

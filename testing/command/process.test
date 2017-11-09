@@ -16,7 +16,7 @@ test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testing
 
 #####################
 # run without any extra bro options
-broctl process $TRACES/dns-session.trace > out 2>&1
+broctl process $TRACES/dns-session.trace > out
 
 # verify that tmp work directory was created
 test -d $BROCTL_INSTALL_PREFIX/spool/tmp/testing

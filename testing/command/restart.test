@@ -20,20 +20,20 @@ EOF
 broctl install
 
 # start all nodes (using restart command)
-broctl restart > start-all.out 2>&1
+broctl restart > start-all.out
 
 # restart one node
-broctl restart worker-1 > restart-one.out 2>&1
+broctl restart worker-1 > restart-one.out
 
 # restart all nodes
-broctl restart > restart-all.out 2>&1
+broctl restart > restart-all.out
 
 # restart all nodes with --clean option
-broctl restart --clean > restart-all-clean.out 2>&1
+broctl restart --clean > restart-all-clean.out
 
 broctl stop
 
 # start one node (using restart command)
-broctl restart manager > start-one.out 2>&1
+broctl restart manager > start-one.out
 
 broctl stop

@@ -38,13 +38,13 @@ spool/worker-1/stdout.log
 EOF
 
 # verify that a node crashed
-! broctl status > status1.out 2>&1
+! broctl status > status1.out
 
 # verify that no email has been sent
 test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out
 
 # test the stop command
-broctl stop > stop.out 2>&1
+broctl stop > stop.out
 
 # the stop command should cleanup the crashed node directory
 while read line; do
@@ -66,4 +66,4 @@ grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp
 grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out
 
 # verify that all nodes are in the stopped state
-! broctl status > status2.out 2>&1
+! broctl status > status2.out

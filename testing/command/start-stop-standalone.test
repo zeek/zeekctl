@@ -18,7 +18,7 @@ broctl install
 test ! -e $BROCTL_INSTALL_PREFIX/spool/bro
 test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log
 
-broctl start > start.out 2>&1
+broctl start > start.out
 
 # the start command creates some files (these are NOT created by bro itself)
 while read line; do
@@ -36,7 +36,7 @@ EOF
 grep started $BROCTL_INSTALL_PREFIX/spool/stats.log
 
 
-broctl stop > stop.out 2>&1
+broctl stop > stop.out
 
 # the stop command should cleanup the node directory
 while read line; do

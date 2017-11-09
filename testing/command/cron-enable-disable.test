@@ -16,11 +16,11 @@ EOF
 broctl install
 
 # check the initial default state
-broctl cron ? > out 2>&1
+broctl cron ? > out
 
 # test that the state can be set to disabled
-broctl cron disable > disable.out 2>&1
-broctl cron ? >> out 2>&1
+broctl cron disable > disable.out
+broctl cron ? >> out
 
 # test that cron doesn't do anything
 rm $BROCTL_INSTALL_PREFIX/spool/debug.log
@@ -28,5 +28,5 @@ broctl cron
 grep -q "cron is disabled" $BROCTL_INSTALL_PREFIX/spool/debug.log
 
 # test that the state can be set to enabled
-broctl cron enable > enable.out 2>&1
-broctl cron ? >> out 2>&1
+broctl cron enable > enable.out
+broctl cron ? >> out
