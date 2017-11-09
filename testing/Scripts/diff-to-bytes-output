@@ -7,6 +7,8 @@
 from __future__ import print_function
 import sys
 
+bignumber = 2**31-1
+
 for line in sys.stdin:
     outstr = ""
     for field in line.split():
@@ -15,7 +17,7 @@ for line in sys.stdin:
         except ValueError:
             num = 0
 
-        if num > 2147483647:
+        if num > bignumber:
             outstr += "%.5e " % num
         else:
             outstr += "%s " % field
