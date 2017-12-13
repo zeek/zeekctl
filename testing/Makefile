@@ -27,6 +27,6 @@ cleanup:
 # Remove the broctl test build dir.
 cleanall:
 	@rm -f $(DIAG)
-	@./Scripts/build-bro cleanall
+	@./Scripts/build-bro --clean
 
 .PHONY: all btest-verbose btest-brief brief rerun buildbro cleanup cleanall

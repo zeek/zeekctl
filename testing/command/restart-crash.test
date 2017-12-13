@@ -1,0 +1,44 @@
+# Test that the restart command can restart crashed nodes and that a crash
+# report is sent.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff restart.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__test_sendmail
+etc/node.cfg__cluster
+bin/bro__test
+bin/sendmail__test --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+broctl install
+! broctl start
+
+# when we restart, make sure no nodes crash
+rm $BROCTL_INSTALL_PREFIX/broctltest.cfg
+
+# verify that a node crashed
+! broctl status > status1.out
+
+# verify that no email has been sent
+test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out
+
+broctl restart > restart.out
+
+# verify that a crash report was sent
+grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out
+
+# verify that all nodes are running
+broctl status > status2.out
+
+broctl stop

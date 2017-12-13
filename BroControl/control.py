@@ -40,7 +40,7 @@ def _make_bro_params(node, live):
     if live:
         args += ["-p", "broctl-live"]
 
-    if node.type == "standalone":
+    if node_mod.is_standalone(node):
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
@@ -63,17 +63,17 @@ def _make_bro_params(node, live):
     #    but overrided by broctl.cfg)
     args += config.Config.sitepolicyscripts.split()
     args += ["broctl"]
-    if node.type == "standalone":
+    if node_mod.is_standalone(node):
         args += ["broctl/standalone"]
     else:
         args += ["base/frameworks/cluster"]
-        if node.type == "manager":
+        if node_mod.is_manager(node):
             args += config.Config.sitepolicymanager.split()
-        elif node.type == "logger":
+        elif node_mod.is_logger(node):
             args += config.Config.sitepolicylogger.split()
-        elif node.type == "proxy":
+        elif node_mod.is_proxy(node):
             args += ["local-proxy"]
-        elif node.type == "worker":
+        elif node_mod.is_worker(node):
             args += config.Config.sitepolicyworker.split()
     args += ["broctl/auto"]
 
@@ -89,7 +89,7 @@ def _make_bro_params(node, live):
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
-    if node.type != "standalone":
+    if not node_mod.is_standalone(node):
         envs.append("CLUSTER_NODE=%s" % node.name)
 
     envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
@@ -118,22 +118,11 @@ class Controller:
 
     def start(self, nodes):
         results = cmdresult.CmdResult()
-        loggers = []
-        manager = []
-        proxies = []
-        workers = []
+
+        loggers, manager, proxies, workers = node_mod.separate_types(nodes)
 
         for n in nodes:
             n.setExpectRunning(True)
-
-            if n.type == "worker":
-                workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
-            elif n.type in ("manager", "standalone"):
-                manager += [n]
-            elif n.type == "logger":
-                loggers += [n]
 
         # Start nodes. Do it in the order loggers, manager, proxies, workers.
         if loggers:
@@ -168,23 +157,21 @@ class Controller:
 
     # Starts the given nodes.
     def _start_nodes(self, nodes, results):
+        self.ui.info("starting %s ..." % node_mod.nodes_describe(nodes))
+
         filtered = []
         # Ignore nodes which are still running.
         for (node, isrunning) in self._isrunning(nodes):
             if not isrunning:
                 filtered += [node]
-                if node.hasCrashed():
-                    self.ui.info("starting %s (was crashed) ..." % node.name)
-                else:
-                    self.ui.info("starting %s ..." % node.name)
-            else:
-                self.ui.info("%s still running" % node.name)
 
         nodes = filtered
 
         # Generate crash report for any crashed nodes.
         crashed = [node for node in nodes if node.hasCrashed()]
-        self._make_crash_reports(crashed)
+        if crashed:
+            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self._make_crash_reports(crashed)
 
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
@@ -420,23 +407,11 @@ class Controller:
     # Stop Bro processes on nodes.
     def stop(self, nodes):
         results = cmdresult.CmdResult()
-        loggers = []
-        manager = []
-        proxies = []
-        workers = []
+
+        loggers, manager, proxies, workers = node_mod.separate_types(nodes)
 
         for n in nodes:
             n.setExpectRunning(False)
-
-            if n.type == "worker":
-                workers += [n]
-            elif n.type == "proxy":
-                proxies += [n]
-            elif n.type in ("manager", "standalone"):
-                manager += [n]
-            elif n.type == "logger":
-                loggers += [n]
-
 
         # Stop nodes. Do it in the order workers, proxies, manager, loggers
         # (the reverse of "start").
@@ -470,22 +445,22 @@ class Controller:
         return results
 
     def _stop_nodes(self, nodes, results):
+        self.ui.info("stopping %s ..." % node_mod.nodes_describe(nodes))
 
         running = []
 
-        # Check for crashed nodes.
+        # Check which nodes are still running.
         for (node, isrunning) in self._isrunning(nodes):
             if isrunning:
                 running += [node]
-                self.ui.info("stopping %s ..." % node.name)
             else:
                 results.set_node_success(node)
 
-                if node.hasCrashed():
-                    self.ui.info("%s not running (was crashed)" % node.name)
-                    self._make_crash_reports([node])
-                else:
-                    self.ui.info("%s not running" % node.name)
+        # Generate crash report for any crashed nodes.
+        crashed = [node for node in nodes if node.hasCrashed()]
+        if crashed:
+            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self._make_crash_reports(crashed)
 
         # Helper function to stop nodes with given signal.
         def stop(nodes, signal):
@@ -960,7 +935,7 @@ class Controller:
         res = execute.run_localcmds(cmds)
 
         for (tag, success, output) in res:
-            node = self.config.nodes(tag=tag)[0]
+            node = self.config.nodes(tag)[0]
             if not success:
                 self.ui.info("failed to update %s: %s" % (tag, output))
                 results.set_node_fail(node)
@@ -990,7 +965,7 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and node.type not in ("manager", "standalone"):
+                if key == "logdir" and not (node_mod.is_manager(node) or node_mod.is_standalone(node)):
                     # Don't need this on the workers/proxies.
                     continue
 
@@ -1235,8 +1210,10 @@ class Controller:
             results.ok = False
             return results
 
-        tag = "standalone" if self.config.standalone else "workers"
-        node = self.config.nodes(tag=tag)[0]
+        if self.config.standalone:
+            node = self.config.nodes()[0]
+        else:
+            node = self.config.workers()[0]
 
         cwd = os.path.join(self.config.tmpdir, "testing")
 
@@ -1337,7 +1314,7 @@ class Controller:
             results.ok = False
             return results
 
-        loggers = self.config.nodes("loggers")
+        loggers = self.config.loggers()
         if loggers:
             # Just use the first logger that is defined.
             node_cwd = loggers[0].cwd()

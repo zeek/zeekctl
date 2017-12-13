@@ -21,61 +21,53 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
 etc/node.cfg__cluster
 bin/bro__test
 EOF
 
-ret=0
 broctl install
 
 # start all nodes
-broctl start > start-all.out 2>&1
-test $? -eq 0 || ret=1
+broctl start > start-all.out
 
-broctl status > status1.out 2>&1
+broctl status > status1.out
 
 # stop one node
-broctl stop worker-1 > stop-one.out 2>&1
+broctl stop worker-1 > stop-one.out
 
-broctl status > status2.out 2>&1
+! broctl status > status2.out
 
 # stop all remaining running nodes
-broctl stop > stop-remaining.out 2>&1
+broctl stop > stop-remaining.out
 
-broctl status > status3.out 2>&1
+! broctl status > status3.out
 
 # start one node
-broctl start manager > start-one.out 2>&1
+broctl start manager > start-one.out
 
-broctl status > status4.out 2>&1
+! broctl status > status4.out
 
 # start all remaining stopped nodes
-broctl start > start-remaining.out 2>&1
+broctl start > start-remaining.out
 
-broctl status > status5.out 2>&1
+broctl status > status5.out
 
 # stop all nodes
-broctl stop > stop-all.out 2>&1
-test $? -eq 0 || ret=1
+broctl stop > stop-all.out
 
-broctl status > status6.out 2>&1
+! broctl status > status6.out
 
 # Setup a cluster with a logger node.
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 
 broctl install
 
 # start all nodes (verify that nodes start in correct order)
-broctl start > start-logger.out 2>&1
-test $? -eq 0 || ret=1
+broctl start > start-logger.out
 
 # stop all nodes (verify that nodes stop in correct order)
-broctl stop > stop-logger.out 2>&1
-test $? -eq 0 || ret=1
-
-exit $ret
-
+broctl stop > stop-logger.out

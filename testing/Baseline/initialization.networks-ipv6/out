@@ -1,3 +1,0 @@
-redef Site::local_nets = {
-	[fe80::]/64,	# another network
-};

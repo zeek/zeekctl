@@ -10,7 +10,7 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__debug
 etc/node.cfg__env_vars
 bin/bro__test
@@ -23,11 +23,10 @@ EOF
 broctl install
 
 # verify that the env_vars option is empty
-broctl config 2>&1 | grep -i env_vars > out
+broctl config | grep -i env_vars > out
 
 # verify that the env. vars. are passed to Bro
 broctl start
 grep -i myvar $BROCTL_INSTALL_PREFIX/spool/debug.log > debug.log
 grep -i myvar $BROCTL_INSTALL_PREFIX/spool/worker-1/stderr.log > stderr.log
 broctl stop
-

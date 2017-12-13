@@ -1,0 +1,28 @@
+# Test that plugins are found in a directory specified by the SitePluginPath
+# option, and that directories that don't contain plugins are ignored.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+# Create dirs specified in the SitePluginPath option in broctl.cfg
+mkdir $BROCTL_INSTALL_PREFIX/testplugins
+mkdir $BROCTL_INSTALL_PREFIX/moreplugins
+mkdir $BROCTL_INSTALL_PREFIX/emptydir
+
+# Install some test plugins
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__sitepluginpath
+plugins/optionstest.py testplugins --new
+plugins/broctlconfigtest.py moreplugins --new
+EOF
+
+replaceprefix etc/broctl.cfg
+
+debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
+
+broctl exit
+
+# Verify that the test plugins were found
+grep "Found plugin optionstest from" ${debuglog} | grep testplugins
+grep "Found plugin broctlconfigtest from" ${debuglog} | grep moreplugins

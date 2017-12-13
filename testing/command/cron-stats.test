@@ -7,33 +7,29 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
 etc/node.cfg__cluster
 bin/bro__test
 bin/capstats__test
 EOF
 
-ret=0
 broctl install
 
 # verify that we start with no stats.log file
-test -e $BROCTL_INSTALL_PREFIX/spool/stats.log && exit 1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log
 
 broctl start
 
 # verify that we start with no stats.log file in the logs/stats directory
-test -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log && ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log
 
 broctl cron
 
 # verify that broctl cron moved the stats.log file to the logs/stats directory
-test -e $BROCTL_INSTALL_PREFIX/spool/stats.log && ret=1
-test ! -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log && ret=1
+test ! -e $BROCTL_INSTALL_PREFIX/spool/stats.log
+test -e $BROCTL_INSTALL_PREFIX/logs/stats/stats.log
 
 cp $BROCTL_INSTALL_PREFIX/logs/stats/stats.log stats.out
 
 broctl stop
-
-exit $ret
-

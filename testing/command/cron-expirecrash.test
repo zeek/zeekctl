@@ -6,11 +6,9 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
 EOF
-
-set -e
 
 testcrashdir1=$BROCTL_INSTALL_PREFIX/spool/tmp/post-terminate-test-1-crash
 testcrashdir2=$BROCTL_INSTALL_PREFIX/spool/tmp/post-terminate-test-2-crash

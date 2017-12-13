@@ -1,0 +1,56 @@
+# Test that the cleanup command does not cleanup any running nodes, and
+# does not cleanup tmpdir unless the "--all" option is specified.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff cleanup.out
+# @TEST-EXEC: btest-diff cleanup-onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all-onenode.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+broctl install
+broctl start
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+#########################
+# test the cleanup command (with and without a node argument)
+broctl cleanup > cleanup.out
+broctl cleanup worker-1 > cleanup-onenode.out
+
+# the node testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+#########################
+# test "cleanup --all" (without a node argument)
+broctl cleanup --all > cleanup-all.out
+
+# the node testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+#########################
+# test "cleanup --all" (with a node argument)
+broctl cleanup --all worker-1 > cleanup-all-onenode.out
+
+# the node testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+broctl stop

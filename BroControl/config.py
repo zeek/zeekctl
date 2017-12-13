@@ -211,7 +211,7 @@ class Configuration:
             except ConfigurationError as err:
                 raise ConfigurationError("broctl config: %s" % err)
 
-            for node in self.nodes("all"):
+            for node in self.nodes():
                 for (key, val) in global_env_vars.items():
                     # Values from node.cfg take precedence over broctl.cfg
                     node.env_vars.setdefault(key, val)
@@ -248,66 +248,45 @@ class Configuration:
     # Returns a list of Nodes (the list will be empty if no matching nodes
     # are found).  The returned list is sorted by node type, and by node name
     # for each type.
-    # - If tag is None, all Nodes are returned.
-    # - If tag is "all", all Nodes are returned if "expand_all" is true.
-    #     If "expand_all" is false, returns an empty list in this case.
-    # - If tag is "loggers", all logger Nodes are returned.
-    # - If tag is "proxies", all proxy Nodes are returned.
-    # - If tag is "workers", all worker Nodes are returned.
-    # - If tag is "manager", the manager Node is returned (cluster config) or
-    #     the standalone Node is returned (standalone config).
-    # - If tag is "standalone", the standalone Node is returned.
+    # - By default (i.e. tag is None), all Nodes are returned.
+    # - If tag is a node group name (e.g. "workers"), all nodes belonging to
+    #   that group are returned.
     # - If tag is the name of a node, then that node is returned.
-    def nodes(self, tag=None, expand_all=True):
-        nodes = []
-        nodetype = None
-
-        if tag == "all":
-            if not expand_all:
-                return []
-
+    def nodes(self, tag=None):
+        nodetype = node_mod.group_type(tag)
+        if nodetype == "_ALL_":
             tag = None
 
-        elif tag == "standalone":
-            nodetype = "standalone"
-
-        elif tag == "loggers":
-            nodetype = "logger"
-
-        elif tag == "manager":
-            nodetype = "manager"
-
-        elif tag == "proxies":
-            nodetype = "proxy"
-
-        elif tag == "workers":
-            nodetype = "worker"
-
+        nodes = []
         for n in self.nodestore.values():
-            if nodetype:
-                if nodetype == n.type:
-                    nodes += [n]
-
-            elif tag == n.name or not tag:
+            if nodetype == n.type or tag == n.name or tag is None:
                 nodes += [n]
 
         nodes.sort(key=node_mod.sortnode)
 
-        if not nodes and tag == "manager":
-            nodes = self.nodes("standalone")
-
         return nodes
 
     # Returns the manager Node (cluster config) or standalone Node (standalone
-    # config).
+    # config).  Returns None if neither are available.
     def manager(self):
-        n = self.nodes("manager")
-        if n:
-            return n[0]
-        n = self.nodes("standalone")
-        if n:
-            return n[0]
-        return None
+        if self.config["standalone"]:
+            n = self.nodes()
+        else:
+            n = self.nodes(node_mod.manager_group())
+
+        if not n:
+            return None
+
+        return n[0]
+
+    def loggers(self):
+        return self.nodes(node_mod.logger_group())
+
+    def proxies(self):
+        return self.nodes(node_mod.proxy_group())
+
+    def workers(self):
+        return self.nodes(node_mod.worker_group())
 
     # Returns a list of nodes which is a subset of the result a similar call to
     # nodes() would yield but within which each host appears only once.
@@ -427,7 +406,7 @@ class Configuration:
         if not node.type:
             raise ConfigurationError("no type given for node %s" % node.name)
 
-        if node.type not in ("logger", "manager", "proxy", "worker", "standalone"):
+        if node.type not in node_mod.node_types():
             raise ConfigurationError("unknown node type '%s' given for node '%s'" % (node.type, node.name))
 
         if not node.host:
@@ -469,7 +448,7 @@ class Configuration:
         numprocs = 0
 
         if node.lb_procs:
-            if node.type != "worker":
+            if not node_mod.is_worker(node):
                 raise ConfigurationError("node '%s' config: load balancing node config options are only for worker nodes" % node.name)
             try:
                 numprocs = int(node.lb_procs)
@@ -542,7 +521,7 @@ class Configuration:
         localhostaddrs = "127.0.0.1", "::1"
 
         for n in nodestore.values():
-            if n.type == "manager":
+            if node_mod.is_manager(n):
                 if manager:
                     raise ConfigurationError("only one manager can be defined in node config")
                 manager = True
@@ -552,10 +531,10 @@ class Configuration:
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
 
-            elif n.type == "proxy":
+            elif node_mod.is_proxy(n):
                 proxy = True
 
-            elif n.type == "standalone":
+            elif node_mod.is_standalone(n):
                 standalone = True
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError("must run broctl on same machine as the standalone node. The standalone node has IP address %s and this machine has IP addresses: %s" % (n.addr, ", ".join(self.localaddrs)))
@@ -572,7 +551,7 @@ class Configuration:
         # If manager is on localhost, then all other nodes must be on localhost
         if manageronlocalhost:
             for n in nodestore.values():
-                if n.type != "manager" and n.addr not in localhostaddrs:
+                if not node_mod.is_manager(n) and n.addr not in localhostaddrs:
                     raise ConfigurationError("all nodes must use localhost/127.0.0.1/::1 when manager uses it")
 
 

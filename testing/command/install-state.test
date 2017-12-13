@@ -1,0 +1,39 @@
+# Test that the install command writes correct values to state database.
+#
+# @TEST-REQUIRES: which sqlite3
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-state-db btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-state-db btest-diff cluster
+
+. broctl-test-setup
+
+dump_db() {
+    out=$1
+
+    sqlite3 $BROCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
+
+    # Produce "key = value" output from the database dump.
+    awk -F \' '{ if (NF == 5) { print $2, "=", $4 } }' dump.out | sort > $out
+}
+
+### Test using a standalone config.
+
+test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
+
+broctl install
+
+dump_db standalone
+
+rm $BROCTL_INSTALL_PREFIX/spool/state.db
+
+### Test using a cluster config.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
+
+broctl install
+
+dump_db cluster

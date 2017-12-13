@@ -1,0 +1,63 @@
+# Test the diag command.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff cluster
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff onenode
+
+. broctl-test-setup
+
+remove_errmsg() {
+    fname=$1
+    os=`uname`
+
+    # On FreeBSD, "ulimit -d unlimited" always fails for non-root users, so
+    # we need to filter out that error message.
+    if [ "$os" = "FreeBSD" ]; then
+        grep -v "ulimit: data seg size: cannot modify limit" $fname > $fname.2
+        mv $fname.2 $fname
+    fi
+
+    # On OpenBSD, "ulimit -d unlimited" and "ulimit -m unlimited" always fail
+    # for non-root users.  So we need to filter out those error messages.
+    if [ "$os" = "OpenBSD" ]; then
+        grep -v "ulimit: [a-z ]*: cannot modify limit" $fname > $fname.2
+        mv $fname.2 $fname
+    fi
+}
+
+### Test using a standalone config
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__no_email
+bin/bro__test
+EOF
+
+broctl install
+broctl start
+
+broctl diag > standalone
+
+broctl stop
+
+remove_errmsg standalone
+
+### Test using a cluster config
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+broctl install
+broctl start
+
+# output diags for all nodes
+broctl diag > cluster
+
+# output diags for one node
+broctl diag worker-2 > onenode
+
+broctl stop
+
+remove_errmsg cluster
+remove_errmsg onenode

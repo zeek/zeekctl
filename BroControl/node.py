@@ -256,3 +256,92 @@ def sortnode(n):
 # a node.
 def sorttuple(t):
     return t[0].type, t[0].count
+
+# Given a list of nodes (all of the same type), return a string that describes
+# the list of nodes (in either singular or plural form).  This string is
+# just for informational output, and doesn't have any other use or meaning.
+# For standalone node type, the node name is returned instead.
+def nodes_describe(nodes):
+    nodetype = nodes[0].type
+
+    if nodetype == "standalone":
+        return nodes[0].name
+    elif nodetype == "manager":
+        return "manager"
+    elif nodetype == "logger":
+        return "logger%s" % ("" if len(nodes) == 1 else "s")
+    elif nodetype == "proxy":
+        return "prox%s" % ("y" if len(nodes) == 1 else "ies")
+    elif nodetype == "worker":
+        return "worker%s" % ("" if len(nodes) == 1 else "s")
+
+# Return a list of all node types.
+def node_types():
+    return ["logger", "manager", "proxy", "worker", "standalone"]
+
+# Check if the given node is a certain type.
+def is_standalone(n):
+    return n.type == "standalone"
+
+def is_manager(n):
+    return n.type == "manager"
+
+def is_logger(n):
+    return n.type == "logger"
+
+def is_proxy(n):
+    return n.type == "proxy"
+
+def is_worker(n):
+    return n.type == "worker"
+
+# Given a list of nodes, return separate lists for each type of node.
+def separate_types(nodes):
+    loggers = []
+    manager = []
+    proxies = []
+    workers = []
+
+    for n in nodes:
+        if n.type == "worker":
+            workers += [n]
+        elif n.type == "proxy":
+            proxies += [n]
+        elif n.type in ("manager", "standalone"):
+            manager += [n]
+        elif n.type == "logger":
+            loggers += [n]
+
+    return loggers, manager, proxies, workers
+
+# Map of node groups to node types (here, "_ALL_" is for internal use only and
+# matches all node types).
+grouptype = {"all": "_ALL_",
+             "loggers": "logger",
+             "manager": "manager",
+             "proxies": "proxy",
+             "workers": "worker"}
+
+# Return a list of all node groups.  These are for convenience when using
+# broctl commands (e.g. "broctl start workers").
+def node_groups():
+    return list(grouptype.keys())
+
+# Return the node type (or "_ALL_", which matches all node types) of a
+# specified group name.  If the "tag" doesn't match any group name, then None
+# is returned.
+def group_type(tag):
+    return grouptype.get(tag)
+
+# Return the name of a node group.
+def manager_group():
+    return "manager"
+
+def logger_group():
+    return "loggers"
+
+def proxy_group():
+    return "proxies"
+
+def worker_group():
+    return "workers"

@@ -5,10 +5,8 @@
 
 . broctl-test-setup
 
-ret=0
-
 while read line; do
-    test ! -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test ! -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 logs/current
 spool/state.db
@@ -18,12 +16,12 @@ spool/installed-scripts-do-not-touch/auto/local-networks.bro
 spool/installed-scripts-do-not-touch/auto/standalone-layout.bro
 EOF
 
-broctl install > out 2>&1
+broctl install > out
 
-test -h $BROCTL_INSTALL_PREFIX/logs/current || ret=1
+test -h $BROCTL_INSTALL_PREFIX/logs/current
 
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line || ret=1
+    test -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/state.db
 spool/installed-scripts-do-not-touch/site/local.bro
@@ -31,6 +29,3 @@ spool/installed-scripts-do-not-touch/auto/broctl-config.bro
 spool/installed-scripts-do-not-touch/auto/local-networks.bro
 spool/installed-scripts-do-not-touch/auto/standalone-layout.bro
 EOF
-
-exit $ret
-

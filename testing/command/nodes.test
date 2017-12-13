@@ -1,0 +1,17 @@
+# Test that the nodes command lists all bro nodes.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff cluster
+
+. broctl-test-setup
+
+broctl install
+broctl nodes > standalone
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster_test
+EOF
+
+broctl install
+broctl nodes > cluster

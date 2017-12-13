@@ -7,12 +7,10 @@
 
 . broctl-test-setup
 
-while read line; do installcfgfile "$line"; done << EOF
+while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
 bin/bro__test
 EOF
-
-set -e
 
 test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
 

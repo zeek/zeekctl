@@ -1,0 +1,14 @@
+# Test that plugins can define new node keys.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__plugin_keys
+plugins/nodekeystest.py lib/broctl/plugins --new
+EOF
+
+broctl exit
+mv keys.out out

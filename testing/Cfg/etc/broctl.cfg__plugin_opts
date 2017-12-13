@@ -1,0 +1,4 @@
+# Specify values for options provided by optionstest.py plugin.
+optionstest.opt1=0
+optionstest.opt2=this is a test
+optionstest.opt3=123
