@@ -1,0 +1,31 @@
+# Test that the print command can print a value from all nodes, or just a
+# specified node.
+#
+# @TEST-SERIALIZE: cluster
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster_no_netifs
+etc/networks.cfg__ipv4
+EOF
+
+broctl install
+broctl start
+
+# print a single-line value from all nodes
+broctl print Log::default_rotation_interval > all.out
+
+# print a multi-line value from one node
+broctl print Site::local_nets worker-2 > onenode.out
+
+broctl stop
+
+# no nodes are running, so no value exists
+broctl print Log::default_rotation_interval > stopped.out
+# the file size should be zero
+test ! -s stopped.out

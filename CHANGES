@@ -1,4 +1,66 @@
 
+1.7-34 | 2017-12-13 11:30:50 -0600
+
+  * Simplify broctl "start" and "stop" output
+
+    Instead of listing the name of every node that is being started or
+    stopped, now just the type of node is shown (e.g. "starting workers").
+    This improves the readability of the command output for clusters tha
+    have more than a few nodes. (Daniel Thayer)
+
+  * Avoid unneeded stderr redirection in test scripts
+
+    Don't capture stderr in test scripts where nothing is written to stderr. (Daniel Thayer)
+
+  * Replace a hard-coded numerical constant in a diff canonifier (Daniel Thayer)
+
+  * Add new tests of the BroControl plugin API (Daniel Thayer)
+
+  * Reorganize a few test files (Daniel Thayer)
+
+  * Update usage of the installcfgfile function (Daniel Thayer)
+
+  * Rename and update sitepluginpath.test (Daniel Thayer)
+
+  * Improve a function in broctl-test-setup scrip
+
+    Improve the installcfgfile function by allowing user to specify
+    a destination directory.  Also renamed the function. (Daniel Thayer)
+
+  * Improve the broctl-test-setup scrip
+
+    Improve code comments and an error message.  Remove the requiremen
+    that a file to be installed must have a "__" in the filename. (Daniel Thayer)
+
+  * Rename some test scripts
+
+    Simplify the naming of some test scripts.  Removed "standalone"
+    and "cluster" from the names when this wasn't useful. (Daniel Thayer)
+
+  * Cleanup the broctl test build and setup scripts
+
+    Added better code comments and error messages.  Also a bit of
+    reorganization. (Daniel Thayer)
+
+  * Simplify test scripts
+
+    Added "set -e" to the broctl-test-setup script instead of setting i
+    in individual test files.  This simplifies many test scripts.
+    Also added "broctl stop" to the cleanup function in case a test fails
+    after bro is started. (Daniel Thayer)
+
+  * Add test for "broctl --version" (Daniel Thayer)
+
+  * Update the "install" command tes
+
+    Added a test case for multiple logger nodes. (Daniel Thayer)
+
+  * Code cleanup: relocate hard-coded node type names
+
+    Instead of having node type and group names hard-coded in various
+    source files, they are now relocated to one source file.  This should
+    help make it easier to modify those names in the future. (Daniel Thayer)
+
 1.7-16 | 2017-09-26 09:16:47 -0400
 
   * Allow broctl plugin command names that don't contain a do

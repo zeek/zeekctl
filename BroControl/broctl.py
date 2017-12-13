@@ -120,23 +120,23 @@ class BroCtl(object):
     # then only one node per host is chosen.  If "get_types" is True, then
     # only one node per node type (manager, proxy, etc.) is chosen.
     def node_args(self, args=None, get_hosts=False, get_types=False):
-        if not args:
-            args = "all"
-
         nodes = []
 
-        for arg in args.split():
-            nodelist = self.config.nodes(arg)
-            if not nodelist and arg != "all":
-                raise InvalidNodeError("unknown node '%s'" % arg)
+        if args:
+            for arg in args.split():
+                nodelist = self.config.nodes(arg)
+                if not nodelist:
+                    raise InvalidNodeError("unknown node '%s'" % arg)
 
-            nodes += nodelist
+                nodes += nodelist
 
-        if args != "all":
             # Remove duplicate nodes
             newlist = list(set(nodes))
             if len(newlist) != len(nodes):
                 nodes = newlist
+        else:
+            # Get all nodes.
+            nodes = self.config.nodes()
 
         # Sort the list so that it doesn't depend on initial order of arguments
         nodes.sort(key=node_mod.sortnode)
@@ -175,6 +175,9 @@ class BroCtl(object):
 
     def node_names(self):
         return [ n.name for n in self.config.nodes() ]
+
+    def node_groups(self):
+        return node_mod.node_groups()
 
     @expose
     @check_config
@@ -466,10 +469,9 @@ class BroCtl(object):
     @lock_required
     def netstats(self, node_list=None):
         if not node_list:
-            if self.config.nodes("standalone"):
-                node_list = "standalone"
-            else:
-                node_list = "workers"
+            node_list = None
+            if not self.config.standalone:
+                node_list = node_mod.worker_group()
 
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("netstats", nodes)

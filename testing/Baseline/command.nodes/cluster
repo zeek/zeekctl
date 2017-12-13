@@ -1,0 +1,4 @@
+        manager - addr=::1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=manager pin_cpus= test_mykey= type=manager zone_id=
+        proxy-1 - addr=::1 aux_scripts= brobase= count=1 env_vars= ether= host=localhost interface= lb_interfaces= lb_method= lb_procs= name=proxy-1 pin_cpus= test_mykey= type=proxy zone_id=
+       worker-1 - addr=::1 aux_scripts=doesnot.exist brobase= count=1 env_vars= ether= host=localhost interface=eth0 lb_interfaces= lb_method= lb_procs= name=worker-1 pin_cpus= test_mykey= type=worker zone_id=
+       worker-2 - addr=::1 aux_scripts= brobase= count=2 env_vars= ether= host=localhost interface=eth1 lb_interfaces= lb_method= lb_procs= name=worker-2 pin_cpus= test_mykey= type=worker zone_id=

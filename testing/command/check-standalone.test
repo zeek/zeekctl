@@ -10,22 +10,16 @@
 
 . broctl-test-setup
 
-ret=0
 broctl install
 
 # verify that initial config is ok
-broctl check > check1.out 2>&1
-test $? -eq 0 || ret=1
+broctl check > check1.out
 
 # verify that broctl check does not look at installed site policy
 echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.bro
-broctl check > check2.out 2>&1
+broctl check > check2.out
 
 # verify that broctl check looks at policy files in SitePolicyPath
 echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro
-broctl check > tmp.out 2>&1
-test $? -ne 0 || ret=1
+! broctl check > tmp.out
 head -n 1 tmp.out > check3.out
-
-exit $ret
-

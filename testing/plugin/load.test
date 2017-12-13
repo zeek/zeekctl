@@ -1,0 +1,32 @@
+# Test that plugins are loaded by default.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+# Create a subdirectory to verify that broctl searches for plugins in subdirs
+mkdir $BROCTL_INSTALL_PREFIX/lib/bro/plugins/more
+
+# Install some test plugins in directories where broctl searches by default
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__debug
+plugins/optionstest.py      lib/broctl/plugins --new
+plugins/commandtest.py      lib/broctl/plugins --new
+plugins/nodekeystest.py     lib/bro/plugins --new
+plugins/broctlconfigtest.py lib/bro/plugins/more --new
+EOF
+
+# Rename a valid plugin file so that it won't be loaded
+cd $BROCTL_INSTALL_PREFIX/lib/broctl/plugins
+mv commandtest.py commandtest
+cd -
+
+debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
+
+broctl exit
+
+# Verify that the expected plugins were found
+grep "Found plugin optionstest from" ${debuglog}
+grep "Found plugin nodekeystest from" ${debuglog}
+grep "Found plugin broctlconfigtest from" ${debuglog}
+! grep "Found plugin commandtest from" ${debuglog}

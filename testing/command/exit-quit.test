@@ -6,11 +6,6 @@
 
 broctl install
 
-# test the exit command
 broctl exit
-test $? -eq 0 || exit 1
 
-# test the quit command
 broctl quit
-test $? -eq 0 || exit 1
-

@@ -1,0 +1,14 @@
+# Test that the exec command can exec a command on all nodes.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+broctl install
+
+broctl exec echo hello world > out

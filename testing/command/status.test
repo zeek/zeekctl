@@ -1,0 +1,35 @@
+# Test that the status command can get status of all nodes, or just a
+# specified node.  Also test that the exit status is zero if all nodes
+# are running, and nonzero otherwise.
+#
+# @TEST-SERIALIZE: cluster
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out
+# @TEST-EXEC: btest-diff stopped.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__fullstatus
+etc/node.cfg__cluster_no_netifs
+EOF
+
+broctl install
+broctl start
+
+# get status of all nodes
+broctl status > all.out
+
+# get status of one node
+broctl status manager > onenode.out
+
+broctl stop worker-1
+
+# not all nodes are running
+! broctl status
+
+broctl stop
+
+# all nodes are stopped
+! broctl status > stopped.out

@@ -1,0 +1,106 @@
+# Test that the cleanup command can cleanup a crashed node in a cluster
+# (which includes resetting the crashed node's state to "stopped"),
+# but does not clean the tmpdir unless "--all" is specified.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
+# @TEST-EXEC: btest-diff cleanup.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
+# @TEST-EXEC: btest-diff status3.out
+# @TEST-EXEC: btest-diff cleanup-stopped.out
+# @TEST-EXEC: btest-diff status4.out
+# @TEST-EXEC: btest-diff cleanup-onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cleanup-all-onenode.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__cluster
+bin/bro__test
+EOF
+
+cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+crash=worker-1
+EOF
+
+broctl install
+! broctl start
+touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# verify one node crashed and all others are running
+! broctl status > status1.out
+
+#########################
+# test cleanup (without any node arguments)
+broctl cleanup > cleanup.out
+
+# verify that the crashed node's state was reset to "stopped"
+! broctl status > status2.out
+
+# the node testfile should not exist
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+#########################
+# test cleanup when no nodes are running (without any node arguments)
+
+# restart crashed node and then stop all other nodes
+! broctl start worker-1
+broctl stop manager proxy-1 worker-2
+
+# verify one node crashed and all others are stopped
+! broctl status > status3.out
+
+broctl cleanup > cleanup-stopped.out
+
+# verify that the crashed node's state was reset to "stopped"
+! broctl status > status4.out
+
+! broctl start
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+#########################
+# test cleanup (with a node argument)
+broctl cleanup worker-1 > cleanup-onenode.out
+
+# the node testfile should not exist
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should still exist
+test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+broctl stop
+! broctl start
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+########################
+# test "cleanup --all" (without a node argument)
+broctl cleanup --all > cleanup-all.out
+
+# the node testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+broctl stop
+! broctl start
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+touch $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+########################
+# test "cleanup --all" (with a node argument)
+broctl cleanup --all worker-1 > cleanup-all-onenode.out
+
+# the node testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/worker-1/testfile
+
+# the tmpdir testfile should be gone
+test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
+
+broctl stop

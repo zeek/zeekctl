@@ -728,7 +728,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if not args or args[0] not in nodes_cmds:
             return []
 
-        nodes = ["manager", "workers", "proxies", "all"] + self.broctl.node_names()
+        nodes = self.broctl.node_groups() + self.broctl.node_names()
 
         return [n for n in nodes if n.startswith(text)]
 

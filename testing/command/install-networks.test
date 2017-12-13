@@ -1,0 +1,36 @@
+# Test that the install command creates local-networks.bro file with correct
+# contents.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff ipv4-v6.out
+# @TEST-EXEC: btest-diff ipv4.out
+# @TEST-EXEC: btest-diff ipv6.out
+
+. broctl-test-setup
+
+### Test a mix of IPv4 and IPv6 networks
+while read line; do installfile $line; done << EOF
+etc/networks.cfg__ipv4_ipv6
+EOF
+
+broctl install
+
+cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/local-networks.bro ipv4-v6.out
+
+### Test IPv4 networks only
+while read line; do installfile $line; done << EOF
+etc/networks.cfg__ipv4
+EOF
+
+broctl install
+
+cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/local-networks.bro ipv4.out
+
+### Test IPv6 networks only
+while read line; do installfile $line; done << EOF
+etc/networks.cfg__ipv6
+EOF
+
+broctl install
+
+cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/local-networks.bro ipv6.out
