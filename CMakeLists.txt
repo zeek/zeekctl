@@ -37,18 +37,13 @@ FindRequiredPackage(PythonInterp)
 FindRequiredPackage(SubnetTree)
 find_package(PCAP)
 
-if (HAVE_PF_RING)
-    set(PF_RING_CLUSTER_ID 21)
-else ()
-    set(PF_RING_CLUSTER_ID 0)
-endif ()
-
 find_program(SENDMAIL sendmail PATHS /usr/sbin)
 if (NOT SENDMAIL)
     message(WARNING "A sendmail program was not found, BroControl will be "
-                    "unable to send mail.  This can be fixed even after "
-                    "installing by editing "
-                    "${BRO_ETC_INSTALL_DIR}/broctl.cfg")
+                    "unable to send mail.")
+    # Set a path now so that the user won't need to edit broctl.cfg after
+    # installing sendmail.
+    set(SENDMAIL /usr/sbin/sendmail)
 endif ()
 
 if (MISSING_PREREQS)
