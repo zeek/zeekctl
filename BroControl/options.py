@@ -125,7 +125,7 @@ options = [
            "A custom command to run everytime the cron command has finished."),
 
     Option("PFRINGClusterID", 21, "int", Option.USER, False,
-           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
+           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined.  In order to use PF_RING, the value of this option must be non-zero."),
     Option("PFRINGClusterType", "4-tuple", "string", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
     Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,
