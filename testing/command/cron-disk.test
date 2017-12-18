@@ -8,7 +8,7 @@
 
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__test_sendmail
-bin/df__test --new
+bin/df__diskfull --new
 bin/sendmail__test --new
 EOF
 

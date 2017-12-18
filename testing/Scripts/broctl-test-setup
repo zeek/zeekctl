@@ -124,7 +124,8 @@ replaceprefix() {
         exit 1
     fi
 
-    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#g" $destfile > $destfile.new && mv $destfile.new $destfile
+    # Using "cp" and "rm" here in order to preserve permissions of file
+    sed "s#@PREFIX@#${BROCTL_INSTALL_PREFIX}#g" $destfile > $destfile.new && cp $destfile.new $destfile && rm $destfile.new
     test $? -ne 0 && exit 1
 
     set -x
@@ -134,6 +135,14 @@ replaceprefix() {
 # The following functions are needed by this script, but are not likely to be
 # needed by any broctl test scripts.
 
+
+# Normalize the specified pathname by resolving any ".." and symlinks in
+# the path.
+canonicalpath() {
+    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
+    test $? -ne 0 && exit 1
+    echo $newpath
+}
 
 # Set the correct install prefix directory in all files where it's needed
 # (this is done immediately after untarring the Bro install).
@@ -190,7 +199,7 @@ main() {
 
     # Export "BROCTL_INSTALL_PREFIX" which is used in test scripts that need
     # the directory path of the Bro install.
-    export BROCTL_INSTALL_PREFIX=$basedir/test.$$
+    export BROCTL_INSTALL_PREFIX=`canonicalpath "$basedir/test.$$"`
 
     # Create test-specific bro installation directory
     mkdir "$BROCTL_INSTALL_PREFIX"
