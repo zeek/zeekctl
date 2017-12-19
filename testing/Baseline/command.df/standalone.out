@@ -1,0 +1,4 @@
+                                              total  avail  capacity
+              bro/localhost        /dev/sda6  238G   100G   55.6 %
+              bro/localhost        /dev/sda7  124G    65G   47.7 %
+              bro/localhost        /dev/sda8  105G    74G   29.0 %
