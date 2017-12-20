@@ -49,9 +49,9 @@ test -e $BROCTL_INSTALL_PREFIX/spool/tmp/testfile
 #########################
 # test cleanup when no nodes are running (without any node arguments)
 
-# restart crashed node and then stop all other nodes
+# stop all nodes and restart only the crashing node
+broctl stop
 ! broctl start worker-1
-broctl stop manager proxy-1 worker-2
 
 # verify one node crashed and all others are stopped
 ! broctl status > status3.out

@@ -22,7 +22,7 @@ broctl start
 broctl top > all.out
 
 # show one node
-broctl top proxy-1 > onenode.out
+broctl top worker-1 > onenode.out
 
 broctl stop worker-1
 

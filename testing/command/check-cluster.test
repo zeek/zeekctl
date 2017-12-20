@@ -18,4 +18,4 @@ broctl install
 broctl check > all.out
 
 # check one node
-broctl check proxy-1 > onenode.out
+broctl check worker-1 > onenode.out

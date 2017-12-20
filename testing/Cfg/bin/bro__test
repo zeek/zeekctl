@@ -61,9 +61,9 @@ if os.path.isfile(cfgfilepath):
     testcfg.close()
 
 
-# The env. var. is set by broctl and can be used to determine if we're a
-# manager, proxy, or worker (for a standalone config, this env. var. is not
-# set).
+# The env. var. is set by broctl and can be used to determine the cluster
+# node type for this instance of bro (for a standalone config, this env. var.
+# is not set).
 nodename = os.getenv("CLUSTER_NODE", "bro")
 
 if livemode:
