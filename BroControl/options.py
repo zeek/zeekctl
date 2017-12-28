@@ -22,12 +22,6 @@ class Option:
             if not isinstance(default, int):
                 raise ValueError("option '%s' default value must be int" % name)
 
-        # This is a hack needed so that "make doc" will work.
-        if name.lower() == "pfringclusterid":
-            val = "@PF_RING_CLUSTER_ID@"
-            if "@" not in val:
-                # Use default value supplied by cmake
-                self.default = int(val)
 
 options = [
     # User options.
@@ -130,8 +124,8 @@ options = [
     Option("CronCmd", "", "string", Option.USER, False,
            "A custom command to run everytime the cron command has finished."),
 
-    Option("PFRINGClusterID", 0, "int", Option.USER, False,
-           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined. The default value is configuration-dependent and determined automatically by CMake at configure-time based upon whether PF_RING's enhanced libpcap is available.  Bro must be linked with PF_RING's libpcap wrapper for this option to work."),
+    Option("PFRINGClusterID", 21, "int", Option.USER, False,
+           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined.  In order to use PF_RING, the value of this option must be non-zero."),
     Option("PFRINGClusterType", "4-tuple", "string", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Bro must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
     Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,

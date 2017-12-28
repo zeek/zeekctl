@@ -1,4 +1,18 @@
 
+1.7-39 | 2017-12-28 10:29:22 -0500
+
+  * Set consistent default values for SendMail and PFRINGClusterID
+
+    Changed the default value of PFRINGClusterID to be 21 (instead of 0)
+    when PF_RING is not installed so that users don't need to remember to
+    set this value if installing PF_RING after installing Bro.
+
+    Changed the default value of SendMail to /usr/sbin/sendmail (instead
+    of SENDMAIL-NOTFOUND) when sendmail is not installed so that users don't
+    need to set the value after installing sendmail.  This is the same
+    default value used by the Bro script constant Notice::sendmail. (Daniel Thayer)
+
+
 1.7-34 | 2017-12-13 11:30:50 -0600
 
   * Simplify broctl "start" and "stop" output to show the node type
