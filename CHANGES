@@ -1,3 +1,22 @@
+1.7-44 | 2017-12-28 10:33:48 -0500
+
+  * Fix broctl df command to not skip filesystems
+
+    The broctl df command had a bug where it could skip checking the filesystem
+    of the "logs" directory if none of the other Bro directories were on that
+    filesystem, but only when a cluster config with a logger node was being
+    used.
+
+    Also fixed the check for NFS mounted volumes to prevent broctl from
+    skipping non-NFS filesystems that have a colon in the name.
+
+    Addresses BIT-1880 (Daniel Thayer)
+
+  * Improve testing of the broctl df command
+
+    Added tests for a standalone configuration, and added tests for Bro
+    directories on different partitions. (Daniel Thayer)
+
 
 1.7-39 | 2017-12-28 10:29:22 -0500
 

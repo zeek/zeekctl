@@ -1,0 +1,3 @@
+                                              total  avail  capacity
+         worker-1/localhost        /dev/sda6  238G   100G   55.6 %
+         worker-1/localhost        /dev/sda7  124G    65G   47.7 %

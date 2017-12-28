@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+#
+# This script is a replacement for the "df" command, and is used for certain
+# broctl test cases where we need different output for different pathnames
+# specified on the cmd-line.
+
+# The last command-line argument
+eval path=\${$#}
+
+# The last path component of the given pathname
+dir=${path##*/}
+
+echo "Filesystem     1024-blocks      Used Available Capacity Mounted on"
+
+if [ "$dir" = "bin" ]; then
+    echo "/dev/sda7        129577356  61831812  67745544      48% @PREFIX@/bin"
+elif [ "$dir" = "logs" ]; then
+    echo "/dev/sda8        109577356  31831812  77745544      29% @PREFIX@/logs"
+else
+    echo "/dev/sda6        249577356 131831812 105067708      56% /"
+fi

@@ -965,8 +965,8 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and not (node_mod.is_manager(node) or node_mod.is_standalone(node)):
-                    # Don't need this on the workers/proxies.
+                if key == "logdir" and not (node_mod.is_logger(node) or node_mod.is_manager(node) or node_mod.is_standalone(node)):
+                    # Don't need to check this on nodes that don't write logs.
                     continue
 
                 path = self.config.config[key]
@@ -982,7 +982,7 @@ class Controller:
 
                 fs = fields[0]
                 # Ignore NFS mounted volumes.
-                if ":" in fs:
+                if not fs.startswith("/") and ":" in fs:
                     continue
 
                 try:

@@ -1,0 +1,4 @@
+                                              total  avail  capacity
+           logger/localhost        /dev/sda6  238G   100G   55.6 %
+           logger/localhost        /dev/sda7  124G    65G   47.7 %
+           logger/localhost        /dev/sda8  105G    74G   29.0 %

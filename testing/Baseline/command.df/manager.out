@@ -1,0 +1,4 @@
+                                              total  avail  capacity
+          manager/localhost        /dev/sda6  238G   100G   55.6 %
+          manager/localhost        /dev/sda7  124G    65G   47.7 %
+          manager/localhost        /dev/sda8  105G    74G   29.0 %
