@@ -248,14 +248,26 @@ class Node:
         Node._keys[kw.lower()] = 1
 
 
+# The sorting order for node types used by the sorting functions below
+# (specifying the sort order explicitly is useful if we don't want to
+# use alphabetical order).
+_typeorder = ("standalone", "logger", "manager", "proxy", "worker")
+
 # Sorting key function for a list of nodes.
 def sortnode(n):
-    return n.type, n.count
+    try:
+        return _typeorder.index(n.type), n.count
+    except ValueError:
+        return len(_typeorder), n.count
 
 # Sorting key function for a list of tuples, where the first tuple element is
 # a node.
 def sorttuple(t):
-    return t[0].type, t[0].count
+    n = t[0]
+    try:
+        return _typeorder.index(n.type), n.count
+    except ValueError:
+        return len(_typeorder), n.count
 
 # Given a list of nodes (all of the same type), return a string that describes
 # the list of nodes (in either singular or plural form).  This string is
