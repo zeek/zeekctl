@@ -5,6 +5,10 @@
 type=manager
 host=localhost
 
+[logger]
+type=logger
+host=localhost
+
 [proxy-1]
 type=proxy
 host=localhost
@@ -16,4 +20,3 @@ host=localhost
 [worker-2]
 type=worker
 host=localhost
-

@@ -1,5 +1,6 @@
 Name         Type    Host             Status    Pid    Started
-manager      manager localhost        running   7962   2014-01-05
-proxy-1      proxy   localhost        running   7994   2014-01-05
-worker-1     worker  localhost        running   8038   2014-01-05
-worker-2     worker  localhost        running   8039   2014-01-05
+logger       logger  localhost        running   11074  2018-01-08
+manager      manager localhost        running   11112  2018-01-08
+proxy-1      proxy   localhost        running   11150  2018-01-08
+worker-1     worker  localhost        running   11201  2018-01-08
+worker-2     worker  localhost        running   11202  2018-01-08

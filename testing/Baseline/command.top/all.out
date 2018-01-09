@@ -1,4 +1,6 @@
 Name         Type    Host             Pid     Proc    VSize  Rss  Cpu   Cmd
+logger       logger  localhost        11555   child    69M    22M  12%  bro
+logger       logger  localhost        11554   parent  156M    26M   2%  bro
 manager      manager localhost        11585   child    69M    22M  25%  bro
 manager      manager localhost        11584   parent  279M    26M   2%  bro
 proxy-1      proxy   localhost        11612   child    69M    22M  21%  bro

@@ -21,4 +21,3 @@ interface=eth0
 type=worker
 host=localhost
 interface=eth1
-

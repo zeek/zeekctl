@@ -1,5 +1,6 @@
    worker-2
-1463526588.246569 peer=proxy-1 host=::1
-1463526588.246569 peer= host=::1
-1463526588.246569 peer=manager host=::1
+1515445052.440612 peer=manager host=127.0.0.1
+1515445052.440612 peer=proxy-1 host=127.0.0.1
+1515445052.440612 peer=logger host=127.0.0.1
+1515445052.440612 peer= host=127.0.0.1
 
