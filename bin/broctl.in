@@ -531,7 +531,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
 
         self.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
         for (node, success, dfs) in results.get_node_data():
-            for key, diskinfo in dfs.items():
+            for key, diskinfo in sorted(dfs.items()):
                 if key == "FAIL":
                     self.info("df helper failed on %s: %s" % (node, diskinfo))
                     continue
