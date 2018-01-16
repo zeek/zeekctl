@@ -1,9 +1,9 @@
-# Test that the start command can handle a Bro node that is slow to initialize.
+# Test that the start command can start a Bro node that is slow to initialize,
+# and that the status command shows the status as "initializing".
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status1.out
-# @TEST-EXEC: btest-diff status2.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status.out
 
 . broctl-test-setup
 
@@ -23,9 +23,9 @@ broctl install
 broctl start > start.out
 
 # verify that one node is still initializing
-! broctl status > status1.out
+! broctl status > status.out
+
+# Indicate to bro that it should now finish initializing.
+touch $BROCTL_INSTALL_PREFIX/spool/worker-1/.broctl_test_sync
 
 broctl stop
-
-# verify that all nodes are stopped
-! broctl status > status2.out

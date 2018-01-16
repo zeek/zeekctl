@@ -1,5 +1,0 @@
-Name         Type    Host             Status    Pid    Started
-manager      manager localhost        stopped
-proxy-1      proxy   localhost        stopped
-worker-1     worker  localhost        crashed
-worker-2     worker  localhost        stopped
