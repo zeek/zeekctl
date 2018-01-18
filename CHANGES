@@ -1,36 +1,43 @@
+
+1.7-53 | 2018-01-18 13:18:38 -0600
+
+  * Allow capstats to work with af_packet (Mike Reeves)
+
+  * Fix race conditions in the "update" command test and the "start-slowstart"
+    command test.  Cleaned up the bro__test script. (Daniel Thayer)
+
+  * Sort the list of filesystems for each node in the "df" command output.
+    This fixes the "df" command test on Python 3. (Daniel Thayer)
+
+  * Enable easier changing of the node type sort order in broctl command
+    output.  A list of node types in the preferred sort order is now used
+    instead of using alphabetical order. (Daniel Thayer)
+
+  * Add a logger to the node.cfg for some tests to verify correct ordering
+    of node names in the output of various broctl commands. (Daniel Thayer)
+
+  * Update test baselines for recent change of PFRINGClusterID default value.
+    Also, it is no longer necessary to set a value for the PFRINGClusterID
+    option in broctl.cfg for the PF_RING tests. (Daniel Thayer)
+
 1.7-44 | 2017-12-28 10:33:48 -0500
 
-  * Fix broctl df command to not skip filesystems
-
-    The broctl df command had a bug where it could skip checking the filesystem
+  * Fix bug in broctl df command where it could skip checking the filesystem
     of the "logs" directory if none of the other Bro directories were on that
     filesystem, but only when a cluster config with a logger node was being
-    used.
-
-    Also fixed the check for NFS mounted volumes to prevent broctl from
-    skipping non-NFS filesystems that have a colon in the name.
-
+    used.  Also fixed the check for NFS mounted volumes to prevent broctl from
+    skipping non-NFS filesystems that have a colon in the name.  
     Addresses BIT-1880 (Daniel Thayer)
 
-  * Improve testing of the broctl df command
-
-    Added tests for a standalone configuration, and added tests for Bro
+  * Added "df" command tests for a standalone configuration, and for Bro
     directories on different partitions. (Daniel Thayer)
-
 
 1.7-39 | 2017-12-28 10:29:22 -0500
 
-  * Set consistent default values for SendMail and PFRINGClusterID
-
-    Changed the default value of PFRINGClusterID to be 21 (instead of 0)
-    when PF_RING is not installed so that users don't need to remember to
-    set this value if installing PF_RING after installing Bro.
-
-    Changed the default value of SendMail to /usr/sbin/sendmail (instead
-    of SENDMAIL-NOTFOUND) when sendmail is not installed so that users don't
-    need to set the value after installing sendmail.  This is the same
-    default value used by the Bro script constant Notice::sendmail. (Daniel Thayer)
-
+  * Changed the default value of PFRINGClusterID to be 21 (instead of 0)
+    when PF_RING is not installed.  Also changed the default value of
+    SendMail to /usr/sbin/sendmail (instead of SENDMAIL-NOTFOUND) when
+    sendmail is not installed. (Daniel Thayer)
 
 1.7-34 | 2017-12-13 11:30:50 -0600
 

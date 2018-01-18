@@ -908,8 +908,13 @@ class Controller:
 
         elif "::" in netif:
             # Interface name has packet source prefix (e.g. "af_packet::eth0"),
-            # so don't try to run capstats on this interface.
-            netif = None
+            # so don't try to run capstats on this interface unless it is
+            # af_packet since we know that works.
+
+            if netif.startswith("af_packet"):
+                netif = netif.split("::")[1]
+            else:
+                netif = None
 
         return netif
 
