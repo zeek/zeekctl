@@ -35,8 +35,16 @@ build_bro() {
     fi
 
     cd "${BROSRCDIR}"
+
+    if [ "${TRAVIS}" = "true" ]; then
+        # This is needed for some Python versions on Travis CI in order to
+        # build pysubnettree (without this, it could fail to find libpython).
+        export LDFLAGS=-L`python-config --exec-prefix`/lib
+    fi
+
     ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" ${BROCTL_TEST_BUILDARGS}
     test $? -ne 0 && return 1
+
     cd ${BUILDPREFIX} && make && make install
 }
 
@@ -140,12 +148,21 @@ create_tar() {
     set +e
 
     # Build and install Bro in the temporary directory.
-    echo "Building Bro (log in $LOG) ..."
-    build_bro >>$LOG 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Bro build failed:" 1>&2
-        tail -n 20 $LOG 1>&2
-        exit 1
+    if [ "${TRAVIS}" = "true" ]; then
+        # Show build output in Travis CI to prevent timeout of the build job.
+        build_bro
+        if [ $? -ne 0 ]; then
+            echo "Error: Bro build failed" 1>&2
+            exit 1
+        fi
+    else
+        echo "Building Bro (log in $LOG) ..."
+        build_bro >>$LOG 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Bro build failed:" 1>&2
+            tail -n 20 $LOG 1>&2
+            exit 1
+        fi
     fi
 
     # Create a tar file of the installation so each test case can start with a
