@@ -20,8 +20,13 @@ def setprocstate(str):
     if not statusfile:
         return
 
-    with open(statusfile, "w") as fout:
+    tmpfile = statusfile + ".tmp"
+    with open(tmpfile, "w") as fout:
         fout.write(str)
+
+    # Update the status file as an atomic operation to prevent the chance
+    # that broctl sees the file as empty.
+    os.rename(tmpfile, statusfile)
 
 
 # Signal handler for SIGTERM.
