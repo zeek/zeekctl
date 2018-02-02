@@ -1,0 +1,27 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+addons:
+  apt:
+    packages:
+      - libpcap-dev
+      - swig
+
+before_install:
+  # We need to clone the bro repo and replace broctl.
+  - tar cf ../broctl.tar -C .. --exclude=.git broctl
+  - git clone --recursive git://git.bro.org/bro
+  - rm -rf bro/aux/broctl
+  - tar xf ../broctl.tar -C bro/aux
+  - rm -f ../broctl.tar
+  - cd bro/aux/broctl/testing
+
+install: make buildbro
+
+script: make btest-verbose
+
+after_failure: cat diag.log
