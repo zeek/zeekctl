@@ -1,4 +1,12 @@
 
+1.7-57 | 2018-02-05 15:04:41 -0800
+
+  * Add a .travis.yml file (Daniel Thayer)
+
+  * Fix a race condition in the bro__test script. (Daniel Thayer)
+
+  * Fix the build-bro script when running on Travis CI. (Daniel Thayer)
+
 1.7-53 | 2018-01-18 13:18:38 -0600
 
   * Allow capstats to work with af_packet (Mike Reeves)
