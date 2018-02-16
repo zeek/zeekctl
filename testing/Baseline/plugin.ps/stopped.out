@@ -1,2 +1,2 @@
-        USER       PID  PPID %CPU %MEM    VSZ   RSS TT       S  STARTED     TIME COMMAND
+        USER               PID  PPID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND
 >>> localhost

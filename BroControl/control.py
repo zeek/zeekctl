@@ -720,7 +720,7 @@ class Controller:
             if isrunning:
                 eventlist += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
 
-        return events.send_events_parallel(eventlist)
+        return events.send_events_parallel(eventlist, "bro/event/framework/control")
 
     def execute_cmd(self, nodes, cmd):
         results = cmdresult.CmdResult()
@@ -1159,7 +1159,7 @@ class Controller:
                 eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
         results = cmdresult.CmdResult()
-        for (node, success, args) in events.send_events_parallel(eventlist):
+        for (node, success, args) in events.send_events_parallel(eventlist, "bro/event/framework/control"):
             if success:
                 out = "\n".join(args)
             else:
@@ -1177,7 +1177,7 @@ class Controller:
             if isrunning:
                 eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
 
-        return events.send_events_parallel(eventlist)
+        return events.send_events_parallel(eventlist, "bro/event/framework/control")
 
     def peerstatus(self, nodes):
         results = cmdresult.CmdResult()

@@ -102,26 +102,6 @@ def make_broctl_config_sh(cmdout):
     return True
 
 
-class Logger:
-    # The "loggers" parameter is a list of logger nodes.
-    def __init__(self, loggers):
-        self.loggerlist = [ll.name for ll in loggers]
-        self._ct = 0
-        self._template_str = '$logger="%s", '
-        # This is the most recently used logger (empty string if no loggers).
-        self.logger = ""
-
-    # Return a string containing the name of the next logger (at end of list,
-    # return first logger in the list).  If the list of loggers is empty, then
-    # just return the most recently used one (which might be an empty string).
-    def next_logger(self):
-        num = len(self.loggerlist)
-        if num:
-            self.logger = self._template_str % self.loggerlist[self._ct % num]
-            self._ct += 1
-        return self.logger
-
-
 # Create Bro-side broctl configuration file.
 def make_layout(path, cmdout, silent=False):
     class Port:
@@ -153,10 +133,7 @@ def make_layout(path, cmdout, silent=False):
         ostr = "# Automatically generated. Do not edit.\n"
         # This is the port that standalone nodes listen on for remote
         # control by default.
-        ostr += "redef Communication::listen_port = %s/tcp;\n" % broport.use_port(manager)
-        ostr += "redef Communication::nodes += {\n"
-        ostr += '\t["control"] = [$host=%s, $zone_id="%s", $class="control", $events=Control::controller_events],\n' % (util.format_bro_addr(manager.addr), manager.zone_id)
-        ostr += "};\n"
+        ostr += "redef Broker::default_port = %s/tcp;\n" % broport.use_port(manager)
 
     else:
         if not silent:
@@ -166,8 +143,6 @@ def make_layout(path, cmdout, silent=False):
         workers = config.Config.workers()
         proxies = config.Config.proxies()
         loggers = config.Config.loggers()
-
-        mylogger = Logger(loggers)
 
         # If no loggers are defined, then manager does the logging.
         manager_is_logger = "F" if loggers else "T"
@@ -184,20 +159,16 @@ def make_layout(path, cmdout, silent=False):
             ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (lognode.name, util.format_bro_addr(lognode.addr), lognode.zone_id, broport.use_port(lognode))
 
         # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$workers=set(' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager), mylogger.next_logger())
-        ostr += ", ".join('"%s"' % s.name for s in workers)
-        ostr += ")],\n"
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager))
 
         # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, %s$manager="%s", $workers=set(' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), mylogger.logger, manager.name)
-            ostr += ", ".join('"%s"' % s.name for s in workers)
-            ostr += ")],\n"
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, $manager="%s"],\n' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), manager.name)
 
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", %s$manager="%s", $proxy="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, mylogger.next_logger(), manager.name, proxies[p].name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", $manager="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, manager.name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
@@ -287,11 +258,6 @@ def make_broctl_config_policy(path, cmdout, plugin_reg):
 
     if not config.Config.standalone:
         ostr += '@endif\n'
-
-    if config.Config.ipv6comm:
-        ostr += 'redef Communication::listen_ipv6 = T;\n'
-    else:
-        ostr += 'redef Communication::listen_ipv6 = F;\n'
 
     ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
     ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize

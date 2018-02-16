@@ -5,12 +5,12 @@ from BroControl import config
 from BroControl import util
 
 try:
-    import broccoli
+    import broker
+    import broker.bro
 except ImportError:
-    broccoli = None
+    broker = None
 
-
-# Broccoli communication with running nodes.
+# Broker communication with running nodes.
 
 # Sends event to a set of nodes in parallel.
 #
@@ -28,80 +28,79 @@ except ImportError:
 #   result event, or [] if no result_event was specified.
 #   If success is False, results_args is a string with an error message.
 
-def send_events_parallel(events):
+def send_events_parallel(events, topic):
 
     results = []
     sent = []
 
     for (node, event, args, result_event) in events:
 
-        if not broccoli:
-            results += [(node, False, "no Python bindings for Broccoli installed")]
+        if not broker:
+            results += [(node, False, "no Python bindings for Broker installed")]
             continue
 
-        success, bc = _send_event_init(node, event, args, result_event)
-        if success and result_event:
-            sent += [(node, result_event, bc)]
-        else:
-            results += [(node, success, bc)]
+        success, endpoint, sub = _send_event_init(node, event, args, result_event, topic)
 
-    for (node, result_event, bc) in sent:
-        success, result_args = _send_event_wait(node, result_event, bc)
-        bc.connDelete()
+        if success and result_event:
+            sent += [(node, result_event, endpoint, sub)]
+        else:
+            results += [(node, success, endpoint, sub)]
+
+    for (node, result_event, endpoint, sub) in sent:
+        success, result_args = _send_event_wait(node, result_event, endpoint, sub)
+        endpoint.shutdown()
         results += [(node, success, result_args)]
 
     return results
 
-def _send_event_init(node, event, args, result_event):
+def _send_event_init(node, event, args, result_event, topic):
 
     host = util.scope_addr(node.addr)
+    endpoint = broker.Endpoint()
+    subscriber = endpoint.make_subscriber(topic)
+    status_subscriber = endpoint.make_status_subscriber(True)
+    endpoint.peer(host, node.getPort(), 1)
 
-    try:
-        bc = broccoli.Connection("%s:%d" % (host, node.getPort()), broclass="control",
-                           flags=broccoli.BRO_CFLAG_ALWAYS_QUEUE, connect=False)
-        bc.subscribe(result_event, _event_callback(bc))
-        bc.got_result = False
-        bc.connect()
-    except IOError as e:
-        logging.debug("broccoli: cannot connect to node %s", node.name)
-        return (False, str(e))
+    tries = 0
 
-    logging.debug("broccoli: %s(%s) to node %s", event, ", ".join(args), node.name)
-    bc.send(event, *args)
-    return (True, bc)
+    while True:
+        msgs = status_subscriber.get(1, 1)
 
-def _send_event_wait(node, result_event, bc):
-    # Wait until we have sent the event out.
-    cnt = 0
-    while bc.processInput():
-        time.sleep(1)
+        for msg in msgs:
+            if isinstance(msg, broker.Status):
+                if msg.code() == broker.SC.PeerAdded:
+                    ev = broker.bro.Event(event, args)
+                    endpoint.publish(topic, ev)
+                    logging.debug("broker: %s(%s) to node %s", event,
+                                  ", ".join(args), node.name)
+                    return (True, endpoint, subscriber)
 
-        cnt += 1
-        if cnt > config.Config.commtimeout:
-            logging.debug("broccoli: timeout during send to node %s", node.name)
-            return (False, "time-out")
+        tries += 1
 
+        if tries > config.Config.commtimeout:
+            return (False, "time-out", None)
+
+def _send_event_wait(node, result_event, bc, sub):
     if not result_event:
         return (True, [])
 
     # Wait for reply event.
-    cnt = 0
-    bc.processInput()
-    while not bc.got_result:
-        time.sleep(1)
-        bc.processInput()
+    tries = 0
 
-        cnt += 1
-        if cnt > config.Config.commtimeout:
-            logging.debug("broccoli: timeout during receive from node %s", node.name)
+    while True:
+        msgs = sub.get(1, 1)
+
+        for msg in msgs:
+            (topic, event) = msg
+            ev = broker.bro.Event(event)
+            args = ev.args()
+            logging.debug("broker: %s(%s) from node %s", result_event,
+                          ", ".join(args), node.name)
+            return (True, args)
+
+        tries += 1
+
+        if tries > config.Config.commtimeout:
+            logging.debug("broker: timeout during receive from node %s", node.name)
             return (False, "time-out")
-
-    logging.debug("broccoli: %s(%s) from node %s", result_event, ", ".join(bc.result_args), node.name)
-    return (True, bc.result_args)
-
-def _event_callback(bc):
-    def save_results(*args):
-        bc.got_result = True
-        bc.result_args = args
-    return save_results
 
