@@ -1042,6 +1042,11 @@ Internal Options
 *DebugLog* (string, default "$\{SpoolDir}/debug.log")
     Log file for debugging information.
 
+.. _DefaultStoreDir:
+
+*DefaultStoreDir* (string, default "$\{SpoolDir}")
+    Default directory where Broker data stores will be written if user has not provided further customizations on a per-store basis.
+
 .. _HelperDir:
 
 *HelperDir* (string, default "$\{BroBase}/share/broctl/scripts/helpers")

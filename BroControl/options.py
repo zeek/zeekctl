@@ -210,6 +210,8 @@ options = [
            "Log file for debugging information."),
     Option("StatsLog", "${SpoolDir}/stats.log", "string", Option.AUTOMATIC, False,
            "Log file for statistics."),
+    Option("DefaultStoreDir", "${SpoolDir}/stores", "string", Option.AUTOMATIC, False,
+           "Default directory where Broker data stores will be written if user has not provided further customizations on a per-store basis."),
 
     Option("SitePolicyPath", "${PolicyDir}/site", "string", Option.USER, False,
            "Directories to search for local (i.e., site-specific) policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during broctl 'install' or 'deploy' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),

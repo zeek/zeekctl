@@ -265,6 +265,8 @@ def make_broctl_config_policy(path, cmdout, plugin_reg):
     seed_str = make_global_hash_seed()
     ostr += 'redef global_hash_seed = "%s";\n' % seed_str
 
+    ostr += 'redef Cluster::default_store_dir = "%s";\n' % config.Config.defaultstoredir
+
     ostr += plugin_reg.getBroctlConfig()
 
     filename = os.path.join(path, "broctl-config.bro")
