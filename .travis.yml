@@ -11,6 +11,15 @@ addons:
       - libpcap-dev
       - swig
 
+branches:
+  only:
+  - master
+
+notifications:
+  email:
+    recipients:
+    - bro-commits-internal@bro.org
+
 before_install:
   # We need to clone the bro repo and replace broctl.
   - tar cf ../broctl.tar -C .. --exclude=.git broctl
