@@ -37,6 +37,8 @@ options = [
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", 10, "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
+    Option("ControlTopic", "bro/control", "string", Option.USER, False,
+           "The Broker topic name used for sending and receiving control messages to Bro processes"),
     Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
     Option("BroPort", 47760, "int", Option.USER, False,
