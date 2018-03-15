@@ -1,4 +1,9 @@
 
+1.7-61 | 2018-03-15 14:57:05 -0700
+
+  * Configure Travis CI email recipients and build branches. (Daniel
+    Thayer)
+
 1.7-57 | 2018-02-05 15:04:41 -0800
 
   * Add a .travis.yml file (Daniel Thayer)
