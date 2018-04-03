@@ -435,7 +435,7 @@ each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
 
 Finally, a few BroControl commands (such as "print" and "peerstatus") rely
-on broccoli to communicate with Bro.  This means that for those commands to
+on Broker to communicate with Bro.  This means that for those commands to
 function, BroControl needs to connect to each Bro instance.
 
 Command Reference
@@ -788,6 +788,11 @@ User Options
 *CompressLogs* (bool, default 1)
     True to compress archived log files.
 
+.. _ControlTopic:
+
+*ControlTopic* (string, default "bro/control")
+    The Broker topic name used for sending and receiving control messages to Bro processes
+
 .. _CrashExpireInterval:
 
 *CrashExpireInterval* (int, default 0)
@@ -1044,7 +1049,7 @@ Internal Options
 
 .. _DefaultStoreDir:
 
-*DefaultStoreDir* (string, default "$\{SpoolDir}")
+*DefaultStoreDir* (string, default "$\{SpoolDir}/stores")
     Default directory where Broker data stores will be written if user has not provided further customizations on a per-store basis.
 
 .. _HelperDir:

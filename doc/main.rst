@@ -433,7 +433,7 @@ each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
 
 Finally, a few BroControl commands (such as "print" and "peerstatus") rely
-on broccoli to communicate with Bro.  This means that for those commands to
+on Broker to communicate with Bro.  This means that for those commands to
 function, BroControl needs to connect to each Bro instance.
 
 Command Reference
