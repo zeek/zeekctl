@@ -23,6 +23,12 @@ class TermUI:
         print(txt, file=sys.stderr)
     warn = error
 
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
+
 def expose(func):
     func.api_exposed = True
     return func
@@ -62,14 +68,22 @@ class BroCtl(object):
 
         self.config = config.Configuration(self.brobase, cfgfile, broscriptdir, self.ui, state)
 
-        # clear the log handlers (set by previous calls to logging.*)
+        # Remove all log handlers (set by any previous calls to logging.*)
         logging.getLogger().handlers = []
-        logging.basicConfig(filename=self.config.debuglog,
+
+        if self.config.debug:
+            # Add a log handler that logs to a file.
+            try:
+                logging.basicConfig(filename=self.config.debuglog,
                             format="%(asctime)s [%(module)s] %(message)s",
                             datefmt=self.config.timefmt,
                             level=logging.DEBUG)
-        if not self.config.debug:
-            logging.getLogger().setLevel(100)
+            except IOError as err:
+                raise RuntimeEnvironmentError("%s\nCheck if the user running BroControl has write access to the debug log file." % err)
+        else:
+            # Add a log handler that does nothing.
+            h = NullHandler()
+            logging.getLogger().addHandler(h)
 
         self.executor = execute.Executor(self.config)
         self.plugins = pluginreg.PluginRegistry()
@@ -98,10 +112,20 @@ class BroCtl(object):
     def reload_cfg(self):
         self.config.reload_cfg()
 
-        if not self.config.debug:
-            logging.getLogger().setLevel(100)
+        if self.config.debug:
+            if isinstance(logging.getLogger().handlers[0], NullHandler):
+                # Remove the null handler and configure logging to a file.
+                logging.getLogger().handlers = []
+                logging.basicConfig(filename=self.config.debuglog,
+                            format="%(asctime)s [%(module)s] %(message)s",
+                            datefmt=self.config.timefmt,
+                            level=logging.DEBUG)
+
+            # Re-enable all log levels.
+            logging.disable(logging.NOTSET)
         else:
-            logging.getLogger().setLevel(logging.NOTSET)
+            # Disable logging to all log levels that we use.
+            logging.disable(logging.CRITICAL)
 
         self.executor.finish()
         self.plugins.initPluginOptions()
