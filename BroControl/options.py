@@ -37,6 +37,8 @@ options = [
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", 10, "int", Option.USER, False,
            "The number of seconds to wait before assuming Broccoli communication events have timed out."),
+    Option("ControlTopic", "bro/control", "string", Option.USER, False,
+           "The Broker topic name used for sending and receiving control messages to Bro processes"),
     Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
     Option("BroPort", 47760, "int", Option.USER, False,
@@ -141,8 +143,6 @@ options = [
     Option("TimeMachinePort", "47757/tcp", "string", Option.USER, False,
            "If the manager should connect to a Time Machine, the port it is running on (in Bro syntax, e.g., 47757/tcp)."),
 
-    Option("IPv6Comm", 1, "bool", Option.USER, False,
-           "Enable IPv6 communication between cluster nodes (and also between them and BroControl). This overrides the Bro script variable Communication::listen_ipv6."),
     Option("ZoneID", "", "string", Option.USER, False,
            "If the host running BroControl is managing a cluster comprised of nodes with non-global IPv6 addresses, this option indicates what :rfc:`4007` zone_id to append to node addresses when communicating with them."),
 
@@ -212,6 +212,8 @@ options = [
            "Log file for debugging information."),
     Option("StatsLog", "${SpoolDir}/stats.log", "string", Option.AUTOMATIC, False,
            "Log file for statistics."),
+    Option("DefaultStoreDir", "${SpoolDir}/stores", "string", Option.AUTOMATIC, False,
+           "Default directory where Broker data stores will be written if user has not provided further customizations on a per-store basis."),
 
     Option("SitePolicyPath", "${PolicyDir}/site", "string", Option.USER, False,
            "Directories to search for local (i.e., site-specific) policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during broctl 'install' or 'deploy' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),

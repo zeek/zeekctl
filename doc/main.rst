@@ -433,7 +433,7 @@ each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
 
 Finally, a few BroControl commands (such as "print" and "peerstatus") rely
-on broccoli to communicate with Bro.  This means that for those commands to
+on Broker to communicate with Bro.  This means that for those commands to
 function, BroControl needs to connect to each Bro instance.
 
 Command Reference
@@ -527,7 +527,11 @@ Questions and Answers
     the beginning of that script for instructions.
 
 *Can BroControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local)?*
-    Yes, set ``ZoneID`` in ``broctl.cfg`` to the zone identifier
+    This used to be supported, but may not work in later version of Bro
+    which use Broker as the communication framework.  The old instructions
+    follow:
+
+    Set ``ZoneID`` in ``broctl.cfg`` to the zone identifier
     that the BroControl node uses to identify the scope zone
     (the ``ifconfig`` command output is usually helpful, if it doesn't
     show the zone identifier appended to the address with a '%'
