@@ -10,4 +10,5 @@ redef Log::default_mail_alarms_interval = 98765 secs;
 @endif
 redef Pcap::snaplen = 1212;
 redef Pcap::bufsize = 256;
-redef global_hash_seed = "29bb0bb6";
+redef global_hash_seed = "d7d93799";
+redef Cluster::default_store_dir = "/Users/jon/projects/bro/bro-broker/aux/broctl/build/testing/test.50489/spool/stores";
