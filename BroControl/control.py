@@ -924,9 +924,6 @@ class Controller:
         results = cmdresult.CmdResult()
 
         running = self._isrunning(nodes)
-        zone = self.config.zoneid
-        if not zone:
-            zone = "NOZONE"
 
         cmds = []
         for (node, isrunning) in running:
@@ -934,7 +931,7 @@ class Controller:
                 env = _make_env_params(node)
                 env += " BRO_DNS_FAKE=1"
                 args = " ".join(_make_bro_params(node, False))
-                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s %s/tcp %s" % (util.format_bro_addr(node.addr), zone, node.getPort(), args), env, None)]
+                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s/tcp %s" % (util.format_bro_addr(node.addr), node.getPort(), args), env, None)]
                 self.ui.info("updating %s ..." % node.name)
 
         res = execute.run_localcmds(cmds)

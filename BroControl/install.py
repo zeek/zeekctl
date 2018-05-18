@@ -152,23 +152,23 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
-        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), config.Config.zoneid, broport.use_port(None))
+        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp],\n' % (util.format_bro_addr(manager.addr), broport.use_port(None))
 
         # Loggers definition
         for lognode in loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (lognode.name, util.format_bro_addr(lognode.addr), lognode.zone_id, broport.use_port(lognode))
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $p=%s/tcp],\n' % (lognode.name, util.format_bro_addr(lognode.addr), broport.use_port(lognode))
 
         # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $zone_id="%s", $p=%s/tcp],\n' % (manager.name, util.format_bro_addr(manager.addr), manager.zone_id, broport.use_port(manager))
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp],\n' % (manager.name, util.format_bro_addr(manager.addr), broport.use_port(manager))
 
         # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $zone_id="%s", $p=%s/tcp, $manager="%s"],\n' % (p.name, util.format_bro_addr(p.addr), p.zone_id, broport.use_port(p), manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager="%s"],\n' % (p.name, util.format_bro_addr(p.addr), broport.use_port(p), manager.name)
 
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $zone_id="%s", $p=%s/tcp, $interface="%s", $manager="%s"],\n' % (w.name, util.format_bro_addr(w.addr), w.zone_id, broport.use_port(w), w.interface, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface="%s", $manager="%s"],\n' % (w.name, util.format_bro_addr(w.addr), broport.use_port(w), w.interface, manager.name)
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:

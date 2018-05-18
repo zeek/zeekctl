@@ -43,14 +43,6 @@ def format_rsync_addr(addr):
     else:
         return "'[%s]'" % addr
 
-# Scopes a non-global IPv6 address with a zone identifier according to RFC 4007
-def scope_addr(addr):
-    zoneid = config.Config.zoneid
-    if ":" not in addr or zoneid == "":
-        return addr
-    else:
-        return addr + "%" + zoneid
-
 # Convert a number into a string with a unit (e.g., 1024 into "1K").
 def number_unit_str(num):
     units = (("G", 1024*1024*1024), ("M", 1024*1024), ("K", 1024))

@@ -55,7 +55,7 @@ def send_events_parallel(events, topic):
 
 def _send_event_init(node, event, args, result_event, topic):
 
-    host = util.scope_addr(node.addr)
+    host = node.addr
     endpoint = broker.Endpoint()
     subscriber = endpoint.make_subscriber(topic)
     status_subscriber = endpoint.make_status_subscriber(True)

@@ -53,14 +53,14 @@ def sync(nodes, paths, cmdout):
     cmds = []
     for n in nodes:
         args = ['-rRl', '--delete', '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"']
-        dst = ["%s:/" % util.format_rsync_addr(util.scope_addr(n.addr))]
+        dst = ["%s:/" % util.format_rsync_addr(n.addr)]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
         cmds += [(n, cmdline, "", None)]
 
     for (id, success, output) in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (util.scope_addr(id.addr), output))
+            cmdout.error("rsync to %s failed: %s" % (id.addr, output))
             result = False
 
     return result

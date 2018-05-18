@@ -2,10 +2,9 @@
 #
 # Update values of Bro script variables on a running Bro.
 #
-# update <host> <zone_id> <port> <bro_args>
+# update <host> <port> <bro_args>
 #
 # host:  the destination host.
-# zone_id:  the zone id, or "NOZONE" to indicate no zone id.
 # port:  the destination port.
 # bro_args:  Bro cmd-line arguments.
 
@@ -30,9 +29,8 @@ if [ $? -ne 0 ]; then
 fi
 
 host=$1
-zone=$2
-port=$3
-shift 3
+port=$2
+shift 2
 
 # Create temporary working directory.
 if [ ! -d "${tmpdir}" ]; then
@@ -48,12 +46,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-zone_arg=""
-if [ "$zone" != "NOZONE" ]; then
-    zone_arg="Control::zone_id=$zone"
-fi
-
-"${bro}" "$@" frameworks/control/controller "Control::host=$host" $zone_arg "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
+"${bro}" "$@" frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?
 
 grep -v -e "warning: no such host" -e "received termination signal" out.log
