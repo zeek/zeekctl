@@ -1,10 +1,11 @@
+warning: 'update' is deprecated and will be removed in a future version.
 updating logger ...
 updating manager ...
 updating proxy-1 ...
 updating worker-1 ...
 updating worker-2 ...
-logger: sent 349 IDs
-manager: sent 349 IDs
-proxy-1: sent 349 IDs
-worker-1: <params>, line 1: processing suspended
-worker-2: <params>, line 1: processing suspended
+logger: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
+manager: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
+proxy-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
+worker-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 378 IDs
+worker-2: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 378 IDs

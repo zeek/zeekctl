@@ -448,6 +448,7 @@ class BroCtl(object):
     @check_config
     @lock_required
     def update(self, node_list=None):
+        self.ui.info("warning: 'update' is deprecated and will be removed in a future version.")
         nodes = self.node_args(node_list)
         nodes = self.plugins.cmdPreWithNodes("update", nodes)
         results = self.controller.update(nodes)

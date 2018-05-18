@@ -4,6 +4,7 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff stopped.out
 
 . broctl-test-setup
 
@@ -23,6 +24,5 @@ broctl update worker-2 > onenode.out
 
 broctl stop
 
-# no nodes are running, so no output is expected
+# no nodes are running, so no output is expected other than a deprecation warning.
 broctl update > stopped.out
-test ! -s stopped.out
