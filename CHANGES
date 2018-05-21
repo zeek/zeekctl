@@ -1,21 +1,22 @@
 
-1.7-76 | 2018-05-18 22:57:00 +0000
+1.7-77 | 2018-05-21 17:46:06 +0000
 
-  * Port BroControl to use Broker. (Corelight)
+    * Port BroControl to use Broker. (Corelight) This includes:
 
-  * Adding deprecation warning to "update" command. Bro's new
-    configuration framework supersedes it. (Corelight)
+        - Add deprecation warning to "update" command. Bro's new
+          configuration framework supersedes it.
 
-  * Make Broker's control topic a configuration option. (Corelight)
+        - Make Broker's control topic a configuration option.
+          
+        - Add 'DefaultStoreDir' option that controls location of
+          persistent stores
 
-  * Add 'DefaultStoreDir' option that controls location of persistent
-    stores. (Corelight).
+        - Remove 'IPv6Comm' and 'ZoneID'. For the former, Broker
+          should be able to handle IPv6 automatically. The latter is
+          not supported anymore for now.
 
-  * Remove 'IPv6Comm' and 'ZoneID'. For the former, Broker should be able
-    to handle IPv6 automatically. (Corelight)
-
-  * Don't open debug.log when not configured to do logging, and catch
-    when broctl can't open the debug log file. (Daniel Thayer)
+    * Don't open debug.log when not configured to do logging, and
+      catch when broctl can't open the debug log file. (Daniel Thayer)
 
 1.7-61 | 2018-03-15 14:57:05 -0700
 
