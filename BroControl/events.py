@@ -1,14 +1,15 @@
-import time
 import logging
 
 from BroControl import config
-from BroControl import util
+
+errmsg = ""
 
 try:
     import broker
     import broker.bro
-except ImportError:
+except ImportError as e:
     broker = None
+    errmsg = e
 
 # Broker communication with running nodes.
 
@@ -36,7 +37,7 @@ def send_events_parallel(events, topic):
     for (node, event, args, result_event) in events:
 
         if not broker:
-            results += [(node, False, "no Python bindings for Broker installed")]
+            results += [(node, False, "Python bindings for Broker: %s" % errmsg)]
             continue
 
         success, endpoint, sub = _send_event_init(node, event, args, result_event, topic)
