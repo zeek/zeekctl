@@ -472,7 +472,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             def output_one(tag, vals):
                 return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
 
-            self.info("\n%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
+            self.info("%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
 
             totals = None
 
@@ -491,7 +491,6 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if totals:
                 self.info("")
                 self.info(output_one("Total", totals))
-                self.info("")
 
         results = self.broctl.capstats(interval=interval, node_list=args)
 

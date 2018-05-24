@@ -895,8 +895,8 @@ class Controller:
 
             results += [(node, netif, True, vals)]
 
-        # Add pseudo-node for totals
-        if len(nodes) > 1:
+        # Add pseudo-node for totals when there is more than one result
+        if len(results) > 1:
             results += [(node_mod.Node(self.config, "$total"), None, True, totals)]
 
         return results
