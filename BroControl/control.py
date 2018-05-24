@@ -239,7 +239,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.info('%s terminated immediately after starting; check output with "diag"' % node.name)
+                self.ui.error('%s terminated immediately after starting; check output with "diag"' % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
@@ -799,11 +799,17 @@ class Controller:
     def capstats(self, nodes, interval):
         results = cmdresult.CmdResult()
 
-        if self.config.capstatspath:
-            for (node, netif, success, vals) in self.get_capstats_output(nodes, interval):
-                if not success:
-                    vals = {"output": vals}
-                results.set_node_data(node, success, vals)
+        if not self.config.capstatspath:
+            results.set_node_data(nodes[0], False, {"output": 'Error: cannot run capstats because broctl option "capstatspath" is not defined'})
+            return results
+
+        for (node, netif, success, vals) in self.get_capstats_output(nodes, interval):
+            if not success:
+                vals = {"output": vals}
+            results.set_node_data(node, success, vals)
+
+        if not results.nodes:
+            results.ok = False
 
         return results
 

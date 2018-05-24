@@ -44,7 +44,10 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def error(self, text):
         print("Error: %s" % text, file=sys.stderr)
         logging.info(text)
-        self.exit_code = 1
+
+    def err(self, text):
+        print(text, file=sys.stderr)
+        logging.info(text)
 
     def default(self, line):
         strlist = line.split()
@@ -414,7 +417,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 self.info("%s scripts are ok." % node)
             else:
                 self.info("%s scripts failed." % node)
-                self.info(output)
+                self.err(output)
 
         return results.ok
 
@@ -476,7 +479,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             for (node, success, vals) in data:
 
                 if not success:
-                    self.info(vals["output"])
+                    self.err(vals["output"])
                     continue
 
                 if str(node) != "$total":
@@ -496,7 +499,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         if nodedata:
             outputcapstats("Interface", nodedata)
         else:
-            self.info("No network interfaces suitable for use with capstats were found.")
+            self.error("No network interfaces suitable for use with capstats were found.")
 
         return results.ok
 
@@ -533,7 +536,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         for (node, success, dfs) in results.get_node_data():
             for key, diskinfo in sorted(dfs.items()):
                 if key == "FAIL":
-                    self.info("df helper failed on %s: %s" % (node, diskinfo))
+                    self.error("df helper failed on %s: %s" % (node, diskinfo))
                     continue
                 nodehost = "%s/%s" % (node.name, node.host)
                 self.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
@@ -567,7 +570,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                 out = msg.split("\n", 1)
                 self.info("%12s   %s = %s" % (node, out[0], out[1]))
             else:
-                self.info("%12s   <error: %s>" % (node, msg))
+                self.err("%12s   <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -584,7 +587,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if success:
                 self.info("%11s\n%s" % (node, msg))
             else:
-                self.info("%11s   <error: %s>" % (node, msg))
+                self.err("%11s   <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -600,7 +603,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
             if success:
                 self.info("%11s: %s" % (node, msg))
             else:
-                self.info("%11s: <error: %s>" % (node, msg))
+                self.err("%11s: <error: %s>" % (node, msg))
 
         return results.ok
 
@@ -665,7 +668,7 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
                     self.info("  %s" % line)
             else:
                 self.info("%s scripts failed." % node)
-                self.info(output)
+                self.err(output)
 
         return results.ok
 
