@@ -45,7 +45,7 @@ build_bro() {
     ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" ${BROCTL_TEST_BUILDARGS}
     test $? -ne 0 && return 1
 
-    cd ${BUILDPREFIX} && make && make install
+    cd ${BUILDPREFIX} && make -j 2 && make install
 }
 
 # Replace the Bro install prefix directory path with the text "@PREFIX@".  This
