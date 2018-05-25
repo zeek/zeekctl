@@ -24,7 +24,7 @@ broctl peerstatus worker-2 > onenode.out
 
 broctl stop
 
-# no nodes are running, so no status exists
-broctl peerstatus > stopped.out
+# no nodes are running, so broctl cannot get any results
+! broctl peerstatus > stopped.out
 # the file size should be zero
 test ! -s stopped.out

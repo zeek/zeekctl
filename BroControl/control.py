@@ -1154,6 +1154,7 @@ class Controller:
         return results
 
     def print_id(self, nodes, id):
+        results = cmdresult.CmdResult()
         running = self._isrunning(nodes)
 
         eventlist = []
@@ -1161,7 +1162,10 @@ class Controller:
             if isrunning:
                 eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
-        results = cmdresult.CmdResult()
+        if not eventlist:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
+            return results
+
         for (node, success, args) in events.send_events_parallel(eventlist, config.Config.controltopic):
             if success:
                 out = "\n".join(args)
@@ -1194,6 +1198,9 @@ class Controller:
                 out = args
             results.set_node_output(node, success, out)
 
+        if not results.nodes:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
+
         return results
 
     def netstats(self, nodes):
@@ -1207,6 +1214,9 @@ class Controller:
             else:
                 out = args
             results.set_node_output(node, success, out)
+
+        if not results.nodes:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
 
         return results
 

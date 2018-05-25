@@ -24,7 +24,7 @@ broctl netstats worker-2 > onenode.out
 
 broctl stop
 
-# no nodes are running, so no status exists
-broctl netstats > stopped.out
+# no nodes are running, so broctl cannot get any results
+! broctl netstats > stopped.out
 # the file size should be zero
 test ! -s stopped.out
