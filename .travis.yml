@@ -29,7 +29,7 @@ before_install:
   - rm -f ../broctl.tar
   - cd bro/aux/broctl/testing
 
-install: make buildbro
+install: make buildbro && rm -rf ../build/bro-build
 
 script: make btest-verbose
 

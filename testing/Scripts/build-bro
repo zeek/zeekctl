@@ -7,7 +7,7 @@
 # Usage:  build-bro [--clean]
 #
 # If the "--clean" parameter is specified, then this script just removes
-# the tar file and the broctl test build directory.
+# the broctl test install directory and tar file.
 #
 # A user can modify the behavior of this script by setting any of these
 # env. variables:
@@ -31,7 +31,7 @@ build_bro() {
         BUILDPREFIX=build
     else
         # Use a build directory specifically for broctl tests
-        BUILDPREFIX=${BROCTL_TEST}/bro-build
+        BUILDPREFIX=${BROCTLBUILDDIR}/bro-build
     fi
 
     cd "${BROSRCDIR}"
@@ -102,10 +102,10 @@ definevars() {
     BROSRCDIR=${BROCTLSRCDIR}/../..
 
     # Path to the BroControl "build" directory.
-    BROCTLBUILDDIR=${BROCTLSRCDIR}/build
+    BROCTLBUILDDIR=`canonicalpath "${BROCTLSRCDIR}/build"`
 
     # Absolute path of parent directory where Bro will be installed.
-    BROCTL_TEST=`canonicalpath "${BROCTLBUILDDIR}/testing"`
+    BROCTL_TEST=${BROCTLBUILDDIR}/testing
     test -z "${BROCTL_TEST}" && exit 1
 }
 
@@ -124,25 +124,21 @@ create_tar() {
         exit 1
     fi
 
-    # The tar file that all broctl test cases will use.
-    TARFILE=${BROCTL_TEST}/bro-test-install.tar
-
-    # Remove the tar file if it exists
-    if [ -e "${TARFILE}" ]; then
-        rm -f "${TARFILE}"
+    # Remove the test directory if it exists.
+    if [ -e "${BROCTL_TEST}" ]; then
+        rm -rf "${BROCTL_TEST}"
     fi
 
     mkdir -p ${BROCTL_TEST}
-    LOG=${BROCTL_TEST}/buildbro.log
+
+    # The tar file that all broctl test cases will use.
+    TARFILE=${BROCTL_TEST}/bro-test-install.tar
+
+    LOG=${BROCTLBUILDDIR}/buildbro.log
     rm -f "$LOG"
 
     # Bro will be installed in this temporary directory.
     INSTALLPREFIX=${BROCTL_TEST}/bro-install
-
-    # Remove the temporary directory if it exists.
-    if [ -e "${INSTALLPREFIX}" ]; then
-        rm -rf "${INSTALLPREFIX}"
-    fi
 
     # Don't exit if a command fails.
     set +e
