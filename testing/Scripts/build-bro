@@ -12,28 +12,18 @@
 # A user can modify the behavior of this script by setting any of these
 # env. variables:
 #   BROCTL_TEST_USEBUILD  - If this is set (value doesn't matter), then Bro
-#                           will be built using the default Bro build directory
-#                           instead of building in a new directory (if Bro has
-#                           already been built, then using this option can save
-#                           time).
+#                           will be built in the default Bro build directory
+#                           instead of using a new directory.  This is intended
+#                           to be used when Bro was previously built, to
+#                           shorten the time it takes to do the rebuild.
 #   BROCTL_TEST_BUILDARGS - Specify additional options that will be passed
-#                           to Bro's "configure" script (this option might be
-#                           useful if Bro fails to build).
+#                           to Bro's "configure" script.
 
 
 # This function builds Bro using a build directory specifically for broctl
 # tests (if BROCTL_TEST_USEBUILD is defined, then the default Bro build
 # directory is used instead).
 build_bro() {
-    # Choose a build directory
-    if [ -n "${BROCTL_TEST_USEBUILD}" ]; then
-        # Use the default Bro build directory
-        BUILDPREFIX=build
-    else
-        # Use a build directory specifically for broctl tests
-        BUILDPREFIX=${BROCTLBUILDDIR}/bro-build
-    fi
-
     cd "${BROSRCDIR}"
 
     if [ "${TRAVIS}" = "true" ]; then
@@ -42,10 +32,22 @@ build_bro() {
         export LDFLAGS=-L`python-config --exec-prefix`/lib
     fi
 
-    ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" ${BROCTL_TEST_BUILDARGS}
+    if [ -n "${BROCTL_TEST_USEBUILD}" ]; then
+        # Reuse a previous build in the default Bro build directory.
+        BUILDPREFIX=build
+        # Rebuild using a new prefix (use BROCTL_TEST_BUILDARGS to specify
+        # any other flags that were used for the previous build).
+        ./configure --prefix="${INSTALLPREFIX}" ${BROCTL_TEST_BUILDARGS}
+    else
+        # Use a build directory specifically for broctl tests.
+        BUILDPREFIX=${BROCTLBUILDDIR}/bro-build
+        # Additional configure options are used here to reduce the build size.
+        ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" --build-type=Release --disable-auxtools ${BROCTL_TEST_BUILDARGS}
+    fi
+
     test $? -ne 0 && return 1
 
-    cd ${BUILDPREFIX} && make -j 2 && make install
+    cd ${BUILDPREFIX} && make -j 2 install
 }
 
 # Replace the Bro install prefix directory path with the text "@PREFIX@".  This
