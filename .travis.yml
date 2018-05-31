@@ -21,15 +21,21 @@ notifications:
     - bro-commits-internal@bro.org
 
 before_install:
-  # We need to clone the bro repo and replace broctl.
-  - tar cf ../broctl.tar -C .. --exclude=.git broctl
+  # Python 2.7 doesn't have the ipaddress module (required by broker).
+  - python -c "import ipaddress" || pip install ipaddress
+  # Clone the bro git repo and replace broctl.
+  - cd ..
+  - tar cf broctl.tar --exclude=.git broctl
+  - rm -rf broctl
   - git clone --recursive git://git.bro.org/bro
   - rm -rf bro/aux/broctl
-  - tar xf ../broctl.tar -C bro/aux
-  - rm -f ../broctl.tar
+  - tar xf broctl.tar -C bro/aux
+  - rm -f broctl.tar
   - cd bro/aux/broctl/testing
 
-install: make buildbro && rm -rf ../build/bro-build
+install:
+  - make buildbro
+  - rm -rf ../build/bro-build
 
 script: make btest-verbose
 
