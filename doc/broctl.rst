@@ -421,7 +421,7 @@ to ssh to the localhost, so in a standalone setup BroControl does not use ssh.
 Each instance of Bro in a cluster needs to communicate directly with other
 instances of Bro regardless of whether these instances are running on the same
 host or not.  Each proxy and worker needs to connect to the manager,
-and each worker needs to connect to one proxy.  If a logger node is defined,
+and each worker needs to connect to each proxy.  If a logger node is defined,
 then each of the other nodes needs to connect to the logger.
 
 Note that you can change the port that Bro listens on by changing the value
@@ -791,7 +791,7 @@ User Options
 .. _ControlTopic:
 
 *ControlTopic* (string, default "bro/control")
-    The Broker topic name used for sending and receiving control messages to Bro processes
+    The Broker topic name used for sending and receiving control messages to Bro processes.
 
 .. _CrashExpireInterval:
 
@@ -2215,6 +2215,6 @@ Questions and Answers
 
 *Can BroControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local)?*
     This used to be supported through a ``ZoneID`` option in
-    ``broctl.cfg``, but does no loger work in later versions
+    ``broctl.cfg``, but no longer works in later versions
     of Bro which use Broker as the communication framework. Please
     file a feature request if this is important to you.
