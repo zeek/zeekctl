@@ -134,6 +134,7 @@ def make_layout(path, cmdout, silent=False):
         # This is the port that standalone nodes listen on for remote
         # control by default.
         ostr += "redef Broker::default_port = %s/tcp;\n" % broport.use_port(manager)
+        ostr += "event bro_init() { Broker::listen(); }\n"
 
     else:
         if not silent:
