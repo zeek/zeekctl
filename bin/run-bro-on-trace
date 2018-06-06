@@ -34,5 +34,5 @@ fi
 
 echo $@ >.cmdline
 
-"${bro}" -r "$trace" "$@"
+BROCTL_PROCESS_TRACE=1 "${bro}" -r "$trace" "$@"
 

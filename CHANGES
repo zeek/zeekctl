@@ -1,4 +1,8 @@
 
+1.7-81 | 2018-06-06 14:01:23 -0500
+
+  * Listen in standalone mode, but not when processing a trace (Corelight)
+
 1.7-77 | 2018-05-21 17:46:06 +0000
 
     * Port BroControl to use Broker. (Corelight) This includes:
