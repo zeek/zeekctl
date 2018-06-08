@@ -7,6 +7,7 @@
 # @TEST-EXEC: btest-diff onenode.out
 # @TEST-EXEC: btest-diff interval.out
 # @TEST-EXEC: btest-diff onenode-interval.out
+# @TEST-EXEC: btest-diff node-interval.out
 
 . broctl-test-setup
 
@@ -28,3 +29,7 @@ broctl capstats 4 > interval.out
 
 # get capstats on one node over a specified time interval
 broctl capstats worker-2 3 > onenode-interval.out
+
+# get capstats on one node (when specifying more than one node) over a
+# specified time interval
+broctl capstats manager worker-2 3 > node-interval.out

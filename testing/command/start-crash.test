@@ -28,7 +28,8 @@ EOF
 broctl install
 
 # start all nodes, and one will crash
-! broctl start > start1.out
+! broctl start > start1.out 2> tmp.out
+cat tmp.out >> start1.out
 
 # the crashed node should not be logged as "started" in stats.log
 grep started $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp

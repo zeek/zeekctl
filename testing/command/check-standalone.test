@@ -21,5 +21,4 @@ broctl check > check2.out
 
 # verify that broctl check looks at policy files in SitePolicyPath
 echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro
-! broctl check > tmp.out
-head -n 1 tmp.out > check3.out
+! broctl check > check3.out

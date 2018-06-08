@@ -25,7 +25,7 @@ broctl print Site::local_nets worker-2 > onenode.out
 
 broctl stop
 
-# no nodes are running, so no value exists
-broctl print Log::default_rotation_interval > stopped.out
+# no nodes are running, so broctl cannot get any results
+! broctl print Log::default_rotation_interval > stopped.out
 # the file size should be zero
 test ! -s stopped.out

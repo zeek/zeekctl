@@ -239,7 +239,7 @@ class Controller:
         # is doing fine and will move on to RUNNING once DNS is done.
         for (node, success) in self._waitforbros(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.info('%s terminated immediately after starting; check output with "diag"' % node.name)
+                self.ui.error('%s terminated immediately after starting; check output with "diag"' % node.name)
                 node.clearPID()
                 results.set_node_fail(node)
             else:
@@ -799,11 +799,17 @@ class Controller:
     def capstats(self, nodes, interval):
         results = cmdresult.CmdResult()
 
-        if self.config.capstatspath:
-            for (node, netif, success, vals) in self.get_capstats_output(nodes, interval):
-                if not success:
-                    vals = {"output": vals}
-                results.set_node_data(node, success, vals)
+        if not self.config.capstatspath:
+            results.set_node_data(nodes[0], False, {"output": 'Error: cannot run capstats because broctl option "capstatspath" is not defined'})
+            return results
+
+        for (node, netif, success, vals) in self.get_capstats_output(nodes, interval):
+            if not success:
+                vals = {"output": vals}
+            results.set_node_data(node, success, vals)
+
+        if not results.nodes:
+            results.ok = False
 
         return results
 
@@ -889,8 +895,8 @@ class Controller:
 
             results += [(node, netif, True, vals)]
 
-        # Add pseudo-node for totals
-        if len(nodes) > 1:
+        # Add pseudo-node for totals when there is more than one result
+        if len(results) > 1:
             results += [(node_mod.Node(self.config, "$total"), None, True, totals)]
 
         return results
@@ -1148,6 +1154,7 @@ class Controller:
         return results
 
     def print_id(self, nodes, id):
+        results = cmdresult.CmdResult()
         running = self._isrunning(nodes)
 
         eventlist = []
@@ -1155,7 +1162,10 @@ class Controller:
             if isrunning:
                 eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
 
-        results = cmdresult.CmdResult()
+        if not eventlist:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
+            return results
+
         for (node, success, args) in events.send_events_parallel(eventlist, config.Config.controltopic):
             if success:
                 out = "\n".join(args)
@@ -1188,6 +1198,9 @@ class Controller:
                 out = args
             results.set_node_output(node, success, out)
 
+        if not results.nodes:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
+
         return results
 
     def netstats(self, nodes):
@@ -1201,6 +1214,9 @@ class Controller:
             else:
                 out = args
             results.set_node_output(node, success, out)
+
+        if not results.nodes:
+            results.set_node_output(nodes[0], False, "no running instances of Bro")
 
         return results
 

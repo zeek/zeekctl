@@ -23,10 +23,11 @@ buildbro:
 
 cleanup:
 	@rm -f $(DIAG)
+	@rm -f .btest.failed.dat
+	@rm -rf .tmp
 
-# Remove the broctl test build dir.
-cleanall:
-	@rm -f $(DIAG)
+# Remove the bro testing install dirs and tar file.
+cleanall: cleanup
 	@./Scripts/build-bro --clean
 
 .PHONY: all btest-verbose btest-brief brief rerun buildbro cleanup cleanall

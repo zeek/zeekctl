@@ -1,4 +1,32 @@
 
+1.7-92 | 2018-06-08 09:55:24 -0500
+
+  * Broker-related updates and fixes for the docs (Daniel Thayer)
+
+  * Reduce the size of the Bro build and build more quickly when running
+    broctl tests (Daniel Thayer)
+
+  * Travis CI improvements (Daniel Thayer)
+
+  * Fix the testing Makefile "cleanup" target to remove all test tmp files.
+    (Daniel Thayer)
+
+  * Fix a few commands to report error when bro is not running (Daniel Thayer)
+
+  * Improve error message for import broker failure (Daniel Thayer)
+
+  * Remove redundant output from broctl capstats command (Daniel Thayer)
+
+  * Output error messages to stderr instead of stdout (Daniel Thayer)
+
+  * Improved capstats error message when capstatspath option is not set.
+    (Daniel Thayer)
+
+  * Fixed exit status of capstats command when it doesn't produce any
+    results. (Daniel Thayer)
+
+  * Updated some test baselines. (Daniel Thayer)
+
 1.7-81 | 2018-06-06 14:01:23 -0500
 
   * Listen in standalone mode, but not when processing a trace (Corelight)
