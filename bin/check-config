@@ -47,7 +47,7 @@ if [ "$print_loaded_scripts" = "1" ]; then
     check_option=
 fi
 
-"${bro}" $check_option "$@"
+BROCTL_CHECK_CONFIG=1 "${bro}" $check_option "$@"
 rc=$?
 
 if [ $rc -eq 0 ] && [ "$print_loaded_scripts" = "1" ]; then

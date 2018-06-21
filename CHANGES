@@ -1,4 +1,8 @@
 
+1.7-93 | 2018-06-21 11:54:09 -0500
+
+  * Make 'check' and 'scripts' commands skip connection setup (Corelight)
+
 1.7-92 | 2018-06-08 09:55:24 -0500
 
   * Broker-related updates and fixes for the docs (Daniel Thayer)
