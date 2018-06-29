@@ -1,5 +1,4 @@
 Name         Type    Host             Pid     Proc    VSize  Rss  Cpu   Cmd
-logger       logger  localhost        37045   parent   57M    57M   2%  bro
 manager      manager localhost        37156   parent   57M    57M   2%  bro
 proxy-1      proxy   localhost        37273   parent   56M    56M   3%  bro
 worker-1     worker  localhost        37402   parent   56M    56M   2%  bro

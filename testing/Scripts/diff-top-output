@@ -13,6 +13,7 @@ awk '{
         if ( $6 ~ /^[0-9]+[KMG]$/ ) { $6 = "XXX" }    # VSize
         if ( $7 ~ /^[0-9]+[KMG]$/ ) { $7 = "XXX" }    # Rss
         if ( $8 ~ /^[0-9]+%$/ ) { $8 = "XX%" }        # Cpu
+        if ( $9 ~ /^(bro|Python)$/ ) { $9 = "XXX" }   # Cmd
     }
 
     print
