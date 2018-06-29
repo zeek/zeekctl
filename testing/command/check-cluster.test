@@ -1,7 +1,6 @@
 # Test that the check command can check all nodes in a cluster, or just a
 # specified node.
 #
-# @TEST-SERIALIZE: cluster
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
