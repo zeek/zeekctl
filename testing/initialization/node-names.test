@@ -5,8 +5,19 @@
 
 . broctl-test-setup
 
-while read line; do installfile $line; done << EOF
-etc/node.cfg__node_names
+cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[logcollector]
+type=manager
+host=localhost
+
+[communicator]
+type=proxy
+host=localhost
+
+[gatherer]
+type=worker
+host=localhost
+interface=eth0
 EOF
 
 broctl install

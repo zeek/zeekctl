@@ -1,6 +1,6 @@
 broversion = "2.5-1"
 configchksum = "5b2ab3fb357a3ff3512c0339cd3f947f8ee48fae"
-confignodechksum = "773df710df35edacbb4b6b8aab7ba5f502357cca"
+confignodechksum = "ec10d3c3bc017b29a2bd78a223070d7b7eba1fde"
 cronenabled = true
 global-hash-seed = "60b21744"
 hash-broctlcfg = "ec73a8c7c3d4e279ef5768d2335b6fa9e695ebbf"

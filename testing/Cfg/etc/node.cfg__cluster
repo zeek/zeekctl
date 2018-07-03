@@ -1,4 +1,4 @@
-# Cluster configuration.
+# Cluster configuration with no loggers.
 
 [manager]
 type=manager
@@ -17,4 +17,3 @@ interface=eth0
 type=worker
 host=localhost
 interface=eth1
-

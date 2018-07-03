@@ -6,8 +6,21 @@
 
 . broctl-test-setup
 
-while read line; do installfile $line; done << EOF
-etc/node.cfg__lb_interfaces
+cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+lb_procs=3
+lb_method=interfaces
+lb_interfaces=eth0, eth3,eth1
 EOF
 
 broctl nodes > out

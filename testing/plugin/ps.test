@@ -11,7 +11,7 @@
 
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
-etc/node.cfg__cluster_no_netifs
+etc/node.cfg__no_netifs
 EOF
 
 broctl install

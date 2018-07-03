@@ -6,8 +6,13 @@
 . broctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/node.cfg__plugin_keys
 plugins/nodekeystest.py lib/broctl/plugins --new
+EOF
+
+# Node configuration using custom node keys defined in nodekeystest.py plugin.
+cat >> $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+nodekeystest.key1=this is a test
+nodekeystest.key2=1
 EOF
 
 broctl exit
