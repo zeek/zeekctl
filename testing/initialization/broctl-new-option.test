@@ -5,8 +5,6 @@
 
 . broctl-test-setup
 
-while read line; do installfile $line; done << EOF
-etc/broctl.cfg__new_option
-EOF
+echo "foo1=this is a test" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
 broctl config | grep foo1 > out

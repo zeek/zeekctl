@@ -1,1 +1,1 @@
-logrotationinterval = 123
+compresslogs = True

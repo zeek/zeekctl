@@ -17,8 +17,11 @@ mv options.out default.out
 
 # Test that custom (user-specified) values override default values.
 
-while read line; do installfile $line; done << EOF
-etc/broctl.cfg__plugin_opts
+# Specify values for options provided by optionstest.py plugin.
+cat >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg << EOF
+optionstest.opt1=0
+optionstest.opt2=this is a test
+optionstest.opt3=123
 EOF
 
 broctl exit

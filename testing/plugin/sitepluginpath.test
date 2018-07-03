@@ -12,10 +12,14 @@ mkdir $BROCTL_INSTALL_PREFIX/emptydir
 
 # Install some test plugins
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__sitepluginpath
+etc/broctl.cfg__debug
 plugins/optionstest.py testplugins --new
 plugins/broctlconfigtest.py moreplugins --new
 EOF
+
+# Specify directories containing test plugins, and a couple other directories
+# that don't.
+echo "SitePluginPath=@PREFIX@/doesnotexist:@PREFIX@/testplugins:@PREFIX@/emptydir:@PREFIX@/moreplugins" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
 replaceprefix etc/broctl.cfg
 

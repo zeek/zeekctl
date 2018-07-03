@@ -11,10 +11,12 @@
 . broctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__env_vars
+etc/broctl.cfg__debug
 etc/node.cfg__cluster
 bin/bro__test
 EOF
+
+echo 'env_vars=myVar1 = "some Global;val",MyVar2=anotherglobal, myvar5=$PATH:/mydir' >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
 cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
 envvars=myVar1 MyVar2 myvar5

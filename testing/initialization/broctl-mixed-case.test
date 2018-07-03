@@ -6,8 +6,8 @@
 
 . broctl-test-setup
 
-while read line; do installfile $line; done << EOF
-etc/broctl.cfg__mixedcase
-EOF
+# Specify an option name with mixed case and extraneous whitespace before
+# and after the option name and value.
+echo "  comprEsSloGs   =     1 " >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
-broctl config | grep -i LogRotationInterval > out
+broctl config | grep -i CompressLogs > out
