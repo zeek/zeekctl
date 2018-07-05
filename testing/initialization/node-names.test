@@ -7,6 +7,10 @@
 
 cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
 [logcollector]
+type=logger
+host=localhost
+
+[central]
 type=manager
 host=localhost
 
