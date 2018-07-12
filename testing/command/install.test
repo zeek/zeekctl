@@ -1,0 +1,55 @@
+# Test that the install command creates necessary directories and files.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff cluster
+
+. broctl-test-setup
+
+# Verify that various files don't exist before running "broctl install".
+while read line; do
+    test ! -e $BROCTL_INSTALL_PREFIX/$line
+done << EOF
+logs/current
+spool/state.db
+spool/installed-scripts-do-not-touch
+EOF
+
+files_exist() {
+test -h $BROCTL_INSTALL_PREFIX/logs/current
+
+while read line; do
+    test -e $BROCTL_INSTALL_PREFIX/$line
+done << EOF
+spool/state.db
+spool/installed-scripts-do-not-touch/site/local.bro
+spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+spool/installed-scripts-do-not-touch/auto/local-networks.bro
+EOF
+}
+
+installed_dir=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch
+
+# Test with a standalone config.
+
+broctl install > standalone
+
+files_exist
+
+# Verify that the correct layout file was created.
+test -e $installed_dir/auto/standalone-layout.bro
+test ! -e $installed_dir/auto/cluster-layout.bro
+
+# Test with a cluster config.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+broctl install > cluster
+
+files_exist
+
+# Verify that the correct layout file was created.
+test ! -e $installed_dir/auto/standalone-layout.bro
+test -e $installed_dir/auto/cluster-layout.bro
