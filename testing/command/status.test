@@ -2,7 +2,10 @@
 # specified node.  Also test that the exit status is zero if all nodes
 # are running, and nonzero otherwise.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because we are using the broker python
+# bindings.
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out

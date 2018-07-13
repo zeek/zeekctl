@@ -1,7 +1,10 @@
 # Test that the print command can print a value from a standalone node,
 # all nodes in a cluster, or just a specified node.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because we are using the broker python
+# bindings.
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff standalone.out
 # @TEST-EXEC: btest-diff all.out

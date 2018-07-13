@@ -1,7 +1,10 @@
 # Test that the ps plugin can show bro processes on all nodes, or just a
 # specified node.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because we are starting Bro and it listens
+# on a port (which could interfere with other tests that need to do that).
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff onenode.out
