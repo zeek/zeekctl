@@ -505,6 +505,8 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
     def do_update(self, args):
         """- [<nodes>]
 
+        NOTE: This command is deprecated and will be removed in a future release.
+
         After a change to Bro policy scripts, this command updates the Bro
         processes on the given nodes *while they are running* (i.e., without
         requiring a restart_). However, such dynamic
