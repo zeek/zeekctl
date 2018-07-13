@@ -27,7 +27,7 @@ test ! -e ${broctlconfig}
 broctl install
 cp ${broctlconfig} standalone
 
-# Install a cluster config.
+# Install a cluster config with no logger node.
 while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
