@@ -1,8 +1,12 @@
-# Test that the print command can print a value from all nodes, or just a
-# specified node.
+# Test that the print command can print a value from a standalone node,
+# all nodes in a cluster, or just a specified node.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because we are using the broker python
+# bindings.
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff standalone.out
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 
@@ -10,22 +14,43 @@
 
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
-etc/node.cfg__cluster_no_netifs
 etc/networks.cfg__ipv4
+EOF
+
+# Test with a standalone config.
+
+cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[bro]
+type=standalone
+host=localhost
 EOF
 
 broctl install
 broctl start
 
-# print a single-line value from all nodes
+# Print a single-line value.
+broctl print Log::default_rotation_interval > standalone.out
+
+broctl stop
+
+# Test with a cluster config.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__no_netifs
+EOF
+
+broctl install
+broctl start
+
+# Print a single-line value from all nodes
 broctl print Log::default_rotation_interval > all.out
 
-# print a multi-line value from one node
+# Print a multi-line value from one node
 broctl print Site::local_nets worker-2 > onenode.out
 
 broctl stop
 
-# no nodes are running, so broctl cannot get any results
+# No nodes are running, so broctl cannot get any results
 ! broctl print Log::default_rotation_interval > stopped.out
-# the file size should be zero
+# The file size should be zero
 test ! -s stopped.out

@@ -1,5 +1,7 @@
-# Don't send emails or summary reports, and turn on debug output.
+# Don't send emails or summary reports.
 sendmail=
 tracesummary=
-debug=1
+# The "broctl stop" command will wait for post-terminate to finish.
 stopwait=1
+# Turn on debug output.
+debug=1

@@ -1,4 +1,4 @@
-# Cluster configuration with a logger node.
+# Cluster configuration with one logger node.
 
 [logger]
 type=logger

@@ -1,5 +1,4 @@
 Name         Type    Host             Status    Pid    Started
-logger       logger  localhost        running   11074  2018-01-08
 manager      manager localhost        running   11112  2018-01-08
 proxy-1      proxy   localhost        running   11150  2018-01-08
 worker-1     worker  localhost        running   11201  2018-01-08

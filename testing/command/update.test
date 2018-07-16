@@ -1,6 +1,10 @@
 # Test that the update command can update all nodes, or just a specified node.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because "broctl update" launches a
+# temporary instance of Bro that needs to communicate with the Bro started
+# by "broctl start".
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-update-output btest-diff onenode.out
@@ -10,7 +14,7 @@
 
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
-etc/node.cfg__cluster_no_netifs
+etc/node.cfg__no_netifs
 EOF
 
 broctl install

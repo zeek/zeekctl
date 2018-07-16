@@ -1,8 +1,0 @@
-# Don't send emails or summary reports, and turn on debug output.
-# Specify an env. variable.
-
-sendmail=
-tracesummary=
-debug=1
-stopwait=1
-env_vars=GVAR=global

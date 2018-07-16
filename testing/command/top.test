@@ -2,7 +2,6 @@
 # specified node.  Also test that the exit status is zero if all nodes
 # are running, and nonzero otherwise.
 #
-# @TEST-SERIALIZE: cluster
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-top-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-top-output btest-diff onenode.out
@@ -12,7 +11,8 @@
 
 while read line; do installfile $line; done << EOF
 etc/broctl.cfg__no_email
-etc/node.cfg__cluster_no_netifs
+etc/node.cfg__cluster
+bin/bro__test
 EOF
 
 broctl install

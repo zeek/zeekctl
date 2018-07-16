@@ -1,0 +1,42 @@
+# Test that the check command can check a standalone and cluster configuration,
+# and that it does not look at installed policy files, but rather those in
+# the SitePolicyPath.  Test that it returns zero exit status on success,
+# and nonzero otherwise.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff check1.out
+# @TEST-EXEC: btest-diff check2.out
+# @TEST-EXEC: btest-diff check3.out
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: btest-diff onenode.out
+
+. broctl-test-setup
+
+broctl install
+
+# Verify that standalone config is ok
+broctl check > check1.out
+
+# Verify that broctl check does not look at installed site policy
+echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.bro
+broctl check > check2.out
+
+# Verify that broctl check looks at policy files in SitePolicyPath
+cp $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro .
+echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro
+! broctl check > check3.out
+mv local.bro $BROCTL_INSTALL_PREFIX/share/bro/site/
+
+# Check a cluster config.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+broctl install
+
+# Check all nodes
+broctl check > all.out
+
+# Check one node
+broctl check worker-1 > onenode.out

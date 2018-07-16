@@ -1,10 +1,18 @@
-# Cluster configuration.
+# Cluster configuration with two proxies.
+
+[logger]
+type=logger
+host=localhost
 
 [manager]
 type=manager
 host=localhost
 
 [proxy-1]
+type=proxy
+host=localhost
+
+[proxy-2]
 type=proxy
 host=localhost
 
@@ -17,4 +25,3 @@ interface=eth0
 type=worker
 host=localhost
 interface=eth1
-

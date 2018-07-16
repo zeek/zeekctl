@@ -1,4 +1,4 @@
-# Cluster configuration with a logger node.
+# Cluster configuration with two logger nodes.
 
 [logger-1]
 type=logger
@@ -25,4 +25,3 @@ interface=eth0
 type=worker
 host=localhost
 interface=eth1
-

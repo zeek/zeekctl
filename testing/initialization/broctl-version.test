@@ -4,9 +4,16 @@
 
 . broctl-test-setup
 
-while read line; do installfile $line; done << EOF
-etc/broctl.cfg__bad_config
-etc/node.cfg__bad_config
+cat > $BROCTL_INSTALL_PREFIX/etc/broctl.cfg << EOF
+something=5
+this is a broken config
+another=7
+EOF
+
+cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[something]
+this is a bad node config
+nodes=3
 EOF
 
 broctl --version > out

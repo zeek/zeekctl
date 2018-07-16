@@ -1,7 +1,0 @@
-# Node configuration using custom node keys defined in nodekeystest.py plugin.
-[bro]
-type=standalone
-host=localhost
-interface=eth0
-nodekeystest.key1=this is a test
-nodekeystest.key2=1

@@ -15,10 +15,7 @@ while read line; do
 done << EOF
 logs/current
 spool/state.db
-spool/installed-scripts-do-not-touch/site/local.bro
-spool/installed-scripts-do-not-touch/auto/broctl-config.bro
-spool/installed-scripts-do-not-touch/auto/local-networks.bro
-spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+spool/installed-scripts-do-not-touch
 EOF
 
 broctl install --local > out

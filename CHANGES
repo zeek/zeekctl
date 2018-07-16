@@ -1,4 +1,20 @@
 
+1.7-107 | 2018-07-16 10:57:58 -0500
+
+  * Update docs about the "update" command being deprecated (Daniel Thayer)
+
+  * Various unit test additions/improvements/cleanups (Daniel Thayer)
+
+  * Update diff-top-output script based on a recent change (Daniel Thayer)
+
+  * Reduce the number of node.cfg files used by the tests (Daniel Thayer)
+
+  * Reduce the number of broctl.cfg files used by the tests (Daniel Thayer)
+
+  * Set BRO_DEFAULT_LISTEN_ADDRESS when running tests (Daniel Thayer)
+
+  * The check and scripts tests no longer need to be serialized (Daniel Thayer)
+
 1.7-93 | 2018-06-21 11:54:09 -0500
 
   * Make 'check' and 'scripts' commands skip connection setup (Corelight)

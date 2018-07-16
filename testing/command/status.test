@@ -2,7 +2,10 @@
 # specified node.  Also test that the exit status is zero if all nodes
 # are running, and nonzero otherwise.
 #
-# @TEST-SERIALIZE: cluster
+# This test needs to be serialized because we are using the broker python
+# bindings.
+# @TEST-SERIALIZE: listen
+#
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out
@@ -11,9 +14,11 @@
 . broctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__fullstatus
-etc/node.cfg__cluster_no_netifs
+etc/broctl.cfg__no_email
+etc/node.cfg__no_netifs
 EOF
+
+echo "statuscmdshowall=1" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
 
 broctl install
 broctl start
