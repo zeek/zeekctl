@@ -20,7 +20,7 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--i eth1 -U .status -p broctl -p broctl-live -p local -p worker-2 local.bro broctl base/frameworks/cluster local-worker.bro broctl/auto
+-i eth1 -U .status -p broctl -p broctl-live -p local -p worker-2 local.bro broctl base/frameworks/cluster broctl/auto
 
 ==== .env_vars
 PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin

@@ -594,14 +594,6 @@ class Configuration:
                 except ValueError:
                     raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
 
-        # If someone uses a deprecated option in broctl.cfg, then convert it
-        # to the new option, but only if the new option is not specified in
-        # the config file.
-        if "sitepolicystandalone" in config:
-            self.ui.warn("the SitePolicyStandalone option is deprecated (use SitePolicyScripts instead).")
-            if "sitepolicyscripts" not in config:
-                config["sitepolicyscripts"] = config["sitepolicystandalone"]
-
         return config
 
     # Initialize a global option if not already set.
