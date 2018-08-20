@@ -107,14 +107,6 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("SitePolicyManager", "local-manager.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for manager.  This option is deprecated."),
-    Option("SitePolicyLogger", "local-logger.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for logger.  This option is deprecated."),
-    Option("SitePolicyWorker", "local-worker.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files for workers.  This option is deprecated."),
-    Option("SitePolicyStandalone", "local.bro", "string", Option.USER, False,
-           "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts.  This option is deprecated (please use SitePolicyScripts instead)."),
     Option("SitePolicyScripts", "local.bro", "string", Option.USER, False,
            "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts."),
 

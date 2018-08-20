@@ -567,6 +567,12 @@ class Configuration:
         type_converters = {"bool": self._to_bool, "int": int, "string": str}
         config = {}
 
+        opt_names = set()
+        for opt in options.options:
+            # Convert key to lowercase because keys are stored in lowercase.
+            key = opt.name.lower()
+            opt_names.add(key)
+
         with open(fname, "r") as f:
             for line in f:
                 line = line.strip()
@@ -581,6 +587,12 @@ class Configuration:
                 # Option names are not case-sensitive.
                 key = key.strip().lower()
 
+                # Warn about unrecognized options, but we can't check plugin
+                # options here because no plugins have been loaded yet.
+                if "." not in key and key not in opt_names:
+                    self.ui.warn("ignoring unrecognized broctl option: %s" % key)
+                    continue
+
                 # if the key already exists, just overwrite with new value
                 config[key] = val.strip()
 
@@ -593,14 +605,6 @@ class Configuration:
                     config[key] = type_converters[opt.type](config[key])
                 except ValueError:
                     raise ConfigurationError("broctl option '%s' has invalid value '%s' for type %s" % (key, config[key], opt.type))
-
-        # If someone uses a deprecated option in broctl.cfg, then convert it
-        # to the new option, but only if the new option is not specified in
-        # the config file.
-        if "sitepolicystandalone" in config:
-            self.ui.warn("the SitePolicyStandalone option is deprecated (use SitePolicyScripts instead).")
-            if "sitepolicyscripts" not in config:
-                config["sitepolicyscripts"] = config["sitepolicystandalone"]
 
         return config
 

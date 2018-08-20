@@ -1,4 +1,10 @@
 
+1.7-117 | 2018-08-20 14:57:41 -0500
+
+  * Change broctl to warn about unrecognized broctl options (Daniel Thayer)
+
+  * Remove deprecated node-specific SitePolicy* options (Daniel Thayer)
+
 1.7-107 | 2018-07-16 10:57:58 -0500
 
   * Update docs about the "update" command being deprecated (Daniel Thayer)
