@@ -567,6 +567,12 @@ class Configuration:
         type_converters = {"bool": self._to_bool, "int": int, "string": str}
         config = {}
 
+        opt_names = set()
+        for opt in options.options:
+            # Convert key to lowercase because keys are stored in lowercase.
+            key = opt.name.lower()
+            opt_names.add(key)
+
         with open(fname, "r") as f:
             for line in f:
                 line = line.strip()
@@ -580,6 +586,12 @@ class Configuration:
                 key, val = args
                 # Option names are not case-sensitive.
                 key = key.strip().lower()
+
+                # Warn about unrecognized options, but we can't check plugin
+                # options here because no plugins have been loaded yet.
+                if "." not in key and key not in opt_names:
+                    self.ui.warn("ignoring unrecognized broctl option: %s" % key)
+                    continue
 
                 # if the key already exists, just overwrite with new value
                 config[key] = val.strip()

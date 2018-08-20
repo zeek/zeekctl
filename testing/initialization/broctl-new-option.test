@@ -1,4 +1,4 @@
-# Test that broctl.cfg options that aren't used or documented can be specified.
+# Test that unrecognized broctl.cfg options are rejected with a warning message.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
