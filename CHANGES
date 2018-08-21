@@ -1,4 +1,9 @@
 
+1.7-119 | 2018-08-21 13:20:35 -0500
+
+  * Change default snaplen to 9216 bytes to better accommodate
+    jumbo frames (Justin Azoff)
+
 1.7-117 | 2018-08-20 14:57:41 -0500
 
   * Change broctl to warn about unrecognized broctl options (Daniel Thayer)

@@ -1076,7 +1076,7 @@ Internal Options
 
 .. _PcapSnaplen:
 
-*PcapSnaplen* (int, default 8192)
+*PcapSnaplen* (int, default 9216)
     Number of bytes per packet to capture from live interfaces via libpcap.
 
 .. _PluginBroDir:
