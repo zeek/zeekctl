@@ -71,7 +71,7 @@ def _send_event_init(node, event, args, result_event, topic):
             if isinstance(msg, broker.Status):
                 if msg.code() == broker.SC.PeerAdded:
                     ev = broker.bro.Event(event, args)
-                    endpoint.publish(topic, ev)
+                    endpoint.publish(topic + "/" + repr(msg.context()), ev)
                     logging.debug("broker: %s(%s) to node %s", event,
                                   ", ".join(args), node.name)
                     return (True, endpoint, subscriber)

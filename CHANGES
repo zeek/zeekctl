@@ -1,4 +1,10 @@
 
+1.7-122 | 2018-08-29 23:44:14 +0000
+
+  * Include Broker node ID in "control" event topics. This helps break
+    a message routing loop due to all "control" nodes being subscribed
+    to a common topic. (Jon Siwek, Corelight)
+
 1.7-119 | 2018-08-21 13:20:35 -0500
 
   * Change default snaplen to 9216 bytes to better accommodate
@@ -70,7 +76,7 @@
           configuration framework supersedes it.
 
         - Make Broker's control topic a configuration option.
-          
+
         - Add 'DefaultStoreDir' option that controls location of
           persistent stores
 
@@ -121,7 +127,7 @@
     of the "logs" directory if none of the other Bro directories were on that
     filesystem, but only when a cluster config with a logger node was being
     used.  Also fixed the check for NFS mounted volumes to prevent broctl from
-    skipping non-NFS filesystems that have a colon in the name.  
+    skipping non-NFS filesystems that have a colon in the name.
     Addresses BIT-1880 (Daniel Thayer)
 
   * Added "df" command tests for a standalone configuration, and for Bro
