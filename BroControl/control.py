@@ -1005,47 +1005,28 @@ class Controller:
         return results
 
     # Returns a list of tuples of the form (node, error, vals) where 'error' is
-    # an error message string, or None if there was no error.  'vals' is a list
-    # of dicts which map tags to their values.  Tags are "pid", "proc", "vsize",
+    # an error message string, or None if there was no error.  'vals' is a
+    # dict which maps tags to their values.  Tags are "pid", "vsize",
     # "rss", "cpu", and "cmd".
     def get_top_output(self, nodes):
 
         results = []
-        cmds = []
 
         running = self._isrunning(nodes)
 
         # Get all the PIDs first.
 
         pids = {}
-        parents = {}
 
         for (node, isrunning) in running:
             if isrunning:
-                pid = node.getPID()
-                pids[node.name] = [pid]
-                parents[node.name] = pid
-
-                cmds += [(node, "get-childs", [str(pid)])]
+                pids[node.name] = node.getPID()
             else:
-                results += [(node, "not running", [{}])]
+                results += [(node, "not running", {})]
                 continue
 
-        if not cmds:
+        if not pids:
             return results
-
-        for (node, success, output) in self.executor.run_helper(cmds):
-            if not success:
-                results += [(node, "cannot get child pids", [{}])]
-                continue
-
-            try:
-                pidlist = [int(line) for line in output.splitlines()]
-            except ValueError as err:
-                results += [(node, "invalid PID: %s" % err, [{}])]
-                continue
-
-            pids[node.name] += pidlist
 
         cmds = []
         hosts = {}
@@ -1080,41 +1061,41 @@ class Controller:
                 # The error msg gets written to stats.log, so we only want
                 # the first line.
                 errmsg = output.splitlines()[0] if output else ""
-                results += [(node, "top failed: %s" % errmsg, [{}])]
+                results += [(node, "top failed: %s" % errmsg, {})]
                 continue
 
             if not output:
-                results += [(node, "no output from top", [{}])]
+                results += [(node, "no output from top", {})]
                 continue
 
-            # Get a list of all bro processes, where each bro process is a list
-            # of fields from the "top" helper.
+            # Get the bro process info, which is a list of fields from
+            # the "top" helper.
+            procinfo = []
             try:
-                procs = [line.split() for line in output.splitlines() if int(line.split()[0]) in pids[node.name]]
+                for line in output.splitlines():
+                    if int(line.split()[0]) == pids[node.name]:
+                        procinfo = line.split()
+                        break
             except (IndexError, ValueError) as err:
-                results += [(node, "bad output from top: %s" % err, [{}])]
+                results += [(node, "bad output from top: %s" % err, {})]
                 continue
 
-            if not procs:
+            if not procinfo:
                 # It's possible that the process is no longer there.
-                results += [(node, "not running", [{}])]
+                results += [(node, "not running", {})]
                 continue
 
-            vals = []
+            vals = {}
 
             try:
-                for p in procs:
-                    d = {}
-                    pid = int(p[0])
-                    d["pid"] = pid
-                    d["proc"] = "parent" if pid == parents[node.name] else "child"
-                    d["vsize"] = int(float(p[1])) #May be something like 2.17684e+9
-                    d["rss"] = int(float(p[2]))
-                    d["cpu"] = p[3]
-                    d["cmd"] = " ".join(p[4:])
-                    vals += [d]
+                pid = int(procinfo[0])
+                vals["pid"] = pid
+                vals["vsize"] = int(float(procinfo[1])) #May be something like 2.17684e+9
+                vals["rss"] = int(float(procinfo[2]))
+                vals["cpu"] = procinfo[3]
+                vals["cmd"] = " ".join(procinfo[4:])
             except (IndexError, ValueError) as err:
-                results += [(node, "unexpected top output: %s" % err, [{}])]
+                results += [(node, "unexpected top output: %s" % err, {})]
                 continue
 
             results += [(node, None, vals)]
@@ -1127,21 +1108,18 @@ class Controller:
 
         for (node, error, vals) in self.get_top_output(nodes):
             top_info = {"name": node.name, "type": node.type,
-                        "host": node.host, "pid": None, "proc": None,
+                        "host": node.host, "pid": None,
                         "vsize": None, "rss": None, "cpu": None,
                         "cmd": None, "error": None}
             if error:
                 top_info["error"] = error
-                results.set_node_data(node, False, {"procs": [top_info]})
+                results.set_node_data(node, False, {"procs": top_info})
                 continue
 
-            proclist = []
-            for d in vals:
-                top_info2 = top_info.copy()
-                top_info2.update(d)
-                proclist.append(top_info2)
+            top_info2 = top_info.copy()
+            top_info2.update(vals)
 
-            results.set_node_data(node, True, {"procs": proclist})
+            results.set_node_data(node, True, {"procs": top_info2})
 
         return results
 

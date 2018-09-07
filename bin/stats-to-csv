@@ -15,6 +15,7 @@ import sys
 # Read the meta.dat file, and extract node names from it.
 def readNodes(meta):
     manager = ""
+    loggers = set()
     proxies = set()
     workers = set()
 
@@ -35,10 +36,13 @@ def readNodes(meta):
                 if m[2] == "proxy":
                     proxies.add(m[1])
 
+                if m[2] == "logger":
+                    loggers.add(m[1])
+
                 if m[2] == "manager":
                     manager = m[1]
 
-    return (manager, proxies, workers)
+    return (manager, loggers, proxies, workers)
 
 
 # Read the stats.log file, and create/append CSV files for one node.
@@ -69,13 +73,17 @@ def processNode(stats, wwwdir, node, iface):
             return
 
         try:
-            val = int(entry["parent-cpu"]) + int(entry["child-cpu"])
+            val = int(entry["parent-cpu"])
+            if "child-cpu" in entry:
+                val += int(entry["child-cpu"])
             cpu.write("%s,%s\n" % (t, val))
         except (ValueError, KeyError):
             pass
 
         try:
-            val = int(entry["parent-vsize"]) + int(entry["child-vsize"])
+            val = int(entry["parent-vsize"])
+            if "child-vsize" in entry:
+                val += int(entry["child-vsize"])
             mem.write("%s,%s\n" % (t, val))
         except (ValueError, KeyError):
             pass
@@ -151,7 +159,7 @@ def main():
         sys.exit(1)
 
     try:
-        manager, proxies, workers = readNodes(meta)
+        manager, loggers, proxies, workers = readNodes(meta)
     except IOError as err:
         print("Error: failed to read file: %s" % err)
         sys.exit(1)
@@ -162,6 +170,9 @@ def main():
 
         for p in proxies:
             processNode(stats, wwwdir, p, False)
+
+        for l in loggers:
+            processNode(stats, wwwdir, l, False)
 
         if manager:
             processNode(stats, wwwdir, manager, False)

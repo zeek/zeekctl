@@ -1,4 +1,12 @@
 
+1.7-126 | 2018-09-07 09:56:19 -0500
+
+  * Update the broctl top command to not show the "Proc" column (Daniel Thayer)
+
+  * Update the stats-to-csv script for broker and loggers (Daniel Thayer)
+
+  * Improve `make dist` (Jon Siwek, Corelight)
+
 1.7-122 | 2018-08-29 23:44:14 +0000
 
   * Include Broker node ID in "control" event topics. This helps break

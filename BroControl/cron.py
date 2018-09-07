@@ -56,11 +56,8 @@ class CronTasks:
             with open(self.config.statslog, "a") as out:
                 for (node, error, vals) in top:
                     if not error:
-                        for proc in vals:
-                            parentchild = proc["proc"]
-                            for (val, key) in sorted(proc.items()):
-                                if val != "proc":
-                                    out.write("%s %s %s %s %s\n" % (t, node, parentchild, val, key))
+                        for (val, key) in sorted(vals.items()):
+                            out.write("%s %s parent %s %s\n" % (t, node, val, key))
                     else:
                         out.write("%s %s error error %s\n" % (t, node, error))
 

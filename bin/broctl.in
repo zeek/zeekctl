@@ -263,41 +263,38 @@ class BroCtlCmdLoop(brocmd.ExitValueCmd):
         hostwidth = 16
         data = results.get_node_data()
         if data:
-            proclist = data[0][2]["procs"]
-            if proclist[0]["type"] == "standalone":
+            procinfo = data[0][2]["procs"]
+            if procinfo["type"] == "standalone":
                 # In standalone mode, we need a wider "type" column.
                 typewidth = 10
                 hostwidth = 13
 
-        lines = ["%-12s %-*s %-*s %-7s %-7s %-6s %-4s %-5s %s" % ("Name",
-                typewidth, "Type", hostwidth, "Host", "Pid", "Proc", "VSize",
+        lines = ["%-12s %-*s %-*s %-7s %-6s %-4s %-5s %s" % ("Name",
+                typewidth, "Type", hostwidth, "Host", "Pid", "VSize",
                 "Rss", "Cpu", "Cmd")]
         for data in results.get_node_data():
-            proclist = data[2]["procs"]
-            for top_info in proclist:
-                msg = ["%-12s" % top_info["name"]]
-                msg.append("%-*s" % (typewidth, top_info["type"]))
-                msg.append("%-*s" % (hostwidth, top_info["host"]))
-                if top_info["error"]:
-                    msg.append("<%s>" % top_info["error"])
-                else:
-                    msg.append("%-7s" % top_info["pid"])
-                    msg.append("%-7s" % top_info["proc"])
-                    msg.append("%-6s" % util.number_unit_str(top_info["vsize"]))
-                    msg.append("%-4s" % util.number_unit_str(top_info["rss"]))
-                    msg.append("%3s%% " % top_info["cpu"])
-                    msg.append("%s" % top_info["cmd"])
+            procinfo = data[2]["procs"]
+            msg = ["%-12s" % procinfo["name"]]
+            msg.append("%-*s" % (typewidth, procinfo["type"]))
+            msg.append("%-*s" % (hostwidth, procinfo["host"]))
+            if procinfo["error"]:
+                msg.append("<%s>" % procinfo["error"])
+            else:
+                msg.append("%-7s" % procinfo["pid"])
+                msg.append("%-6s" % util.number_unit_str(procinfo["vsize"]))
+                msg.append("%-4s" % util.number_unit_str(procinfo["rss"]))
+                msg.append("%3s%% " % procinfo["cpu"])
+                msg.append("%s" % procinfo["cmd"])
 
-                lines.append(" ".join(msg))
+            lines.append(" ".join(msg))
 
         return (results.ok, lines)
 
     def do_top(self, args):
         """- [<nodes>]
 
-        For each of the nodes, prints the status of the two Bro
-        processes (parent process and child process) in a *top*-like
-        format, including CPU usage and memory consumption. If
+        For each of the nodes, prints the status of the Bro process in
+        a *top*-like format, including CPU usage and memory consumption. If
         executed interactively, the display is updated frequently
         until key ``q`` is pressed. If invoked non-interactively, the
         status is printed only once."""
