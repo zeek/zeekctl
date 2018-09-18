@@ -1,4 +1,8 @@
 
+1.8 | 2018-09-18 14:26:09 -0500
+
+  * Release v1.8.
+
 1.7-126 | 2018-09-07 09:56:19 -0500
 
   * Update the broctl top command to not show the "Proc" column (Daniel Thayer)
