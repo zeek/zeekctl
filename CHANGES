@@ -1,4 +1,8 @@
 
+1.9 | 2018-09-18 16:47:56 -0500
+
+  * Release 1.9.
+
 1.8-1 | 2018-09-18 16:46:20 -0500
 
   * Fix commands that use broker python bindings (Jon Siwek, Corelight)
