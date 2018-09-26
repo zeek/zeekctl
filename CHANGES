@@ -1,4 +1,8 @@
 
+1.9-2 | 2018-09-26 10:31:47 -0500
+
+  * Update broctl.rst (by running "make doc") (Daniel Thayer)
+
 1.9 | 2018-09-18 16:47:56 -0500
 
   * Release 1.9.
