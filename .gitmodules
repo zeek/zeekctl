@@ -1,12 +1,12 @@
 [submodule "aux/capstats"]
 	path = aux/capstats
-	url = git://git.bro.org/capstats
+	url = https://github.com/zeek/capstats
 [submodule "aux/pysubnettree"]
 	path = aux/pysubnettree
-	url = git://git.bro.org/pysubnettree
+	url = https://github.com/zeek/pysubnettree
 [submodule "aux/trace-summary"]
 	path = aux/trace-summary
-	url = git://git.bro.org/trace-summary
+	url = https://github.com/zeek/trace-summary
 [submodule "cmake"]
 	path = cmake
-	url = git://git.bro.org/cmake
+	url = https://github.com/zeek/cmake
