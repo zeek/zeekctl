@@ -1,4 +1,10 @@
 
+1.9-4 | 2018-12-07 16:31:33 -0600
+
+  * Update github/download link (Jon Siwek, Corelight)
+
+  * Update submodules to use github.com/zeek (Jon Siwek, Corelight)
+
 1.9-2 | 2018-09-26 10:31:47 -0500
 
   * Update broctl.rst (by running "make doc") (Daniel Thayer)
