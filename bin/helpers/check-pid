@@ -4,10 +4,31 @@
 #
 #  check-pid <pid>
 
-ps -p $1 -o args | grep -q bro
+if [[ $(uname -s) == Darwin ]]; then
+    ps -p $1 -o args | grep -q bro
+
+    if [ $? -eq 0 ]; then
+        echo "running"
+    else
+        echo "not running"
+    fi
+
+    exit 0
+fi
+
+kill -0 $1 >/dev/null 2>&1
 
 if [ $? -eq 0 ]; then
-    echo "running"
-else
-    echo "not running"
+    IFS=$'\n'
+
+    for line in $(ps ax -opid,args | grep $1 | grep bro); do
+        pid=$(echo $line | awk '{print $1}')
+
+        if [ "$pid" -eq $1 ]; then
+            echo "running"
+            exit 0
+        fi
+    done
 fi
+
+echo "not running"
