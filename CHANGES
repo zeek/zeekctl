@@ -1,4 +1,10 @@
 
+1.9-7 | 2018-12-10 13:09:29 -0600
+
+  * Update Travis URL for cloning Zeek (Jon Siwek, Corelight)
+
+  * GH-11: Improve check-pid helper script for Alpine support (Jon Siwek, Corelight)
+
 1.9-4 | 2018-12-07 16:31:33 -0600
 
   * Update github/download link (Jon Siwek, Corelight)

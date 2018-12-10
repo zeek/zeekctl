@@ -27,7 +27,7 @@ before_install:
   - cd ..
   - tar cf broctl.tar --exclude=.git broctl
   - rm -rf broctl
-  - git clone --recursive git://git.bro.org/bro
+  - git clone --recursive https://github.com/zeek/zeek bro
   - rm -rf bro/aux/broctl
   - tar xf broctl.tar -C bro/aux
   - rm -f broctl.tar
