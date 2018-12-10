@@ -35,8 +35,7 @@ before_install:
 
 install:
   - make buildbro
-  - rm -rf ../build/bro-build
 
-script: make btest-verbose
+script: ../../btest/btest -f diag.log -A
 
 after_failure: cat diag.log

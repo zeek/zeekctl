@@ -1,4 +1,8 @@
 
+1.9-8 | 2018-12-10 15:07:31 -0600
+
+  * Change Travis btest commnad to help isolate hung tests (Jon Siwek, Corelight)
+
 1.9-7 | 2018-12-10 13:09:29 -0600
 
   * Update Travis URL for cloning Zeek (Jon Siwek, Corelight)
