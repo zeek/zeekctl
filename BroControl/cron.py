@@ -121,10 +121,18 @@ class CronTasks:
         if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
             return
 
-        success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+        expirelogs=os.path.join(self.config.scriptsdir, "expire-logs")
+        cmds=[]
+        for node in self.config.nodestore:
+            if node.split('-')[0] == 'logger':
+                cmds.append((self.config.nodestore[node], expirelogs, []))
 
-        if not success:
-            self.ui.error("expire-logs failed\n%s" % output)
+        for (node, success, output) in self.executor.run_cmds(cmds, shell=True, helper=False):
+            if not success:
+                self.ui.error("expire-logs failed for node %s\n" % node)
+                if output:
+                    self.ui.error(output)
+
 
     def expire_crash(self):
         if self.config.crashexpireinterval == 0:
