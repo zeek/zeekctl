@@ -1,4 +1,8 @@
 
+1.9-11 | 2019-01-04 13:10:54 -0600
+
+  * Adding support for log rotation/expiration for distributed loggers. (Stefan Maerz)
+
 1.9-8 | 2018-12-10 15:07:31 -0600
 
   * Change Travis btest commnad to help isolate hung tests (Jon Siwek, Corelight)

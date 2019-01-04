@@ -6,6 +6,7 @@ import shutil
 
 from BroControl import execute
 from BroControl import py3bro
+from BroControl import node as node_mod
 
 class CronUI:
     def __init__(self):
@@ -121,10 +122,26 @@ class CronTasks:
         if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
             return
 
-        success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+        if self.config.standalone:
+            success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
 
-        if not success:
-            self.ui.error("expire-logs failed\n%s" % output)
+            if not success:
+                self.ui.error("expire-logs failed\n%s" % output)
+        else:
+            nodes = self.config.hosts(tag=node_mod.logger_group())
+
+            if not nodes:
+                nodes = self.config.hosts(tag=node_mod.manager_group())
+
+            expirelogs = os.path.join(self.config.scriptsdir, "expire-logs")
+            cmds = [(node, expirelogs, []) for node in nodes]
+
+            for (node, success, output) in self.executor.run_cmds(cmds):
+                if not success:
+                    self.ui.error("expire-logs failed for node %s\n" % node)
+                    if output:
+                        self.ui.error(output)
+
 
     def expire_crash(self):
         if self.config.crashexpireinterval == 0:
