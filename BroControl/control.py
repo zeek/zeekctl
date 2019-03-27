@@ -926,7 +926,7 @@ class Controller:
         cmds = []
         for (node, isrunning) in running:
             if isrunning:
-                env = _make_env_params(node)
+                env = ""
                 env += " BRO_DNS_FAKE=1"
                 args = " ".join(_make_bro_params(node, False))
                 cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s/tcp %s" % (util.format_bro_addr(node.addr), node.getPort(), args), env, None)]

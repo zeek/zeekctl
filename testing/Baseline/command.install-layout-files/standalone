@@ -2,6 +2,6 @@
 redef Broker::default_port = 47760/tcp;
 event bro_init()
 	{
-	if ( getenv("BROCTL_PROCESS_TRACE") == "" )
+	if ( getenv("BROCTL_DISABLE_LISTEN") == "" )
 		Broker::listen();
 	}

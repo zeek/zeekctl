@@ -136,7 +136,7 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Broker::default_port = %s/tcp;\n" % broport.use_port(manager)
         ostr += "event bro_init()\n"
         ostr += "\t{\n"
-        ostr += "\tif ( getenv(\"BROCTL_PROCESS_TRACE\") == \"\" )\n"
+        ostr += "\tif ( getenv(\"BROCTL_DISABLE_LISTEN\") == \"\" )\n"
         ostr += "\t\tBroker::listen();\n"
         ostr += "\t}\n"
 

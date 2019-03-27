@@ -34,5 +34,5 @@ fi
 
 echo $@ >.cmdline
 
-BROCTL_PROCESS_TRACE=1 "${bro}" -r "$trace" "$@"
+BROCTL_DISABLE_LISTEN=1 "${bro}" -r "$trace" "$@"
 

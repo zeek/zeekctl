@@ -46,7 +46,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-"${bro}" "$@" frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
+BROCTL_DISABLE_LISTEN=1 "${bro}" "$@" frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?
 
 grep -v -e "warning: no such host" -e "received termination signal" out.log
