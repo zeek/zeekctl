@@ -107,7 +107,7 @@ options = [
     Option("Prefixes", "local", "string", Option.USER, False,
            "Additional script prefixes for Bro, separated by colons. Use this instead of @prefix."),
 
-    Option("SitePolicyScripts", "local.bro", "string", Option.USER, False,
+    Option("SitePolicyScripts", "local.zeek", "string", Option.USER, False,
            "Space-separated list of local policy files that will be automatically loaded for all Bro instances.  Scripts listed here do not need to be explicitly loaded from any other policy scripts."),
 
     Option("StatusCmdShowAll", 0, "bool", Option.USER, False,

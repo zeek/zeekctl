@@ -798,7 +798,7 @@ class Configuration:
 
     # Check if the user has already run the "install" or "deploy" commands.
     def is_broctl_installed(self):
-        return os.path.isfile(os.path.join(self.config["policydirsiteinstallauto"], "broctl-config.bro"))
+        return os.path.isfile(os.path.join(self.config["policydirsiteinstallauto"], "broctl-config.zeek"))
 
     # Warn user to run broctl deploy if any changes are detected to broctl
     # config options, node config, Bro version, or if certain state variables

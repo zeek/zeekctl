@@ -58,9 +58,9 @@ StatusCmdShowAll = 0
 CrashExpireInterval = 0
 
 # Site-specific policy script to load. Bro will look for this in
-# $PREFIX/share/bro/site. A default local.bro comes preinstalled
+# $PREFIX/share/bro/site. A default local.zeek comes preinstalled
 # and can be customized as desired.
-SitePolicyScripts = local.bro
+SitePolicyScripts = local.zeek
 
 # Location of the log directory where log files will be archived each rotation
 # interval.

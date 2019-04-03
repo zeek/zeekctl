@@ -160,8 +160,8 @@ class PluginRegistry:
 
     def getBroctlConfig(self):
         """Call the broctl_config method on all plugins in case a plugin
-        needs to add some custom script code to broctl-config.bro.  Returns
-        a string containing Bro script code from the plugins.
+        needs to add some custom script code to the broctl-config.zeek file.
+        Returns a string containing Bro script code from the plugins.
         """
 
         extra_code = []

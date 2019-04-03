@@ -126,9 +126,9 @@ def make_layout(path, cmdout, silent=False):
 
     if config.Config.standalone:
         if not silent:
-            cmdout.info("generating standalone-layout.bro ...")
+            cmdout.info("generating standalone-layout.zeek ...")
 
-        filename = os.path.join(path, "standalone-layout.bro")
+        filename = os.path.join(path, "standalone-layout.zeek")
 
         ostr = "# Automatically generated. Do not edit.\n"
         # This is the port that standalone nodes listen on for remote
@@ -142,9 +142,9 @@ def make_layout(path, cmdout, silent=False):
 
     else:
         if not silent:
-            cmdout.info("generating cluster-layout.bro ...")
+            cmdout.info("generating cluster-layout.zeek ...")
 
-        filename = os.path.join(path, "cluster-layout.bro")
+        filename = os.path.join(path, "cluster-layout.zeek")
         workers = config.Config.workers()
         proxies = config.Config.proxies()
         loggers = config.Config.loggers()
@@ -237,7 +237,7 @@ def make_local_networks(path, cmdout):
     ostr += "};\n\n"
 
     try:
-        with open(os.path.join(path, "local-networks.bro"), "w") as out:
+        with open(os.path.join(path, "local-networks.zeek"), "w") as out:
             out.write(ostr)
     except IOError as e:
         cmdout.error("failed to write file: %s" % e)
@@ -274,7 +274,7 @@ def make_broctl_config_policy(path, cmdout, plugin_reg):
 
     ostr += plugin_reg.getBroctlConfig()
 
-    filename = os.path.join(path, "broctl-config.bro")
+    filename = os.path.join(path, "broctl-config.zeek")
     try:
         with open(filename, "w") as out:
             out.write(ostr)
