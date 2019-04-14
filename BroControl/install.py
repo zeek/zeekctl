@@ -134,7 +134,7 @@ def make_layout(path, cmdout, silent=False):
         # This is the port that standalone nodes listen on for remote
         # control by default.
         ostr += "redef Broker::default_port = %s/tcp;\n" % broport.use_port(manager)
-        ostr += "event bro_init()\n"
+        ostr += "event zeek_init()\n"
         ostr += "\t{\n"
         ostr += "\tif ( getenv(\"BROCTL_DISABLE_LISTEN\") == \"\" )\n"
         ostr += "\t\tBroker::listen();\n"
