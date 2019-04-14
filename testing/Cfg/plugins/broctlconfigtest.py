@@ -1,4 +1,4 @@
-# Broctl test plugin that defines a string to write to broctl-config.bro
+# Broctl test plugin that defines a string to write to broctl-config.zeek
 
 import BroControl.plugin
 

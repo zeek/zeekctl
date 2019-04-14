@@ -1,4 +1,4 @@
-# Test that a plugin can add content to the broctl-config.bro file.
+# Test that a plugin can add content to the broctl-config.zeek file.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
@@ -9,7 +9,7 @@ while read line; do installfile $line; done << EOF
 plugins/broctlconfigtest.py lib/broctl/plugins --new
 EOF
 
-broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.zeek
 
 broctl install
 sed -n '/Begin code from/,$p' ${broctlconfig} > out

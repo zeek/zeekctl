@@ -20,7 +20,7 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--i eth0 -U .status -p broctl -p broctl-live -p standalone -p local -p bro local.bro broctl broctl/standalone broctl/auto
+-i eth0 -U .status -p broctl -p broctl-live -p standalone -p local -p bro local.zeek broctl broctl/standalone broctl/auto
 
 ==== .env_vars
 PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27595/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
