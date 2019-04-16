@@ -146,7 +146,7 @@ install(FILES man/broctl.8 DESTINATION ${BRO_MAN_INSTALL_PATH}/man8)
 install(DIRECTORY scripts/
         DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
-        PATTERN "*.bro")
+        PATTERN "*.zeek")
 
 if ( BRO_LOCAL_STATE_DIR )
     set(VAR ${BRO_LOCAL_STATE_DIR})

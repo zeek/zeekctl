@@ -8,8 +8,8 @@
 
 . broctl-test-setup
 
-standalonelayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.bro
-clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+standalonelayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek
+clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
 
 # Test a standalone config.
 

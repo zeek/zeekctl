@@ -18,14 +18,14 @@ broctl install
 broctl check > check1.out
 
 # Verify that broctl check does not look at installed site policy
-echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.bro
+echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.zeek
 broctl check > check2.out
 
 # Verify that broctl check looks at policy files in SitePolicyPath
-cp $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro .
-echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.bro
+cp $BROCTL_INSTALL_PREFIX/share/bro/site/local.zeek .
+echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.zeek
 ! broctl check > check3.out
-mv local.bro $BROCTL_INSTALL_PREFIX/share/bro/site/
+mv local.zeek $BROCTL_INSTALL_PREFIX/share/bro/site/
 
 # Check a cluster config.
 

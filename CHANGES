@@ -1,4 +1,24 @@
 
+1.9-24 | 2019-04-16 11:53:06 -0700
+
+  * Update some tests and baselines due to new file extension (Daniel Thayer)
+
+  * Install script files with new file extension (Daniel Thayer)
+
+  * Change file extension of all script files to ".zeek" (Daniel Thayer)
+
+  * Fix the update command
+
+    This broke due to https://github.com/zeek/zeek/pull/261, in which
+    errors in initialization are now fatal, but there happened to be
+    benign/unnoticed errors with the way `broctl update` was working.
+    Namely, it was incorrectly treating the bro process that it spawned
+    for using the control framework as a cluster node, by setting the
+    CLUSTER_NODE environment variable, and that causes an attempt to listen
+    on a port which, when a cluster is up and running as it should be,
+    is already listened upon, thus generating an error and completely
+    failing now due to change in initialization behavior. (Jon Siwek, Corelight)
+
 1.9-11 | 2019-01-04 13:10:54 -0600
 
   * Adding support for log rotation/expiration for distributed loggers. (Stefan Maerz)

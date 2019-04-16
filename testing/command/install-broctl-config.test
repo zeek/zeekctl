@@ -1,4 +1,4 @@
-# Test that the install command creates a broctl-config.bro policy file
+# Test that the install command creates a broctl-config.zeek policy file
 # with the correct contents.
 #
 # @TEST-EXEC: bash %INPUT
@@ -9,9 +9,9 @@
 . broctl-test-setup
 
 broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
-broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.bro
+broctlconfig=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/broctl-config.zeek
 
-# Specify non-default values for options that are written to broctl-config.bro
+# Specify non-default values for options that are written to broctl-config.zeek
 echo "MailTo=broctltest@somedomain" >> ${broctlcfg}
 echo "MailAlarmsTo=broctltest2@somedomain2" >> ${broctlcfg}
 echo "SendMail=/path/to/sendmail" >> ${broctlcfg}

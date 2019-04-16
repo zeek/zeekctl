@@ -4,8 +4,8 @@ updating manager ...
 updating proxy-1 ...
 updating worker-1 ...
 updating worker-2 ...
-logger: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
-manager: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
-proxy-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 377 IDs
-worker-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 378 IDs
-worker-2: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.bro, line 136: Control framework sent 378 IDs
+logger: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.zeek, line 136: Control framework sent 377 IDs
+manager: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.zeek, line 136: Control framework sent 377 IDs
+proxy-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.zeek, line 136: Control framework sent 377 IDs
+worker-1: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.zeek, line 136: Control framework sent 378 IDs
+worker-2: /home/robin/bro/master/aux/broctl/build/testing/test.11362/share/bro/policy/frameworks/control/controller.zeek, line 136: Control framework sent 378 IDs

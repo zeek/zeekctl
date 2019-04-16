@@ -1,5 +1,5 @@
-# Test that the install command installs either the standalone-layout.bro or
-# cluster-layout.bro file, and that the contents of the file are correct.
+# Test that the install command installs either the standalone-layout.zeek or
+# cluster-layout.zeek file, and that the contents of the file are correct.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff standalone
@@ -11,9 +11,9 @@
 
 # Test using a standalone config.
 broctl install
-cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.bro standalone
+cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek standalone
 
-clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.bro
+clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
 
 # Install a cluster config with no logger nodes.
 while read line; do installfile $line; done << EOF

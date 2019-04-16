@@ -330,7 +330,7 @@ class Plugin(object):
     @doc.api("override")
     def broctl_config(self):
         """Returns a string containing Bro script code that should be written
-        to the dynamically generated Bro script named "broctl-config.bro".
+        to the dynamically generated Bro script named "broctl-config.zeek".
         This provides a way for plugins to easily add Bro script code that
         depends on broctl settings.
 

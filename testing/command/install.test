@@ -22,9 +22,9 @@ while read line; do
     test -e $BROCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/state.db
-spool/installed-scripts-do-not-touch/site/local.bro
-spool/installed-scripts-do-not-touch/auto/broctl-config.bro
-spool/installed-scripts-do-not-touch/auto/local-networks.bro
+spool/installed-scripts-do-not-touch/site/local.zeek
+spool/installed-scripts-do-not-touch/auto/broctl-config.zeek
+spool/installed-scripts-do-not-touch/auto/local-networks.zeek
 EOF
 }
 
@@ -37,8 +37,8 @@ broctl install > standalone
 files_exist
 
 # Verify that the correct layout file was created.
-test -e $installed_dir/auto/standalone-layout.bro
-test ! -e $installed_dir/auto/cluster-layout.bro
+test -e $installed_dir/auto/standalone-layout.zeek
+test ! -e $installed_dir/auto/cluster-layout.zeek
 
 # Test with a cluster config.
 
@@ -51,5 +51,5 @@ broctl install > cluster
 files_exist
 
 # Verify that the correct layout file was created.
-test ! -e $installed_dir/auto/standalone-layout.bro
-test -e $installed_dir/auto/cluster-layout.bro
+test ! -e $installed_dir/auto/standalone-layout.zeek
+test -e $installed_dir/auto/cluster-layout.zeek
