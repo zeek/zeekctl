@@ -1,6 +1,6 @@
 # Automatically generated. Do not edit.
 redef Broker::default_port = 47760/tcp;
-event bro_init()
+event zeek_init()
 	{
 	if ( getenv("BROCTL_DISABLE_LISTEN") == "" )
 		Broker::listen();

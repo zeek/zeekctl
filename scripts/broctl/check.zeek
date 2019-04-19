@@ -4,14 +4,14 @@
 redef Log::default_rotation_interval=0secs;
 
 # When checking the configuration, Bro needs to exit after fully initializing.
-event bro_init() &priority=-10
+event zeek_init() &priority=-10
 	{
 	terminate();
 	}
 
 # We want the local loaded_scripts.log on all nodes (not just on the node that
 # does the logging).
-event bro_init() &priority=-10
+event zeek_init() &priority=-10
     {
     local f = Log::get_filter(LoadedScripts::LOG, "default");
     f$log_local = T;
