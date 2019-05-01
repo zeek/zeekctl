@@ -1,2 +1,2 @@
 Name         Type    Host             Pid     VSize  Rss  Cpu   Cmd
-worker-1     worker  localhost        37402    56M    56M   2%  bro
+worker-1     worker  localhost        37402    56M    56M   2%  zeek

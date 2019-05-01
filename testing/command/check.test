@@ -10,22 +10,22 @@
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-broctl install
+zeekctl install
 
 # Verify that standalone config is ok
-broctl check > check1.out
+zeekctl check > check1.out
 
-# Verify that broctl check does not look at installed site policy
-echo "this is an error" >> $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.zeek
-broctl check > check2.out
+# Verify that zeekctl check does not look at installed site policy
+echo "this is an error" >> $ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/site/local.zeek
+zeekctl check > check2.out
 
-# Verify that broctl check looks at policy files in SitePolicyPath
-cp $BROCTL_INSTALL_PREFIX/share/bro/site/local.zeek .
-echo "this is an error" >> $BROCTL_INSTALL_PREFIX/share/bro/site/local.zeek
-! broctl check > check3.out
-mv local.zeek $BROCTL_INSTALL_PREFIX/share/bro/site/
+# Verify that zeekctl check looks at policy files in SitePolicyPath
+cp $ZEEKCTL_INSTALL_PREFIX/share/bro/site/local.zeek .
+echo "this is an error" >> $ZEEKCTL_INSTALL_PREFIX/share/bro/site/local.zeek
+! zeekctl check > check3.out
+mv local.zeek $ZEEKCTL_INSTALL_PREFIX/share/bro/site/
 
 # Check a cluster config.
 
@@ -33,10 +33,10 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
-broctl install
+zeekctl install
 
 # Check all nodes
-broctl check > all.out
+zeekctl check > all.out
 
 # Check one node
-broctl check worker-1 > onenode.out
+zeekctl check worker-1 > onenode.out

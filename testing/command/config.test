@@ -3,10 +3,10 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-broctl install
+zeekctl install
 
 # test the config command (many config items are system-dependent, so just grab
 # one)
-broctl config | grep mailsubjectprefix > out
+zeekctl config | grep mailsubjectprefix > out

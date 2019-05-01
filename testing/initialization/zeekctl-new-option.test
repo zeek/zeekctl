@@ -1,0 +1,10 @@
+# Test that unrecognized zeekctl.cfg options are rejected with a warning message.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+echo "foo1=this is a test" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+zeekctl config | grep foo1 > out

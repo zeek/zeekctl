@@ -1,4 +1,4 @@
-project(BroControl C CXX)
+project(ZeekControl C CXX)
 # Python is checked as a dependency below
 cmake_minimum_required(VERSION 2.6.3 FATAL_ERROR)
 include(cmake/CommonCMakeConfig.cmake)
@@ -6,7 +6,7 @@ include(cmake/CommonCMakeConfig.cmake)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX "${CMAKE_INSTALL_PREFIX}")
-set(BROSCRIPTDIR "${BRO_SCRIPT_INSTALL_PATH}")
+set(ZEEKSCRIPTDIR "${BRO_SCRIPT_INSTALL_PATH}")
 set(ETC "${BRO_ETC_INSTALL_DIR}")
 
 ########################################################################
@@ -39,9 +39,9 @@ find_package(PCAP)
 
 find_program(SENDMAIL sendmail PATHS /usr/sbin)
 if (NOT SENDMAIL)
-    message(WARNING "A sendmail program was not found, BroControl will be "
+    message(WARNING "A sendmail program was not found, ZeekControl will be "
                     "unable to send mail.")
-    # Set a path now so that the user won't need to edit broctl.cfg after
+    # Set a path now so that the user won't need to edit zeekctl.cfg after
     # installing sendmail.
     set(SENDMAIL /usr/sbin/sendmail)
 endif ()
@@ -58,17 +58,17 @@ execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
 
 if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
     message(FATAL_ERROR "The sqlite3 python module is required to use "
-            "BroControl, but was not found.  Configuration aborted.")
+            "ZeekControl, but was not found.  Configuration aborted.")
 endif ()
 
 if (NOT BRO_ROOT_DIR)
-    message(WARNING "A Bro installation was not found, your BroControl "
+    message(WARNING "A Zeek installation was not found, your ZeekControl "
                     " installation may not work.  Please review the install "
-                    " summary before proceeding or force a Bro root directory "
-                    " with the --with-bro configure option. ")
+                    " summary before proceeding or force a Zeek root directory "
+                    " with the --with-zeek configure option. ")
 elseif (NOT "${BRO_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
-    message(WARNING "Broctl installation directory ${CMAKE_INSTALL_PREFIX} "
-                    "does not match Bro installation directory ${BRO_ROOT_DIR}")
+    message(WARNING "ZeekControl installation directory ${CMAKE_INSTALL_PREFIX} "
+                    "does not match Zeek installation directory ${BRO_ROOT_DIR}")
 endif ()
 
 ########################################################################
@@ -83,85 +83,85 @@ set(policydir ${BRO_SCRIPT_INSTALL_PATH})
 # If a script may need to be configured by CMake and also have its hashbang
 # transformed to use an absolute path to an interpreter, use the
 # InstallShellScript macro.
-InstallShellScript(bin bin/broctl.in broctl)
-#InstallShellScript(bin bin/broctld.in broctld)
-InstallShellScript(share/broctl/scripts bin/archive-log)
-InstallShellScript(share/broctl/scripts bin/check-config)
-InstallShellScript(share/broctl/scripts bin/crash-diag)
-InstallShellScript(share/broctl/scripts bin/delete-log)
-InstallShellScript(share/broctl/scripts bin/expire-crash)
-InstallShellScript(share/broctl/scripts bin/expire-logs)
-InstallShellScript(share/broctl/scripts bin/make-archive-name)
-InstallShellScript(share/broctl/scripts bin/post-terminate)
-InstallShellScript(share/broctl/scripts bin/run-bro)
-InstallShellScript(share/broctl/scripts bin/run-bro-on-trace)
-InstallShellScript(share/broctl/scripts bin/send-mail)
-InstallShellScript(share/broctl/scripts bin/stats-to-csv)
-InstallShellScript(share/broctl/scripts bin/update)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/check-pid)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/df)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/first-line)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/start)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/stop)
-InstallShellScript(share/broctl/scripts/helpers bin/helpers/top)
-InstallShellScript(share/broctl/scripts/postprocessors bin/postprocessors/summarize-connections)
+InstallShellScript(bin bin/zeekctl.in zeekctl)
+#InstallShellScript(bin bin/zeekctld.in zeekctld)
+InstallShellScript(share/zeekctl/scripts bin/archive-log)
+InstallShellScript(share/zeekctl/scripts bin/check-config)
+InstallShellScript(share/zeekctl/scripts bin/crash-diag)
+InstallShellScript(share/zeekctl/scripts bin/delete-log)
+InstallShellScript(share/zeekctl/scripts bin/expire-crash)
+InstallShellScript(share/zeekctl/scripts bin/expire-logs)
+InstallShellScript(share/zeekctl/scripts bin/make-archive-name)
+InstallShellScript(share/zeekctl/scripts bin/post-terminate)
+InstallShellScript(share/zeekctl/scripts bin/run-zeek)
+InstallShellScript(share/zeekctl/scripts bin/run-zeek-on-trace)
+InstallShellScript(share/zeekctl/scripts bin/send-mail)
+InstallShellScript(share/zeekctl/scripts bin/stats-to-csv)
+InstallShellScript(share/zeekctl/scripts bin/update)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/check-pid)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/df)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/first-line)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/start)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/stop)
+InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/top)
+InstallShellScript(share/zeekctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
-install(DIRECTORY BroControl
-        DESTINATION lib/broctl
+install(DIRECTORY ZeekControl
+        DESTINATION lib/zeekctl
         PATTERN "options.py" EXCLUDE
         PATTERN "ssh_runner.py" EXCLUDE
         PATTERN "version.py" EXCLUDE
-        PATTERN "broctld.py" EXCLUDE
+        PATTERN "zeekctld.py" EXCLUDE
         PATTERN "ser.py" EXCLUDE
         PATTERN "test_cli.py" EXCLUDE
         PATTERN "web.py" EXCLUDE
         PATTERN "plugins*" EXCLUDE)
-configure_file(BroControl/options.py
-               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py @ONLY)
-configure_file(BroControl/ssh_runner.py
-               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/ssh_runner.py @ONLY)
-configure_file(BroControl/version.py
-               ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/options.py
-        DESTINATION lib/broctl/BroControl)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/ssh_runner.py
-        DESTINATION lib/broctl/BroControl)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BroControl/version.py
-        DESTINATION lib/broctl/BroControl)
-install(DIRECTORY BroControl/plugins
-        DESTINATION lib/broctl)
+configure_file(ZeekControl/options.py
+               ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/options.py @ONLY)
+configure_file(ZeekControl/ssh_runner.py
+               ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/ssh_runner.py @ONLY)
+configure_file(ZeekControl/version.py
+               ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/version.py @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/options.py
+        DESTINATION lib/zeekctl/ZeekControl)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/ssh_runner.py
+        DESTINATION lib/zeekctl/ZeekControl)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/version.py
+        DESTINATION lib/zeekctl/ZeekControl)
+install(DIRECTORY ZeekControl/plugins
+        DESTINATION lib/zeekctl)
 
 # Special cases where execute permission isn't applicable.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/helpers/to-bytes.awk
-        DESTINATION share/broctl/scripts/helpers)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/set-bro-path
-        DESTINATION share/broctl/scripts)
+        DESTINATION share/zeekctl/scripts/helpers)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/set-zeek-path
+        DESTINATION share/zeekctl/scripts)
 
-if ( NOT BRO_MAN_INSTALL_PATH )
-    set(BRO_MAN_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/man)
+if ( NOT ZEEK_MAN_INSTALL_PATH )
+    set(ZEEK_MAN_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/man)
 endif ()
 
-install(FILES man/broctl.8 DESTINATION ${BRO_MAN_INSTALL_PATH}/man8)
+install(FILES man/zeekctl.8 DESTINATION ${ZEEK_MAN_INSTALL_PATH}/man8)
 
 install(DIRECTORY scripts/
         DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
         PATTERN "*.zeek")
 
-if ( BRO_LOCAL_STATE_DIR )
-    set(VAR ${BRO_LOCAL_STATE_DIR})
+if ( ZEEK_LOCAL_STATE_DIR )
+    set(VAR ${ZEEK_LOCAL_STATE_DIR})
 else ()
     set(VAR ${PREFIX})
 endif ()
 
-if ( BRO_SPOOL_DIR )
-    set(SPOOL ${BRO_SPOOL_DIR})
+if ( ZEEK_SPOOL_DIR )
+    set(SPOOL ${ZEEK_SPOOL_DIR})
 else ()
     set(SPOOL ${VAR}/spool)
 endif ()
 
-if ( BRO_LOG_DIR )
-    set(LOGS ${BRO_LOG_DIR})
+if ( ZEEK_LOG_DIR )
+    set(LOGS ${ZEEK_LOG_DIR})
 else ()
     set(LOGS ${VAR}/logs)
 endif ()
@@ -190,20 +190,20 @@ else ()
     install(DIRECTORY DESTINATION ${LOGS})
 endif ()
 
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zeekctl-config.sh
      "# Automatically generated. Do not edit.\n")
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/broctl-config.sh DESTINATION ${SPOOL})
-InstallSymlink(${SPOOL}/broctl-config.sh
-               ${PREFIX}/share/broctl/scripts/broctl-config.sh)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zeekctl-config.sh DESTINATION ${SPOOL})
+InstallSymlink(${SPOOL}/zeekctl-config.sh
+               ${PREFIX}/share/zeekctl/scripts/zeekctl-config.sh)
 
 # A couple of configuration options that are needed are placed in here.
-configure_file(etc/broctl.cfg.in
-               ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg)
+configure_file(etc/zeekctl.cfg.in
+               ${CMAKE_CURRENT_BINARY_DIR}/etc/zeekctl.cfg)
 
 InstallPackageConfigFile(
-    ${CMAKE_CURRENT_BINARY_DIR}/etc/broctl.cfg
+    ${CMAKE_CURRENT_BINARY_DIR}/etc/zeekctl.cfg
     ${ETC}
-    broctl.cfg)
+    zeekctl.cfg)
 InstallPackageConfigFile(
     ${CMAKE_CURRENT_SOURCE_DIR}/etc/networks.cfg
     ${ETC}
@@ -243,14 +243,14 @@ else ()
 endif ()
 
 message(
-    "\n=================|  Broctl Install Summary  |==================="
+    "\n=================|  ZeekControl Install Summary  |==================="
     "\n"
     "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
-    "\nBro root:          ${BRO_ROOT_DIR}"
+    "\nZeek root:         ${BRO_ROOT_DIR}"
     "\nScripts Dir:       ${policydir}"
     "\nSpool Dir:         ${spoolDir}"
     "\nLog Dir:           ${logDir}"
-    "\nConfig File Dir:   ${BRO_ETC_INSTALL_DIR}"
+    "\nConfig File Dir:   ${ZEEK_ETC_INSTALL_DIR}"
     "\n"
     "\n================================================================\n"
 )

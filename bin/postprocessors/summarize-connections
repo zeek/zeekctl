@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to create connection summary log file.
+# Zeek postprocessor script to create connection summary log file.
 #
 # Needs trace-summary script.
 #
@@ -28,12 +28,12 @@ if [ "$base" != "conn" ] || [ "$writer" != "ascii" ]; then
     exit 0
 fi
 
-. `dirname $0`/../broctl-config.sh
+. `dirname $0`/../zeekctl-config.sh
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# If the tracesummary broctl config option is not defined, then exit (this is
+# If the tracesummary zeekctl config option is not defined, then exit (this is
 # not an error).
 if [ -z "${tracesummary}" ]; then
     exit 0

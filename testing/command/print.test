@@ -10,28 +10,28 @@
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/networks.cfg__ipv4
 EOF
 
 # Test with a standalone config.
 
-cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
-[bro]
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[zeek]
 type=standalone
 host=localhost
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # Print a single-line value.
-broctl print Log::default_rotation_interval > standalone.out
+zeekctl print Log::default_rotation_interval > standalone.out
 
-broctl stop
+zeekctl stop
 
 # Test with a cluster config.
 
@@ -39,18 +39,18 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__no_netifs
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # Print a single-line value from all nodes
-broctl print Log::default_rotation_interval > all.out
+zeekctl print Log::default_rotation_interval > all.out
 
 # Print a multi-line value from one node
-broctl print Site::local_nets worker-2 > onenode.out
+zeekctl print Site::local_nets worker-2 > onenode.out
 
-broctl stop
+zeekctl stop
 
-# No nodes are running, so broctl cannot get any results
-! broctl print Log::default_rotation_interval > stopped.out
+# No nodes are running, so zeekctl cannot get any results
+! zeekctl print Log::default_rotation_interval > stopped.out
 # The file size should be zero
 test ! -s stopped.out

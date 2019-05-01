@@ -1,28 +1,28 @@
 # Test that the archive-log script correctly archives a log file that was
-# compressed by Bro.
+# compressed by Zeek.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
-logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
-archivedtestlog=${logdir}/broctltest.22:24:20-22:30:00.log.gz
-origtestlog=broctltest.2013-12-30-22-24-20.log.gz
+archivelog=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/archive-log
+logdir=$ZEEKCTL_INSTALL_PREFIX/logs/2013-12-30
+archivedtestlog=${logdir}/zeekctltest.22:24:20-22:30:00.log.gz
+origtestlog=zeekctltest.2013-12-30-22-24-20.log.gz
 
-broctl install
+zeekctl install
 
-# Create Bro's working directory, chdir to that dir, and create rotated logs
-mkdir $BROCTL_INSTALL_PREFIX/spool/bro
-cd $BROCTL_INSTALL_PREFIX/spool/bro
+# Create Zeek's working directory, chdir to that dir, and create rotated logs
+mkdir $ZEEKCTL_INSTALL_PREFIX/spool/zeek
+cd $ZEEKCTL_INSTALL_PREFIX/spool/zeek
 cat > ${origtestlog} << _EOF_
-# This is a test broctltest.log
+# This is a test zeekctltest.log
 _EOF_
 
 # Verify that the log is not archived yet
 test ! -e ${archivedtestlog}
 
-${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+${archivelog} ${origtestlog} zeekctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
 # Verify that the log is now archived (with correct filename)
 test ! -e ${origtestlog}

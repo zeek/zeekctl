@@ -1,5 +1,5 @@
 # Cluster myricom configuration with override of an env. var. set
-# by the broctl myricom plugin, and an additional env. var. specified.
+# by the zeekctl myricom plugin, and an additional env. var. specified.
 
 [manager]
 type=manager

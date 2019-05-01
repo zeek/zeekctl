@@ -1,24 +1,24 @@
-# Test that the broctl cron command runs a command specified by the
-# croncmd broctl option.
+# Test that the zeekctl cron command runs a command specified by the
+# croncmd zeekctl option.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 EOF
 
-outfile=$BROCTL_INSTALL_PREFIX/testcommand.out
+outfile=$ZEEKCTL_INSTALL_PREFIX/testcommand.out
 
-echo "croncmd=date -u >> ${outfile}" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "croncmd=date -u >> ${outfile}" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 
-broctl install
+zeekctl install
 
 # verify that the output file does not exist
 test ! -e ${outfile}
 
-broctl cron
+zeekctl cron
 
 # verify that the croncmd ran successfully
 grep -q UTC ${outfile}

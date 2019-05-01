@@ -7,20 +7,20 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff logger
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff two-loggers
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 # Test using a standalone config.
-broctl install
-cp $BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek standalone
+zeekctl install
+cp $ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek standalone
 
-clusterlayout=$BROCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
+clusterlayout=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
 
 # Install a cluster config with no logger nodes.
 while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
-broctl install
+zeekctl install
 cp ${clusterlayout} no-logger
 
 # Install a cluster config with one logger node.
@@ -28,7 +28,7 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 
-broctl install
+zeekctl install
 cp ${clusterlayout} logger
 
 # Install a cluster config with two logger nodes.
@@ -36,5 +36,5 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__two_loggers
 EOF
 
-broctl install
+zeekctl install
 cp ${clusterlayout} two-loggers

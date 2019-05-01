@@ -1,5 +1,5 @@
 # Test that each worker node is started with PF_RING environment variables
-# set by the lb_pf_ring plugin when the necessary broctl.cfg and node.cfg
+# set by the lb_pf_ring plugin when the necessary zeekctl.cfg and node.cfg
 # options are specified.
 #
 # @TEST-EXEC: bash %INPUT
@@ -7,39 +7,39 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug2.log
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug3.log
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__debug
+etc/zeekctl.cfg__debug
 etc/node.cfg__pfring
-bin/bro__test
+bin/zeek__test
 EOF
 
-broctlcfg=$BROCTL_INSTALL_PREFIX/etc/broctl.cfg
-debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
+zeekctlcfg=$ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+debuglog=$ZEEKCTL_INSTALL_PREFIX/spool/debug.log
 
 # Default cluster type
-broctl install
+zeekctl install
 
-broctl start
+zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug1.log
-broctl stop
+zeekctl stop
 
 # Round-robin cluster type
-echo "pfringclustertype=round-robin" >> ${broctlcfg}
-broctl install
+echo "pfringclustertype=round-robin" >> ${zeekctlcfg}
+zeekctl install
 rm ${debuglog}
 
-broctl start
+zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug2.log
-broctl stop
+zeekctl stop
 
 # 6-tuple cluster type
-sed "s/pfringclustertype=round-robin/pfringclustertype=6-tuple/" ${broctlcfg} > ${broctlcfg}.new && mv ${broctlcfg}.new ${broctlcfg}
-broctl install
+sed "s/pfringclustertype=round-robin/pfringclustertype=6-tuple/" ${zeekctlcfg} > ${zeekctlcfg}.new && mv ${zeekctlcfg}.new ${zeekctlcfg}
+zeekctl install
 rm ${debuglog}
 
-broctl start
+zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug3.log
-broctl stop
+zeekctl stop
 

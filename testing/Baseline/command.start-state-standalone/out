@@ -1,11 +1,11 @@
-bro-expect-running = true
-bro-host = "localhost"
-bro-pid = 55699
-bro-port = 47760
-broversion = "2.5-1"
+zeek-expect-running = true
+zeek-host = "localhost"
+zeek-pid = 55699
+zeek-port = 47760
+zeekversion = "2.5-1"
 configchksum = "5b2ab3fb357a3ff3512c0339cd3f947f8ee48fae"
 confignodechksum = "50d10c94dd5b9a4ee0bc7ab58800f3976e62dfc7"
 cronenabled = true
 global-hash-seed = "d3c7362c"
-hash-broctlcfg = "f36adabcbc7a8b6ef9680eb7d990aba06a63095c"
+hash-zeekctlcfg = "f36adabcbc7a8b6ef9680eb7d990aba06a63095c"
 hash-nodecfg = "19ffee6539d2ae71d83f7acd4921ff0d48905ca2"

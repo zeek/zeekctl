@@ -1,0 +1,14 @@
+# Automatically generated. Do not edit.
+redef Notice::mail_dest = "zeekctltest@somedomain";
+redef Notice::mail_dest_pretty_printed = "zeekctltest2@somedomain2";
+redef Notice::sendmail = "/path/to/sendmail";
+redef Notice::mail_subject_prefix = "This is Subject";
+redef Notice::mail_from = "zeekctltestuser@mydomain";
+@if ( Cluster::local_node_type() == Cluster::LOGGER )
+redef Log::default_rotation_interval = 12345 secs;
+redef Log::default_mail_alarms_interval = 98765 secs;
+@endif
+redef Pcap::snaplen = 1212;
+redef Pcap::bufsize = 256;
+redef global_hash_seed = "d7d93799";
+redef Cluster::default_store_dir = "/Users/jon/projects/zeek/zeek-broker/aux/zeekctl/build/testing/test.50489/spool/stores";

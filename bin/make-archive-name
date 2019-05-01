@@ -28,7 +28,7 @@
 #
 # The script must return the path under which the file should be
 # archived.  A relative path will be interpreted as
-# relative to BroControl's standard log directory.
+# relative to ZeekControl's standard log directory.
 #
 # Note that even if the logs will later be compressed, this script should
 # always return the filename without any compression extension (such as ".gz");

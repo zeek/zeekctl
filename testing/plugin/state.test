@@ -4,14 +4,14 @@
 # @TEST-EXEC: btest-diff out1
 # @TEST-EXEC: btest-diff out2
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-plugins/statetest.py lib/broctl/plugins --new
+plugins/statetest.py lib/zeekctl/plugins --new
 EOF
 
-broctl exit
+zeekctl exit
 mv state.out out1
 
-broctl exit
+zeekctl exit
 mv state.out out2

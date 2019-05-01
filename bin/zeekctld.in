@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+ZeekBase = "@PREFIX@"
+
+import os
+import sys
+
+sys.path = [os.path.join(ZeekBase, "lib/zeekctl")] + sys.path
+
+from ZeekControl import zeekctld
+
+if __name__ == "__main__":
+    zeekctld.main(ZeekBase)

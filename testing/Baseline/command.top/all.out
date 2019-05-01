@@ -1,5 +1,5 @@
 Name         Type    Host             Pid     VSize  Rss  Cpu   Cmd
-manager      manager localhost        37156    57M    57M   2%  bro
-proxy-1      proxy   localhost        37273    56M    56M   3%  bro
-worker-1     worker  localhost        37402    56M    56M   2%  bro
-worker-2     worker  localhost        37403    56M    56M   2%  bro
+manager      manager localhost        37156    57M    57M   2%  zeek
+proxy-1      proxy   localhost        37273    56M    56M   3%  zeek
+worker-1     worker  localhost        37402    56M    56M   2%  zeek
+worker-2     worker  localhost        37403    56M    56M   2%  zeek

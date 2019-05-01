@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace columns from "broctl df" output that are not predictable with Xs.
+# Replace columns from "zeekctl df" output that are not predictable with Xs.
 
 awk '{
     if ( $0 !~ /total[ ]+avail/ )

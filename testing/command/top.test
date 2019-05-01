@@ -7,29 +7,29 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-top-output btest-diff onenode.out
 # @TEST-EXEC: btest-diff stopped.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # show all nodes
-broctl top > all.out
+zeekctl top > all.out
 
 # show one node
-broctl top worker-1 > onenode.out
+zeekctl top worker-1 > onenode.out
 
-broctl stop worker-1
+zeekctl stop worker-1
 
 # not all nodes are running
-! broctl top
+! zeekctl top
 
-broctl stop
+zeekctl stop
 
 # all nodes are stopped
-! broctl top > stopped.out
+! zeekctl top > stopped.out

@@ -1,8 +1,8 @@
-# Broctl test plugin that defines plugin options.
+# Zeekctl test plugin that defines plugin options.
 
-import BroControl.plugin
+import ZeekControl.plugin
 
-class OptionsTest(BroControl.plugin.Plugin):
+class OptionsTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(OptionsTest, self).__init__(apiversion=1)
 

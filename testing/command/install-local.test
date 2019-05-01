@@ -4,30 +4,30 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
 while read line; do
-    test ! -e $BROCTL_INSTALL_PREFIX/$line
+    test ! -e $ZEEKCTL_INSTALL_PREFIX/$line
 done << EOF
 logs/current
 spool/state.db
 spool/installed-scripts-do-not-touch
 EOF
 
-broctl install --local > out
+zeekctl install --local > out
 
-test -h $BROCTL_INSTALL_PREFIX/logs/current
+test -h $ZEEKCTL_INSTALL_PREFIX/logs/current
 
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line
+    test -e $ZEEKCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/state.db
 spool/installed-scripts-do-not-touch/site/local.zeek
-spool/installed-scripts-do-not-touch/auto/broctl-config.zeek
+spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
 spool/installed-scripts-do-not-touch/auto/local-networks.zeek
 spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
 EOF

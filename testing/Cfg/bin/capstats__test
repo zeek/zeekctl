@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #
 # This script is a replacement for the "capstats" command, and is used for
-# certain broctl test cases.
+# certain zeekctl test cases.
 
 
 while [ -n "$1" ]; do
@@ -23,7 +23,7 @@ fi
 
 sleep $interval
 
-# Output an example capstats output (broctl ignores the timestamp value)
+# Output an example capstats output (zeekctl ignores the timestamp value)
 # Note: the capstats command outputs to stderr
 
 echo $msg 1>&2

@@ -1,0 +1,35 @@
+# Test of env_vars (specified only in zeekctl.cfg).  Test that env. vars. are
+# applied to all nodes.  Test that the
+# environment variable names and values are case-sensitive.  Test that
+# extraneous whitespace is ignored in the "env_vars" list in zeekctl.cfg.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-abspath" btest-diff stderr.log
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__debug
+etc/node.cfg__cluster
+bin/zeek__test
+EOF
+
+echo 'env_vars=myVar1 = "some Global;val",MyVar2=anotherglobal, myvar5=$PATH:/mydir' >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+cat > $ZEEKCTL_INSTALL_PREFIX/zeekctltest.cfg << EOF
+envvars=myVar1 MyVar2 myvar5
+EOF
+
+zeekctl install
+
+# verify that the env_vars option has correct value
+zeekctl config | grep -i env_vars > out
+
+# verify that the env. vars. are passed to Zeek
+rm $ZEEKCTL_INSTALL_PREFIX/spool/debug.log
+zeekctl start
+grep -i myvar $ZEEKCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+grep -i myvar $ZEEKCTL_INSTALL_PREFIX/spool/manager/stderr.log > stderr.log
+zeekctl stop

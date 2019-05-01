@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace columns from broctl cron's stats.log
+# Replace columns from zeekctl cron's stats.log
 # that are not predictable with Xs.
 
 awk '{ 

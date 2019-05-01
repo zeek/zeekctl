@@ -19,55 +19,55 @@
 # @TEST-EXEC: btest-diff start-logger.out
 # @TEST-EXEC: btest-diff stop-logger.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 EOF
 
-broctl install
+zeekctl install
 
 # start all nodes
-broctl start > start-all.out
+zeekctl start > start-all.out
 
-broctl status > status1.out
+zeekctl status > status1.out
 
 # stop one node
-broctl stop worker-1 > stop-one.out
+zeekctl stop worker-1 > stop-one.out
 
-! broctl status > status2.out
+! zeekctl status > status2.out
 
 # stop all remaining running nodes
-broctl stop > stop-remaining.out
+zeekctl stop > stop-remaining.out
 
-! broctl status > status3.out
+! zeekctl status > status3.out
 
 # start one node
-broctl start manager > start-one.out
+zeekctl start manager > start-one.out
 
-! broctl status > status4.out
+! zeekctl status > status4.out
 
 # start all remaining stopped nodes
-broctl start > start-remaining.out
+zeekctl start > start-remaining.out
 
-broctl status > status5.out
+zeekctl status > status5.out
 
 # stop all nodes
-broctl stop > stop-all.out
+zeekctl stop > stop-all.out
 
-! broctl status > status6.out
+! zeekctl status > status6.out
 
 # Setup a cluster with a logger node.
 while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 
-broctl install
+zeekctl install
 
 # start all nodes (verify that nodes start in correct order)
-broctl start > start-logger.out
+zeekctl start > start-logger.out
 
 # stop all nodes (verify that nodes stop in correct order)
-broctl stop > stop-logger.out
+zeekctl stop > stop-logger.out

@@ -2,10 +2,10 @@
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-broctl install
+zeekctl install
 
-broctl exit
+zeekctl exit
 
-broctl quit
+zeekctl quit

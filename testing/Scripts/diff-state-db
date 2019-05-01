@@ -4,8 +4,8 @@
 # format, this script replaces values that change between test runs with
 # the string XXXXX.
 
-# Replace bro version, bro PID, and broctl cfg hash (broctl cfg has absolute
+# Replace zeek version, zeek PID, and zeekctl cfg hash (zeekctl cfg has absolute
 # paths that change for each test run, so the config hash changes for each
 # test run).
-sed -e 's/^broversion = "[0-9.a-z-]*"/broversion = "XXXXX"/' -e 's/^configchksum = "[0-9a-f]*"/configchksum = "XXXXX"/' -e 's/^hash-broctlcfg = "[0-9a-f]*"/hash-broctlcfg = "XXXXX"/' -e 's/^\([a-z0-9-]*-pid\) = [0-9][0-9]*/\1 = XXXXX/' -e 's/^global-hash-seed = "[0-9a-f]*"/global-hash-seed = "XXXXXXXX"/'
+sed -e 's/^zeekversion = "[0-9.a-z-]*"/zeekversion = "XXXXX"/' -e 's/^configchksum = "[0-9a-f]*"/configchksum = "XXXXX"/' -e 's/^hash-zeekctlcfg = "[0-9a-f]*"/hash-zeekctlcfg = "XXXXX"/' -e 's/^\([a-z0-9-]*-pid\) = [0-9][0-9]*/\1 = XXXXX/' -e 's/^global-hash-seed = "[0-9a-f]*"/global-hash-seed = "XXXXXXXX"/'
 

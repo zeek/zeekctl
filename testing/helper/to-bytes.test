@@ -9,9 +9,9 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out5
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-to-bytes-output btest-diff out6
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-tobytes=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/helpers/to-bytes.awk
+tobytes=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/helpers/to-bytes.awk
 
 # Create a test file containing input values for the to-bytes.awk script.
 cat > testfile << _EOF_

@@ -1,0 +1,44 @@
+# Test that the install command creates a zeekctl-config.zeek policy file
+# with the correct contents.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-zeekctl-config btest-diff standalone
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-zeekctl-config btest-diff no-logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-zeekctl-config btest-diff logger
+
+. zeekctl-test-setup
+
+zeekctlcfg=$ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+# Specify non-default values for options that are written to zeekctl-config.zeek
+echo "MailTo=zeekctltest@somedomain" >> ${zeekctlcfg}
+echo "MailAlarmsTo=zeekctltest2@somedomain2" >> ${zeekctlcfg}
+echo "SendMail=/path/to/sendmail" >> ${zeekctlcfg}
+echo "MailSubjectPrefix=This is Subject" >> ${zeekctlcfg}
+echo "MailFrom=zeekctltestuser@mydomain" >> ${zeekctlcfg}
+echo "LogRotationInterval=12345" >> ${zeekctlcfg}
+echo "MailAlarmsInterval=98765" >> ${zeekctlcfg}
+echo "PcapSnaplen=1212" >> ${zeekctlcfg}
+echo "PcapBufsize=256" >> ${zeekctlcfg}
+
+test ! -e ${zeekctlconfig}
+
+zeekctl install
+cp ${zeekctlconfig} standalone
+
+# Install a cluster config with no logger node.
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+zeekctl install
+cp ${zeekctlconfig} no-logger
+
+# Install a cluster config with a logger node.
+while read line; do installfile $line; done << EOF
+etc/node.cfg__logger
+EOF
+
+zeekctl install
+cp ${zeekctlconfig} logger

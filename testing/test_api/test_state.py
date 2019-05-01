@@ -1,5 +1,5 @@
 from __future__ import print_function
-from BroControl.state import SqliteState
+from ZeekControl.state import SqliteState
 
 def test_state_basic():
     s = SqliteState(":memory:")

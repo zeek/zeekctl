@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Remove content from "broctl diag" output that is too system-dependent
+# Remove content from "zeekctl diag" output that is too system-dependent
 # (currently, this includes the contents of stderr.log, stdout.log, PATH,
 # BROPATH, OS version, and the system-dependent "No core file" message).
 

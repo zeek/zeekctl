@@ -1,7 +1,7 @@
-This a test suite of small "unit tests" that verify individual pieces of BroCtl
+This a test suite of small "unit tests" that verify individual pieces of ZeekCtl
 functionality.  They all utilize BTest, a simple framework/driver for
 writing unit tests.  More information about BTest can be found at
-http://www.bro.org/development/README.btest.html
+http://www.zeek.org/development/README.btest.html
 
 The test suite's BTest configuration is handled through the
 ``btest.cfg`` file.  Of particular interest is the "TestDirs" settings,
@@ -21,23 +21,23 @@ Significant Subdirectories
 
 * Cfg/
 	This is a collection of config files utilized by various BTest tests.
-	The directory hierarchy emulates the hierarchy of the Bro installation
+	The directory hierarchy emulates the hierarchy of the Zeek installation
 	directory.
 
 Running Tests
 =============
 
-In order to run the tests you must clone the entire Bro repo (not just the
-broctl repo).  Next, either use the ``make all`` or ``make brief``
+In order to run the tests you must clone the entire Zeek repo (not just the
+zeekctl repo).  Next, either use the ``make all`` or ``make brief``
 ``Makefile`` targets to run all the tests (these will automatically build
-Bro before running any of the broctl tests).  If Bro fails to build, you can
-define an environment variable BROCTL_TEST_BUILDARGS which specifies 
-additional options that will be passed to Bro's "configure" script.
-If Bro builds successfully, but one or more tests fail, then you can
+Zeek before running any of the zeekctl tests).  If Zeek fails to build, you can
+define an environment variable ZEEKCTL_TEST_BUILDARGS which specifies 
+additional options that will be passed to Zeek's "configure" script.
+If Zeek builds successfully, but one or more tests fail, then you can
 re-run all failed tests with ``make rerun``.
 
-If you want to run just a subset of the tests, then build Bro with
-``make buildbro``, followed by ``btest`` directly with desired
+If you want to run just a subset of the tests, then build Zeek with
+``make buildzeek``, followed by ``btest`` directly with desired
 options/arguments.  Examples:
 
 * btest <no arguments>
@@ -50,7 +50,7 @@ options/arguments.  Examples:
 	You can specify a directory on the command line to run just the
 	tests contained in that directory. This is useful if you wish to
 	run all of a given type of test, without running all the tests
-	there are. For example, "btest command" will run all of the broctl
+	there are. For example, "btest command" will run all of the zeekctl
 	command unit tests.
 
 
@@ -63,7 +63,7 @@ Adding Tests
 ============
 
 See either the `BTest documentation
-<http://www.bro.org/development/README.btest.html>`_ or the existing unit
+<http://www.zeek.org/development/README.btest.html>`_ or the existing unit
 tests for examples of what they actually look like.  The essential
 components of a new test include:
 
@@ -84,5 +84,5 @@ tests, then you'll need to add it to the list of ``TestDirs`` in
 any of the extant directories.
 
 Note that any new test you add this way will automatically be included
-in the testing done in Bro's central automated build & test
+in the testing done in Zeek's central automated build & test
 environment.

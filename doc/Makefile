@@ -7,5 +7,5 @@
 all: generate-docs
 
 generate-docs:
-	@echo "Creating broctl.rst ..."
-	@PYTHONPATH=.. ../bin/broctl.in --print-doc main.rst >broctl.rst
+	@echo "Creating zeekctl.rst ..."
+	@PYTHONPATH=.. ../bin/zeekctl.in --print-doc main.rst >zeekctl.rst

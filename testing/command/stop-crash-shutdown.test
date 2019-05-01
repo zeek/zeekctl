@@ -1,5 +1,5 @@
 # Test that the stop command reports a node that crashed during shutdown,
-# and verify that broctl does not clean the crashed node's working directory
+# and verify that zeekctl does not clean the crashed node's working directory
 # and does not send a crash report.
 #
 # @TEST-EXEC: bash %INPUT
@@ -7,36 +7,36 @@
 # @TEST-EXEC: btest-diff stop.out
 # @TEST-EXEC: btest-diff status2.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__test_sendmail
+etc/zeekctl.cfg__test_sendmail
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 bin/sendmail__test --new
 EOF
 
-replaceprefix etc/broctl.cfg
+replaceprefix etc/zeekctl.cfg
 
-cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+cat > $ZEEKCTL_INSTALL_PREFIX/zeekctltest.cfg << EOF
 crashshutdown=worker-1
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # verify that all nodes started
-broctl status > status1.out
+zeekctl status > status1.out
 
 # test the stop command
-broctl stop > stop.out
+zeekctl stop > stop.out
 
 # verify that the crashed node is in the crashed state
-! broctl status > status2.out
+! zeekctl status > status2.out
 
 # the stop command should not cleanup the crashed node directory
 while read line; do
-    test -e $BROCTL_INSTALL_PREFIX/$line
+    test -e $ZEEKCTL_INSTALL_PREFIX/$line
 done << EOF
 spool/worker-1/.cmdline
 spool/worker-1/.env_vars
@@ -47,8 +47,8 @@ spool/worker-1/stdout.log
 EOF
 
 # the crashed node should not be logged as "stopped" in stats.log
-grep stopped $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp
+grep stopped $ZEEKCTL_INSTALL_PREFIX/spool/stats.log > tmp
 ! grep worker-1 tmp
 
 # verify that a crash report was not sent
-test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out
+test ! -e $ZEEKCTL_INSTALL_PREFIX/sendmail.out

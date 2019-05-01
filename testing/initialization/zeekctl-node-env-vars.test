@@ -1,0 +1,27 @@
+# Test of env_vars (specified both in zeekctl.cfg and node.cfg).  Test that the
+# node-specific values override the global values.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__debug
+etc/node.cfg__env_vars
+bin/zeek__test
+EOF
+
+echo 'env_vars=myVar1 = "some Global;val",MyVar2=anotherglobal, myvar5=$PATH:/mydir' >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+zeekctl install
+
+# verify that the env_vars option has global (and not node-specific) values
+zeekctl config | grep -i env_vars > out
+
+# verify that the correct (global vs. node) env. vars. are passed to Zeek
+rm $ZEEKCTL_INSTALL_PREFIX/spool/debug.log
+zeekctl start
+grep -i myvar $ZEEKCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+zeekctl stop

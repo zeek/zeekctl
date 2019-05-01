@@ -3,12 +3,12 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
-broctl install
+zeekctl install
 
-broctl exec echo hello world > out
+zeekctl exec echo hello world > out

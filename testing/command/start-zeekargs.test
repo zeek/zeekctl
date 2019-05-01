@@ -1,0 +1,23 @@
+# Test that the start command passes additional
+# arguments to Zeek as specified in the zeekargs zeekctl option.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__debug
+etc/node.cfg__cluster
+bin/zeek__test
+EOF
+
+echo "zeekargs=mytest myscript" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+zeekctl install
+zeekctl start
+
+# extract the relevant lines from debug.log
+grep CLUSTER_NODE $ZEEKCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+
+zeekctl stop

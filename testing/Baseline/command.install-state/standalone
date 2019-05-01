@@ -1,8 +1,8 @@
-bro-port = 47760
-broversion = "2.5-156"
+zeek-port = 47760
+zeekversion = "2.5-156"
 configchksum = "ffb6969bdfdbfca35da7344107e283c30c82fb20"
 confignodechksum = "50d10c94dd5b9a4ee0bc7ab58800f3976e62dfc7"
 cronenabled = true
 global-hash-seed = "97c75b28"
-hash-broctlcfg = "7060b02c06db5614974199f353a61ed658c94af6"
+hash-zeekctlcfg = "7060b02c06db5614974199f353a61ed658c94af6"
 hash-nodecfg = "19ffee6539d2ae71d83f7acd4921ff0d48905ca2"

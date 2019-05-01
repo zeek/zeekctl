@@ -1,0 +1,13 @@
+# Test that option names in zeekctl.cfg are case-insensitive, and that
+# whitespace is ignored before and after option names and values.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+# Specify an option name with mixed case and extraneous whitespace before
+# and after the option name and value.
+echo "  comprEsSloGs   =     1 " >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+zeekctl config | grep -i CompressLogs > out

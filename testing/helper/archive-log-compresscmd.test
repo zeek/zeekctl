@@ -1,41 +1,41 @@
 # Test that the archive-log script archives and compresses a specified
 # log file (including a connection summary report) according to the
-# CompressCmd and CompressExtension broctl options.
+# CompressCmd and CompressExtension zeekctl options.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
 bin/compress__test --new
 EOF
 
-cat >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg << EOF
+cat >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
 compresscmd=@PREFIX@/bin/compress -i
-compressextension=broctlcompress
+compressextension=zeekctlcompress
 sendmail=
 EOF
 
-replaceprefix etc/broctl.cfg
+replaceprefix etc/zeekctl.cfg
 
-archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
-logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
-connlog=${logdir}/conn.22:24:20-22:30:00.log.broctlcompress
-testlog=${logdir}/broctltest.22:24:20-22:30:00.log.broctlcompress
-connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log.broctlcompress
+archivelog=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/archive-log
+logdir=$ZEEKCTL_INSTALL_PREFIX/logs/2013-12-30
+connlog=${logdir}/conn.22:24:20-22:30:00.log.zeekctlcompress
+testlog=${logdir}/zeekctltest.22:24:20-22:30:00.log.zeekctlcompress
+connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log.zeekctlcompress
 origconnlog=conn.2013-12-30-22-24-20.log
-origtestlog=broctltest.2013-12-30-22-24-20.log
+origtestlog=zeekctltest.2013-12-30-22-24-20.log
 
-broctl install
+zeekctl install
 
-# Create Bro's working directory, chdir to that dir, and create rotated logs
-mkdir $BROCTL_INSTALL_PREFIX/spool/bro
-cd $BROCTL_INSTALL_PREFIX/spool/bro
+# Create Zeek's working directory, chdir to that dir, and create rotated logs
+mkdir $ZEEKCTL_INSTALL_PREFIX/spool/zeek
+cd $ZEEKCTL_INSTALL_PREFIX/spool/zeek
 cat > ${origconnlog} << _EOF_
-# This is a BROCTL TEST
+# This is a ZEEKCTL TEST
 _EOF_
 cat > ${origtestlog} << _EOF_
-# This is a BROCTL TEST
+# This is a ZEEKCTL TEST
 _EOF_
 
 ###############################################
@@ -48,7 +48,7 @@ test ! -f ${origconnlog}
 test -f ${connlog}
 test -f ${connsummarylog}
 
-# verify that the logs were compressed according to the broctl options
+# verify that the logs were compressed according to the zeekctl options
 grep -q "compressed" ${connlog}
 grep -q "compress option" ${connlog}
 grep -q ">== Total ===" ${connsummarylog}
@@ -57,15 +57,15 @@ grep -q "compress option" ${connsummarylog}
 ###############################################
 # Test archive-log for a different log file
 
-# verify that the broctltest.log was not archived yet
+# verify that the zeekctltest.log was not archived yet
 test ! -f ${testlog}
 
-${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+${archivelog} ${origtestlog} zeekctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
-# verify that broctltest.log was archived
+# verify that zeekctltest.log was archived
 test ! -f ${origtestlog}
 test -f ${testlog}
 
-# verify that broctltest.log was compressed according to the broctl options
+# verify that zeekctltest.log was compressed according to the zeekctl options
 grep -q "compressed" ${testlog}
 grep -q "compress option" ${testlog}

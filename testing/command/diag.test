@@ -5,7 +5,7 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff cluster
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-diag-output btest-diff onenode
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 remove_errmsg() {
     fname=$1
@@ -29,16 +29,16 @@ remove_errmsg() {
 ### Test using a standalone config
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
-bin/bro__test
+etc/zeekctl.cfg__no_email
+bin/zeek__test
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
-broctl diag > standalone
+zeekctl diag > standalone
 
-broctl stop
+zeekctl stop
 
 remove_errmsg standalone
 
@@ -48,16 +48,16 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__cluster
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # output diags for all nodes
-broctl diag > cluster
+zeekctl diag > cluster
 
 # output diags for one node
-broctl diag worker-2 > onenode
+zeekctl diag worker-2 > onenode
 
-broctl stop
+zeekctl stop
 
 remove_errmsg cluster
 remove_errmsg onenode

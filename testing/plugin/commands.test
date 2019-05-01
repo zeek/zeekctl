@@ -5,16 +5,16 @@
 # @TEST-EXEC: btest-diff cmd.out
 # @TEST-EXEC: btest-diff testcmd.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__debug
-plugins/commandtest.py lib/broctl/plugins --new
+etc/zeekctl.cfg__debug
+plugins/commandtest.py lib/zeekctl/plugins --new
 EOF
 
-broctl install
-broctl help | grep commandtest > help.out
+zeekctl install
+zeekctl help | grep commandtest > help.out
 
-broctl commandtest > cmd.out
-broctl commandtest.testcmd manager worker > testcmd.out
-! broctl commandtest.testcmd fail
+zeekctl commandtest > cmd.out
+zeekctl commandtest.testcmd manager worker > testcmd.out
+! zeekctl commandtest.testcmd fail

@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace columns from "broctl top" output that are not predictable
+# Replace columns from "zeekctl top" output that are not predictable
 # (such as PID) with Xs.
 
 awk '{
@@ -13,7 +13,7 @@ awk '{
         if ( $5 ~ /^[0-9]+[KMG]$/ ) { $5 = "XXX" }    # VSize
         if ( $6 ~ /^[0-9]+[KMG]$/ ) { $6 = "XXX" }    # Rss
         if ( $7 ~ /^[0-9]+%$/ ) { $7 = "XX%" }        # Cpu
-        if ( $8 ~ /^(bro|[Pp]ython.*)$/ ) { $8 = "XXX" } # Cmd
+        if ( $8 ~ /^(zeek|[Pp]ython.*)$/ ) { $8 = "XXX" } # Cmd
     }
 
     print

@@ -5,21 +5,21 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-state-db btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
-bin/bro__test
+etc/zeekctl.cfg__no_email
+bin/zeek__test
 EOF
 
-test ! -e $BROCTL_INSTALL_PREFIX/spool/state.db
+test ! -e $ZEEKCTL_INSTALL_PREFIX/spool/state.db
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
-sqlite3 $BROCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
+sqlite3 $ZEEKCTL_INSTALL_PREFIX/spool/state.db ".dump" > dump.out
 
 # Produce "key = value" output from the database dump.
 awk -F \' '{ if (NF == 5) { print $2, "=", $4 } }' dump.out | sort > out
 
-broctl stop
+zeekctl stop

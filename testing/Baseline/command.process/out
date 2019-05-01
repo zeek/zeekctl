@@ -1,3 +1,3 @@
-/home/repo/bro/aux/broctl/testing/../build/testing/test.8513/share/broctl/scripts/run-bro-on-trace 0 /home/repo/bro/aux/broctl/testing/../build/testing/test.8513/spool/tmp/testing /home/repo/bro/aux/broctl/testing/Traces/dns-session.trace -U .status -p broctl -p standalone -p local -p bro local.zeek broctl broctl/standalone broctl/auto broctl/process-trace
+/home/repo/zeek/aux/zeekctl/testing/../build/testing/test.8513/share/zeekctl/scripts/run-zeek-on-trace 0 /home/repo/zeek/aux/zeekctl/testing/../build/testing/test.8513/spool/tmp/testing /home/repo/zeek/aux/zeekctl/testing/Traces/dns-session.trace -U .status -p zeekctl -p standalone -p local -p zeek local.zeek zeekctl zeekctl/standalone zeekctl/auto zeekctl/process-trace
 
-### Bro output in /home/repo/bro/aux/broctl/testing/../build/testing/test.8513/spool/tmp/testing
+### Zeek output in /home/repo/zeek/aux/zeekctl/testing/../build/testing/test.8513/spool/tmp/testing
