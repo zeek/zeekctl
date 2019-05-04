@@ -213,6 +213,12 @@ InstallPackageConfigFile(
     ${ETC}
     node.cfg)
 
+# Install legacy BroControl wrappers and links.
+InstallSymlink("${CMAKE_INSTALL_PREFIX}/bin/zeek-wrapper" "${CMAKE_INSTALL_PREFIX}/bin/broctl")
+InstallSymlink("./zeekctl" "${CMAKE_INSTALL_PREFIX}/lib/broctl")
+
+install(DIRECTORY BroControl DESTINATION lib/zeekctl)
+
 ########################################################################
 ## Packaging Setup
 

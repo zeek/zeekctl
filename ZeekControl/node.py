@@ -159,7 +159,7 @@ class Node:
 
         # Do not output attributes starting with underscore, because they are
         # for internal use and don't provide useful information to the user.
-        return ("%15s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys()) if not k.startswith("_")])
+        return ("%16s - " % self.name) + " ".join(["%s=%s" % (k, fmt(self.__dict__[k])) for k in sorted(self.__dict__.keys()) if not k.startswith("_")])
 
     def to_dict(self):
         d = dict(self.items())

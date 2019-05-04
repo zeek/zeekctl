@@ -47,7 +47,9 @@ test -f ${connsummarylog}
 ! grep -q "This is a test" ${connlog}
 ! grep -q ">== Total ===" ${connsummarylog}
 
+
 # verify that a connection summary report was emailed
+cat $ZEEKCTL_INSTALL_PREFIX/sendmail.out >&2
 grep -q ">== Total ===" $ZEEKCTL_INSTALL_PREFIX/sendmail.out
 
 rm $ZEEKCTL_INSTALL_PREFIX/sendmail.out

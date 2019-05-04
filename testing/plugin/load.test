@@ -5,15 +5,15 @@
 . zeekctl-test-setup
 
 # Create a subdirectory to verify that zeekctl searches for plugins in subdirs
-mkdir $ZEEKCTL_INSTALL_PREFIX/lib/zeek/plugins/more
+mkdir $ZEEKCTL_INSTALL_PREFIX/lib/bro/plugins/more
 
 # Install some test plugins in directories where zeekctl searches by default
 while read line; do installfile $line; done << EOF
 etc/zeekctl.cfg__debug
 plugins/optionstest.py      lib/zeekctl/plugins --new
 plugins/commandtest.py      lib/zeekctl/plugins --new
-plugins/nodekeystest.py     lib/zeek/plugins --new
-plugins/zeekctlconfigtest.py lib/zeek/plugins/more --new
+plugins/nodekeystest.py     lib/bro/plugins --new
+plugins/zeekctlconfigtest.py lib/bro/plugins/more --new
 EOF
 
 # Rename a valid plugin file so that it won't be loaded

@@ -927,7 +927,7 @@ class Controller:
         for (node, isrunning) in running:
             if isrunning:
                 env = ""
-                env += " ZEEK_DNS_FAKE=1"
+                env += " BRO_DNS_FAKE=1"
                 args = " ".join(_make_zeek_params(node, False))
                 cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s/tcp %s" % (util.format_zeek_addr(node.addr), node.getPort(), args), env, None)]
                 self.ui.info("updating %s ..." % node.name)

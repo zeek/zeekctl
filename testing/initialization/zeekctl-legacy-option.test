@@ -1,0 +1,18 @@
+# Test that "zeekctl --version" works even if there is a bad configuration.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
+BroArgs=FooBar
+EOF
+
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[zeek]
+type=standalone
+host=localhost
+EOF
+
+zeekctl config 2>&1 | egrep -i args >out

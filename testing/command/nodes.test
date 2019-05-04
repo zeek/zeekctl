@@ -6,6 +6,8 @@
 
 . zeekctl-test-setup
 
+which zeekctl >&2
+
 zeekctl install
 zeekctl nodes > standalone
 

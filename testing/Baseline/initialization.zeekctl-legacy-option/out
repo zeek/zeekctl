@@ -1,0 +1,2 @@
+Warning: option 'BroArgs' is deprecated, please use 'ZeekArgs' instead
+zeekargs = FooBar

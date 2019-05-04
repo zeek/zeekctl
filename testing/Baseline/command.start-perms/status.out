@@ -1,2 +1,2 @@
 Name         Type       Host          Status    Pid    Started
-zeek          standalone localhost     stopped
+zeek         standalone localhost     stopped

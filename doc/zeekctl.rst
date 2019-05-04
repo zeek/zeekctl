@@ -859,7 +859,7 @@ User Options
 
 .. _MailFrom:
 
-*MailFrom* (string, default "Big Brother <bro@localhost>")
+*MailFrom* (string, default "Zeek <zeel@localhost>")
     Originator address for mails. This overrides the Bro script variable Notice::mail_from.
 
 .. _MailHostUpDown:

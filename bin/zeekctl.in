@@ -537,7 +537,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
                     self.error("df helper failed on %s: %s" % (node, diskinfo))
                     continue
                 nodehost = "%s/%s" % (node.name, node.host)
-                self.info("%27s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
+                self.info("%28s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
                     diskinfo.fs, util.number_unit_str(diskinfo.total),
                     util.number_unit_str(diskinfo.available), diskinfo.percent))
 
