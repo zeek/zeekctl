@@ -1,8 +1,8 @@
-# Builds the top-level broctl.rst from its parts.
+# Builds the top-level zeekctl.rst from its parts.
 #
 # Note: It's not great to build this here and commit to the repository
 # (as opposed to in build/). However, otherwise it would get hard
-# to put the final document online www.bro.org.
+# to put the final document online www.zeek.org.
 
 all: generate-docs
 
