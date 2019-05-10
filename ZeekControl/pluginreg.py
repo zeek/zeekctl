@@ -173,7 +173,7 @@ class PluginRegistry:
             code2 = p.broctl_config()
 
             if code2:
-                cmdout.warn("Plugin '%s' uses deprecated method 'broctl_config'; use 'broctl_config' instead" % p.name())
+                cmdout.warn("Plugin '%s' uses deprecated method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
 
             if code1 or code2:
                 # Make sure first character of returned string is a newline

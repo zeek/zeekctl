@@ -431,7 +431,7 @@ each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
 
 Finally, a few ZeekControl commands (such as "print" and "peerstatus") rely
-on Zeekker to communicate with Zeek.  This means that for those commands to
+on Broker to communicate with Zeek.  This means that for those commands to
 function, ZeekControl needs to connect to each Zeek instance.
 
 Command Reference
@@ -527,5 +527,5 @@ Questions and Answers
 *Can ZeekControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local)?*
     This used to be supported through a ``ZoneID`` option in
     ``zeekctl.cfg``, but no longer works in later versions
-    of Zeek which use Zeekker as the communication framework. Please
+    of Zeek which use Broker as the communication framework. Please
     file a feature request if this is important to you.

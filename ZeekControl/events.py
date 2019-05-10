@@ -20,7 +20,7 @@ except ImportError as e:
 #   event:   the name of the event to send (node that receiver must subscribe
 #            to it as well).
 #   args:    a list of event args; each arg must be a data type understood by
-#            the Zeekccoli module.
+#            the Broker module.
 #   result_event: name of a event the node sends back. None if no event is
 #                 sent back.
 #

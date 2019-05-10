@@ -4,7 +4,7 @@ import sys
 
 msg="""
 Warning: ZeekControl plugin uses legacy BroControl API. Use
-'import ZeekControl.plugin' instead of 'import BroControl.plugin
+'import ZeekControl.plugin' instead of 'import BroControl.plugin'
 """
 print(msg, file=sys.stderr)
 

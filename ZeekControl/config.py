@@ -111,11 +111,7 @@ class Configuration:
 
         # Set defaults for options we derive dynamically.
         self.init_option("mailto", "%s" % os.getenv("USER"))
-        self.init_option("mailfrom", "Big Zeekther <zeek@%s>" % socket.gethostname())
-        self.init_option("mailalarmsto", self.config["mailto"])
-
-        self.init_option("mailto", "%s" % os.getenv("USER"))
-        self.init_option("mailfrom", "Big Zeekther <zeek@%s>" % socket.gethostname())
+        self.init_option("mailfrom", "Zeek <zeek@%s>" % socket.gethostname())
         self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.

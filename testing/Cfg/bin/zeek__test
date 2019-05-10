@@ -155,7 +155,7 @@ def main():
     if nodename in testcfg.slowstart:
         # To avoid race conditions, wait for the test script to indicate when
         # it is ready to continue.  However, stop waiting after a while
-        # to avoid getting stuck forever due to a zeekken test script.
+        # to avoid getting stuck forever due to a broken test script.
         ct = 0
         while not os.path.exists(".zeekctl_test_sync"):
             ct += 1

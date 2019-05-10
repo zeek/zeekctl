@@ -1,4 +1,4 @@
-# Test that "zeekctl --version" works even if there is a bad configuration.
+# Test that old legacy BroControl options are still recognized.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out

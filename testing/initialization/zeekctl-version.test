@@ -6,7 +6,7 @@
 
 cat > $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
 something=5
-this is a zeekken config
+this is a broken config
 another=7
 EOF
 

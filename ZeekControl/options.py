@@ -37,7 +37,7 @@ options = [
     Option("StopTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait before sending a SIGKILL to a node which was previously issued the 'stop' command but did not terminate gracefully."),
     Option("CommTimeout", 10, "int", Option.USER, False,
-           "The number of seconds to wait before assuming Zeekccoli communication events have timed out."),
+           "The number of seconds to wait before assuming Broker communication events have timed out."),
     Option("ControlTopic", "zeek/control", "string", Option.USER, False,
            "The Broker topic name used for sending and receiving control messages to Zeek processes."),
     Option("CommandTimeout", 60, "int", Option.USER, False,

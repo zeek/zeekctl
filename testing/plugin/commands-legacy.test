@@ -9,7 +9,7 @@
 
 while read line; do installfile $line; done << EOF
 etc/zeekctl.cfg__debug
-plugins/commandtest-legacy.py lib/broctl/plugins --new
+plugins/commandtest_legacy.py lib/broctl/plugins --new
 EOF
 
 ls -al $ZEEKCTL_INSTALL_PREFIX/lib >&2

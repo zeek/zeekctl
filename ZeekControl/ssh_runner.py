@@ -237,7 +237,7 @@ class HostHandler(Thread):
         try:
             resp = self.master.exec_command(["/bin/echo", "ping"], timeout=10)
         except Exception as e:
-            # This happens most likely due to zeekken pipe (i.e., ssh
+            # This happens most likely due to broken pipe (i.e., ssh
             # terminates, usually because it couldn't connect, or its own
             # timeout occurred).
             return "%s: %s" % (msg, e)
