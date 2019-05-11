@@ -10,26 +10,28 @@ from BroControl import py3bro
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
 
-# Directories/files in form (path, mirror) which are synced from the manager to
+# Directories/files in form (path, mirror, optional) which are synced from the manager to
 # all remote hosts.
 # If "mirror" is False, then the path is assumed to be a directory and it will
 # just be created on the remote host.  If "mirror" is True, then the path
-# is fully mirrored recursively.
+# is fully mirrored recursively.  If "optional" is True, then it's ok for
+# the path to not exist on the manager.
 def get_syncs():
     syncs = [
-    ("${brobase}", False),
-    ("${brobase}/share", True),
-    ("${cfgdir}", True),
-    ("${libdir}", True),
-    ("${bindir}", True),
-    ("${policydirsiteinstall}", True),
-    ("${policydirsiteinstallauto}", True),
-    # ("${policydir}", True),
-    # ("${staticdir}", True),
-    ("${logdir}", False),
-    ("${spooldir}", False),
-    ("${tmpdir}", False),
-    ("${broctlconfigdir}/broctl-config.sh", True)
+    ("${brobase}", False, False),
+    ("${brobase}/share", True, False),
+    ("${cfgdir}", True, False),
+    ("${libdir}", True, True),
+    ("${libdir64}", True, True),
+    ("${bindir}", True, False),
+    ("${policydirsiteinstall}", True, False),
+    ("${policydirsiteinstallauto}", True, False),
+    # ("${policydir}", True, False),
+    # ("${staticdir}", True, False),
+    ("${logdir}", False, False),
+    ("${spooldir}", False, False),
+    ("${tmpdir}", False, False),
+    ("${broctlconfigdir}/broctl-config.sh", True, False)
     ]
 
     return syncs
@@ -37,11 +39,11 @@ def get_syncs():
 # In NFS-mode, only these will be synced.
 def get_nfssyncs():
     nfssyncs = [
-    ("${spooldir}", False),
-    ("${tmpdir}", False),
-    ("${policydirsiteinstall}", True),
-    ("${policydirsiteinstallauto}", True),
-    ("${broctlconfigdir}/broctl-config.sh", True)
+    ("${spooldir}", False, False),
+    ("${tmpdir}", False, False),
+    ("${policydirsiteinstall}", True, False),
+    ("${policydirsiteinstallauto}", True, False),
+    ("${broctlconfigdir}/broctl-config.sh", True, False)
     ]
 
     return nfssyncs

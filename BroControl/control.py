@@ -956,7 +956,7 @@ class Controller:
 
         DiskInfo = namedtuple("DiskInfo", ("fs", "total", "used", "available", "percent"))
         dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir",
-                "policydir", "libdir", "tmpdir", "staticdir", "scriptsdir")
+                "policydir", "libdir", "libdir64", "tmpdir", "staticdir", "scriptsdir")
 
         df = {}
         for node in nodes:
@@ -970,6 +970,10 @@ class Controller:
                     continue
 
                 path = self.config.config[key]
+
+                if key == "libdir" or key == "libdir64":
+                    if not os.path.exists(path):
+                        continue
 
                 cmds += [(node, "df", [path])]
 
@@ -1349,6 +1353,8 @@ class Controller:
             dirs.append((manager, self.config.logdir))
 
             syncs = install.get_nfssyncs()
+
+        syncs = [(dir, mirror) for (dir, mirror, optional) in syncs if not optional or os.path.exists(self.config.subst(dir))]
 
         createdirs = [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]
         for n in nodes:

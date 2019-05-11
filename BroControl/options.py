@@ -170,6 +170,8 @@ options = [
 
     Option("LibDir", "${BroBase}/lib", "string", Option.AUTOMATIC, False,
            "Directory for library files."),
+    Option("LibDir64", "${BroBase}/lib64", "string", Option.AUTOMATIC, False,
+           "Directory for 64-bit architecture library files."),
     Option("LibDirInternal", "${BroBase}/lib/broctl", "string", Option.AUTOMATIC, False,
            "Directory for broctl-specific library files."),
     Option("TmpDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,

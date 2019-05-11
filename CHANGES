@@ -1,4 +1,18 @@
 
+1.9-32 | 2019-05-10 19:13:32 -0700
+
+  * Add LibDir64 option (Jon Siwek, Corelight)
+
+    And make it and LibDir optional dirs for syncing to remote nodes as
+    well as for use with the 'df' command.
+
+    On some platforms, certain libraries in the Zeek-ecosystem now install
+    into the lib64/ directory by default (per that platform's convention).
+
+  * Allow option names that have numbers in them (Jon Siwek, Corelight)
+
+  * Silence test failures due to rotate_file_by_name deprecation (Jon Siwek, Corelight)
+
 1.9-28 | 2019-04-19 11:11:53 -0700
 
   * Replace bro_init/bro_done usages with zeek_init/zeek_done (Seth Hall, Corelight)
