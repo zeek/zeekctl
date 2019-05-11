@@ -16,7 +16,10 @@ test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testing
 
 #####################
 # run without any extra bro options
-broctl process $TRACES/dns-session.trace > out
+broctl process $TRACES/dns-session.trace > orig-out
+
+# silence deprecation warning that will eventually be resolved in zeek scripts
+grep -v rotate_file_by_name orig-out > out
 
 # verify that tmp work directory was created
 test -d $BROCTL_INSTALL_PREFIX/spool/tmp/testing
