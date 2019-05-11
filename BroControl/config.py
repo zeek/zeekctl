@@ -312,7 +312,7 @@ class Configuration:
     # Defaults to replacement with the empty string for unknown options.
     def subst(self, text):
         while True:
-            match = re.search(r"(\$\{([A-Za-z]+)(:([^}]+))?\})", text)
+            match = re.search(r"(\$\{([A-Za-z][A-Za-z0-9]*)(:([^}]+))?\})", text)
             if not match:
                 return text
 
