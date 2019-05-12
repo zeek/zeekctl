@@ -7,9 +7,9 @@
 .. Version number is filled in automatically.
 .. |version| replace:: 1.9-28
 
-==========
+===========
 ZeekControl
-==========
+===========
 
 .. rst-class:: opening
 
@@ -433,7 +433,7 @@ each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
 
 Finally, a few ZeekControl commands (such as "print" and "peerstatus") rely
-on Zeekker to communicate with Zeek.  This means that for those commands to
+on Broker to communicate with Zeek.  This means that for those commands to
 function, ZeekControl needs to connect to each Zeek instance.
 
 Command Reference
@@ -755,7 +755,7 @@ User Options
 .. _CommTimeout:
 
 *CommTimeout* (int, default 10)
-    The number of seconds to wait before assuming Zeekccoli communication events have timed out.
+    The number of seconds to wait before assuming Broker communication events have timed out.
 
 .. _CommandTimeout:
 
@@ -849,7 +849,7 @@ User Options
 
 .. _MailFrom:
 
-*MailFrom* (string, default "Big Zeekther <zeek@localhost>")
+*MailFrom* (string, default "Zeek <zeek@localhost>")
     Originator address for mails. This overrides the Zeek script variable Notice::mail_from.
 
 .. _MailHostUpDown:
@@ -2195,5 +2195,5 @@ Questions and Answers
 *Can ZeekControl manage a cluster of nodes over non-global IPv6 scope (e.g. link-local)?*
     This used to be supported through a ``ZoneID`` option in
     ``zeekctl.cfg``, but no longer works in later versions
-    of Zeek which use Zeekker as the communication framework. Please
+    of Zeek which use Broker as the communication framework. Please
     file a feature request if this is important to you.

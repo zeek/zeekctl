@@ -66,7 +66,7 @@ options = [
            "Reply-to address for zeekctl-generated mails."),
     Option("MailTo", "<user>", "string", Option.USER, True,
            "Destination address for non-alarm mails. This overrides the Zeek script variable Notice::mail_dest."),
-    Option("MailFrom", "Big Zeekther <zeek@localhost>", "string", Option.USER, True,
+    Option("MailFrom", "Zeek <zeek@localhost>", "string", Option.USER, True,
            "Originator address for mails. This overrides the Zeek script variable Notice::mail_from."),
 
     Option("MailAlarmsTo", "${MailTo}", "string", Option.USER, True,
