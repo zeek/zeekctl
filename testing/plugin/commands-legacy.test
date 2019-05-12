@@ -12,14 +12,13 @@ etc/zeekctl.cfg__debug
 plugins/commandtest_legacy.py lib/broctl/plugins --new
 EOF
 
-ls -al $ZEEKCTL_INSTALL_PREFIX/lib >&2
-
-ls -al $ZEEKCTL_INSTALL_PREFIX/lib/zeekctl/plugins >&2
-ls -al $ZEEKCTL_INSTALL_PREFIX/lib/broctl/plugins >&2
+# Verify that plugin is installed in correct directory.
+test -f $ZEEKCTL_INSTALL_PREFIX/lib/zeekctl/plugins/commandtest_legacy.py
+test -f $ZEEKCTL_INSTALL_PREFIX/lib/broctl/plugins/commandtest_legacy.py
 
 zeekctl install
 zeekctl help | grep commandtest > help.out
 
-zeekctl commandtest > cmd.out
+zeekctl commandtest > cmd.out 2>&1
 zeekctl commandtest.testcmd manager worker > testcmd.out
 ! zeekctl commandtest.testcmd fail

@@ -8,6 +8,7 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff onenode.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff legacy.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-ps-output btest-diff stopped.out
 
 . zeekctl-test-setup
@@ -25,6 +26,9 @@ zeekctl ps.zeek > all.out
 
 # get status of one node
 zeekctl ps.zeek worker-2 > onenode.out
+
+# Legacy plugin name is still recognized.
+broctl ps.bro worker-2 > legacy.out
 
 zeekctl stop
 

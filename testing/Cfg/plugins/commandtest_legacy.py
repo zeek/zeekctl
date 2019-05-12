@@ -2,6 +2,7 @@
 # legacy API.
 
 import BroControl.plugin
+import BroControl.cmdresult
 
 class CommandTest(BroControl.plugin.Plugin):
     def __init__(self):

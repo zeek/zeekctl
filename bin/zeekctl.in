@@ -767,7 +767,7 @@ ZeekControl Version %s
   nodes                            - Print node configuration
   peerstatus [<nodes>]             - Print status of nodes' remote connections
   print <id> [<nodes>]             - Print values of script variable at nodes
-  process <trace> [<op>] [-- <sc>] - Run Zeek (with options and scripts) on trace
+  process <trace> [<op>] [-- <sc>] - Run Zeek with options and scripts on trace
   quit                             - Exit shell
   restart [--clean] [<nodes>]      - Stop and then restart processing
   scripts [-c] [<nodes>]           - List the Zeek scripts the nodes will load

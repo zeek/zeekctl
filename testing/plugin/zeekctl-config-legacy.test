@@ -1,0 +1,16 @@
+# Test that a plugin can add content to the zeekctl-config.zeek file using the
+# old legacy BroControl API.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+plugins/zeekctlconfigtest_legacy.py lib/broctl/plugins --new
+EOF
+
+zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+broctl install
+sed -n '/Begin code from/,$p' ${zeekctlconfig} > out
