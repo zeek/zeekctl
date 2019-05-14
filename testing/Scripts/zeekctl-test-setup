@@ -1,0 +1,228 @@
+#! /usr/bin/env bash
+#
+# Zeekctl test setup script.  This script should be sourced in each test
+# script.  This script requires that some env. vars. are correctly defined
+# in btest.cfg.
+#
+# This script installs Zeek to a directory that is unique to each test,
+# and provides a few functions and environment variables that can be used
+# directly by test scripts.
+#
+# This script provides these functions that can be used directly in
+# test scripts:
+#   installfile       Install a file into the test-specific Zeek install dir.
+#   replaceprefix     Replace text "@PREFIX@" in a specified file with the
+#                     test-specific directory path of the Zeek install.
+#
+# This script automatically exports some environment variables that are needed
+# by test scripts:
+#   ZEEKCTL_INSTALL_PREFIX - Test-specific directory path of the Zeek install.
+#   PATH - Enable test scripts to run the correct copy of "zeekctl" without
+#          specifying a path.
+#
+# A user can modify the behavior of this script by setting any of the
+# following env. variables:
+#   ZEEKCTL_TEST_DEBUG - If this is set (value doesn't matter), then the
+#                       test-specific Zeek install directory will not be removed
+#                       when a test terminates (this is useful for debugging).
+
+
+
+# installfile <rel.path> [<destdir>] [--new]
+#
+# Install a file to the test-specific Zeek installation directory.
+#
+# The <rel.path> is the pathname (relative to the "Cfg" directory, which is
+# located in the btest base directory) of the file to be installed,
+# and it must follow a naming convention: <dir>/<dest.name>__<text>
+# where <dir> is the directory, <dest.name> is the destination filename, and
+# <text> is some descriptive text for the file (to allow choosing
+# among different variations of the same file).
+# The file will be copied to $ZEEKCTL_INSTALL_PREFIX/<dir>/<dest.name>
+#
+# If <destdir> is specified, then the file will be copied to
+# $ZEEKCTL_INSTALL_PREFIX/<destdir>/<dest.name>
+#
+# The destination directory and file must already exist.
+# If "--new" is given, then skip check for existence of destination file.
+installfile() {
+    set +x
+
+    if [ -z "$1" ]; then
+        return
+    fi
+
+    newfile="no"
+    destdir=""
+    origrelpath=$1
+    if [ -n "$2" ]; then
+        if [ "$2" = "--new" ]; then
+            newfile="yes"
+        else
+            destdir=$2
+        fi
+        if [ "$3" = "--new" ]; then
+            newfile="yes"
+        fi
+    fi
+
+    # Make sure original file exists
+    origpath=$ZEEKCTLCFG/$origrelpath
+    if [ ! -f "$origpath" ]; then
+        echo "Error: source file not found: $origpath" 1>&2
+        exit 1
+    fi
+
+    # Remove the optional double-underscore delimiter (and following text) to
+    # derive the destination filename
+    relpath=$(echo $origrelpath | awk -F'__' '{print $1}')
+    destfile=$(basename "$relpath")
+
+    # Destination directory is either specified by user or is the original
+    # directory path
+    if [ -z "$destdir" ]; then
+        destdir=$(dirname "$relpath")
+    fi
+
+    # Make sure destination directory exists
+    if [ ! -d "$ZEEKCTL_INSTALL_PREFIX/$destdir" ]; then
+        echo "Error: destination directory not found: $ZEEKCTL_INSTALL_PREFIX/$destdir" 1>&2
+        exit 1
+    fi
+
+    # Finally, build the destination pathname
+    destpath=$ZEEKCTL_INSTALL_PREFIX/$destdir/$destfile
+
+    if [ "$newfile" = "no" ]; then
+        # Make sure destination file exists (usually, we're overwriting an
+        # existing file, so this is a good safety check to catch typos)
+        if [ ! -f "$destpath" ]; then
+            echo "Error: destination file not found: $destpath (if this is a new file, use the --new option)" 1>&2
+            exit 1
+        fi
+    fi
+
+    cp $origpath $destpath
+    set -x
+}
+
+
+# replaceprefix <rel.path>
+#
+# Replace the text "@PREFIX@" with the zeek install prefix in the specified
+# file (given as a relative pathname).
+replaceprefix() {
+    set +x
+
+    if [ -z "$1" ]; then
+        return
+    fi
+
+    destfile=$ZEEKCTL_INSTALL_PREFIX/$1
+    if [ ! -f $destfile ]; then
+        echo "Error: file not found: $destfile" 1>&2
+        exit 1
+    fi
+
+    # Using "cp" and "rm" here in order to preserve permissions of file
+    sed "s#@PREFIX@#${ZEEKCTL_INSTALL_PREFIX}#g" $destfile > $destfile.new && cp $destfile.new $destfile && rm $destfile.new
+    test $? -ne 0 && exit 1
+
+    set -x
+}
+
+#####
+# The following functions are needed by this script, but are not likely to be
+# needed by any zeekctl test scripts.
+
+
+# Normalize the specified pathname by resolving any ".." and symlinks in
+# the path.
+canonicalpath() {
+    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
+    test $? -ne 0 && exit 1
+    echo $newpath
+}
+
+# Set the correct install prefix directory in all files where it's needed
+# (this is done immediately after untarring the Zeek install).
+replaceprefixes() {
+    for i in etc/zeekctl.cfg bin/zeekctl lib/zeekctl/ZeekControl/version.py ; do
+        sed "s#@PREFIX@#${ZEEKCTL_INSTALL_PREFIX}#" $i > $i.new && cp $i.new $i && rm $i.new
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    done
+}
+
+# Cleanup when a zeekctl test script terminates for any reason (this is called
+# automatically).
+cleanup() {
+    set +x
+    set +e
+
+    # Make sure all Zeek instances started by this test are stopped.
+    # Hide the output to avoid user confusion if a test fails (for example,
+    # this command will fail if "zeekctl install" was not run).
+    zeekctl stop > /dev/null 2>&1
+
+    # Cleanup the test-specific Zeek install directory only if ZEEKCTL_TEST_DEBUG
+    # is not set.
+    if [ -z "${ZEEKCTL_TEST_DEBUG}" ]; then
+        test -n "$ZEEKCTL_INSTALL_PREFIX" && rm -rf "$ZEEKCTL_INSTALL_PREFIX"
+    fi
+}
+
+
+# Create a test-specific directory, install Zeek to this directory, and export
+# the env. vars. ZEEKCTL_INSTALL_PREFIX and PATH which are both needed by
+# zeekctl test scripts.
+main() {
+    # Exit if any command fails (this is useful to debug a failing zeekctl test
+    # script).
+    set -e
+
+    if [ -z "${INSTALL}" ]; then
+        echo "Error: the INSTALL env. variable is not defined (should be in btest.cfg)" 1>&2
+        exit 1
+    fi
+
+    basedir="${INSTALL}"
+    tarfile=$basedir/zeek-test-install.tar
+
+    if [ ! -f "$tarfile" ]; then
+        echo "Error: $tarfile doesn't exist (run the 'Scripts/build-zeek' script)" 1>&2
+        exit 1
+    fi
+
+    trap "cleanup" EXIT
+
+    # Export "ZEEKCTL_INSTALL_PREFIX" which is used in test scripts that need
+    # the directory path of the Zeek install.
+    export ZEEKCTL_INSTALL_PREFIX=`canonicalpath "$basedir/test.$$"`
+
+    # Create test-specific zeek installation directory
+    mkdir "$ZEEKCTL_INSTALL_PREFIX"
+
+    # Install zeek
+    (cd "$ZEEKCTL_INSTALL_PREFIX" && tar xf "$tarfile" && replaceprefixes)
+
+    # Update PATH to ensure that test scripts are running the correct copy of
+    # zeekctl.
+    export PATH=$ZEEKCTL_INSTALL_PREFIX/bin:$PATH
+
+    # If the user set the env. var. ZEEKCTL_TEST_DEBUG, then leave a file in
+    # the test directory to help setup the environment for running zeekctl
+    # manually.
+    if [ -n "${ZEEKCTL_TEST_DEBUG}" ]; then
+        how2run=${ZEEKCTL_INSTALL_PREFIX}/how_to_run_zeekctl
+        echo "# In order to run zeekctl in this directory, type '. ./how_to_run_zeekctl'" >> $how2run
+        echo "export PATH=$ZEEKCTL_INSTALL_PREFIX/bin:\$PATH" >> $how2run
+    fi
+
+    # Output all commands in a zeekctl test script (if a test fails, this might
+    # be useful for debugging).
+    set -x
+}
+
+main

@@ -1,49 +1,49 @@
-# Test that the process command can run bro on the specified trace file,
-# with or without extra Bro options or Bro scripts.
+# Test that the process command can run zeek on the specified trace file,
+# with or without extra Zeek options or Zeek scripts.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-touch $BROCTL_INSTALL_PREFIX/share/bro/site/test123.bro
-touch $BROCTL_INSTALL_PREFIX/share/bro/site/test456.bro
-touch $BROCTL_INSTALL_PREFIX/share/bro/site/test789.bro
+touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test123.zeek
+touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test456.zeek
+touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test789.zeek
 
-broctl install
+zeekctl install
 
-test ! -e $BROCTL_INSTALL_PREFIX/spool/tmp/testing
+test ! -e $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing
 
 #####################
-# run without any extra bro options
-broctl process $TRACES/dns-session.trace > orig-out
+# run without any extra zeek options
+zeekctl process $TRACES/dns-session.trace > orig-out
 
 # silence deprecation warning that will eventually be resolved in zeek scripts
 grep -v rotate_file_by_name orig-out > out
 
 # verify that tmp work directory was created
-test -d $BROCTL_INSTALL_PREFIX/spool/tmp/testing
+test -d $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing
 
 #####################
-# run with extra bro options (but no extra bro scripts)
-broctl process $TRACES/dns-session.trace -p test
+# run with extra zeek options (but no extra zeek scripts)
+zeekctl process $TRACES/dns-session.trace -p test
 
-# verify that specified bro options are at the start of the Bro command-line
-grep "^-p test " $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
-
-#####################
-# run with extra bro scripts (but no bro options)
-broctl process $TRACES/dns-session.trace -- test123.bro test456.bro
-
-# verify that specified bro scripts are at the end of the Bro command-line
-grep "test123.bro test456.bro$" $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
+# verify that specified zeek options are at the start of the Zeek command-line
+grep "^-p test " $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
 
 #####################
-# run with extra bro options and scripts
-broctl process $TRACES/dns-session.trace -p opt2 -- test789.bro
+# run with extra zeek scripts (but no zeek options)
+zeekctl process $TRACES/dns-session.trace -- test123.zeek test456.zeek
 
-# verify that specified bro options are at the start of the Bro command-line
-grep "^-p opt2 " $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
+# verify that specified zeek scripts are at the end of the Zeek command-line
+grep "test123.zeek test456.zeek$" $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
 
-# verify that specified bro scripts are at the end of the Bro command-line
-grep "test789.bro$" $BROCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
+#####################
+# run with extra zeek options and scripts
+zeekctl process $TRACES/dns-session.trace -p opt2 -- test789.zeek
+
+# verify that specified zeek options are at the start of the Zeek command-line
+grep "^-p opt2 " $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline
+
+# verify that specified zeek scripts are at the end of the Zeek command-line
+grep "test789.zeek$" $ZEEKCTL_INSTALL_PREFIX/spool/tmp/testing/.cmdline

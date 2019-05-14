@@ -1,0 +1,179 @@
+#! /usr/bin/env bash
+#
+# This script builds Zeek, then creates a tar file of the Zeek installation which
+# will be used by each zeekctl test case to have its own fresh install of Zeek.
+# This script must be run before attempting to run any of the zeekctl tests.
+#
+# Usage:  build-zeek [--clean]
+#
+# If the "--clean" parameter is specified, then this script just removes
+# the zeekctl test install directory and tar file.
+#
+# A user can modify the behavior of this script by setting any of these
+# env. variables:
+#   ZEEKCTL_TEST_USEBUILD  - If this is set (value doesn't matter), then Zeek
+#                           will be built in the default Zeek build directory
+#                           instead of using a new directory.  This is intended
+#                           to be used when Zeek was previously built, to
+#                           shorten the time it takes to do the rebuild.
+#   ZEEKCTL_TEST_BUILDARGS - Specify additional options that will be passed
+#                           to Zeek's "configure" script.
+
+
+# This function builds Zeek using a build directory specifically for zeekctl
+# tests (if ZEEKCTL_TEST_USEBUILD is defined, then the default Zeek build
+# directory is used instead).
+build_zeek() {
+    cd "${ZEEKSRCDIR}"
+
+    if [ "${TRAVIS}" = "true" ]; then
+        # This is needed for some Python versions on Travis CI in order to
+        # build pysubnettree (without this, it could fail to find libpython).
+        export LDFLAGS=-L`python-config --exec-prefix`/lib
+    fi
+
+    if [ -n "${ZEEKCTL_TEST_USEBUILD}" ]; then
+        # Reuse a previous build in the default Zeek build directory.
+        BUILDPREFIX=build
+        # Rebuild using a new prefix (use ZEEKCTL_TEST_BUILDARGS to specify
+        # any other flags that were used for the previous build).
+        ./configure --prefix="${INSTALLPREFIX}" ${ZEEKCTL_TEST_BUILDARGS}
+    else
+        # Use a build directory specifically for zeekctl tests.
+        BUILDPREFIX=${ZEEKCTLBUILDDIR}/zeek-build
+        # Additional configure options are used here to reduce the build size.
+        ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" --build-type=Release --disable-auxtools ${ZEEKCTL_TEST_BUILDARGS}
+    fi
+
+    test $? -ne 0 && return 1
+
+    cd ${BUILDPREFIX} && make -j 2 install
+}
+
+# Replace the Zeek install prefix directory path with the text "@PREFIX@".  This
+# is needed so that each ZeekControl test script can use its own install prefix.
+replaceprefix() {
+    # First, fix the ZEEKSCRIPTDIR path (this step is needed to avoid any
+    # unintended difference between ZEEKSCRIPTDIR and INSTALLPREFIX because on
+    # FreeBSD /home is actually a symlink to /usr/home).
+    oldpath=`grep '^ZEEKSCRIPTDIR' lib/zeekctl/ZeekControl/version.py | awk -F \" '{ print $2 }'`
+    newpath=`canonicalpath "$oldpath"`
+    if [ "$newpath" != "$oldpath" ]; then
+        for i in lib/zeekctl/ZeekControl/version.py ; do
+            sed "s#$oldpath#$newpath#" $i > $i.new && cp $i.new $i && rm $i.new
+        done
+    fi
+
+    for i in etc/zeekctl.cfg bin/zeekctl lib/zeekctl/ZeekControl/version.py ; do
+        sed "s#${INSTALLPREFIX}#@PREFIX@#" $i > $i.new && cp $i.new $i && rm $i.new
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    done
+}
+
+# Normalize the specified pathname by resolving any symlinks in the path.
+canonicalpath() {
+    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
+    test $? -ne 0 && exit 1
+    echo $newpath
+}
+
+# Remove the tar file and all test-specific Zeek installation directories.
+clean() {
+    definevars
+
+    # Verify the path is a directory (and exists) before attempting to
+    # remove.
+    test -d "${ZEEKCTL_TEST}" && rm -rf "${ZEEKCTL_TEST}"
+
+    # If the directory still exists, then something is wrong.
+    if [ -d "${ZEEKCTL_TEST}" ]; then
+        exit 1
+    fi
+
+    exit 0
+}
+
+
+definevars() {
+    # Path to the top-level ZeekControl source code directory.
+    ZEEKCTLSRCDIR=`dirname "$0"`/../..
+
+    # Path to the Zeek source code directory.
+    ZEEKSRCDIR=${ZEEKCTLSRCDIR}/../..
+
+    # Path to the ZeekControl "build" directory.
+    ZEEKCTLBUILDDIR=`canonicalpath "${ZEEKCTLSRCDIR}/build"`
+
+    # Absolute path of parent directory where Zeek will be installed.
+    ZEEKCTL_TEST=${ZEEKCTLBUILDDIR}/testing
+    test -z "${ZEEKCTL_TEST}" && exit 1
+}
+
+
+# Create a tar file of the Zeek installation.  The tar file will be used by
+# each zeekctl test script to create a test-specific Zeek installation.
+create_tar() {
+    definevars
+
+    # Exit if any command fails.
+    set -e
+
+    # Verify that the entire Zeek git repo was cloned (not just the zeekctl repo).
+    if [ ! -e "${ZEEKSRCDIR}/configure" ]; then
+        echo "Error: in order to run the ZeekControl tests, you must clone the zeek repo (not just the zeekctl repo)" 1>&2
+        exit 1
+    fi
+
+    # Remove the test directory if it exists.
+    if [ -e "${ZEEKCTL_TEST}" ]; then
+        rm -rf "${ZEEKCTL_TEST}"
+    fi
+
+    mkdir -p ${ZEEKCTL_TEST}
+
+    # The tar file that all zeekctl test cases will use.
+    TARFILE=${ZEEKCTL_TEST}/zeek-test-install.tar
+
+    LOG=${ZEEKCTLBUILDDIR}/buildzeek.log
+    rm -f "$LOG"
+
+    # Zeek will be installed in this temporary directory.
+    INSTALLPREFIX=${ZEEKCTL_TEST}/zeek-install
+
+    # Don't exit if a command fails.
+    set +e
+
+    # Build and install Zeek in the temporary directory.
+    if [ "${TRAVIS}" = "true" ]; then
+        # Show build output in Travis CI to prevent timeout of the build job.
+        build_zeek
+        if [ $? -ne 0 ]; then
+            echo "Error: Zeek build failed" 1>&2
+            exit 1
+        fi
+    else
+        echo "Building Zeek (log in $LOG) ..."
+        build_zeek >>$LOG 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Zeek build failed:" 1>&2
+            tail -n 20 $LOG 1>&2
+            exit 1
+        fi
+    fi
+
+    # Create a tar file of the installation so each test case can start with a
+    # clean installation without needing to rebuild Zeek.
+    (cd "${INSTALLPREFIX}" && replaceprefix && tar cf "${TARFILE}" * )
+    if [ $? -ne 0 ]; then
+        rm -rf "${INSTALLPREFIX}"
+        exit 1
+    fi
+}
+
+if [ "$1" = "--clean" ]; then
+    clean
+else
+    create_tar
+fi

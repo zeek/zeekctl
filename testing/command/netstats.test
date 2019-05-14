@@ -9,25 +9,25 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff all.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff onenode.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__no_netifs
 EOF
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
 # get status of all nodes
-broctl netstats > all.out
+zeekctl netstats > all.out
 
 # get status of one node
-broctl netstats worker-2 > onenode.out
+zeekctl netstats worker-2 > onenode.out
 
-broctl stop
+zeekctl stop
 
-# no nodes are running, so broctl cannot get any results
-! broctl netstats > stopped.out
+# no nodes are running, so zeekctl cannot get any results
+! zeekctl netstats > stopped.out
 # the file size should be zero
 test ! -s stopped.out

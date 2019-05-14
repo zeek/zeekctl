@@ -7,26 +7,26 @@
 # @TEST-EXEC: btest-diff enable.out
 # @TEST-EXEC: btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__debug
+etc/zeekctl.cfg__debug
 EOF
 
-broctl install
+zeekctl install
 
 # check the initial default state
-broctl cron ? > out
+zeekctl cron ? > out
 
 # test that the state can be set to disabled
-broctl cron disable > disable.out
-broctl cron ? >> out
+zeekctl cron disable > disable.out
+zeekctl cron ? >> out
 
 # test that cron doesn't do anything
-rm $BROCTL_INSTALL_PREFIX/spool/debug.log
-broctl cron
-grep -q "cron is disabled" $BROCTL_INSTALL_PREFIX/spool/debug.log
+rm $ZEEKCTL_INSTALL_PREFIX/spool/debug.log
+zeekctl cron
+grep -q "cron is disabled" $ZEEKCTL_INSTALL_PREFIX/spool/debug.log
 
 # test that the state can be set to enabled
-broctl cron enable > enable.out
-broctl cron ? >> out
+zeekctl cron enable > enable.out
+zeekctl cron ? >> out

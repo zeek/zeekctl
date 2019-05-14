@@ -1,0 +1,5 @@
+# Don't send emails or summary reports.
+sendmail=
+tracesummary=
+# The "zeekctl stop" command will wait for post-terminate to finish.
+stopwait=1

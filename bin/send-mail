@@ -8,7 +8,7 @@
 #
 # Sends stdin per mail to recipients, adding some common headers/footers
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -65,7 +65,7 @@ cat >>"$tmp" <<_EOF_
 From: $from
 Subject: $subject
 To: $to
-User-Agent: BroControl ${version}
+User-Agent: ZeekControl ${version}
 _EOF_
 
 if [ -n "${mailreplyto}" ]; then

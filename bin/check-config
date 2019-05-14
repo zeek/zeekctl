@@ -1,34 +1,34 @@
 #! /usr/bin/env bash
 #
-# Check Bro's configuration for errors.
+# Check Zeek's configuration for errors.
 #
-# check-config <use_installed_policies> <print_loaded_scripts> <cwd> <bro_opts>
+# check-config <use_installed_policies> <print_loaded_scripts> <cwd> <zeek_opts>
 #
 # use_installed_policies:  1 to use local policy files installed by
-#                          "broctl install", or 0 to use the original files
+#                          "zeekctl install", or 0 to use the original files
 # print_loaded_scripts:  1 to output loaded_scripts.log, or 0 to not output
-# cwd:  directory name to run Bro from
-# bro_opts:  string containing Bro cmd-line options
+# cwd:  directory name to run Zeek from
+# zeek_opts:  string containing Zeek cmd-line options
 
 if [ $# -lt 4 ]; then
     echo "check-config: missing arguments"
     exit 1
 fi
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 
 use_installed_policies=$1
 print_loaded_scripts=$2
 tmp_node_dir=$3
 shift 3
 
-. "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-zeek-path
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ ! -f "${bro}" ]; then
-    echo "check-config: file not found: ${bro}"
+if [ ! -f "${zeek}" ]; then
+    echo "check-config: file not found: ${zeek}"
     exit 1
 fi
 
@@ -43,11 +43,11 @@ echo $@ >.cmdline
 
 check_option="-a"
 if [ "$print_loaded_scripts" = "1" ]; then
-    # No bro logs are created with "-a", so don't use it with "broctl scripts".
+    # No Zeek logs are created with "-a", so don't use it with "zeekctl scripts".
     check_option=
 fi
 
-BROCTL_CHECK_CONFIG=1 "${bro}" $check_option "$@"
+ZEEKCTL_CHECK_CONFIG=1 "${zeek}" $check_option "$@"
 rc=$?
 
 if [ $rc -eq 0 ] && [ "$print_loaded_scripts" = "1" ]; then

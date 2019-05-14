@@ -1,21 +1,21 @@
-# Test that the broctl cron command creates the meta.dat file, and some *.csv
+# Test that the zeekctl cron command creates the meta.dat file, and some *.csv
 # files.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cron-meta btest-diff meta.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 bin/capstats__test
 EOF
 
-logsstats=$BROCTL_INSTALL_PREFIX/logs/stats
-broctl install
-broctl start
+logsstats=$ZEEKCTL_INSTALL_PREFIX/logs/stats
+zeekctl install
+zeekctl start
 
 # verify that we start with no meta.dat file
 test ! -e $logsstats/meta.dat
@@ -25,9 +25,9 @@ test ! -e $logsstats/www
 #find $logsstats/www -name *.csv > find1.out
 #test ! -s find1.out
 
-broctl cron
+zeekctl cron
 
-# verify that broctl cron created the meta.dat file
+# verify that zeekctl cron created the meta.dat file
 test -e $logsstats/meta.dat
 test -e $logsstats/www/meta.dat
 
@@ -37,4 +37,4 @@ cp $logsstats/meta.dat meta.out
 find $logsstats/www -name *.csv > find2.out
 test -s find2.out
 
-broctl stop
+zeekctl stop

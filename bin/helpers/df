@@ -4,7 +4,7 @@
 #
 # Returns:  <fs> <fs-size-kB> <fs-used-kB> <fs-avail-kB>
 
-. `dirname $0`/../broctl-config.sh
+. `dirname $0`/../zeekctl-config.sh
 
 if [ ! -d "$1" ]; then
     echo "not a directory: $1"

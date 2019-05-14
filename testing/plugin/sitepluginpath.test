@@ -3,30 +3,30 @@
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-# Create dirs specified in the SitePluginPath option in broctl.cfg
-mkdir $BROCTL_INSTALL_PREFIX/testplugins
-mkdir $BROCTL_INSTALL_PREFIX/moreplugins
-mkdir $BROCTL_INSTALL_PREFIX/emptydir
+# Create dirs specified in the SitePluginPath option in zeekctl.cfg
+mkdir $ZEEKCTL_INSTALL_PREFIX/testplugins
+mkdir $ZEEKCTL_INSTALL_PREFIX/moreplugins
+mkdir $ZEEKCTL_INSTALL_PREFIX/emptydir
 
 # Install some test plugins
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__debug
+etc/zeekctl.cfg__debug
 plugins/optionstest.py testplugins --new
-plugins/broctlconfigtest.py moreplugins --new
+plugins/zeekctlconfigtest.py moreplugins --new
 EOF
 
 # Specify directories containing test plugins, and a couple other directories
 # that don't.
-echo "SitePluginPath=@PREFIX@/doesnotexist:@PREFIX@/testplugins:@PREFIX@/emptydir:@PREFIX@/moreplugins" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "SitePluginPath=@PREFIX@/doesnotexist:@PREFIX@/testplugins:@PREFIX@/emptydir:@PREFIX@/moreplugins" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 
-replaceprefix etc/broctl.cfg
+replaceprefix etc/zeekctl.cfg
 
-debuglog=$BROCTL_INSTALL_PREFIX/spool/debug.log
+debuglog=$ZEEKCTL_INSTALL_PREFIX/spool/debug.log
 
-broctl exit
+zeekctl exit
 
 # Verify that the test plugins were found
 grep "Found plugin optionstest from" ${debuglog} | grep testplugins
-grep "Found plugin broctlconfigtest from" ${debuglog} | grep moreplugins
+grep "Found plugin zeekctlconfigtest from" ${debuglog} | grep moreplugins

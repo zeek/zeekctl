@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace unpredictable "broctl update" output with a constant string.
+# Replace unpredictable "zeekctl update" output with a constant string.
 
 awk '{
     if ( $1 != "updating" )

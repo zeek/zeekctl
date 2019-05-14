@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+#
+# This script replaces values that change between test runs in
+# zeekctl-config.zeek with the string XXXXXXXX.
+
+sed -e 's/global_hash_seed = "[0-9a-f]*"/global_hash_seed = "XXXXXXXX"/' \
+    -e 's/Cluster::default_store_dir = ".*"/Cluster::default_store_dir = "XXXXXXXX"/'
+

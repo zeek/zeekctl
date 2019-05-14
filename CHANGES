@@ -1,4 +1,45 @@
 
+1.9-39 | 2019-05-14 13:12:15 -0700
+
+  * Fix legacy plugin API and add new tests (Daniel Thayer)
+
+  * Added new test cases and improved a few tests. (Daniel Thayer)
+
+  * Fixed one line in the help output to fit within an 80 character display. (Daniel Thayer)
+
+  * Some fixes for bro-to-zeek renaming and docs (Daniel Thayer)
+
+  * Updating documentation. (Robin Sommer, Corelight)
+
+  * Renamed broctl to zeekctl (Robin Sommer, Corelight)
+
+    I ended up doing the rename pretty comprehensively across all the
+    scripts, as it was hard to change some places but not others. So most
+    uses of Bro are replaced with Zeek now. I tried to maintain backwards
+    compatibility with the old names where user visible, including names
+    for options and IDs inside plugins.
+
+    Changes to maintain backwards compabibility:
+
+    - We now also puts links in place for backwards compability:
+
+        bin/broctl -> bin/zeek-wrapper (which then forwards to zeekctl)
+        lib/broctl -> lib/zeekctl
+
+    - If an etc/broctl.cfg exists from a previous install, we symlink
+      etc/zeekctl.cfg to it to keep any customizations that were made.
+
+    - We create a Python wrapper module BroControl that forwards (with a
+      warning) to the renamed ZeekControl, so that old plugins continue to
+      work.
+
+    - Old option name containing "Bro" are accepted in place of the new
+      Zeek variants.
+
+    - "ps.bro" is an alias for "ps.zeek".
+
+    - BROCTL_DISABLE_LISTEN is an alias for ZEEKCTL_DISABLE_LISTEN
+
 1.9-32 | 2019-05-10 19:13:32 -0700
 
   * Add LibDir64 option (Jon Siwek, Corelight)

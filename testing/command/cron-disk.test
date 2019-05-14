@@ -1,22 +1,22 @@
-# Test that the broctl cron command sends an email warning on low disk free
+# Test that the zeekctl cron command sends an email warning on low disk free
 # space only when the amount of free disk space crosses the threshold
-# specified by the mindiskspace broctl option.
+# specified by the mindiskspace zeekctl option.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__test_sendmail
+etc/zeekctl.cfg__test_sendmail
 bin/df__diskfull --new
 bin/sendmail__test --new
 EOF
 
-replaceprefix etc/broctl.cfg
+replaceprefix etc/zeekctl.cfg
 
 # Check if a low disk space email was received.  Return 0 if yes, and 1 if no.
 check_email() {
-    email=$BROCTL_INSTALL_PREFIX/sendmail.out
+    email=$ZEEKCTL_INSTALL_PREFIX/sendmail.out
     test ! -e $email && return 1
 
     # Verify the contents of mail are correct (this should never fail).
@@ -25,47 +25,47 @@ check_email() {
     rm $email
 }
 
-broctl install
+zeekctl install
 
 # Verify the default value of mindiskspace
-broctl config | sed 's/ //g' > tmp
+zeekctl config | sed 's/ //g' > tmp
 grep -q mindiskspace=5 tmp
 
 ################
 # Test with lots of free disk space (no email warning)
 
-broctl cron
+zeekctl cron
 
 ! check_email
 
 ################
 # Test with a disk that is almost full (email warning)
 
-export BROCTL_TEST_DISK_FULL=1
-broctl cron
+export ZEEKCTL_TEST_DISK_FULL=1
+zeekctl cron
 
 check_email
 
 ################
 # Test again with same disk usage as before (no duplicate warning is sent)
 
-broctl cron
+zeekctl cron
 
 ! check_email
 
 ################
 # Test with lots of free disk space (no email warning)
 
-BROCTL_TEST_DISK_FULL=
-broctl cron
+ZEEKCTL_TEST_DISK_FULL=
+zeekctl cron
 
 ! check_email
 
 ################
 # Test with a disk that is almost full (another warning is sent)
 
-BROCTL_TEST_DISK_FULL=1
-broctl cron
+ZEEKCTL_TEST_DISK_FULL=1
+zeekctl cron
 
 check_email
 
@@ -73,13 +73,13 @@ check_email
 # Test with lots of free disk space, but different mindiskspace (email warning)
 
 # Remove previous free disk space records (otherwise we won't get an email)
-rm $BROCTL_INSTALL_PREFIX/spool/state.db
+rm $ZEEKCTL_INSTALL_PREFIX/spool/state.db
 
 # Update configuration
-echo "mindiskspace=50" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
-broctl install
+echo "mindiskspace=50" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+zeekctl install
 
-BROCTL_TEST_DISK_FULL=
-broctl cron
+ZEEKCTL_TEST_DISK_FULL=
+zeekctl cron
 
 check_email

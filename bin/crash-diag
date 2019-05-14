@@ -3,10 +3,10 @@
 # crash-diag [-c] <dir>
 #
 # -c: if this flag is present, then this script was run from post-terminate
-#     because Bro crashed.
+#     because Zeek crashed.
 # <dir> is the node's working directory.
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 
 postterminate=0
 if [ "$1" = "-c" ]; then
@@ -38,26 +38,26 @@ gdb_name="gdb"
 if [ "${os}" = "Darwin" ]; then
     gdb_name="lldb"
 elif [ "${os}" = "OpenBSD" ]; then
-    # The default gdb fails when trying to read Bro core files.
+    # The default gdb fails when trying to read Zeek core files.
     gdb_name="egdb"
 fi
 gdb_path=`which $gdb_name 2> /dev/null`
 
-if [ -f "${bro}" ];then
-    bro_version=`"${bro}" -v 2>/dev/null | awk '{print $3}'`
+if [ -f "${zeek}" ];then
+    zeek_version=`"${zeek}" -v 2>/dev/null | awk '{print $3}'`
 else
-    bro_version="(file not found: ${bro})"
+    zeek_version="(file not found: ${zeek})"
 fi
 
-# If Bro crashed and if a core file exists, then copy the Bro binary so that
+# If Zeek crashed and if a core file exists, then copy the Zeek binary so that
 # the user has the ability to generate a backtrace in the future.
 if [ $postterminate -eq 1 ]; then
     if [ -n "$core" ]; then
-        mybro=${bro}
+        myzeek=${zeek}
         if [ "${havenfs}" = "1" ]; then
-            mybro=${tmpexecdir}/`basename "${bro}"`
+            myzeek=${tmpexecdir}/`basename "${zeek}"`
         fi
-        cp "$mybro" .
+        cp "$myzeek" .
     fi
 fi
 
@@ -65,12 +65,12 @@ fi
 echo
 
 # If no backtrace can be generated, then output an explanation.  However,
-# skip this if there's no .status file, because in that case Bro didn't run.
+# skip this if there's no .status file, because in that case Zeek didn't run.
 if [ -f .status ]; then
     if [ -n "$gdb_path" ]; then
         if [ -z "$core" ]; then
             # Check if the system allows setting core file size to unlimited,
-            # because this is what the run-bro script does when it starts bro.
+            # because this is what the run-zeek script does when it starts Zeek.
             ulimit -c unlimited 2> /dev/null
             coresize=`ulimit -c`
 
@@ -86,26 +86,26 @@ if [ -f .status ]; then
     else
         if [ -n "$core" ]; then
             echo "Unable to output a backtrace because $gdb_name is not installed."
-            echo "It is recommended to install $gdb_name so that BroControl can output a"
-            echo "backtrace the next time Bro crashes."
+            echo "It is recommended to install $gdb_name so that ZeekControl can output a"
+            echo "backtrace the next time Zeek crashes."
         else
             echo "No core file found and $gdb_name is not installed.  It is recommended to"
-            echo "install $gdb_name so that BroControl can output a backtrace if Bro crashes."
+            echo "install $gdb_name so that ZeekControl can output a backtrace if Zeek crashes."
         fi
         echo
     fi
 fi
 
-echo Bro $bro_version
+echo Zeek $zeek_version
 uname -sr
 echo
 
-broplugins=`"${bro}" -N 2>/dev/null | grep -v "(built-in)"`
-if [ -z "$broplugins" ]; then
-    echo "Bro plugins: (none found)"
+zeekplugins=`"${zeek}" -N 2>/dev/null | grep -v "(built-in)"`
+if [ -z "$zeekplugins" ]; then
+    echo "Zeek plugins: (none found)"
 else
-    echo "Bro plugins:"
-    echo "$broplugins"
+    echo "Zeek plugins:"
+    echo "$zeekplugins"
 fi
 
 # Output a backtrace if we have a debugger and a core file.
@@ -119,13 +119,13 @@ if [ -n "$gdb_path" ]; then
         for c in "$core"; do
             if [ -f "$c" ]; then
                 echo
-                # Note: broctl looks for this string in order to determine
+                # Note: zeekctl looks for this string in order to determine
                 # if a backtrace was output.
                 echo "Core file: $c"
                 if [ "$gdb_name" = "gdb" ] || [ "$gdb_name" = "egdb" ]; then
-                    $gdb_path --batch -x .gdb_cmds "${bro}" "$c" 2>/dev/null
+                    $gdb_path --batch -x .gdb_cmds "${zeek}" "$c" 2>/dev/null
                 elif [ "$gdb_name" = "lldb" ]; then
-                    $gdb_path --batch -s .gdb_cmds -f "${bro}" -c "$c" 2>/dev/null
+                    $gdb_path --batch -s .gdb_cmds -f "${zeek}" -c "$c" 2>/dev/null
                 fi
             fi
         done

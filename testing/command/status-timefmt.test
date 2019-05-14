@@ -1,22 +1,22 @@
 # Test that the status command can output status with an alternate time format
-# as specified with the timefmt broctl option.
+# as specified with the timefmt zeekctl option.
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --time | $SCRIPTS/diff-remove-timestamps-yyyy-mm-dd" btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 EOF
 
-echo "timefmt=%Y-%m-%d" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "timefmt=%Y-%m-%d" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 
-broctl status > out
+zeekctl status > out
 
-broctl stop
+zeekctl stop

@@ -6,7 +6,7 @@
 # 
 #           <pid> <vsize bytes> <rss in bytes> <%cpu> <cmdline>
 
-. `dirname $0`/../broctl-config.sh
+. `dirname $0`/../zeekctl-config.sh
 
 cmd_Linux='top -b -n 1 | awk "/^ *[0-9]+ /{printf(\"%d %s %s %d %s\\n\", \$1, \$5, \$6, \$9, \$12)}"'
 

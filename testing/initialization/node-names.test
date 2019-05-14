@@ -3,9 +3,9 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-localhost-values btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-cat > $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg << EOF
 [logcollector]
 type=logger
 host=localhost
@@ -24,6 +24,6 @@ host=localhost
 interface=eth0
 EOF
 
-broctl install
+zeekctl install
 
-broctl nodes > out
+zeekctl nodes > out

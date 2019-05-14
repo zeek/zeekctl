@@ -2,7 +2,7 @@
 #
 # Delete crash directories older than ${crashexpireinterval} days.
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 if [ $? -ne 0 ]; then
     exit 1
 fi

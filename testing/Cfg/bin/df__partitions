@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #
 # This script is a replacement for the "df" command, and is used for certain
-# broctl test cases where we need different output for different pathnames
+# zeekctl test cases where we need different output for different pathnames
 # specified on the cmd-line.
 
 # The last command-line argument

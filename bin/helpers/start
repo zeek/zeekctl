@@ -1,22 +1,22 @@
 #! /usr/bin/env bash
 #
-# Start Bro, output the Bro PID, and return zero.  Upon failure, output an
+# Start Zeek, output the Zeek PID, and return zero.  Upon failure, output an
 # error message and return nonzero.
 #
-#  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <bro_args>
+#  start [ -v var=value [ -v ...]] <cwd> <pin_cpu> <zeek_args>
 #
 # -v var=value...:  environment variables to set (optional).
 # cwd:  the node's working directory.
 # pin_cpu:  the CPU number to use, or -1 to not use CPU pinning.
-# bro_args:  Bro cmd-line arguments.
+# zeek_args:  Zeek cmd-line arguments.
 
-. `dirname $0`/../broctl-config.sh
+. `dirname $0`/../zeekctl-config.sh
 
 while getopts 'v:' flag; do
     case "$flag" in
         v) export "$OPTARG"
            if [ $? -ne 0 ]; then
-               echo "start: unable to set env. variable \"$OPTARG\" (check the env_vars broctl option)" >&2
+               echo "start: unable to set env. variable \"$OPTARG\" (check the env_vars zeekctl option)" >&2
                exit 1
            fi
            ;;
@@ -27,7 +27,7 @@ origopts="$@"
 shift $((OPTIND-1))
 
 if [ $# -lt 3 ]; then
-    echo "start: too few cmd-line options received: \"$origopts\" (this is usually caused by shell metacharacters in the env_vars broctl option)" >&2
+    echo "start: too few cmd-line options received: \"$origopts\" (this is usually caused by shell metacharacters in the env_vars zeekctl option)" >&2
     exit 1
 fi
 
@@ -44,25 +44,25 @@ rm -f .pid
 # Make sure .test does not exist
 rm -f .test > /dev/null 2>&1
 if [ -e .test ]; then
-    echo "start: cannot remove files in Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
+    echo "start: cannot remove files in Zeek working directory (try running zeekctl as a different user, or check permissions of Zeek working dir: $workingdir)" >&2
     exit 1
 fi
 
-# Create and remove a test file to ensure that the run-bro script will be able
+# Create and remove a test file to ensure that the run-zeek script will be able
 # to create a pid file.
 touch .test > /dev/null 2>&1
 rm .test > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "start: problem with Bro working directory (try running broctl as a different user, or check permissions of Bro working dir: $workingdir)" >&2
+    echo "start: problem with Zeek working directory (try running zeekctl as a different user, or check permissions of Zeek working dir: $workingdir)" >&2
     exit 1
 fi
 
-if [ ! -f "${scriptsdir}"/run-bro ]; then
-    echo "start: file not found: ${scriptsdir}/run-bro" >&2
+if [ ! -f "${scriptsdir}"/run-zeek ]; then
+    echo "start: file not found: ${scriptsdir}/run-zeek" >&2
     exit 1
 fi
 
-nohup "${scriptsdir}"/run-bro "$@" >stdout.log 2>stderr.log &
+nohup "${scriptsdir}"/run-zeek "$@" >stdout.log 2>stderr.log &
 
 while [ ! -s .pid ]; do
     sleep 1
@@ -71,11 +71,11 @@ done
 pid=`cat .pid`
 
 if [ -z "$pid" ]; then
-    echo "start: failed to get PID of Bro" >&2
+    echo "start: failed to get PID of Zeek" >&2
     exit 1
 fi
 
-# The "run-bro" script uses a value of -1 to indicate an error occurred.
+# The "run-zeek" script uses a value of -1 to indicate an error occurred.
 if [ "$pid" = "-1" ]; then
     exit 1
 fi

@@ -1,8 +1,8 @@
-# Broctl test plugin that uses plugin state variables.
+# Zeekctl test plugin that uses plugin state variables.
 
-import BroControl.plugin
+import ZeekControl.plugin
 
-class StateTest(BroControl.plugin.Plugin):
+class StateTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(StateTest, self).__init__(apiversion=1)
 

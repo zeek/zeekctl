@@ -1,6 +1,0 @@
-# Rather than send emails, use the test sendmail script to output message
-# text to a temporary file.
-sendmail=@PREFIX@/bin/sendmail
-
-# The "broctl stop" command will wait for post-terminate to finish.
-stopwait=1

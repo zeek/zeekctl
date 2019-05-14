@@ -1,11 +1,11 @@
-broversion = "2.5-156"
-configchksum = "95b90ba01c03b04c543bb46e55752967c6486ed1"
+configchksum = "703eacc611d9f65b675e3096559dfc7d88fc8dba"
 confignodechksum = "ec10d3c3bc017b29a2bd78a223070d7b7eba1fde"
 cronenabled = true
-global-hash-seed = "d1547404"
-hash-broctlcfg = "94f1f62c8b758c06289deb5c1c436b58fe5fe1aa"
-hash-nodecfg = "108ffebe85f812b1348530a85e685570d5190019"
+global-hash-seed = "c89d39be"
+hash-nodecfg = "bb35dfdd518afcfc57e2233114a47a391fa1f68c"
+hash-zeekctlcfg = "1611fd49145832dd8a0b69333329100ac66485e1"
 manager-port = 47761
 proxy-1-port = 47762
 worker-1-port = 47763
 worker-2-port = 47764
+zeekversion = "2.6-255"

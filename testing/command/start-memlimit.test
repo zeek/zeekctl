@@ -1,32 +1,32 @@
-# Test that the start command uses the memlimit broctl option when
-# starting bro.
+# Test that the start command uses the memlimit zeekctl option when
+# starting zeek.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
-bin/bro__test
+etc/zeekctl.cfg__no_email
+bin/zeek__test
 EOF
 
-stdoutlog=$BROCTL_INSTALL_PREFIX/spool/bro/stdout.log
+stdoutlog=$ZEEKCTL_INSTALL_PREFIX/spool/zeek/stdout.log
 
 new_memlimit=123456
 
 # Test that the new value is not set by default (if it is, then the test fails
-# because we can't verify that the new value is being set by broctl)
-broctl install
-broctl start
+# because we can't verify that the new value is being set by zeekctl)
+zeekctl install
+zeekctl start
 grep kbytes ${stdoutlog} > tmp
 ! grep $new_memlimit tmp
-broctl stop
+zeekctl stop
 
 # Set a new memlimit value
-echo "memlimit=$new_memlimit" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "memlimit=$new_memlimit" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 
 # Test that the new value is set
-broctl install
-broctl start
+zeekctl install
+zeekctl start
 grep kbytes ${stdoutlog} | grep $new_memlimit
-broctl stop
+zeekctl stop

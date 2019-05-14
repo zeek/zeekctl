@@ -8,15 +8,15 @@
 # @TEST-EXEC: btest-diff manager.out
 # @TEST-EXEC: btest-diff worker.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
-broctl install
+zeekctl install
 
 # Test with the real "df" command
 
-broctl df > default.out
+zeekctl df > default.out
 
-# Test with Bro directories on multiple partitions
+# Test with Zeek directories on multiple partitions
 
 while read line; do installfile $line; done << EOF
 bin/df__partitions --new
@@ -24,7 +24,7 @@ EOF
 
 replaceprefix bin/df
 
-broctl df > standalone.out
+zeekctl df > standalone.out
 
 # Test using a cluster config
 
@@ -32,13 +32,13 @@ while read line; do installfile $line; done << EOF
 etc/node.cfg__logger
 EOF
 
-broctl install
+zeekctl install
 
 # check usage on all nodes (in this case, the logger)
-broctl df > cluster.out
+zeekctl df > cluster.out
 
 # check usage on manager
-broctl df manager > manager.out
+zeekctl df manager > manager.out
 
 # check usage on a worker
-broctl df worker-1 > worker.out
+zeekctl df worker-1 > worker.out

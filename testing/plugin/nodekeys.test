@@ -3,17 +3,17 @@
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-plugins/nodekeystest.py lib/broctl/plugins --new
+plugins/nodekeystest.py lib/zeekctl/plugins --new
 EOF
 
 # Node configuration using custom node keys defined in nodekeystest.py plugin.
-cat >> $BROCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+cat >> $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg << EOF
 nodekeystest.key1=this is a test
 nodekeystest.key2=1
 EOF
 
-broctl exit
+zeekctl exit
 mv keys.out out

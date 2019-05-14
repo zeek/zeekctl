@@ -10,47 +10,47 @@
 # @TEST-EXEC: btest-diff start2.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status2.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__test_sendmail
+etc/zeekctl.cfg__test_sendmail
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 bin/sendmail__test --new
 EOF
 
-replaceprefix etc/broctl.cfg
+replaceprefix etc/zeekctl.cfg
 
-cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+cat > $ZEEKCTL_INSTALL_PREFIX/zeekctltest.cfg << EOF
 crash=worker-1
 EOF
 
-broctl install
+zeekctl install
 
 # start all nodes, and one will crash
-! broctl start > start1.out 2> tmp.out
+! zeekctl start > start1.out 2> tmp.out
 cat tmp.out >> start1.out
 
 # the crashed node should not be logged as "started" in stats.log
-grep started $BROCTL_INSTALL_PREFIX/spool/stats.log > tmp
+grep started $ZEEKCTL_INSTALL_PREFIX/spool/stats.log > tmp
 ! grep worker-1 tmp
 
 # verify that a node is in the crashed state
-! broctl status > status1.out
+! zeekctl status > status1.out
 
 # this time we don't want it to crash
-rm -f $BROCTL_INSTALL_PREFIX/broctltest.cfg
+rm -f $ZEEKCTL_INSTALL_PREFIX/zeekctltest.cfg
 
 # verify that no email has been sent
-test ! -e $BROCTL_INSTALL_PREFIX/sendmail.out
+test ! -e $ZEEKCTL_INSTALL_PREFIX/sendmail.out
 
 # try to start a node in the "crashed" state
-broctl start > start2.out
+zeekctl start > start2.out
 
 # verify that a crash report was sent
-grep -q "Crash report from worker-1" $BROCTL_INSTALL_PREFIX/sendmail.out
+grep -q "Crash report from worker-1" $ZEEKCTL_INSTALL_PREFIX/sendmail.out
 
 # verify that all nodes are running
-broctl status > status2.out
+zeekctl status > status2.out
 
-broctl stop
+zeekctl stop

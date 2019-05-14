@@ -1,0 +1,22 @@
+# Test that "zeekctl --version" works even if there is a bad configuration.
+#
+# @TEST-EXEC: bash %INPUT
+
+. zeekctl-test-setup
+
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
+something=5
+this is a broken config
+another=7
+EOF
+
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg << EOF
+[something]
+this is a bad node config
+nodes=3
+EOF
+
+zeekctl --version > out
+
+# Verify that the version string was output to stdout and has correct format.
+grep "^ZeekControl version [0-9][0-9a-z.-]*$" out

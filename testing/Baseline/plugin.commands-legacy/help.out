@@ -1,0 +1,2 @@
+  commandtest                      - Another test command
+  commandtest.testcmd [<nodes>]    - Test command that expects arguments

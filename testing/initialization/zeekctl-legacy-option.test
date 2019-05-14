@@ -1,0 +1,22 @@
+# Test that old legacy BroControl options are still recognized.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
+BroArgs=FooBar
+BroPort=5000
+EOF
+
+zeekctl config 2>&1 | grep -i args >out
+zeekctl config 2>&1 | grep -i port | grep -v timemachineport >>out
+
+# Show that legacy option doesn't override new option.
+cat > $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg << EOF
+ZeekArgs=FooBarNew
+BroArgs=FooBar
+EOF
+
+zeekctl config 2>&1 | grep -i args >>out

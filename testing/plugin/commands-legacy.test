@@ -1,0 +1,24 @@
+# Test that commands can be added by a plugin using the old legacy BroControl API.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff help.out
+# @TEST-EXEC: btest-diff cmd.out
+# @TEST-EXEC: btest-diff testcmd.out
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__debug
+plugins/commandtest_legacy.py lib/broctl/plugins --new
+EOF
+
+# Verify that plugin is installed in correct directory.
+test -f $ZEEKCTL_INSTALL_PREFIX/lib/zeekctl/plugins/commandtest_legacy.py
+test -f $ZEEKCTL_INSTALL_PREFIX/lib/broctl/plugins/commandtest_legacy.py
+
+zeekctl install
+zeekctl help | grep commandtest > help.out
+
+zeekctl commandtest > cmd.out 2>&1
+zeekctl commandtest.testcmd manager worker > testcmd.out
+! zeekctl commandtest.testcmd fail

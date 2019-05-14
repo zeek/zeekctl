@@ -1,0 +1,57 @@
+# Test that the install command can install a custom value of the zeekport
+# zeekctl option.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff no-logger
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff two-loggers
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff two-proxies
+
+. zeekctl-test-setup
+
+standalonelayout=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek
+clusterlayout=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/cluster-layout.zeek
+
+# Test a standalone config.
+
+zeekctl install
+
+# Verify that the test port number is not installed by default
+! grep -q 41234 $standalonelayout
+
+# Change the configuration to use a test port number
+echo "zeekport=41234" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+zeekctl install
+
+# Verify that the test port number was installed
+grep -q 41234 $standalonelayout
+
+# Test a cluster config with no logger node.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__cluster
+EOF
+
+zeekctl install
+
+cp $clusterlayout no-logger
+
+# Test a cluster config with two logger nodes.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__two_loggers
+EOF
+
+zeekctl install
+
+cp $clusterlayout two-loggers
+
+# Test a cluster config with two proxy nodes.
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__two_proxies
+EOF
+
+zeekctl install
+
+cp $clusterlayout two-proxies

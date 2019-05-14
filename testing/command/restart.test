@@ -9,31 +9,31 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff restart-all-clean.out
 # @TEST-EXEC: btest-diff start-one.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 EOF
 
-broctl install
+zeekctl install
 
 # start all nodes (using restart command)
-broctl restart > start-all.out
+zeekctl restart > start-all.out
 
 # restart one node
-broctl restart worker-1 > restart-one.out
+zeekctl restart worker-1 > restart-one.out
 
 # restart all nodes
-broctl restart > restart-all.out
+zeekctl restart > restart-all.out
 
 # restart all nodes with --clean option
-broctl restart --clean > restart-all-clean.out
+zeekctl restart --clean > restart-all-clean.out
 
-broctl stop
+zeekctl stop
 
 # start one node (using restart command)
-broctl restart manager > start-one.out
+zeekctl restart manager > start-one.out
 
-broctl stop
+zeekctl stop

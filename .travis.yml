@@ -18,23 +18,23 @@ branches:
 notifications:
   email:
     recipients:
-    - bro-commits-internal@bro.org
+    - zeek-commits-internal@zeek.org
 
 before_install:
   # Python 2.7 doesn't have the ipaddress module (required by broker).
   - python -c "import ipaddress" || pip install ipaddress
-  # Clone the bro git repo and replace broctl.
+  # Clone the zeek git repo and replace zeekctl.
   - cd ..
-  - tar cf broctl.tar --exclude=.git broctl
-  - rm -rf broctl
+  - tar cf zeekctl.tar --exclude=.git zeekctl
+  - rm -rf zeekctl
   - git clone --recursive https://github.com/zeek/zeek bro
   - rm -rf bro/aux/broctl
-  - tar xf broctl.tar -C bro/aux
-  - rm -f broctl.tar
+  - tar xf zeekctl.tar -C bro/aux
+  - rm -f zeekctl.tar
   - cd bro/aux/broctl/testing
 
 install:
-  - make buildbro
+  - make buildzeek
 
 script: ../../btest/btest -f diag.log -A
 

@@ -1,8 +1,8 @@
-# Broctl test plugin that defines custom node keys.
+# Zeekctl test plugin that defines custom node keys.
 
-import BroControl.plugin
+import ZeekControl.plugin
 
-class NodeKeysTest(BroControl.plugin.Plugin):
+class NodeKeysTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(NodeKeysTest, self).__init__(apiversion=1)
 

@@ -1,5 +1,5 @@
-# Test that the start command fails immediately when broctl lacks the needed
-# permissions to the bro working directory, and gives a useful error message.
+# Test that the start command fails immediately when zeekctl lacks the needed
+# permissions to the zeek working directory, and gives a useful error message.
 #
 # Skip this test if running as the superuser.
 # @TEST-REQUIRES: test `id -u` -ne 0
@@ -8,23 +8,23 @@
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-abspath btest-diff start.out
 # @TEST-EXEC: btest-diff status.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
-bin/bro__test
+etc/zeekctl.cfg__no_email
+bin/zeek__test
 EOF
 
-broctl install
+zeekctl install
 # need to create the working dir
-broctl start
-broctl stop
+zeekctl start
+zeekctl stop
 
 # Remove write access to working dir.
-chmod ugo-w $BROCTL_INSTALL_PREFIX/spool/bro
+chmod ugo-w $ZEEKCTL_INSTALL_PREFIX/spool/zeek
 
 # Verify that the start command returns non-zero.
-! broctl start > start.out 2>&1
+! zeekctl start > start.out 2>&1
 
 # Verify that the status is "stopped".
-! broctl status > status.out
+! zeekctl status > status.out

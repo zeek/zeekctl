@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Bro postprocessor script to archive log files.
+# Zeek postprocessor script to archive log files.
 #
 # archive-log <file_name> <base_name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
 #
@@ -11,7 +11,7 @@
 #                          format YY-MM-DD_HH.MM.SS).
 #  timestamp-when-closed:  timestamp when log file was finished (must be in the
 #                          format YY-MM-DD_HH.MM.SS).
-#  terminating:  0 during normal log rotation, or 1 if Bro is shutting down.
+#  terminating:  0 during normal log rotation, or 1 if Zeek is shutting down.
 #  writer:  a string indicating the log writer type, such as "ascii".
 # 
 # Example:
@@ -32,7 +32,7 @@ trap sig_handler 0
 # to archive-log.
 now=`date +%y-%m-%d_%H.%M.%S`
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 
 # Make sure all parameters are supplied.
 if [ $# -ne 6 ]; then
@@ -75,7 +75,7 @@ if [ "$ext" = "gz" ]; then
 fi
 
 if [ ! -f "${makearchivename}" ]; then
-    echo "archive-log: broctl option makearchivename is not set correctly" >&2
+    echo "archive-log: zeekctl option makearchivename is not set correctly" >&2
     exit 1
 fi
 # Compute the archived log filename
@@ -94,7 +94,7 @@ fi
 echo $dest | grep -q '^/'
 if [ $? -ne 0 ]; then
     if [ -z "${logdir}" ]; then
-        echo "archive-log: broctl option logdir is not set" >&2
+        echo "archive-log: zeekctl option logdir is not set" >&2
         exit 1
     fi
     dest="${logdir}/$dest"
@@ -109,7 +109,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Record time of last rotation (the post-terminate script passes this to
-# archive-log when Bro crashes, so it must be in the format that archive-log
+# archive-log when Zeek crashes, so it must be in the format that archive-log
 # expects).
 echo $now > .rotated.$base_name
 

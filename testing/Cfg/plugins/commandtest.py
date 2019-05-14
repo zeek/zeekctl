@@ -1,8 +1,8 @@
-# Broctl test plugin that defines custom commands.
+# Zeekctl test plugin that defines custom commands.
 
-import BroControl.plugin
+import ZeekControl.plugin
 
-class CommandTest(BroControl.plugin.Plugin):
+class CommandTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(CommandTest, self).__init__(apiversion=1)
 
@@ -20,7 +20,7 @@ class CommandTest(BroControl.plugin.Plugin):
                 ("", "", "Another test command")]
 
     def cmd_custom(self, cmd, args, cmdout):
-        results = BroControl.cmdresult.CmdResult()
+        results = ZeekControl.cmdresult.CmdResult()
 
         # This is an easy way to force the plugin command to return failure.
         if args == "fail":

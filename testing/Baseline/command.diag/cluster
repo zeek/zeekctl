@@ -1,12 +1,12 @@
 [manager]
 
 No core file found and gdb is not installed.  It is recommended to
-install gdb so that BroControl can output a backtrace if Bro crashes.
+install gdb so that ZeekControl can output a backtrace if Zeek crashes.
 
-Bro 2.5-1
+Zeek 2.5-1
 Darwin 14.5.0
 
-Bro plugins:
+Zeek plugins:
 Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
@@ -20,11 +20,11 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--U .status -p broctl -p broctl-live -p local -p manager local.zeek broctl base/frameworks/cluster broctl/auto
+-U .status -p zeekctl -p zeekctl-live -p local -p manager local.zeek zeekctl base/frameworks/cluster zeekctl/auto
 
 ==== .env_vars
-PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-BROPATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/policy:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/site
+PATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeekctl/scripts:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/Scripts:/Users/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+BROPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/site
 CLUSTER_NODE=manager
 
 ==== .status
@@ -35,17 +35,17 @@ RUNNING [net_run]
 ==== No packet_filter.log
 
 ==== loaded_scripts.log
-Node manager: This is the contents of loaded_scripts.log for broctl testing.
+Node manager: This is the contents of loaded_scripts.log for zeekctl testing.
 
 [proxy-1]
 
 No core file found and gdb is not installed.  It is recommended to
-install gdb so that BroControl can output a backtrace if Bro crashes.
+install gdb so that ZeekControl can output a backtrace if Zeek crashes.
 
-Bro 2.5-1
+Zeek 2.5-1
 Darwin 14.5.0
 
-Bro plugins:
+Zeek plugins:
 Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
@@ -59,11 +59,11 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--U .status -p broctl -p broctl-live -p local -p proxy-1 local.zeek broctl base/frameworks/cluster broctl/auto
+-U .status -p zeekctl -p zeekctl-live -p local -p proxy-1 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
 
 ==== .env_vars
-PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-BROPATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/policy:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/site
+PATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeekctl/scripts:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/Scripts:/Users/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+BROPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/site
 CLUSTER_NODE=proxy-1
 
 ==== .status
@@ -74,17 +74,17 @@ RUNNING [net_run]
 ==== No packet_filter.log
 
 ==== loaded_scripts.log
-Node proxy-1: This is the contents of loaded_scripts.log for broctl testing.
+Node proxy-1: This is the contents of loaded_scripts.log for zeekctl testing.
 
 [worker-1]
 
 No core file found and gdb is not installed.  It is recommended to
-install gdb so that BroControl can output a backtrace if Bro crashes.
+install gdb so that ZeekControl can output a backtrace if Zeek crashes.
 
-Bro 2.5-1
+Zeek 2.5-1
 Darwin 14.5.0
 
-Bro plugins:
+Zeek plugins:
 Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
@@ -98,11 +98,11 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--i eth0 -U .status -p broctl -p broctl-live -p local -p worker-1 local.zeek broctl base/frameworks/cluster broctl/auto
+-i eth0 -U .status -p zeekctl -p zeekctl-live -p local -p worker-1 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
 
 ==== .env_vars
-PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-BROPATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/policy:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/site
+PATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeekctl/scripts:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/Scripts:/Users/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+BROPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/site
 CLUSTER_NODE=worker-1
 
 ==== .status
@@ -113,17 +113,17 @@ RUNNING [net_run]
 ==== No packet_filter.log
 
 ==== loaded_scripts.log
-Node worker-1: This is the contents of loaded_scripts.log for broctl testing.
+Node worker-1: This is the contents of loaded_scripts.log for zeekctl testing.
 
 [worker-2]
 
 No core file found and gdb is not installed.  It is recommended to
-install gdb so that BroControl can output a backtrace if Bro crashes.
+install gdb so that ZeekControl can output a backtrace if Zeek crashes.
 
-Bro 2.5-1
+Zeek 2.5-1
 Darwin 14.5.0
 
-Bro plugins:
+Zeek plugins:
 Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)
 
 ==== No reporter.log
@@ -137,11 +137,11 @@ virtual memory          (kbytes, -v) unlimited
 core file size          (blocks, -c) unlimited
 
 ==== .cmdline
--i eth1 -U .status -p broctl -p broctl-live -p local -p worker-2 local.zeek broctl base/frameworks/cluster broctl/auto
+-i eth1 -U .status -p zeekctl -p zeekctl-live -p local -p worker-2 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
 
 ==== .env_vars
-PATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/broctl/scripts:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/bin:/Users/repo/bro/aux/broctl/testing/Scripts:/Users/repo/bro/aux/broctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-BROPATH=/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/policy:/Users/repo/bro/aux/broctl/testing/../build/testing/test.27083/share/bro/site
+PATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeekctl/scripts:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/bin:/Users/repo/zeek/aux/zeekctl/testing/Scripts:/Users/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+BROPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27083/share/zeek/site
 CLUSTER_NODE=worker-2
 
 ==== .status
@@ -152,5 +152,5 @@ RUNNING [net_run]
 ==== No packet_filter.log
 
 ==== loaded_scripts.log
-Node worker-2: This is the contents of loaded_scripts.log for broctl testing.
+Node worker-2: This is the contents of loaded_scripts.log for zeekctl testing.
 

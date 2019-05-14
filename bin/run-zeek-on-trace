@@ -1,0 +1,38 @@
+#! /usr/bin/env bash
+#
+# Run Zeek on a trace file.
+#
+# run-zeek-on-trace <use_installed_policies> <cwd> <trace> <zeek_args>
+#
+# use_installed_policies:  1 to use local policy files installed by
+#                          "zeekctl install", or 0 to use the original files
+# cwd:  directory name to run Zeek from
+# trace:  pathname of a trace file
+# zeek_args:  string containing Zeek cmd-line options
+
+. `dirname $0`/zeekctl-config.sh
+
+if [ $# -lt 4 ]; then
+    echo "run-zeek-on-trace: missing cmd-line arguments"
+    exit 1
+fi
+
+use_installed_policies=$1
+cwd=$2
+trace=$3
+shift 3
+
+. "${scriptsdir}"/set-zeek-path
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+cd "$cwd"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+echo $@ >.cmdline
+
+ZEEKCTL_DISABLE_LISTEN=1 "${zeek}" -r "$trace" "$@"
+

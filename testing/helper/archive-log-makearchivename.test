@@ -1,48 +1,48 @@
 # Test that the archive-log script archives and compresses a specified log
 # file using an alternative make-archive-name script when the makearchivename
-# broctl option is specified.
+# zeekctl option is specified.
 #
 # @TEST-EXEC: bash %INPUT
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 EOF
 
-makearchname=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/make-archive-name
-testarchname=$BROCTL_INSTALL_PREFIX/test-arch-name
-archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
-logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
-testlog=${logdir}/broctltest.22_24_20-22_30_00.log.gz
-origtestlog=broctltest.2013-12-30-22-24-20.log
+makearchname=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/make-archive-name
+testarchname=$ZEEKCTL_INSTALL_PREFIX/test-arch-name
+archivelog=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/archive-log
+logdir=$ZEEKCTL_INSTALL_PREFIX/logs/2013-12-30
+testlog=${logdir}/zeekctltest.22_24_20-22_30_00.log.gz
+origtestlog=zeekctltest.2013-12-30-22-24-20.log
 
-echo "makearchivename=${testarchname}" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+echo "makearchivename=${testarchname}" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 
 # Create the new script (behaves differently than original script)
 sed "s/%s:%s:%s/%s_%s_%s/" ${makearchname} > ${testarchname}
 chmod 755 ${testarchname}
 
-broctl install
+zeekctl install
 
-# Create Bro's working directory, chdir to that dir, and create a rotated log
-mkdir $BROCTL_INSTALL_PREFIX/spool/bro
-cd $BROCTL_INSTALL_PREFIX/spool/bro
+# Create Zeek's working directory, chdir to that dir, and create a rotated log
+mkdir $ZEEKCTL_INSTALL_PREFIX/spool/zeek
+cd $ZEEKCTL_INSTALL_PREFIX/spool/zeek
 cat > ${origtestlog} << _EOF_
-# This is a test broctltest.log
+# This is a test zeekctltest.log
 _EOF_
 
 ###############################################
 # Test archive-log with an alternate make-archive-name
 
-# verify that broctltest.log was not archived yet
+# verify that zeekctltest.log was not archived yet
 test ! -f ${testlog}
 
-${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+${archivelog} ${origtestlog} zeekctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
 
-# verify that broctltest.log was archived
+# verify that zeekctltest.log was archived
 test ! -f ${origtestlog}
 test -f ${testlog}
 
-# verify that broctltest.log was compressed
+# verify that zeekctltest.log was compressed
 ! grep -q "This is a test" ${testlog}

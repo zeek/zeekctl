@@ -3,7 +3,7 @@
 # Delete logs older than ${logexpireminutes} minutes, and remove entries in
 # stats.log older than ${statslogexpireinterval} days.
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 
 expire_statslog()
 {

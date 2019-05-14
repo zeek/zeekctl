@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace columns from "broctl ps.bro" output that are not predictable
+# Replace columns from "zeekctl ps.zeek" output that are not predictable
 # (such as PID) with Xs, and then sort the lines.
 
 awk '{

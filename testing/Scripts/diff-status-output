@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace columns from "broctl status" output that are not predictable
+# Replace columns from "zeekctl status" output that are not predictable
 # (such as PID) with Xs.  This script assumes that there is no "Peers" column
 # in the output, unless the "--peers" command-line option is specified.
 #

@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Replace fields from "broctl peerstatus" output that are not predictable
+# Replace fields from "zeekctl peerstatus" output that are not predictable
 # with Xs.
 
 awk '{

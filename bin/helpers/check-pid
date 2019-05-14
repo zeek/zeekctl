@@ -1,11 +1,11 @@
 #! /usr/bin/env bash
 #
-# Given a PID, check if it corresponds to a running Bro process.
+# Given a PID, check if it corresponds to a running Zeek process.
 #
 #  check-pid <pid>
 
 if [[ $(uname -s) == Darwin ]]; then
-    ps -p $1 -o args | grep -q bro
+    ps -p $1 -o args | grep -q zeek
 
     if [ $? -eq 0 ]; then
         echo "running"
@@ -21,7 +21,7 @@ kill -0 $1 >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     IFS=$'\n'
 
-    for line in $(ps ax -opid,args | grep $1 | grep bro); do
+    for line in $(ps ax -opid,args | grep $1 | grep zeek); do
         pid=$(echo $line | awk '{print $1}')
 
         if [ "$pid" -eq $1 ]; then

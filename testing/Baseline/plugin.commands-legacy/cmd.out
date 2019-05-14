@@ -1,0 +1,6 @@
+
+Warning: ZeekControl plugin uses legacy BroControl API. Use
+'import ZeekControl.plugin' instead of 'import BroControl.plugin'
+
+Command name: commandtest
+Command args: 

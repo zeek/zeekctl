@@ -1,0 +1,3 @@
+myVar1=some Global;val
+MyVar2=anotherglobal
+myvar5=/home/repo/zeek/aux/zeekctl/testing/../build/testing/test.21301/bin:/home/repo/zeek/aux/zeekctl/testing/Scripts:/home/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/mydir

@@ -1,29 +1,29 @@
 #! /usr/bin/env bash
 #
-# Update values of Bro script variables on a running Bro.
+# Update values of Zeek script variables on a running Zeek.
 #
-# update <host> <port> <bro_args>
+# update <host> <port> <zeek_args>
 #
 # host:  the destination host.
 # port:  the destination port.
-# bro_args:  Bro cmd-line arguments.
+# zeek_args:  Zeek cmd-line arguments.
 
-. `dirname $0`/broctl-config.sh
+. `dirname $0`/zeekctl-config.sh
 
 if [ $# -lt 4 ]; then
     echo "update: missing arguments"
     exit 1
 fi
 
-if [ ! -f "${bro}" ]; then
-    echo "update: file not found: ${bro}"
+if [ ! -f "${zeek}" ]; then
+    echo "update: file not found: ${zeek}"
     exit 1
 fi
 
 export PATH=${bindir}:${scriptsdir}:$PATH
 
 use_installed_policies=1
-. "${scriptsdir}"/set-bro-path
+. "${scriptsdir}"/set-zeek-path
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -46,7 +46,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-BROCTL_DISABLE_LISTEN=1 "${bro}" "$@" frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
+ZEEKCTL_DISABLE_LISTEN=1 "${zeek}" "$@" frameworks/control/controller "Control::host=$host" "Control::host_port=$port" "Control::cmd=configuration_update" >out.log 2>&1
 rc=$?
 
 grep -v -e "warning: no such host" -e "received termination signal" out.log

@@ -1,31 +1,31 @@
-# Test that the start command can start a Bro node that is slow to initialize,
+# Test that the start command can start a Zeek node that is slow to initialize,
 # and that the status command shows the status as "initializing".
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff start.out
 # @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-status-output btest-diff status.out
 
-. broctl-test-setup
+. zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-etc/broctl.cfg__no_email
+etc/zeekctl.cfg__no_email
 etc/node.cfg__cluster
-bin/bro__test
+bin/zeek__test
 EOF
 
-cat > $BROCTL_INSTALL_PREFIX/broctltest.cfg << EOF
+cat > $ZEEKCTL_INSTALL_PREFIX/zeekctltest.cfg << EOF
 slowstart=worker-1
 EOF
 
-broctl install
+zeekctl install
 
 # start all nodes
-broctl start > start.out
+zeekctl start > start.out
 
 # verify that one node is still initializing
-! broctl status > status.out
+! zeekctl status > status.out
 
-# Indicate to bro that it should now finish initializing.
-touch $BROCTL_INSTALL_PREFIX/spool/worker-1/.broctl_test_sync
+# Indicate to zeek that it should now finish initializing.
+touch $ZEEKCTL_INSTALL_PREFIX/spool/worker-1/.zeekctl_test_sync
 
-broctl stop
+zeekctl stop

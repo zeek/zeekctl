@@ -1,0 +1,194 @@
+#! /usr/bin/env python
+#
+# This script can be used in place of Zeek for some (but not all) of the zeekctl
+# tests.  The advantage of using this script for certain tests instead of
+# the real Zeek:  this script never requires superuser privileges to run,
+# tests that use this script can be run in parallel with other tests,
+# this script automatically terminates after a while in case a test script
+# fails to cleanup, and this script can be controlled by a config file to
+# simulate various scenarios (crash, slow to start, etc.).
+
+from __future__ import print_function
+import os, atexit, getopt, signal, sys, time
+
+livemode = False
+statusfile = None
+
+# Write the given string to the Zeek status file.  If no status file defined,
+# then do nothing.
+def setprocstate(str):
+    if not statusfile:
+        return
+
+    tmpfile = statusfile + ".tmp"
+    with open(tmpfile, "w") as fout:
+        fout.write(str)
+
+    # Update the status file as an atomic operation to prevent the chance
+    # that zeekctl sees the file as empty.
+    os.rename(tmpfile, statusfile)
+
+
+# Signal handler for SIGTERM.
+def catchsigterm(signum, frame):
+    # Exit normally so the exit handler can run.
+    sys.exit(0)
+
+
+# Create the loaded_scripts.log file.
+def createloadedscriptslog(thisnode):
+    with open("loaded_scripts.log", "w") as fout:
+        fout.write("Node %s: This is the contents of loaded_scripts.log for zeekctl testing.\n" % thisnode)
+
+
+# Parse cmd-line args.
+def getcmdargs():
+    global livemode, statusfile
+
+    optlist, args = getopt.getopt(sys.argv[1:], "abde:f:ghi:p:r:s:t:vw:x:CFG:H:I:NPQR:ST:U:WX:")
+
+    # Process only those options that are relevant for zeekctl testing.
+    for (opt, val) in optlist:
+        if opt == "-v":
+            # zeekctl runs "zeek -v" and expects the output to be in a specific
+            # format, but the exact version number reported doesn't matter.
+            print("zeek version 2.5-1")
+            sys.exit(0)
+        elif opt == "-N":
+            # Output some plugins (doesn't matter which ones) so we can
+            # test the "zeekctl diag" command.
+            print("Zeek::ARP - ARP Parsing (built-in)")
+            print("Zeek::ZIP - Generic ZIP support analyzer (built-in)")
+            print("Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)")
+            sys.exit(0)
+        elif opt == "-U":
+            statusfile = val
+        elif opt == "-p":
+            if val == "zeekctl-live":
+                livemode = True
+
+
+# Class that represents contents of zeekctltest.cfg file.
+class ZeekctlTestCfg():
+    def __init__(self, keylist):
+        for key in keylist:
+            setattr(self, key, "")
+
+
+# Read a zeekctl test config file.  The config file can be used to control the
+# behavior of this script (neither Zeek nor zeekctl use this config file).
+def readzeekctltestcfg():
+    # These are the config options available (node1, node2, etc., are the names
+    # of nodes, and var1, var2, etc., are the names of environment variables):
+    #   crash = node1 [node2 node3 ...]
+    #   crashshutdown = node1 [node2 node3 ...]
+    #   slowstart = node1 [node2 node3 ...]
+    #   slowstop = node1 [node2 node3 ...]
+    #   envvars = var1 [var2 var3 ...]
+    keys = ("crash", "crashshutdown", "slowstart", "slowstop", "envvars")
+    testcfg = ZeekctlTestCfg(keys)
+
+    # The "zeekctl-test-setup" script exports ZEEKCTL_INSTALL_PREFIX which
+    # contains the test-specific directory path of the Zeek install.
+    zeekbase = os.getenv("ZEEKCTL_INSTALL_PREFIX", "")
+    cfgfilepath = os.path.join(zeekbase, "zeekctltest.cfg")
+
+    if not os.path.isfile(cfgfilepath):
+        return testcfg
+
+    with open(cfgfilepath, "r") as fin:
+        for line in fin:
+            key, val = line.strip().split('=', 1)
+            key = key.strip()
+            val = val.strip().split()
+            if key not in keys:
+                print("Error: unknown option '%s' in: %s" % (zeekvar, cfgfilepath), file=sys.stderr)
+                sys.exit(1)
+            setattr(testcfg, key, val)
+
+    return testcfg
+
+
+def main():
+    getcmdargs()
+
+    # Create state file (the zeekctl "start" and "stop" commands check this
+    # file, and zeekctl "status" just shows the state to the user).  Note that
+    # zeekctl ignores the part of the string in brackets.
+    setprocstate("INITIALIZING [main]\n")
+
+    # The CLUSTER_NODE env. var. is set by zeekctl and can be used to determine
+    # the cluster node type for this instance of zeek (for a standalone config,
+    # this env. var. is not set).
+    nodename = os.getenv("CLUSTER_NODE", "zeek")
+
+    if not livemode:
+        # Create loaded_scripts.log (for testing the zeekctl "scripts" and
+        # "diag" commands).
+        createloadedscriptslog(nodename)
+        return
+
+    testcfg = readzeekctltestcfg()
+
+    # Set an exit handler to update status file upon exit, unless
+    # the "crashshutdown" option is specified for this node.
+    if nodename not in testcfg.crashshutdown:
+        atexit.register(setprocstate, "TERMINATED [atexit]\n")
+
+    # If the "slowstop" option is specified for this node, then ignore SIGTERM
+    # to simulate a slow shutdown.
+    if nodename in testcfg.slowstop:
+        # Ignore SIGTERM so that "zeekctl stop" must fallback to using SIGKILL.
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    else:
+        # Catch SIGTERM so the exit handler can run after a "zeekctl stop".
+        signal.signal(signal.SIGTERM, catchsigterm)
+
+    # If the "crash" option is specified for this node, then exit now to
+    # simulate a crash.
+    if nodename in testcfg.crash:
+        # Let the exit handler update the state file.
+        sys.exit(1)
+
+    # If the "slowstart" option is specified for this node, then wait a bit
+    # before entering the "running" state.
+    if nodename in testcfg.slowstart:
+        # To avoid race conditions, wait for the test script to indicate when
+        # it is ready to continue.  However, stop waiting after a while
+        # to avoid getting stuck forever due to a broken test script.
+        ct = 0
+        while not os.path.exists(".zeekctl_test_sync"):
+            ct += 1
+            if ct > 100:
+                break
+            time.sleep(1)
+        # Remove the file to indicate that we're going to continue running now.
+        try:
+            os.unlink(".zeekctl_test_sync")
+        except OSError:
+            pass
+
+    # Set the status so the zeekctl "start" command knows we're up and running.
+    setprocstate("RUNNING [net_run]\n")
+
+    # Create a log file for testing ability of zeekctl to archive log files.
+    createloadedscriptslog(nodename)
+
+    # If the "envvars" option is specified, then print the value of each
+    # specified environment variable to verify if zeekctl can set environment
+    # variables.
+    envvars = testcfg.envvars
+    if envvars:
+        for envvar in envvars:
+            envval = os.getenv(envvar, "")
+            print("%s=%s" % (envvar, envval), file=sys.stderr)
+        sys.stderr.flush()
+
+    # Now that all work has been done, just wait long enough so that the
+    # slowest test case has time to finish, and then exit to avoid having
+    # unwanted processes running if a test script fails to cleanup (this
+    # should never happen).
+    time.sleep(1000)
+
+if __name__ == "__main__":
+    main()

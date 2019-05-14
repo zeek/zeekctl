@@ -1,0 +1,15 @@
+# Test that a plugin can add content to the zeekctl-config.zeek file.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff out
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+plugins/zeekctlconfigtest.py lib/zeekctl/plugins --new
+EOF
+
+zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+zeekctl install
+sed -n '/Begin code from/,$p' ${zeekctlconfig} > out
