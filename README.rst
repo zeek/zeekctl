@@ -1,1 +1,1 @@
-doc/broctl.rst
+doc/zeekctl.rst
