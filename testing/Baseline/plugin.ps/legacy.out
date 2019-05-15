@@ -1,4 +1,3 @@
-Warning: 'ps.bro' is deprecated, please use 'ps.zeek' instead
         USER        PID   PPID %CPU %MEM    VSZ   RSS TT       S  STARTED     TIME COMMAND
 >>> localhost
    (-) testusr          75221 75215   5.5  1.9  4392860  79524   ??  S     7:13AM   0:02.18 zeek

@@ -1,4 +1,8 @@
 
+1.9-43 | 2019-05-14 19:29:56 -0700
+
+  * Fix plugin.ps test (Jon Siwek, Corelight)
+
 1.9-42 | 2019-05-14 18:19:43 -0700
 
   * Remove the "update" command (Jon Siwek, Corelight)
