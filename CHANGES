@@ -1,4 +1,10 @@
 
+1.9-45 | 2019-05-15 15:00:39 -0700
+
+  * Adjust parallelism of build-zeek script (Jon Siwek, Corelight)
+
+  * Update broker.bro module usage to broker.zeek (Jon Siwek, Corelight)
+
 1.9-43 | 2019-05-14 19:29:56 -0700
 
   * Fix plugin.ps test (Jon Siwek, Corelight)

@@ -47,7 +47,17 @@ build_zeek() {
 
     test $? -ne 0 && return 1
 
-    cd ${BUILDPREFIX} && make -j 2 install
+    ncpus=2
+
+    if [ "${TRAVIS}" != "true" ]; then
+        if type nproc >/dev/null 2>&1; then
+            ncpus=$(nproc)
+        fi
+    fi
+
+    echo "Building Zeek with ${ncpus} processors ..."
+
+    cd ${BUILDPREFIX} && make -j ${ncpus} install
 }
 
 # Replace the Zeek install prefix directory path with the text "@PREFIX@".  This
