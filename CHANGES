@@ -1,4 +1,10 @@
 
+1.9-41 | 2019-05-14 17:27:44 -0700
+
+  * Update Travis config to use zeek/zeekctl (Jon Siwek, Corelight)
+
+  * Update README.rst symlink (Jon Siwek, Corelight)
+
 1.9-39 | 2019-05-14 13:12:15 -0700
 
   * Fix legacy plugin API and add new tests (Daniel Thayer)

@@ -27,11 +27,11 @@ before_install:
   - cd ..
   - tar cf zeekctl.tar --exclude=.git zeekctl
   - rm -rf zeekctl
-  - git clone --recursive https://github.com/zeek/zeek bro
-  - rm -rf bro/aux/broctl
-  - tar xf zeekctl.tar -C bro/aux
+  - git clone --recursive https://github.com/zeek/zeek zeek
+  - rm -rf zeek/aux/zeekctl
+  - tar xf zeekctl.tar -C zeek/aux
   - rm -f zeekctl.tar
-  - cd bro/aux/broctl/testing
+  - cd zeek/aux/zeekctl/testing
 
 install:
   - make buildzeek
