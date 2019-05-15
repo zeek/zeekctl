@@ -916,36 +916,6 @@ class Controller:
 
         return netif
 
-
-    # Update the configuration of a running instance on the fly.
-    def update(self, nodes):
-        results = cmdresult.CmdResult()
-
-        running = self._isrunning(nodes)
-
-        cmds = []
-        for (node, isrunning) in running:
-            if isrunning:
-                env = ""
-                env += " BRO_DNS_FAKE=1"
-                args = " ".join(_make_zeek_params(node, False))
-                cmds += [(node.name, os.path.join(self.config.scriptsdir, "update") + " %s %s/tcp %s" % (util.format_zeek_addr(node.addr), node.getPort(), args), env, None)]
-                self.ui.info("updating %s ..." % node.name)
-
-        res = execute.run_localcmds(cmds)
-
-        for (tag, success, output) in res:
-            node = self.config.nodes(tag)[0]
-            if not success:
-                self.ui.info("failed to update %s: %s" % (tag, output))
-                results.set_node_fail(node)
-            else:
-                out = output.splitlines()[0] if output else ""
-                self.ui.info("%s: %s" % (tag, out))
-                results.set_node_success(node)
-
-        return results
-
     # Gets disk space on all volumes relevant to zeekctl installation.
     # Returns a list of the form:  [ (host, diskinfo), ...]
     # where diskinfo is a list of the form DiskInfo named tuple objects (fs,

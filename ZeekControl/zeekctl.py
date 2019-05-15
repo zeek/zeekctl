@@ -447,18 +447,6 @@ class ZeekCtl(object):
     @expose
     @check_config
     @lock_required
-    def update(self, node_list=None):
-        self.ui.info("warning: 'update' is deprecated and will be removed in a future version.")
-        nodes = self.node_args(node_list)
-        nodes = self.plugins.cmdPreWithNodes("update", nodes)
-        results = self.controller.update(nodes)
-        self.plugins.cmdPostWithResults("update", results.get_node_data())
-
-        return results
-
-    @expose
-    @check_config
-    @lock_required
     def df(self, node_list=None):
         nodes = self.node_args(node_list, get_hosts=True)
         nodes = self.plugins.cmdPreWithNodes("df", nodes)

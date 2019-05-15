@@ -1,3 +1,0 @@
-warning: 'update' is deprecated and will be removed in a future version.
-updating worker-2 ...
-worker-2: /home/robin/zeek/master/aux/zeekctl/build/testing/test.11362/share/zeek/policy/frameworks/control/controller.zeek, line 136: Control framework sent 378 IDs

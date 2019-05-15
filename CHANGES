@@ -1,4 +1,8 @@
 
+1.9-42 | 2019-05-14 18:19:43 -0700
+
+  * Remove the "update" command (Jon Siwek, Corelight)
+
 1.9-41 | 2019-05-14 17:27:44 -0700
 
   * Update Travis config to use zeek/zeekctl (Jon Siwek, Corelight)

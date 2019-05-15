@@ -499,29 +499,6 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         return results.ok
 
-    def do_update(self, args):
-        """- [<nodes>]
-
-        NOTE: This command is deprecated and will be removed in a future release.
-
-        After a change to Zeek policy scripts, this command updates the Zeek
-        processes on the given nodes *while they are running* (i.e., without
-        requiring a restart_). However, such dynamic
-        updates work only for a *subset* of Zeek's full configuration. The
-        following changes can be applied on the fly:  The value of all
-        const variables defined with the ``&redef`` attribute can be changed.
-        More extensive script changes are not possible during runtime and
-        always require a restart; if you change more than just the values of
-        ``&redef``-able consts and still issue ``update``, the results are
-        undefined and can lead to crashes. Also note that before running
-        ``update``, you still need to do an install_ (preferably after
-        check_), as otherwise ``update`` will not see the changes and it will
-        resend the old configuration."""
-
-        results = self.zeekctl.update(node_list=args)
-
-        return results.ok
-
     def do_df(self, args):
         """- [<nodes>]
 
@@ -775,7 +752,6 @@ ZeekControl Version %s
   status [<nodes>]                 - Summarize node status
   stop [<nodes>]                   - Stop processing
   top [<nodes>]                    - Show Zeek processes ala top
-  update [<nodes>]                 - Update configuration of nodes on the fly
   %s""" % (version.VERSION, plugin_help))
 
 def main():
