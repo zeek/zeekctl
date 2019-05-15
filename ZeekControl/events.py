@@ -6,7 +6,7 @@ errmsg = ""
 
 try:
     import broker
-    import broker.bro
+    import broker.zeek
 except ImportError as e:
     broker = None
     errmsg = e
@@ -70,7 +70,7 @@ def _send_event_init(node, event, args, result_event, topic):
         for msg in msgs:
             if isinstance(msg, broker.Status):
                 if msg.code() == broker.SC.PeerAdded:
-                    ev = broker.bro.Event(event, *args)
+                    ev = broker.zeek.Event(event, *args)
                     endpoint.publish(topic + "/" + repr(msg.context()), ev)
                     logging.debug("broker: %s(%s) to node %s", event,
                                   ", ".join(args), node.name)
@@ -93,7 +93,7 @@ def _send_event_wait(node, result_event, bc, sub):
 
         for msg in msgs:
             (topic, event) = msg
-            ev = broker.bro.Event(event)
+            ev = broker.zeek.Event(event)
             args = ev.args()
             logging.debug("broker: %s(%s) from node %s", result_event,
                           ", ".join(args), node.name)
