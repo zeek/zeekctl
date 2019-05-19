@@ -6,8 +6,8 @@ include(cmake/CommonCMakeConfig.cmake)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX "${CMAKE_INSTALL_PREFIX}")
-set(ZEEKSCRIPTDIR "${BRO_SCRIPT_INSTALL_PATH}")
-set(ETC "${BRO_ETC_INSTALL_DIR}")
+set(ZEEKSCRIPTDIR "${ZEEK_SCRIPT_INSTALL_PATH}")
+set(ETC "${ZEEK_ETC_INSTALL_DIR}")
 
 ########################################################################
 ## Dependency Configuration
@@ -32,7 +32,7 @@ else ()
     find_package(TraceSummary)
 endif ()
 
-find_package(Bro)
+find_package(Zeek)
 FindRequiredPackage(PythonInterp)
 FindRequiredPackage(SubnetTree)
 find_package(PCAP)
@@ -61,14 +61,14 @@ if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
             "ZeekControl, but was not found.  Configuration aborted.")
 endif ()
 
-if (NOT BRO_ROOT_DIR)
+if (NOT ZEEK_ROOT_DIR)
     message(WARNING "A Zeek installation was not found, your ZeekControl "
                     " installation may not work.  Please review the install "
                     " summary before proceeding or force a Zeek root directory "
                     " with the --with-zeek configure option. ")
-elseif (NOT "${BRO_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
+elseif (NOT "${ZEEK_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
     message(WARNING "ZeekControl installation directory ${CMAKE_INSTALL_PREFIX} "
-                    "does not match Zeek installation directory ${BRO_ROOT_DIR}")
+                    "does not match Zeek installation directory ${ZEEK_ROOT_DIR}")
 endif ()
 
 ########################################################################
@@ -78,7 +78,7 @@ include(InstallPackageConfigFile)
 include(InstallSymlink)
 include(InstallShellScript)
 
-set(policydir ${BRO_SCRIPT_INSTALL_PATH})
+set(policydir ${ZEEK_SCRIPT_INSTALL_PATH})
 
 # If a script may need to be configured by CMake and also have its hashbang
 # transformed to use an absolute path to an interpreter, use the
@@ -143,7 +143,7 @@ endif ()
 install(FILES man/zeekctl.8 DESTINATION ${ZEEK_MAN_INSTALL_PATH}/man8)
 
 install(DIRECTORY scripts/
-        DESTINATION ${BRO_SCRIPT_INSTALL_PATH}
+        DESTINATION ${ZEEK_SCRIPT_INSTALL_PATH}
         FILES_MATCHING
         PATTERN "*.zeek")
 
@@ -287,7 +287,7 @@ message(
     "\n=================|  ZeekControl Install Summary  |==================="
     "\n"
     "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
-    "\nZeek root:         ${BRO_ROOT_DIR}"
+    "\nZeek root:         ${ZEEK_ROOT_DIR}"
     "\nScripts Dir:       ${policydir}"
     "\nSpool Dir:         ${spoolDir}"
     "\nLog Dir:           ${logDir}"
