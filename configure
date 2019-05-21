@@ -69,7 +69,7 @@ prefix=/usr/local/bro
 CMakeCacheEntries=""
 append_cache_entry CMAKE_INSTALL_PREFIX PATH   $prefix
 append_cache_entry PY_MOD_INSTALL_DIR   PATH   $prefix/lib/zeekctl
-append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
+append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
 append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING
 
 # parse arguments
@@ -93,11 +93,11 @@ while [ $# -ne 0 ]; do
             append_cache_entry PY_MOD_INSTALL_DIR   PATH   $optarg/lib/zeekctl
             ;;
         --scriptdir=*)
-            append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $optarg
+            append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $optarg
             user_set_scriptdir="true"
             ;;
         --conf-files-dir=*)
-            append_cache_entry BRO_ETC_INSTALL_DIR  PATH   $optarg
+            append_cache_entry ZEEK_ETC_INSTALL_DIR  PATH   $optarg
             user_set_conffilesdir="true"
             ;;
         --localstatedir=*)
@@ -110,7 +110,7 @@ while [ $# -ne 0 ]; do
             append_cache_entry ZEEK_LOG_DIR  PATH   $optarg
             ;;
         --with-zeek=*)
-            append_cache_entry BRO_ROOT_DIR PATH $optarg
+            append_cache_entry ZEEK_ROOT_DIR PATH $optarg
             ;;
         --with-pcap=*)
             append_cache_entry PCAP_ROOT_DIR    PATH    $optarg
@@ -152,7 +152,7 @@ while [ $# -ne 0 ]; do
 done
 
 if [ "$user_set_scriptdir" != "true" ]; then
-    append_cache_entry BRO_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
+    append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
 fi
 
 if [ "$user_set_conffilesdir" != "true" ]; then

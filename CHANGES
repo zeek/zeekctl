@@ -1,4 +1,8 @@
 
+1.9-47 | 2019-05-20 19:37:27 -0700
+
+  * More changes for Bro to Zeek renaming (Daniel Thayer)
+
 1.9-45 | 2019-05-15 15:00:39 -0700
 
   * Adjust parallelism of build-zeek script (Jon Siwek, Corelight)
