@@ -1,14 +1,14 @@
 #
-# Sets BROPATH to either the installed policy scripts (if
+# Sets ZEEKPATH to either the installed policy scripts (if
 # use_installed_policies is 1), or the user-provided originals
 # (otherwise).
 #
 # Should be sourced.
 
-BROPATH=${tmp_node_dir}:${policydirsiteinstallauto}:${policydir}:${policydir}/policy:${policydir}/site
+ZEEKPATH=${tmp_node_dir}:${policydirsiteinstallauto}:${policydir}:${policydir}/policy:${policydir}/site
 
 if [ "$use_installed_policies" = "1" ]; then
-   export BROPATH=${policydirsiteinstall}:$BROPATH
+   export ZEEKPATH=${policydirsiteinstall}:$ZEEKPATH
 else
-   export BROPATH=${sitepolicypath}:$BROPATH
+   export ZEEKPATH=${sitepolicypath}:$ZEEKPATH
 fi

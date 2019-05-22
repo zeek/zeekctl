@@ -64,7 +64,7 @@ ulimit -c unlimited
 ulimit -m -d $ulimit_v -c
 
 echo "PATH=${PATH}" >.env_vars
-echo "BROPATH=${BROPATH}" >>.env_vars
+echo "ZEEKPATH=${ZEEKPATH}" >>.env_vars
 echo "CLUSTER_NODE=${CLUSTER_NODE}" >>.env_vars
 
 echo $@ >.cmdline
