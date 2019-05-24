@@ -24,7 +24,7 @@ core file size          (blocks, -c) unlimited
 
 ==== .env_vars
 PATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/bin:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeekctl/scripts:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/bin:/Users/repo/zeek/aux/zeekctl/testing/Scripts:/Users/repo/zeek/aux/zeekctl/testing/../../btest:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-BROPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek/site
+ZEEKPATH=/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/site::/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/spool/installed-scripts-do-not-touch/auto:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek/policy:/Users/repo/zeek/aux/zeekctl/testing/../build/testing/test.27595/share/zeek/site
 CLUSTER_NODE=
 
 ==== .status

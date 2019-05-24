@@ -2,7 +2,7 @@
 #
 # Remove content from "zeekctl diag" output that is too system-dependent
 # (currently, this includes the contents of stderr.log, stdout.log, PATH,
-# BROPATH, OS version, and the system-dependent "No core file" message).
+# ZEEKPATH, OS version, and the system-dependent "No core file" message).
 
 awk '{
     if ( skip == 0 ) {
@@ -22,8 +22,8 @@ awk '{
         else if ( $0 ~ /^PATH=/ ) {
             print "PATH=<...>"
         }
-        else if ( $0 ~ /^BROPATH=/ ) {
-            print "BROPATH=<...>"
+        else if ( $0 ~ /^ZEEKPATH=/ ) {
+            print "ZEEKPATH=<...>"
         }
         else {
             print
