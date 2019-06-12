@@ -6,9 +6,9 @@
 
 . zeekctl-test-setup
 
-touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test123.zeek
-touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test456.zeek
-touch $ZEEKCTL_INSTALL_PREFIX/share/bro/site/test789.zeek
+touch $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/test123.zeek
+touch $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/test456.zeek
+touch $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/test789.zeek
 
 zeekctl install
 

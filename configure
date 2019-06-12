@@ -20,9 +20,9 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --builddir=DIR         place build files in directory [build]
 
   Installation Directories:
-    --prefix=PREFIX        installation directory [/usr/local/bro]
+    --prefix=PREFIX        installation directory [/usr/local/zeek]
     --scriptdir=PATH       root installation directory for Zeek scripts
-                           [PREFIX/share/bro]
+                           [PREFIX/share/zeek]
     --conf-files-dir=DIR   config files installation directory [PREFIX/etc]
     --localstatedir=PATH   path to store log files and run-time data
                            (within log/ and spool/ subdirs) [PREFIX]
@@ -65,11 +65,11 @@ append_cache_entry () {
 
 # set defaults
 builddir=build
-prefix=/usr/local/bro
+prefix=/usr/local/zeek
 CMakeCacheEntries=""
 append_cache_entry CMAKE_INSTALL_PREFIX PATH   $prefix
 append_cache_entry PY_MOD_INSTALL_DIR   PATH   $prefix/lib/zeekctl
-append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
+append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/zeek
 append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING
 
 # parse arguments
@@ -152,7 +152,7 @@ while [ $# -ne 0 ]; do
 done
 
 if [ "$user_set_scriptdir" != "true" ]; then
-    append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/bro
+    append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/zeek
 fi
 
 if [ "$user_set_conffilesdir" != "true" ]; then

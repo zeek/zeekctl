@@ -22,10 +22,10 @@ echo "this is an error" >> $ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-no
 zeekctl check > check2.out
 
 # Verify that zeekctl check looks at policy files in SitePolicyPath
-cp $ZEEKCTL_INSTALL_PREFIX/share/bro/site/local.zeek .
-echo "this is an error" >> $ZEEKCTL_INSTALL_PREFIX/share/bro/site/local.zeek
+cp $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/local.zeek .
+echo "this is an error" >> $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/local.zeek
 ! zeekctl check > check3.out
-mv local.zeek $ZEEKCTL_INSTALL_PREFIX/share/bro/site/
+mv local.zeek $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/
 
 # Check a cluster config.
 

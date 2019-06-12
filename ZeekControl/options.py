@@ -183,7 +183,7 @@ options = [
            "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
            "Directory where standard zeekctl plugins are located."),
-    Option("PluginZeekDir", "${ZeekBase}/lib/bro/plugins", "string", Option.AUTOMATIC, False,
+    Option("PluginZeekDir", "${ZeekBase}/lib/zeek/plugins", "string", Option.AUTOMATIC, False,
            "Directory where Zeek plugins are located.  ZeekControl will search this directory tree for zeekctl plugins that are provided by any Zeek plugin.", "PluginBroDir"),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,

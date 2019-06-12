@@ -1,4 +1,8 @@
 
+1.9-52 | 2019-06-12 15:08:09 -0700
+
+  * Rename directories from bro to zeek (Daniel Thayer)
+
 1.9-49 | 2019-05-23 19:33:47 -0700
 
   * Rename the BROPATH environment variable (Daniel Thayer)
