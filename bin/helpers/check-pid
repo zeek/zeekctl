@@ -21,7 +21,7 @@ kill -0 $1 >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     IFS=$'\n'
 
-    for line in $(ps ax -opid,args | grep $1 | grep zeek); do
+    for line in $(ps ax -o pid=PID____8 -o args | grep $1 | grep zeek); do
         pid=$(echo $line | awk '{print $1}')
 
         if [ "$pid" -eq $1 ]; then
