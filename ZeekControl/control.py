@@ -264,6 +264,10 @@ class Controller:
                 self.ui.error("failed to run check-pid on node %s" % node.name)
                 continue
 
+            if output.strip() not in ["running", "not running"]:
+                self.ui.error("failed to run check-pid on node %s, got unexpected output: %r" % (node.name, output))
+                continue
+
             running = output.strip() == "running"
 
             results += [(node, running)]
