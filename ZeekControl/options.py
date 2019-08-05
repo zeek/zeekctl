@@ -52,6 +52,8 @@ options = [
            "Script to generate filenames for archived log files."),
     Option("CompressLogs", 1, "bool", Option.USER, False,
            "True to compress archived log files."),
+    Option("CompressLogsInFlight", 0, "bool", Option.USER, False,
+           "True to compress archived log files as they're created instead of during rotation. If this is enabled, the CompressLogs, CompressCmd, and CompressExtension arguments will be ignored as the files are compressed automatically by Zeek."),
     Option("CompressCmd", "gzip -9", "string", Option.USER, False,
            "If archived logs will be compressed, the command to use for that. The specified command must compress its standard input to standard output."),
     Option("CompressExtension", "gz", "string", Option.USER, False,

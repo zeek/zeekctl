@@ -757,6 +757,11 @@ User Options
 *CompressLogs* (bool, default 1)
     True to compress archived log files.
 
+.. _CompressLogsInFlight:
+
+*CompressLogsInFlight* (bool, default 0)
+    True to have compress log files at creation time instead of during log rotation. If this is set to 1, the CompressLogs option will be ignored.
+
 .. _ControlTopic:
 
 *ControlTopic* (string, default "zeek/control")
