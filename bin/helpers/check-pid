@@ -4,31 +4,20 @@
 #
 #  check-pid <pid>
 
-if [[ $(uname -s) == Darwin ]]; then
-    ps -p $1 -o args | grep -q zeek
+ps -p $1 -o args 2>/dev/null | grep -q zeek
 
-    if [ $? -eq 0 ]; then
-        echo "running"
+if [ $? -eq 0 ]; then
+    echo "running"
+else
+    if [ -f /proc/$1/cmdline ]; then
+        grep -q zeek /proc/$1/cmdline
+
+        if [ $? -eq 0 ]; then
+            echo "running"
+        else
+            echo "not running"
+        fi
     else
         echo "not running"
     fi
-
-    exit 0
 fi
-
-kill -0 $1 >/dev/null 2>&1
-
-if [ $? -eq 0 ]; then
-    IFS=$'\n'
-
-    for line in $(ps ax -o pid=PID____8 -o args | grep $1 | grep zeek); do
-        pid=$(echo $line | awk '{print $1}')
-
-        if [ "$pid" -eq $1 ]; then
-            echo "running"
-            exit 0
-        fi
-    done
-fi
-
-echo "not running"
