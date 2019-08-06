@@ -1,4 +1,12 @@
 
+1.9-60 | 2019-08-06 11:48:09 -0700
+
+  * Simplify check-pid script
+
+    Still keeps support for Alpine/BusyBox version of `ps`, which lacks
+    the -p option, but removes the use of `kill -0`, which transiently
+    fails for unknown reason: see https://github.com/zeek/zeek/issues/518 (Jon Siwek, Corelight)
+
 1.9-56 | 2019-06-21 09:55:14 -0700
 
   * Fix alpine ps => PID issue (Jeff Barber)
