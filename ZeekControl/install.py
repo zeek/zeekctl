@@ -276,6 +276,10 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
 
     ostr += plugin_reg.getZeekctlConfig(cmdout)
 
+    if config.Config.compresslogsinflight > 0:
+        ostr += 'redef LogAscii::gzip_level = %s;\n' % config.Config.compresslogsinflight
+        ostr += 'redef LogAscii::gzip_file_extension = "%s";\n' % config.Config.compressextension
+
     filename = os.path.join(path, "zeekctl-config.zeek")
     try:
         with open(filename, "w") as out:

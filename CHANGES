@@ -1,4 +1,8 @@
 
+2.0.0-3 | 2019-08-13 13:43:34 -0700
+
+  * Add CompressLogsInFlight option to compress logs while writing instead of upon rotation (Tim Wojtulewicz, Corelight)
+
 2.0.0 | 2019-08-08 10:51:01 -0700
 
   * Release 2.0.0

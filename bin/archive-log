@@ -125,7 +125,7 @@ if [ ! -f $file_name ]; then
     exit 0
 fi
 
-if [ "${compresslogs}" = "1" ] && [ -n "${compresscmd}" ] && [ $gzipped -eq 0 ]; then
+if [ "${compresslogsinflight}" = "0" ] && [ "${compresslogs}" = "1" ] && [ -n "${compresscmd}" ] && [ $gzipped -eq 0 ]; then
     dest="$dest.${compressextension}"
     nice ${compresscmd} < $file_name > "$dest"
 else

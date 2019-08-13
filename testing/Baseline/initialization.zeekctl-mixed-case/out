@@ -1,1 +1,2 @@
 compresslogs = True
+compresslogsinflight = 0
