@@ -36,7 +36,26 @@ now=`date +%y-%m-%d_%H.%M.%S`
 
 # Make sure all parameters are supplied.
 if [ $# -ne 6 ]; then
-    echo "archive-log: wrong usage: $@" >&2
+    echo "Error: incorrect number of arguments provided.
+
+ archive-log:
+     Zeek postprocessor script to archive log files.
+
+ Usage:
+
+    $ archive-log file_name base_name start_timestamp end_timestamp terminating writer
+
+    file_name:        the rotated log filename that we need to archive
+    base_name:        base name of the log (e.g. 'conn').
+    start_timestamp:  timestamp when log file was created (format YY-MM-DD_HH.MM.SS).
+    end_timestamp:    timestamp when log file was finished (format YY-MM-DD_HH.MM.SS).
+    terminating:      0 during normal log rotation, or 1 if Zeek is shutting down.
+    writer:           a string indicating the log writer type, such as 'ascii'.
+
+ Example:
+
+   $ archive-log conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii"
+
     exit 1
 fi
 
