@@ -54,7 +54,7 @@ options = [
            "True to compress archived log files."),
     Option("CompressLogsInFlight", 0, "int", Option.USER, False,
            "Set to greater than zero to compress archived log files as they're created instead of during rotation.  The value indicates the compression level to use between 1 and 9 (values of 6 or 7 are a typical choice to bias slightly more towards better compression at cost of performance). If this is enabled, the CompressLogs, and CompressCmd arguments will be ignored as the files are compressed automatically by Zeek."),
-    Option("CompressCmd", "gzip -9", "string", Option.USER, False,
+    Option("CompressCmd", "gzip", "string", Option.USER, False,
            "If archived logs will be compressed, the command to use for that. The specified command must compress its standard input to standard output."),
     Option("CompressExtension", "gz", "string", Option.USER, False,
            "If archived logs will be compressed, the file extension to use on compressed log files. When specifying a file extension, don't include the period character (e.g., specify 'gz' instead of '.gz')."),
