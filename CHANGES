@@ -1,4 +1,8 @@
 
+2.0.0-12 | 2019-10-17 16:30:37 -0700
+
+  * Change gzip compression level from 9 to default #614 (JC Connell)
+
 2.0.0-6 | 2019-08-23 06:31:33 -0400
 
   * archive-log: Print a usage string if the number of arguments is incorrect. (Vlad Grigorescu)
