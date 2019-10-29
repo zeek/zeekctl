@@ -1,4 +1,10 @@
 
+2.0.0-17 | 2019-10-28 18:27:37 -0700
+
+  * Use Ubuntu 18.04 (Bionic) in Travis CI (Jon Siwek, Corelight)
+
+    To satisfy Zeek C++17 requirement
+
 2.0.0-16 | 2019-10-28 18:25:20 -0700
 
   * Move CMake project() after cmake_minimum_required() (Jon Siwek, Corelight)
