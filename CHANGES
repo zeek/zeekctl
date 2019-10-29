@@ -1,4 +1,10 @@
 
+2.0.0-18 | 2019-10-28 20:14:23 -0700
+
+  * Remove Python 3.4 from Travis CI matrix (Jon Siwek, Corelight)
+
+    It's end-of-life and not available in Travis "dist: bionic".
+
 2.0.0-17 | 2019-10-28 18:27:37 -0700
 
   * Use Ubuntu 18.04 (Bionic) in Travis CI (Jon Siwek, Corelight)
