@@ -1,4 +1,8 @@
 
+2.0.0-16 | 2019-10-28 18:25:20 -0700
+
+  * Move CMake project() after cmake_minimum_required() (Jon Siwek, Corelight)
+
 2.0.0-12 | 2019-10-17 16:30:37 -0700
 
   * Change gzip compression level from 9 to default #614 (JC Connell)

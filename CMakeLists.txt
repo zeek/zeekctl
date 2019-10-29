@@ -1,6 +1,5 @@
-project(ZeekControl C CXX)
-# Python is checked as a dependency below
 cmake_minimum_required(VERSION 2.6.3 FATAL_ERROR)
+project(ZeekControl C CXX)
 include(cmake/CommonCMakeConfig.cmake)
 
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
