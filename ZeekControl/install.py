@@ -48,6 +48,32 @@ def get_nfssyncs():
 
     return nfssyncs
 
+# Determine relative cfg_path
+def splitall(path):
+    """Break out all parts of a path into a list"""
+    allparts = []
+    while True:
+        parts = os.path.split(path)
+        if parts[0] == path:
+            allparts.insert(0, parts[0])
+            break
+        if parts[1] == path:
+            allparts.insert(0, parts[1])
+            break
+        path = parts[0]
+        allparts.insert(0, parts[1])
+    return allparts
+
+def relpath(src, dst):
+    """Calculate the relative path to dst)"""
+    srcparts = splitall(src)
+    dstparts = splitall(dst)
+    while srcparts and dstparts and srcparts[0] == dstparts[0]:
+        srcparts.pop(0)
+        dstparts.pop(0)
+    relparts = (len(dstparts) - 1) * ['..'] + srcparts
+    return os.path.join(*relparts)
+
 # Generate a shell script "zeekctl-config.sh" that sets env. vars. that
 # correspond to zeekctl config options.
 def make_zeekctl_config_sh(cmdout):
@@ -86,9 +112,12 @@ def make_zeekctl_config_sh(cmdout):
 
     symlink = os.path.join(config.Config.scriptsdir, "zeekctl-config.sh")
 
+    # Use a relative path
+    sym_cfg_path = relpath(cfg_path, symlink)
+
     # check if the symlink needs to be updated
     try:
-        update_link = not os.path.islink(symlink) or os.readlink(symlink) != cfg_path
+        update_link = not os.path.islink(symlink) or os.readlink(symlink) != sym_cfg_path
     except OSError as e:
         cmdout.error("failed to read symlink: %s" % e)
         return False
@@ -96,9 +125,9 @@ def make_zeekctl_config_sh(cmdout):
     if update_link:
         # attempt to update the symlink
         try:
-            util.force_symlink(cfg_path, symlink)
+            util.force_symlink(sym_cfg_path, symlink)
         except OSError as e:
-            cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, cfg_path, e.strerror))
+            cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, sym_cfg_path, e.strerror))
             return False
 
     return True
