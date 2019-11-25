@@ -47,7 +47,7 @@ if [ "$print_loaded_scripts" = "1" ]; then
     check_option=
 fi
 
-ZEEKCTL_CHECK_CONFIG=1 "${zeek}" $check_option "$@"
+ZEEKCTL_DISABLE_LISTEN=1 ZEEKCTL_CHECK_CONFIG=1 "${zeek}" $check_option "$@"
 rc=$?
 
 if [ $rc -eq 0 ] && [ "$print_loaded_scripts" = "1" ]; then

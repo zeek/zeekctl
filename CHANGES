@@ -1,4 +1,10 @@
 
+2.0.0-25 | 2019-11-25 10:21:18 -0800
+
+  * Fix "scripts" command in standalone mode (Jon Siwek, Corelight)
+
+    Addresses https://github.com/zeek/zeek/issues/697
+
 2.0.0-24 | 2019-11-25 09:21:27 -0800
 
   * Change install.py to use a relative path for the zeekctl-config.sh symlink (Craig Leres)
