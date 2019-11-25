@@ -1,4 +1,8 @@
 
+2.0.0-24 | 2019-11-25 09:21:27 -0800
+
+  * Change install.py to use a relative path for the zeekctl-config.sh symlink (Craig Leres)
+
 2.0.0-18 | 2019-10-28 20:14:23 -0700
 
   * Remove Python 3.4 from Travis CI matrix (Jon Siwek, Corelight)
