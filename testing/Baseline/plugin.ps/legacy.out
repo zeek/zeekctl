@@ -1,7 +1,0 @@
-        USER        PID   PPID %CPU %MEM    VSZ   RSS TT       S  STARTED     TIME COMMAND
->>> localhost
-   (-) testusr          75221 75215   5.5  1.9  4392860  79524   ??  S     7:13AM   0:02.18 zeek
-   (-) testusr          75276 75270   5.3  1.9  4393336  81272   ??  S     7:14AM   0:02.09 zeek
-   (-) testusr          75331 75325   5.5  1.9  4392836  79440   ??  S     7:14AM   0:01.87 zeek
-   (-) testusr          75400 75388   5.3  1.9  4392836  79324   ??  S     7:14AM   0:01.89 zeek
-   (+) testusr          75401 75390   5.5  1.9  4393360  79388   ??  S     7:14AM   0:01.89 zeek

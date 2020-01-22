@@ -168,7 +168,7 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Broker::default_port = %s/tcp;\n" % zeekport.use_port(manager)
         ostr += "event zeek_init()\n"
         ostr += "\t{\n"
-        ostr += "\tif ( getenv(\"ZEEKCTL_DISABLE_LISTEN\") == \"\" && getenv(\"BROCTL_DISABLE_LISTEN\") == \"\" )\n"
+        ostr += "\tif ( getenv(\"ZEEKCTL_DISABLE_LISTEN\") == \"\" )\n"
         ostr += "\t\tBroker::listen();\n"
         ostr += "\t}\n"
 

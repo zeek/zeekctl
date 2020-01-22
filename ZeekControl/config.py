@@ -99,14 +99,6 @@ class Configuration:
             if opt.dontinit:
                 continue
 
-            if opt.legacy_name:
-                old_key = opt.legacy_name.lower()
-                if old_key in self.config:
-                    self.ui.warn("option '%s' is deprecated, please use '%s' instead" % (opt.legacy_name, opt.name))
-                    self.init_option(opt.name, self.config[old_key])
-                    del self.config[old_key]
-                    continue
-
             self.init_option(opt.name, opt.default)
 
         # Set defaults for options we derive dynamically.
@@ -582,8 +574,6 @@ class Configuration:
             # Convert key to lowercase because keys are stored in lowercase.
             key = opt.name.lower()
             opt_names.add(key)
-            if opt.legacy_name:
-                opt_names.add(opt.legacy_name.lower())
 
         with open(fname, "r") as f:
             for line in f:

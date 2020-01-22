@@ -198,26 +198,6 @@ InstallSymlink(${SPOOL}/zeekctl-config.sh
 configure_file(etc/zeekctl.cfg.in
                ${CMAKE_CURRENT_BINARY_DIR}/etc/zeekctl.cfg)
 
-if ( NOT BINARY_PACKAGING_MODE )
-  # If the user has a broctl.cfg file from a previous installation, prefer to
-  # symlink zeek.cfg to it to avoid breaking their custom configuration --
-  # because ZeekControl will now always load zeekctl.cfg and we're about to
-  # install a default version of that.
-
-  set(_broctl_cfg_dst ${ETC}/broctl.cfg)
-  set(_zeekctl_cfg_dst ${ETC}/zeekctl.cfg)
-
-  install(CODE "
-    if ( \"\$ENV{DESTDIR}\" STREQUAL \"\" )
-      if ( EXISTS \"${_broctl_cfg_dst}\" AND NOT EXISTS \"${_zeekctl_cfg_dst}\" )
-        message(STATUS \"WARNING: installed ${_zeekctl_cfg_dst} as symlink to ${_broctl_cfg_dst}\")
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
-          \"${_broctl_cfg_dst}\" \"${_zeekctl_cfg_dst}\")
-      endif ()
-    endif ()
-  ")
-endif ()
-
 InstallPackageConfigFile(
     ${CMAKE_CURRENT_BINARY_DIR}/etc/zeekctl.cfg
     ${ETC}
@@ -230,28 +210,6 @@ InstallPackageConfigFile(
     ${CMAKE_CURRENT_SOURCE_DIR}/etc/node.cfg
     ${ETC}
     node.cfg)
-
-# Install legacy BroControl wrappers and links.
-InstallSymlink("${CMAKE_INSTALL_PREFIX}/bin/zeek-wrapper" "${CMAKE_INSTALL_PREFIX}/bin/broctl")
-
-if ( NOT BINARY_PACKAGING_MODE )
-  # Need to remove pre-existing $prefix/lib/broctl dir from previous installs.
-  set(_broctl_lib_dst ${CMAKE_INSTALL_PREFIX}/lib/broctl)
-
-  install(CODE "
-    if ( \"\$ENV{DESTDIR}\" STREQUAL \"\" )
-      if ( EXISTS \"${_broctl_lib_dst}\" AND NOT IS_SYMLINK \"${_broctl_lib_dst}\" AND IS_DIRECTORY \"${_broctl_lib_dst}\" )
-        message(STATUS \"WARNING: removing old directory ${_broctl_lib_dst}\")
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E remove_directory
-          \"${_broctl_lib_dst}\")
-      endif ()
-    endif ()
-  ")
-endif ()
-
-InstallSymlink("./zeekctl" "${CMAKE_INSTALL_PREFIX}/lib/broctl")
-
-install(DIRECTORY BroControl DESTINATION lib/zeekctl)
 
 ########################################################################
 ## Packaging Setup

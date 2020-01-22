@@ -7,14 +7,13 @@ class Option:
     INTERNAL = 2   # internal, don't expose to user.
     AUTOMATIC = 3  # Set automatically, unlikely to be changed.
 
-    def __init__(self, name, default, type, category, dontinit, description, legacy_name=None):
+    def __init__(self, name, default, type, category, dontinit, description):
         self.name = name
         self.default = default
         self.type = type
         self.category = category
         self.dontinit = dontinit
         self.description = description
-        self.legacy_name = legacy_name
 
         if type == "string":
             if not isinstance(default, str):
@@ -43,7 +42,7 @@ options = [
     Option("CommandTimeout", 60, "int", Option.USER, False,
            "The number of seconds to wait for a command to return results."),
     Option("ZeekPort", 47760, "int", Option.USER, False,
-           "The TCP port number that Zeek will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on.", "BroPort"),
+           "The TCP port number that Zeek will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on."),
     Option("LogRotationInterval", 3600, "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Zeek script variable Log::default_rotation_interval."),
     Option("LogDir", "${ZeekBase}/logs", "string", Option.USER, False,
@@ -98,7 +97,7 @@ options = [
     Option("KeepLogs", "", "string", Option.USER, False,
            "A space-separated list of filename shell patterns of expired log files to keep (empty string means don't keep any expired log files). The filename shell patterns are not regular expressions and do not include any directories. For example, specifying 'conn.* dns*' will prevent any expired log files with filenames starting with 'conn.' or 'dns' from being removed. Finally, note that this option is ignored if log files never expire."),
     Option("ZeekArgs", "", "string", Option.USER, False,
-           'Additional arguments to pass to Zeek on the command-line (e.g. zeekargs=-f "tcp port 80").', "BroArgs"),
+           'Additional arguments to pass to Zeek on the command-line (e.g. zeekargs=-f "tcp port 80").'),
     Option("MemLimit", "unlimited", "string", Option.USER, False,
            "Maximum amount of memory for Zeek processes to use (in KB, or the string 'unlimited')."),
     Option("Env_Vars", "", "string", Option.USER, False,
@@ -140,7 +139,7 @@ options = [
 
     # Automatically set.
     Option("ZeekBase", "", "string", Option.AUTOMATIC, True,
-           "Base path of zeekctl installation on all nodes.", "BroBase"),
+           "Base path of zeekctl installation on all nodes."),
     Option("Version", "", "string", Option.AUTOMATIC, True,
            "Version of the zeekctl."),
     Option("StandAlone", 0, "bool", Option.AUTOMATIC, True,
@@ -154,8 +153,7 @@ options = [
 
     Option("BinDir", "${ZeekBase}/bin", "string", Option.AUTOMATIC, False,
            "Directory for executable files."),
-    Option("Zeek", "${BinDir}/zeek", "string", Option.AUTOMATIC, False,
-           "Path to Zeek binary.", "Bro"),
+    Option("Zeek", "${BinDir}/zeek", "string", Option.AUTOMATIC, False, "Path to Zeek binary."),
     Option("ScriptsDir", "${ZeekBase}/share/zeekctl/scripts", "string", Option.AUTOMATIC, False,
            "Directory for executable scripts shipping as part of zeekctl."),
     Option("PostProcDir", "${ZeekBase}/share/zeekctl/scripts/postprocessors", "string", Option.AUTOMATIC, False,
@@ -186,7 +184,7 @@ options = [
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
            "Directory where standard zeekctl plugins are located."),
     Option("PluginZeekDir", "${ZeekBase}/lib/zeek/plugins", "string", Option.AUTOMATIC, False,
-           "Directory where Zeek plugins are located.  ZeekControl will search this directory tree for zeekctl plugins that are provided by any Zeek plugin.", "PluginBroDir"),
+           "Directory where Zeek plugins are located.  ZeekControl will search this directory tree for zeekctl plugins that are provided by any Zeek plugin."),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,
            "Path to trace-summary script (empty if not available). Make this string blank to disable the connection summary reports."),
@@ -224,7 +222,7 @@ options = [
     Option("ZeekCtlConfigDir", "${SpoolDir}", "string", Option.INTERNAL, False,
            """Directory where the shell copies the zeekctl-config.sh
            configuration file. If this is changed, the symlink created in
-           CMakeLists.txt must be adapted as well.""", "BroCtlConfigDir"),
+           CMakeLists.txt must be adapted as well."""),
 ]
 
 def print_options(category):

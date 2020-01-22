@@ -79,8 +79,6 @@ class PluginRegistry:
         parameter semantics."""
         for p in self._activeplugins():
             p.zeekProcessDied(node)
-             # TODO: Can we recognize when this is in use to warn about deprecation?
-            p.broProcessDied(node)
 
     def cmdPreWithNodes(self, cmd, nodes, *args):
         """Executes the ``cmd_<XXX>_pre`` function for a command taking a list
@@ -169,20 +167,13 @@ class PluginRegistry:
         extra_code = []
 
         for p in self._activeplugins():
-            code1 = p.zeekctl_config()
-            code2 = p.broctl_config()
+            code = p.zeekctl_config()
 
-            if code2:
-                cmdout.warn("Plugin '%s' uses deprecated method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
-
-            if code1 or code2:
+            if code:
                 # Make sure first character of returned string is a newline
                 extra_code.append("")
                 extra_code.append("# Begin code from %s plugin" % p.name())
-                if code1:
-                    extra_code.append(code1)
-                if code2:
-                    extra_code.append(code2)
+                extra_code.append(code)
                 extra_code.append("# End code from %s plugin" % p.name())
 
         if extra_code:

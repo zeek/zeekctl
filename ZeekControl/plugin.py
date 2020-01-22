@@ -339,10 +339,6 @@ class Plugin(object):
         """
         return
 
-    def broctl_config(self):
-        """Deprecated legacy name for `zeekctl_config`."""
-        return
-
     @doc.api("override")
     def init(self):
         """Called once just before ZeekControl starts executing any commands.
@@ -401,10 +397,6 @@ class Plugin(object):
         This method can be overridden by derived classes. The default
         implementation does nothing.
         """
-        return
-
-    def broProcessDied(self, node):
-        """Deprecated legacy name for `zeekProcessDied`."""
         return
 
     # Per-command help currently not supported by zeekctl. May add this later.
