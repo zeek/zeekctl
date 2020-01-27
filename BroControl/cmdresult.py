@@ -1,6 +1,5 @@
 #
-# Legacy BroControl Plugin API. This just prints a warning and forwards to the
-# new API.
+# Legacy BroControl Plugin API. Importing it will abort.
 #
 
 import ZeekControl.cmdresult
