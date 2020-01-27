@@ -20,15 +20,10 @@ class PsZeek(ZeekControl.plugin.Plugin):
     def commands(self):
         return [
             ("zeek", "[<nodes>]", "Show Zeek processes on nodes' systems"),
-            ("bro", "[<nodes>]", "Show Zeek processes on nodes' systems (deprecated)"),
         ]
 
     def cmd_custom(self, cmd, args, cmdout):
         results = ZeekControl.cmdresult.CmdResult()
-
-        if cmd == "bro":
-            cmdout.warn("'ps.bro' is deprecated, please use 'ps.zeek' instead")
-            cmd = "zeek"
 
         assert(cmd == "zeek") # Can't be anything else.
 
