@@ -5,6 +5,7 @@ import os
 import socket
 import subprocess
 import re
+import sys
 
 from ZeekControl import py3zeek
 from ZeekControl import node as node_mod
@@ -102,10 +103,8 @@ class Configuration:
             if opt.legacy_name:
                 old_key = opt.legacy_name.lower()
                 if old_key in self.config:
-                    self.ui.warn("option '%s' is deprecated, please use '%s' instead" % (opt.legacy_name, opt.name))
-                    self.init_option(opt.name, self.config[old_key])
-                    del self.config[old_key]
-                    continue
+                    self.ui.error("option '%s' is no longer supported, please use '%s' instead" % (opt.legacy_name, opt.name))
+                    sys.exit(1)
 
             self.init_option(opt.name, opt.default)
 
