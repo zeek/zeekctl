@@ -1,6 +1,1 @@
-Warning: option 'BroArgs' is deprecated, please use 'ZeekArgs' instead
-zeekargs = FooBar
-Warning: option 'BroPort' is deprecated, please use 'ZeekPort' instead
-zeekport = 5000
-Warning: option 'BroArgs' is deprecated, please use 'ZeekArgs' instead
-zeekargs = FooBarNew
+Error: option 'BroPort' is no longer supported, please use 'ZeekPort' instead
