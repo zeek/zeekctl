@@ -199,10 +199,8 @@ configure_file(etc/zeekctl.cfg.in
                ${CMAKE_CURRENT_BINARY_DIR}/etc/zeekctl.cfg)
 
 if ( NOT BINARY_PACKAGING_MODE )
-  # If the user has a broctl.cfg file from a previous installation, prefer to
-  # symlink zeek.cfg to it to avoid breaking their custom configuration --
-  # because ZeekControl will now always load zeekctl.cfg and we're about to
-  # install a default version of that.
+  # If the user has a broctl.cfg file from a previous installation,
+  # but no zeekctl..cf, abort.
 
   set(_broctl_cfg_dst ${ETC}/broctl.cfg)
   set(_zeekctl_cfg_dst ${ETC}/zeekctl.cfg)
@@ -210,9 +208,7 @@ if ( NOT BINARY_PACKAGING_MODE )
   install(CODE "
     if ( \"\$ENV{DESTDIR}\" STREQUAL \"\" )
       if ( EXISTS \"${_broctl_cfg_dst}\" AND NOT EXISTS \"${_zeekctl_cfg_dst}\" )
-        message(STATUS \"WARNING: installed ${_zeekctl_cfg_dst} as symlink to ${_broctl_cfg_dst}\")
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
-          \"${_broctl_cfg_dst}\" \"${_zeekctl_cfg_dst}\")
+        message(FATAL_ERROR \"${_broctl_cfg_dst} exists, but no ${_zeekctl_cfg_dst}; rename it\")
       endif ()
     endif ()
   ")
