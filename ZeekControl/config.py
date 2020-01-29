@@ -96,6 +96,7 @@ class Configuration:
         self.init_option("version", VERSION)
 
         # Initialize options that are not already set.
+        errors = False
         for opt in options.options:
             if opt.dontinit:
                 continue
@@ -104,9 +105,13 @@ class Configuration:
                 old_key = opt.legacy_name.lower()
                 if old_key in self.config:
                     self.ui.error("option '%s' is no longer supported, please use '%s' instead" % (opt.legacy_name, opt.name))
-                    sys.exit(1)
+                    errors = True
+                    continue
 
             self.init_option(opt.name, opt.default)
+
+        if errors:
+            sys.exit(1)
 
         # Set defaults for options we derive dynamically.
         self.init_option("mailto", "%s" % os.getenv("USER"))

@@ -170,7 +170,7 @@ class PluginRegistry:
 
         for p in self._activeplugins():
             if p.broctl_config():
-                cmdout.error("Plugin '%s' uses deprecated method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
+                cmdout.error("Plugin '%s' uses discontinued method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
 
             code = p.zeekctl_config()
             if code:

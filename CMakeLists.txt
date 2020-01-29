@@ -200,7 +200,7 @@ configure_file(etc/zeekctl.cfg.in
 
 if ( NOT BINARY_PACKAGING_MODE )
   # If the user has a broctl.cfg file from a previous installation,
-  # but no zeekctl..cf, abort.
+  # but no zeekctl.cfg, abort.
 
   set(_broctl_cfg_dst ${ETC}/broctl.cfg)
   set(_zeekctl_cfg_dst ${ETC}/zeekctl.cfg)
@@ -208,7 +208,7 @@ if ( NOT BINARY_PACKAGING_MODE )
   install(CODE "
     if ( \"\$ENV{DESTDIR}\" STREQUAL \"\" )
       if ( EXISTS \"${_broctl_cfg_dst}\" AND NOT EXISTS \"${_zeekctl_cfg_dst}\" )
-        message(FATAL_ERROR \"${_broctl_cfg_dst} exists, but no ${_zeekctl_cfg_dst}; rename it\")
+        message(FATAL_ERROR \"${_broctl_cfg_dst} exists, but ${_zeekctl_cfg_dst} does not; rename it\")
       endif ()
     endif ()
   ")

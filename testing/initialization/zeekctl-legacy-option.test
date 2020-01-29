@@ -1,4 +1,4 @@
-# Test that old legacy BroControl abort.
+# Test that old legacy BroControl options abort.
 #
 # @TEST-EXEC-FAIL: bash %INPUT
 # @TEST-EXEC: btest-diff out
