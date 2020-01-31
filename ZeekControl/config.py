@@ -5,6 +5,7 @@ import os
 import socket
 import subprocess
 import re
+import sys
 
 from ZeekControl import py3zeek
 from ZeekControl import node as node_mod
@@ -95,6 +96,7 @@ class Configuration:
         self.init_option("version", VERSION)
 
         # Initialize options that are not already set.
+        errors = False
         for opt in options.options:
             if opt.dontinit:
                 continue
@@ -102,12 +104,14 @@ class Configuration:
             if opt.legacy_name:
                 old_key = opt.legacy_name.lower()
                 if old_key in self.config:
-                    self.ui.warn("option '%s' is deprecated, please use '%s' instead" % (opt.legacy_name, opt.name))
-                    self.init_option(opt.name, self.config[old_key])
-                    del self.config[old_key]
+                    self.ui.error("option '%s' is no longer supported, please use '%s' instead" % (opt.legacy_name, opt.name))
+                    errors = True
                     continue
 
             self.init_option(opt.name, opt.default)
+
+        if errors:
+            sys.exit(1)
 
         # Set defaults for options we derive dynamically.
         self.init_option("mailto", "%s" % os.getenv("USER"))

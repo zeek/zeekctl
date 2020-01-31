@@ -405,6 +405,7 @@ class Plugin(object):
 
     def broProcessDied(self, node):
         """Deprecated legacy name for `zeekProcessDied`."""
+        # We keep this around as it's difficult to warn about its usage.
         return
 
     # Per-command help currently not supported by zeekctl. May add this later.

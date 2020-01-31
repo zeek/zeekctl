@@ -169,20 +169,15 @@ class PluginRegistry:
         extra_code = []
 
         for p in self._activeplugins():
-            code1 = p.zeekctl_config()
-            code2 = p.broctl_config()
+            if p.broctl_config():
+                cmdout.error("Plugin '%s' uses discontinued method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
 
-            if code2:
-                cmdout.warn("Plugin '%s' uses deprecated method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
-
-            if code1 or code2:
+            code = p.zeekctl_config()
+            if code:
                 # Make sure first character of returned string is a newline
                 extra_code.append("")
                 extra_code.append("# Begin code from %s plugin" % p.name())
-                if code1:
-                    extra_code.append(code1)
-                if code2:
-                    extra_code.append(code2)
+                extra_code.append(code)
                 extra_code.append("# End code from %s plugin" % p.name())
 
         if extra_code:

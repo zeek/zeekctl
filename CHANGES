@@ -1,4 +1,18 @@
 
+2.0.0-36 | 2020-01-30 19:11:25 -0800
+
+  * No longer need to look for BROCTL_DISABLE_LISTEN. (Robin Sommer, Corelight)
+
+  * Error out when old Bro options are used. (Robin Sommer, Corelight)
+
+  * Error out when old Bro plugin API used. (Robin Sommer, Corelight)
+
+  * Remove 'bro' command from ps plugin. (Robin Sommer, Corelight)
+
+  * Abort if there's a broctl.cfg but no zeekctl.cfg. (Robin Sommer, Corelight)
+
+  * Abort when using old BroControl plugin API. (Robin Sommer, Corelight)
+
 2.0.0-25 | 2019-11-25 10:21:18 -0800
 
   * Fix "scripts" command in standalone mode (Jon Siwek, Corelight)
