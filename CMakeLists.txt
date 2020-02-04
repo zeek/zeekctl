@@ -52,12 +52,14 @@ if (MISSING_PREREQS)
     message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
 endif ()
 
-execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
-                RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
+if (NOT CMAKE_CROSSCOMPILING)
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
+                    RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
 
-if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
-    message(FATAL_ERROR "The sqlite3 python module is required to use "
-            "ZeekControl, but was not found.  Configuration aborted.")
+    if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
+        message(FATAL_ERROR "The sqlite3 python module is required to use "
+                "ZeekControl, but was not found.  Configuration aborted.")
+    endif ()
 endif ()
 
 if (NOT ZEEK_ROOT_DIR)

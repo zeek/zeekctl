@@ -1,4 +1,13 @@
 
+2.0.0-39 | 2020-02-04 12:07:18 -0800
+
+  * Don't check for sqlite3 python module when cross-compiling (Fabrice Fontaine)
+
+    Don't check for sqlite3 python module support by calling
+    "${PYTHON_EXECUTABLE}" -c "import sqlite3" when cross-compiling as this
+    will check sqlite3 support on the host python interpreter and not the
+    target python interpreter.
+
 2.0.0-36 | 2020-01-30 19:11:25 -0800
 
   * No longer need to look for BROCTL_DISABLE_LISTEN. (Robin Sommer, Corelight)
