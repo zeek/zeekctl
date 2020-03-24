@@ -10,14 +10,14 @@ from ZeekControl import doc
 class Node:
     """Class representing one node of the ZeekControl maintained setup. In
     standalone mode, there's always exactly one node of type ``standalone``. In
-    a cluster setup, there is zero or one of type ``logger``, exactly one of
-    type ``manager``, one or more of type ``proxy``, and zero or more of
-    type ``worker``.  The manager will handle writing logs if there is no
-    logger defined in a cluster.
+    a cluster setup, there is zero or more of type ``logger``, exactly one of
+    type ``manager``, one or more of type ``proxy``, and zero or more of type
+    ``worker``.  The manager will handle writing logs if there are no loggers
+    defined in a cluster.
 
-    A ``Node`` object has a number of keys with values that are set
-    via the ``node.cfg`` file and can be accessed directly (from a plugin)
-    via corresponding Python attributes (e.g., ``node.name``):
+    A ``Node`` object has a number of keys with values that are set via the
+    ``node.cfg`` file and can be accessed directly (from a plugin) via
+    corresponding Python attributes (e.g., ``node.name``):
 
         ``name`` (string)
             The name of the node, which corresponds to the ``[<name>]``
