@@ -1,5 +1,5 @@
 configchksum = "cbf7a4f0cda2b090f36d74eb0bde9adbf9a7da95"
-confignodechksum = "f4a39f43687473d400e9dfcb4e0aaf0518fedddf"
+confignodechksum = "0e2367f8a72f266e95c16c263f897b8ea1b8e86d"
 cronenabled = true
 global-hash-seed = "4f653872"
 hash-nodecfg = "6e75bc05b3255aaffd6483075e6a6c7b319e1c76"

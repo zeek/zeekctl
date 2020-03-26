@@ -1,4 +1,10 @@
 
+2.1.0-11 | 2020-03-26 13:33:50 -0700
+
+  * Update generated docs (Jon Zeolla)
+
+  * Clarify docs and example for multi-logger cluster (Jon Zeolla)
+
 2.1.0 | 2020-02-08 12:32:49 -0800
 
   * Release 2.1.0
