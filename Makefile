@@ -40,7 +40,7 @@ test:
 
 .PHONY : test-all
 test-all: test
-	test -d aux/trace-summary && ( cd aux/trace-summary && make test )
+	test -d auxil/trace-summary && ( cd auxil/trace-summary && make test )
 
 .PHONY : doc
 doc:

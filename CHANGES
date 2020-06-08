@@ -1,4 +1,10 @@
 
+2.1.0-18 | 2020-06-08 11:14:14 -0700
+
+  * Rename aux/ to auxil/ (Jon Siwek, Corelight)
+
+    Since "aux" is not an allowed file/dir name on Windows.
+
 2.1.0-11 | 2020-03-26 13:33:50 -0700
 
   * Update generated docs (Jon Zeolla)
