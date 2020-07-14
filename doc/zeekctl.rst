@@ -732,6 +732,11 @@ automatically. They are documented here only for reference.
 
 User Options
 ~~~~~~~~~~~~
+.. _BrokerDBDir:
+
+*BrokerDBDir* (string, default "$\{ZeekBase}/spool/brokerstore")
+    Directory used for persistence databases of broker datastore backed tables.
+
 .. _CommTimeout:
 
 *CommTimeout* (int, default 10)

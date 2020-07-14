@@ -21,3 +21,6 @@ event zeek_init() &priority=-10
 
 # This prevents "zeekctl scripts" from hanging.
 redef exit_only_after_terminate = F;
+# This prevents us from trying to read the current global databases (which might be
+# locked) during a check.
+redef Broker::auto_store_db_directory = ".";

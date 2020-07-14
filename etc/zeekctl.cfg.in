@@ -70,6 +70,10 @@ LogDir = ${LOGS}
 # written are stored.
 SpoolDir = ${SPOOL}
 
+# Location of the directory in which the databases for broker datastore backed
+# Zeek tables are stored.
+BrokerDBDir = ${SPOOL}/brokerstore
+
 # Location of other configuration files that can be used to customize
 # ZeekControl operation (e.g. local networks, nodes).
 CfgDir = ${ETC}

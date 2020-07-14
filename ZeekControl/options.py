@@ -166,6 +166,8 @@ options = [
            "Directory for configuration files."),
     Option("SpoolDir", "${ZeekBase}/spool", "string", Option.AUTOMATIC, False,
            "Directory for run-time data."),
+    Option("BrokerDBDir", "${ZeekBase}/spool/brokerstore", "string", Option.AUTOMATIC, False,
+           "Directory for broker backed tables data store persistence databases."),
     Option("PolicyDir", "${ZeekScriptDir}", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
     Option("StaticDir", "${ZeekBase}/share/zeekctl", "string", Option.AUTOMATIC, False,
