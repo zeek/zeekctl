@@ -285,7 +285,7 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     ostr += 'redef Notice::sendmail = "%s";\n' % config.Config.sendmail
     ostr += 'redef Notice::mail_subject_prefix = "%s";\n' % config.Config.mailsubjectprefix
     ostr += 'redef Notice::mail_from = "%s";\n' % config.Config.mailfrom
-    ostr += 'redef Broker::auto_store_db_directory = "%s";\n' % config.Config.brokerdbdir
+    ostr += 'redef Broker::table_store_db_directory = "%s";\n' % config.Config.brokerdbdir
     if not config.Config.standalone:
         loggers = config.Config.loggers()
         ntype = "LOGGER" if loggers else "MANAGER"
