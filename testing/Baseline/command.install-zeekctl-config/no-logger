@@ -4,6 +4,7 @@ redef Notice::mail_dest_pretty_printed = "zeekctltest2@somedomain2";
 redef Notice::sendmail = "/path/to/sendmail";
 redef Notice::mail_subject_prefix = "This is Subject";
 redef Notice::mail_from = "zeekctltestuser@mydomain";
+redef Broker::table_store_db_directory = "/home/jon/pro/zeek/zeek/auxil/zeekctl/build/testing/test.28953/spool/brokerstore";
 @if ( Cluster::local_node_type() == Cluster::MANAGER )
 redef Log::default_rotation_interval = 12345 secs;
 redef Log::default_mail_alarms_interval = 98765 secs;
