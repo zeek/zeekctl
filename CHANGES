@@ -1,4 +1,10 @@
 
+2.1.0-24 | 2020-07-21 14:45:35 +0000
+
+  * Add new "BrokerDBDir" configuration option, which sets the
+    location in which Zeek tables that are backed by Broker stores are
+    persisted. (Johanna Amann, Corelight)
+
 2.1.0-20 | 2020-06-30 11:31:03 -0700
 
   * Fix .travis.yml to use auxil/ instead of aux/ (Jon Siwek, Corelight)
