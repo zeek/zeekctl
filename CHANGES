@@ -1,4 +1,8 @@
 
+2.2.0 | 2020-07-27 11:14:20 -0700
+
+  * Release 2.2.0
+
 2.1.0-25 | 2020-07-21 12:55:47 -0700
 
   * Update a test baseline for new Broker::table_store_db_directory (Jon Siwek, Corelight)
