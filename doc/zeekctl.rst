@@ -1023,7 +1023,7 @@ Internal Options
 
 .. _LibDirInternal:
 
-*LibDirInternal* (string, default "$\{LibDir}/zeekctl")
+*LibDirInternal* (string, default "$\{LibDir}/zeek/python/zeekctl")
     Directory for zeekctl-specific library files.
 
 .. _LocalNetsCfg:
@@ -1183,11 +1183,11 @@ plugin is written in Python and can do any, or all, of the following:
 A plugin is written by deriving a new class from ZeekControl class
 `Plugin`_. The Python script with the new plugin is then copied into a
 plugin directory searched by ZeekControl at startup. By default,
-ZeekControl searches ``<prefix>/lib/zeekctl/plugins``; additional directories
+ZeekControl searches ``<prefix>/lib/zeek/python/zeekctl/plugins``; additional directories
 may be configured by setting the SitePluginPath_ option. Note that any plugin
 script must end in ``*.py`` to be found. ZeekControl comes with some
 example plugins that can be used as a starting point; see
-the ``<prefix>/lib/zeekctl/plugins`` directory.
+the ``<prefix>/lib/zeek/python/zeekctl/plugins`` directory.
 
 In the following, we document the API that is available to plugins. A
 plugin must be derived from the `Plugin`_ class, and can use its

@@ -17,6 +17,8 @@
 # This script automatically exports some environment variables that are needed
 # by test scripts:
 #   ZEEKCTL_INSTALL_PREFIX - Test-specific directory path of the Zeek install.
+#   ZEEKCTL_INSTALL_PYTHON_DIR - Absolute path of the Python module directory
+#       for the above install.
 #   PATH - Enable test scripts to run the correct copy of "zeekctl" without
 #          specifying a path.
 #
@@ -84,14 +86,19 @@ installfile() {
         destdir=$(dirname "$relpath")
     fi
 
+    # If destination directory is not yet absolute, make it so:
+    if [[ "$destdir" != /* ]]; then
+        destdir="$ZEEKCTL_INSTALL_PREFIX/$destdir"
+    fi
+
     # Make sure destination directory exists
-    if [ ! -d "$ZEEKCTL_INSTALL_PREFIX/$destdir" ]; then
-        echo "Error: destination directory not found: $ZEEKCTL_INSTALL_PREFIX/$destdir" 1>&2
+    if [ ! -d "$destdir" ]; then
+        echo "Error: destination directory not found: $destdir" 1>&2
         exit 1
     fi
 
     # Finally, build the destination pathname
-    destpath=$ZEEKCTL_INSTALL_PREFIX/$destdir/$destfile
+    destpath=$destdir/$destfile
 
     if [ "$newfile" = "no" ]; then
         # Make sure destination file exists (usually, we're overwriting an
@@ -147,7 +154,22 @@ canonicalpath() {
 # Set the correct install prefix directory in all files where it's needed
 # (this is done immediately after untarring the Zeek install).
 replaceprefixes() {
-    for i in etc/zeekctl.cfg bin/zeekctl lib/zeekctl/ZeekControl/version.py ; do
+    # Put in place the test's actual prefix in files where we
+    # previously put in place the @PREFIX@ pattern:
+    for i in etc/zeekctl.cfg bin/zeekctl bin/zeek-config ; do
+        sed "s#@PREFIX@#${ZEEKCTL_INSTALL_PREFIX}#" $i > $i.new && cp $i.new $i && rm $i.new
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    done
+
+    # We can now use zeek-config to figure out additional paths. This
+    # avoids assumptions about where Zeek places directories.
+    local pydir=$(./bin/zeek-config --python_dir)
+
+    # Finally, substitute those in additional files whose location we
+    # didn't previously know.
+    for i in $pydir/zeekctl/ZeekControl/version.py ; do
         sed "s#@PREFIX@#${ZEEKCTL_INSTALL_PREFIX}#" $i > $i.new && cp $i.new $i && rm $i.new
         if [ $? -ne 0 ]; then
             return 1
@@ -210,6 +232,11 @@ main() {
     # Update PATH to ensure that test scripts are running the correct copy of
     # zeekctl.
     export PATH=$ZEEKCTL_INSTALL_PREFIX/bin:$PATH
+
+    # Provide the Python module installation directory to the tests.
+    # This avoids hardwiring assumptions about the location of that
+    # directory into the tests.
+    export ZEEKCTL_INSTALL_PYTHON_DIR=$(zeek-config --python_dir)
 
     # If the user set the env. var. ZEEKCTL_TEST_DEBUG, then leave a file in
     # the test directory to help setup the environment for running zeekctl

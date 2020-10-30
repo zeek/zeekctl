@@ -53,10 +53,11 @@ class NodeStore:
 
 
 class Configuration:
-    def __init__(self, basedir, libdir, cfgfile, zeekscriptdir, ui, state=None):
+    def __init__(self, basedir, libdir, libdirinternal, cfgfile, zeekscriptdir, ui, state=None):
         self.ui = ui
         self.basedir = basedir
         self.libdir = libdir
+        self.libdirinternal = libdirinternal
         self.cfgfile = cfgfile
         self.zeekscriptdir = zeekscriptdir
         global Config
@@ -96,6 +97,7 @@ class Configuration:
         self.init_option("zeekscriptdir", self.zeekscriptdir)
         self.init_option("version", VERSION)
         self.init_option("libdir", self.libdir)
+        self.init_option("libdirinternal", self.libdirinternal)
 
         # Initialize options that are not already set.
         errors = False

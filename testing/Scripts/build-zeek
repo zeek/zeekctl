@@ -71,15 +71,20 @@ replaceprefix() {
     # First, fix the ZEEKSCRIPTDIR path (this step is needed to avoid any
     # unintended difference between ZEEKSCRIPTDIR and INSTALLPREFIX because on
     # FreeBSD /home is actually a symlink to /usr/home).
-    oldpath=`grep '^ZEEKSCRIPTDIR' lib/zeekctl/ZeekControl/version.py | awk -F \" '{ print $2 }'`
+    #
+    # To locate Python files in the installed tree, rely on the
+    # installation's zeek-config to avoid hardwiring paths:
+    pydir="$($INSTALLPREFIX/bin/zeek-config --python_dir)"
+
+    oldpath=`grep '^ZEEKSCRIPTDIR' $pydir/zeekctl/ZeekControl/version.py | awk -F \" '{ print $2 }'`
     newpath=`canonicalpath "$oldpath"`
     if [ "$newpath" != "$oldpath" ]; then
-        for i in lib/zeekctl/ZeekControl/version.py ; do
+        for i in $pydir/zeekctl/ZeekControl/version.py ; do
             sed "s#$oldpath#$newpath#" $i > $i.new && cp $i.new $i && rm $i.new
         done
     fi
 
-    for i in etc/zeekctl.cfg bin/zeekctl lib/zeekctl/ZeekControl/version.py ; do
+    for i in etc/zeekctl.cfg bin/zeekctl bin/zeek-config $pydir/zeekctl/ZeekControl/version.py ; do
         sed "s#${INSTALLPREFIX}#@PREFIX@#" $i > $i.new && cp $i.new $i && rm $i.new
         if [ $? -ne 0 ]; then
             return 1

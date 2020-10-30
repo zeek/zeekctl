@@ -10,14 +10,14 @@ mkdir $ZEEKCTL_INSTALL_PREFIX/lib/zeek/plugins/more
 # Install some test plugins in directories where zeekctl searches by default
 while read line; do installfile $line; done << EOF
 etc/zeekctl.cfg__debug
-plugins/optionstest.py      lib/zeekctl/plugins --new
-plugins/commandtest.py      lib/zeekctl/plugins --new
+plugins/optionstest.py      $ZEEKCTL_INSTALL_PYTHON_DIR/zeekctl/plugins --new
+plugins/commandtest.py      $ZEEKCTL_INSTALL_PYTHON_DIR/zeekctl/plugins --new
 plugins/nodekeystest.py     lib/zeek/plugins --new
 plugins/zeekctlconfigtest.py lib/zeek/plugins/more --new
 EOF
 
 # Rename a valid plugin file so that it won't be loaded
-cd $ZEEKCTL_INSTALL_PREFIX/lib/zeekctl/plugins
+cd $ZEEKCTL_INSTALL_PYTHON_DIR/zeekctl/plugins
 mv commandtest.py commandtest
 cd -
 

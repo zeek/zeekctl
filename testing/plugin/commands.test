@@ -9,7 +9,7 @@
 
 while read line; do installfile $line; done << EOF
 etc/zeekctl.cfg__debug
-plugins/commandtest.py lib/zeekctl/plugins --new
+plugins/commandtest.py $ZEEKCTL_INSTALL_PYTHON_DIR/zeekctl/plugins --new
 EOF
 
 zeekctl install

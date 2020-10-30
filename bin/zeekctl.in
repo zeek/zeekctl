@@ -3,12 +3,16 @@
 # The ZeekControl interactive shell.
 
 from __future__ import print_function
+import os.path
 import sys
 import time
 import logging
 
-# This is needed so that we can import ZeekControl.
-sys.path.insert(0, "@LIBDIR@/zeekctl")
+for path in ("@PREFIX@/lib/zeekctl",
+             "@PY_MOD_INSTALL_DIR@",
+             "@PY_MOD_INSTALL_DIR@/zeekctl"):
+    if os.path.isdir(path):
+        sys.path.insert(0, path)
 
 from ZeekControl.zeekctl import ZeekCtl, ZeekControlError, CommandSyntaxError
 from ZeekControl import zeekcmd

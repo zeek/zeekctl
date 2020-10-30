@@ -28,10 +28,12 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
                            (within log/ and spool/ subdirs) [PREFIX]
     --spooldir=PATH        path to store run-time data [PREFIX/spool]
     --logdir=PATH          path to store log file [PREFIX/logs]
-    --python-install-dir   the desired installation directory for
-                           any auxiliary python modules (if present)
-                           [PREFIX/lib/zeekctl]
     --libdir=PATH          installation directory for library files [PREFIX/lib]
+    --python-home=PATH     installation directory for Python module
+                           [PATH/lib/python], the path tracks --prefix if
+                           that option is used
+    --python-prefix=PATH   versioned installation directory for Python module
+                           [PATH/lib/python<Python Version>/site-packages]
 
   Required Packages in Non-Standard Locations:
     --with-pcap=PATH       path to libpcap install root
@@ -90,11 +92,18 @@ while [ $# -ne 0 ]; do
         --prefix=*)
             prefix=$optarg
             append_cache_entry CMAKE_INSTALL_PREFIX PATH   $optarg
+            append_cache_entry ZEEKCTL_PYTHON_HOME PATH   $optarg
             ;;
         --libdir=*)
             libdir=$optarg
             append_cache_entry CMAKE_INSTALL_LIBDIR PATH   $optarg
              ;;
+        --python-home=*)
+            append_cache_entry ZEEKCTL_PYTHON_HOME PATH   $optarg
+            ;;
+        --python-prefix=*)
+            append_cache_entry ZEEKCTL_PYTHON_PREFIX PATH   $optarg
+            ;;
         --scriptdir=*)
             append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $optarg
             user_set_scriptdir="true"
