@@ -173,11 +173,12 @@ options = [
     Option("StaticDir", "${ZeekBase}/share/zeekctl", "string", Option.AUTOMATIC, False,
            "Directory for static, arch-independent files."),
 
-    Option("LibDir", "${ZeekBase}/lib", "string", Option.AUTOMATIC, False,
+    Option("LibDir", "", "string", Option.AUTOMATIC, False,
            "Directory for library files."),
+    # XXX Do we still need the following? --cpk
     Option("LibDir64", "${ZeekBase}/lib64", "string", Option.AUTOMATIC, False,
            "Directory for 64-bit architecture library files."),
-    Option("LibDirInternal", "${ZeekBase}/lib/zeekctl", "string", Option.AUTOMATIC, False,
+    Option("LibDirInternal", "${LibDir}/zeekctl", "string", Option.AUTOMATIC, False,
            "Directory for zeekctl-specific library files."),
     Option("TmpDir", "${SpoolDir}/tmp", "string", Option.AUTOMATIC, False,
            "Directory for temporary data."),
@@ -187,7 +188,7 @@ options = [
            "Directory where statistics are kept."),
     Option("PluginDir", "${LibDirInternal}/plugins", "string", Option.AUTOMATIC, False,
            "Directory where standard zeekctl plugins are located."),
-    Option("PluginZeekDir", "${ZeekBase}/lib/zeek/plugins", "string", Option.AUTOMATIC, False,
+    Option("PluginZeekDir", "${LibDir}/zeek/plugins", "string", Option.AUTOMATIC, False,
            "Directory where Zeek plugins are located.  ZeekControl will search this directory tree for zeekctl plugins that are provided by any Zeek plugin.", "PluginBroDir"),
 
     Option("TraceSummary", "${bindir}/trace-summary", "string", Option.AUTOMATIC, False,

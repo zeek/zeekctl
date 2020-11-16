@@ -35,14 +35,19 @@ build_zeek() {
     if [ -n "${ZEEKCTL_TEST_USEBUILD}" ]; then
         # Reuse a previous build in the default Zeek build directory.
         BUILDPREFIX=build
-        # Rebuild using a new prefix (use ZEEKCTL_TEST_BUILDARGS to specify
-        # any other flags that were used for the previous build).
-        ./configure --prefix="${INSTALLPREFIX}" ${ZEEKCTL_TEST_BUILDARGS}
+        # Rebuild using a new prefix (use ZEEKCTL_TEST_BUILDARGS to
+        # specify any other flags that were used for the previous
+        # build). Also specify a libdir so we know we're using "lib"
+        # as our library prefix -- it's used throughout the testsuite.
+        ./configure --prefix="${INSTALLPREFIX}" --libdir="${INSTALLPREFIX}/lib" \
+                    ${ZEEKCTL_TEST_BUILDARGS}
     else
         # Use a build directory specifically for zeekctl tests.
         BUILDPREFIX=${ZEEKCTLBUILDDIR}/zeek-build
         # Additional configure options are used here to reduce the build size.
-        ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" --build-type=Release --disable-auxtools ${ZEEKCTL_TEST_BUILDARGS}
+        ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" \
+                    --libdir="${INSTALLPREFIX}/lib" --build-type=Release \
+                    --disable-auxtools ${ZEEKCTL_TEST_BUILDARGS}
     fi
 
     test $? -ne 0 && return 1

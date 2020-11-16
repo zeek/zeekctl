@@ -62,11 +62,13 @@ def check_config(func):
     return wrapper
 
 class ZeekCtl(object):
-    def __init__(self, basedir=version.ZEEKBASE, cfgfile=version.CFGFILE, zeekscriptdir=version.ZEEKSCRIPTDIR, ui=TermUI(), state=None):
+    def __init__(self, basedir=version.ZEEKBASE, libdir=version.LIBDIR, cfgfile=version.CFGFILE,
+                 zeekscriptdir=version.ZEEKSCRIPTDIR, ui=TermUI(), state=None):
         self.ui = ui
         self.zeekbase = basedir
+        self.libdir = libdir
 
-        self.config = config.Configuration(self.zeekbase, cfgfile, zeekscriptdir, self.ui, state)
+        self.config = config.Configuration(self.zeekbase, self.libdir, cfgfile, zeekscriptdir, self.ui, state)
 
         # Remove all log handlers (set by any previous calls to logging.*)
         logging.getLogger().handlers = []
