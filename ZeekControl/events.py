@@ -58,7 +58,9 @@ def _send_event_init(node, event, args, result_event, topic):
 
     host = node.addr
     endpoint = broker.Endpoint()
-    subscriber = endpoint.make_subscriber(topic)
+    node_id = endpoint.node_id()
+    args.append(node_id)
+    subscriber = endpoint.make_subscriber(topic + "/" + node_id)
     status_subscriber = endpoint.make_status_subscriber(True)
     endpoint.peer(host, node.getPort(), 1)
 
