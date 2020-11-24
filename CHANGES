@@ -1,4 +1,8 @@
 
+2.2.0-6 | 2020-11-24 15:16:37 -0800
+
+  * Rely on GNUInstallDirs for definition of libdir and adopt it for installation (Christian Kreibich, Corelight)
+
 2.2.0 | 2020-07-27 11:14:20 -0700
 
   * Release 2.2.0

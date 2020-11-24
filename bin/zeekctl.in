@@ -8,7 +8,7 @@ import time
 import logging
 
 # This is needed so that we can import ZeekControl.
-sys.path.insert(0, "@PREFIX@/lib/zeekctl")
+sys.path.insert(0, "@LIBDIR@/zeekctl")
 
 from ZeekControl.zeekctl import ZeekCtl, ZeekControlError, CommandSyntaxError
 from ZeekControl import zeekcmd

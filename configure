@@ -31,6 +31,7 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --python-install-dir   the desired installation directory for
                            any auxiliary python modules (if present)
                            [PREFIX/lib/zeekctl]
+    --libdir=PATH          installation directory for library files [PREFIX/lib]
 
   Required Packages in Non-Standard Locations:
     --with-pcap=PATH       path to libpcap install root
@@ -67,8 +68,7 @@ append_cache_entry () {
 builddir=build
 prefix=/usr/local/zeek
 CMakeCacheEntries=""
-append_cache_entry CMAKE_INSTALL_PREFIX PATH   $prefix
-append_cache_entry PY_MOD_INSTALL_DIR   PATH   $prefix/lib/zeekctl
+append_cache_entry CMAKE_INSTALL_PREFIX PATH $prefix
 append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $prefix/share/zeek
 append_cache_entry CPACK_SOURCE_IGNORE_FILES STRING
 
@@ -90,8 +90,11 @@ while [ $# -ne 0 ]; do
         --prefix=*)
             prefix=$optarg
             append_cache_entry CMAKE_INSTALL_PREFIX PATH   $optarg
-            append_cache_entry PY_MOD_INSTALL_DIR   PATH   $optarg/lib/zeekctl
             ;;
+        --libdir=*)
+            libdir=$optarg
+            append_cache_entry CMAKE_INSTALL_LIBDIR PATH   $optarg
+             ;;
         --scriptdir=*)
             append_cache_entry ZEEK_SCRIPT_INSTALL_PATH STRING $optarg
             user_set_scriptdir="true"
