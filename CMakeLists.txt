@@ -56,6 +56,12 @@ if (MISSING_PREREQS)
     message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
 endif ()
 
+set(ZEEKCTL_PYTHON_MIN 3.5.0)
+
+if ( PYTHON_VERSION_STRING VERSION_LESS ${ZEEKCTL_PYTHON_MIN} )
+    message(FATAL_ERROR "Python ${ZEEKCTL_PYTHON_MIN} or greater is required.")
+endif ()
+
 if (NOT CMAKE_CROSSCOMPILING)
     execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
                     RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
@@ -262,7 +268,7 @@ install(DIRECTORY BroControl DESTINATION ${LIBDIR}/zeekctl)
 ## Packaging Setup
 
 # CPack RPM Generator may not automatically detect this
-set(CPACK_RPM_PACKAGE_REQUIRES "python >= 2.6.0")
+set(CPACK_RPM_PACKAGE_REQUIRES "python >= ${ZEEKCTL_PYTHON_MIN}")
 
 # If this CMake project is a sub-project of another, we will not
 # configure the generic packaging because CPack will fail in the case
