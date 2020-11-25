@@ -1,11 +1,11 @@
 # Tasks which are to be done on a regular basis from cron.
 from __future__ import print_function
+import io
 import os
 import time
 import shutil
 
 from ZeekControl import execute
-from ZeekControl import py3zeek
 from ZeekControl import node as node_mod
 
 class CronUI:
@@ -21,7 +21,7 @@ class CronUI:
     warn = info
 
     def buffer_output(self):
-        self.buffer = py3zeek.io.StringIO()
+        self.buffer = io.StringIO()
 
     def get_buffered_output(self):
         buf = self.buffer.getvalue()

@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import logging
 
-from ZeekControl import py3zeek
 from ZeekControl import ssh_runner
 from ZeekControl import util
 
@@ -111,15 +110,14 @@ def _run_localcmd_init(id, cmd, env):
     return proc
 
 def _run_localcmd_wait(proc, inputtext):
-    if py3zeek.using_py3 and inputtext:
+    if inputtext:
         inputtext = inputtext.encode()
 
     # Note: "output" is combined stdout/stderr output.
     output, _ = proc.communicate(inputtext)
     rc = proc.returncode
 
-    if py3zeek.using_py3:
-        output = output.decode()
+    output = output.decode()
 
     logging.debug("exit status: %d", rc)
 

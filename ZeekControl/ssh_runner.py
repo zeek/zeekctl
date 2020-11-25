@@ -9,10 +9,7 @@ import base64
 import zlib
 import logging
 from threading import Thread
-
-from ZeekControl import py3zeek
-Queue = py3zeek.Queue
-Empty = py3zeek.Empty
+from queue import Queue, Empty
 
 
 def get_muxer(shell):
@@ -83,19 +80,11 @@ w("done")
     else:
         muxer = muxer.replace("__SHELL__", "")
 
-    if py3zeek.using_py3:
-        muxer = muxer.encode()
-
+    muxer = muxer.encode()
     muxer = base64.b64encode(zlib.compress(muxer))
-
-    if py3zeek.using_py3:
-        muxer = muxer.decode()
-
-    # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
+    muxer = muxer.decode()
     muxer = "%s -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % (pythonpath, muxer)
-
-    if py3zeek.using_py3:
-        muxer = muxer.encode()
+    muxer = muxer.encode()
 
     return muxer
 
@@ -133,8 +122,7 @@ class SSHMaster:
         if not readable:
             return None
         jtxt = self.master.stdout.readline()
-        if py3zeek.using_py3:
-            jtxt = jtxt.decode()
+        jtxt = jtxt.decode()
         return jtxt
 
     def exec_command(self, cmd, shell=False, timeout=60):
@@ -157,8 +145,7 @@ class SSHMaster:
 
         for cmd in cmds:
             jcmd = "%s\n" % json.dumps(cmd)
-            if py3zeek.using_py3:
-                jcmd = jcmd.encode()
+            jcmd = jcmd.encode()
             self.master.stdin.write(jcmd)
         # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
         self.master.stdin.write(b"done\n")
@@ -180,9 +167,8 @@ class SSHMaster:
             idx, result = resp
             status, out, err = result
 
-            if py3zeek.using_py3:
-                out = out.decode(errors="replace")
-                err = err.decode(errors="replace")
+            out = out.decode(errors="replace")
+            err = err.decode(errors="replace")
 
             outputs[idx] = CmdResult(status, out, err)
         return outputs

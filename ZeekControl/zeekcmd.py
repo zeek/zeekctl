@@ -1,7 +1,6 @@
 from __future__ import print_function
 import cmd
 
-from ZeekControl import py3zeek
 from ZeekControl.exceptions import CommandSyntaxError, InvalidNodeError, LockError
 
 class ExitValueCmd(cmd.Cmd):
@@ -34,7 +33,7 @@ class ExitValueCmd(cmd.Cmd):
                 else:
                     if self.use_rawinput:
                         try:
-                            line = py3zeek.input(self.prompt)
+                            line = input(self.prompt)
                         except EOFError:
                             line = "EOF"
                     else:
