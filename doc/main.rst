@@ -44,8 +44,8 @@ Running ZeekControl requires the following prerequisites:
     should work out of the box. Other Unix systems will quite likely
     require some tweaking.
 
-  - A version of *Python* >= 2.6 (on FreeBSD, the package "py27-sqlite3" must
-    also be installed).
+  - A version of *Python* >= 3.5 (on FreeBSD, the package "pyXY-sqlite3" must
+    also be installed for whatever your Python X.Y version is).
 
   - A *bash* (note that on FreeBSD, *bash* is not installed by default).
 
