@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #
 # Convert large integers in the to-bytes.awk output to floating point
 # exponential format, because some versions of awk output large integers in
