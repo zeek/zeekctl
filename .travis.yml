@@ -2,9 +2,11 @@ dist: bionic
 
 language: python
 python:
-  - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
 
 addons:
   apt:
@@ -22,8 +24,6 @@ notifications:
     - zeek-commits-internal@zeek.org
 
 before_install:
-  # Python 2.7 doesn't have the ipaddress module (required by broker).
-  - python -c "import ipaddress" || pip install ipaddress
   # Clone the zeek git repo and replace zeekctl.
   - cd ..
   - tar cf zeekctl.tar --exclude=.git zeekctl
