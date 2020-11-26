@@ -1,4 +1,20 @@
 
+2.2.0-15 | 2020-11-26 18:06:12 +0000
+
+  * Remove an empty/useless 'btest' file (Jon Siwek, Corelight)
+
+  * Remove CI testing of older Python versions and add newer versions (Jon Siwek, Corelight)
+
+  * Remove Python 2 compatibility logic from all Python scripts (Jon Siwek, Corelight)
+
+  * Update Python invocations to use explicit `python3` (Jon Siwek, Corelight)
+
+  * Update CMake logic to enforce Python >= 3.5 (Jon Siwek, Corelight)
+
+  * Update docs to reflect new Python 3.5 minimum requirement (Jon Siwek, Corelight)
+
+  * Update submodules for changes related to Python 2 EOL (Jon Siwek, Corelight)
+
 2.2.0-6 | 2020-11-24 15:16:37 -0800
 
   * Rely on GNUInstallDirs for definition of libdir and adopt it for installation (Christian Kreibich, Corelight)

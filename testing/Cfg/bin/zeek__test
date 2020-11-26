@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #
 # This script can be used in place of Zeek for some (but not all) of the zeekctl
 # tests.  The advantage of using this script for certain tests instead of

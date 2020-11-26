@@ -5,7 +5,6 @@ import binascii
 
 from ZeekControl import util
 from ZeekControl import config
-from ZeekControl import py3zeek
 
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
@@ -335,8 +334,7 @@ def make_global_hash_seed():
 
         # Convert each byte of seed value to a two-digit hex string.
         seed_str = binascii.hexlify(seed)
-        if py3zeek.using_py3:
-            seed_str = seed_str.decode()
+        seed_str = seed_str.decode()
 
         config.Config.set_state("global-hash-seed", seed_str)
 

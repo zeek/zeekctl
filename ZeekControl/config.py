@@ -6,8 +6,8 @@ import socket
 import subprocess
 import re
 import sys
+import configparser
 
-from ZeekControl import py3zeek
 from ZeekControl import node as node_mod
 from ZeekControl import options
 from ZeekControl.exceptions import ConfigurationError, RuntimeEnvironmentError
@@ -384,12 +384,12 @@ class Configuration:
 
     # Parse node.cfg.
     def _read_nodes(self):
-        config = py3zeek.configparser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         fname = self.nodecfg
         try:
             if not config.read(fname):
                 raise ConfigurationError("cannot read node config file: %s" % fname)
-        except py3zeek.configparser.MissingSectionHeaderError as err:
+        except configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
         nodestore = NodeStore()
@@ -683,8 +683,7 @@ class Configuration:
             return False
 
         localaddrs = []
-        if py3zeek.using_py3:
-            out = out.decode()
+        out = out.decode()
 
         # The output of ifconfig varies by OS and by IPv4 vs IPv6.
         # Linux example:
@@ -737,8 +736,7 @@ class Configuration:
             return False
 
         localaddrs = []
-        if py3zeek.using_py3:
-            out = out.decode()
+        out = out.decode()
 
         # Here is an example portion of "ip" command output:
         #    inet 127.0.0.1/8
@@ -915,8 +913,7 @@ class Configuration:
         else:
             data = str(sorted(self.config.items()))
 
-        if py3zeek.using_py3:
-            data = data.encode()
+        data = data.encode()
 
         hh = hashlib.sha1()
         hh.update(data)
@@ -933,8 +930,7 @@ class Configuration:
                 nn.append(tuple([(key, val) for key, val in n.items() if not key.startswith("_")]))
             data = str(nn)
 
-        if py3zeek.using_py3:
-            data = data.encode()
+        data = data.encode()
 
         hh = hashlib.sha1()
         hh.update(data)

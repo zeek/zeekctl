@@ -139,7 +139,7 @@ replaceprefix() {
 # Normalize the specified pathname by resolving any ".." and symlinks in
 # the path.
 canonicalpath() {
-    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
+    newpath=`python3 -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
     test $? -ne 0 && exit 1
     echo $newpath
 }
