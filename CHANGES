@@ -1,4 +1,8 @@
 
+2.2.0-17 | 2020-12-02 11:10:51 -0800
+
+  * Update minimum required CMake to 3.5 (Jon Siwek, Corelight)
+
 2.2.0-15 | 2020-11-26 18:06:12 +0000
 
   * Remove an empty/useless 'btest' file (Jon Siwek, Corelight)
