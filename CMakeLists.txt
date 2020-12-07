@@ -36,6 +36,7 @@ else ()
 endif ()
 
 find_package(Zeek)
+list(APPEND Python_ADDITIONAL_VERSIONS 3)
 FindRequiredPackage(PythonInterp)
 FindRequiredPackage(SubnetTree)
 find_package(PCAP)
