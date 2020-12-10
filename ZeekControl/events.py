@@ -45,10 +45,13 @@ def send_events_parallel(events, topic):
         if success and result_event:
             sent += [(node, result_event, endpoint, sub)]
         else:
-            results += [(node, success, endpoint, sub)]
+            sub.reset()
+            endpoint.shutdown()
+            results += [(node, success, "")]
 
     for (node, result_event, endpoint, sub) in sent:
         success, result_args = _send_event_wait(node, result_event, endpoint, sub)
+        sub.reset()
         endpoint.shutdown()
         results += [(node, success, result_args)]
 
@@ -59,27 +62,28 @@ def _send_event_init(node, event, args, result_event, topic):
     host = node.addr
     endpoint = broker.Endpoint()
     subscriber = endpoint.make_subscriber(topic)
-    status_subscriber = endpoint.make_status_subscriber(True)
-    endpoint.peer(host, node.getPort(), 1)
 
-    tries = 0
+    with endpoint.make_status_subscriber(True) as status_subscriber:
+        endpoint.peer(host, node.getPort(), 1)
 
-    while True:
-        msgs = status_subscriber.get(1, 1)
+        tries = 0
 
-        for msg in msgs:
-            if isinstance(msg, broker.Status):
-                if msg.code() == broker.SC.PeerAdded:
-                    ev = broker.zeek.Event(event, *args)
-                    endpoint.publish(topic + "/" + repr(msg.context()), ev)
-                    logging.debug("broker: %s(%s) to node %s", event,
-                                  ", ".join(args), node.name)
-                    return (True, endpoint, subscriber)
+        while True:
+            msgs = status_subscriber.get(1, 1)
 
-        tries += 1
+            for msg in msgs:
+                if isinstance(msg, broker.Status):
+                    if msg.code() == broker.SC.PeerAdded:
+                        ev = broker.zeek.Event(event, *args)
+                        endpoint.publish(topic + "/" + repr(msg.context()), ev)
+                        logging.debug("broker: %s(%s) to node %s", event,
+                                      ", ".join(args), node.name)
+                        return (True, endpoint, subscriber)
 
-        if tries > config.Config.commtimeout:
-            return (False, "time-out", None)
+            tries += 1
+
+            if tries > config.Config.commtimeout:
+                return (False, "time-out", None)
 
 def _send_event_wait(node, result_event, bc, sub):
     if not result_event:

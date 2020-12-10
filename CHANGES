@@ -1,4 +1,12 @@
 
+2.2.0-25 | 2020-12-10 14:11:47 -0800
+
+  * Update Broker Python binding usages to new API (Jon Siwek, Corelight)
+
+    Without properly use of context-management or explicit reset() calls,
+    the destruction order of subscriber objects can cause
+    heap-use-after-free crashes.
+
 2.2.0-24 | 2020-12-10 15:45:03 +0000
 
   * Baseline refresh to reflect btest 0.64 (Christian Kreibich, Corelight)
