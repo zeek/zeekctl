@@ -1,4 +1,8 @@
 
+2.2.0-24 | 2020-12-10 15:45:03 +0000
+
+  * Baseline refresh to reflect btest 0.64 (Christian Kreibich, Corelight)
+
 2.2.0-21 | 2020-12-07 15:06:31 -0800
 
   * Update CMake logic to prefer Python 3 over Python 2 (Jon Siwek, Corelight)
