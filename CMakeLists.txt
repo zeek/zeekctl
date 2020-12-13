@@ -8,7 +8,6 @@ file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION LIMIT_COUNT 1)
 
 set(PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
-set(PY_MOD_INSTALL_DIR "${CMAKE_INSTALL_FULL_LIBDIR}/zeekctl")
 set(ZEEKSCRIPTDIR "${ZEEK_SCRIPT_INSTALL_PATH}")
 set(ETC "${ZEEK_ETC_INSTALL_DIR}")
 
@@ -84,6 +83,30 @@ elseif (NOT "${ZEEK_ROOT_DIR}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
 endif ()
 
 ########################################################################
+## Python module installation setup
+
+# We inherit a PY_MOD_INSTALL_DIR module installation path from Zeek
+# when bundled with it. If that variable is not available, figure it
+# out locally. Compare to similar logic in Broker's Python bindings.
+
+if ( NOT PY_MOD_INSTALL_DIR )
+  # Figure out Python module install directory.
+  if (ZEEKCTL_PYTHON_PREFIX)
+    set(pyver ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
+    set(PY_MOD_INSTALL_DIR
+        ${ZEEKCTL_PYTHON_PREFIX}/lib/python${pyver}/site-packages)
+  elseif (ZEEKCTL_PYTHON_HOME)
+    set(PY_MOD_INSTALL_DIR ${ZEEKCTL_PYTHON_HOME}/lib/python)
+  else ()
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+      "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
+      OUTPUT_VARIABLE python_site_packages
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(PY_MOD_INSTALL_DIR ${python_site_packages})
+  endif ()
+endif ()
+
+########################################################################
 ## Install
 
 include(InstallPackageConfigFile)
@@ -118,7 +141,7 @@ InstallShellScript(share/zeekctl/scripts/helpers bin/helpers/top)
 InstallShellScript(share/zeekctl/scripts/postprocessors bin/postprocessors/summarize-connections)
 
 install(DIRECTORY ZeekControl
-        DESTINATION ${LIBDIR}/zeekctl
+        DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl
         PATTERN "options.py" EXCLUDE
         PATTERN "ssh_runner.py" EXCLUDE
         PATTERN "version.py" EXCLUDE
@@ -134,13 +157,13 @@ configure_file(ZeekControl/ssh_runner.py
 configure_file(ZeekControl/version.py
                ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/version.py @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/options.py
-        DESTINATION ${LIBDIR}/zeekctl/ZeekControl)
+        DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl/ZeekControl)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/ssh_runner.py
-        DESTINATION ${LIBDIR}/zeekctl/ZeekControl)
+        DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl/ZeekControl)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ZeekControl/version.py
-        DESTINATION ${LIBDIR}/zeekctl/ZeekControl)
+        DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl/ZeekControl)
 install(DIRECTORY ZeekControl/plugins
-        DESTINATION ${LIBDIR}/zeekctl)
+        DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl)
 
 # Special cases where execute permission isn't applicable.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/helpers/to-bytes.awk
@@ -254,16 +277,14 @@ if ( NOT BINARY_PACKAGING_MODE )
     if ( \"\$ENV{DESTDIR}\" STREQUAL \"\" )
       if ( EXISTS \"${_broctl_lib_dst}\" AND NOT IS_SYMLINK \"${_broctl_lib_dst}\" AND IS_DIRECTORY \"${_broctl_lib_dst}\" )
         message(STATUS \"WARNING: removing old directory ${_broctl_lib_dst}\")
-        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E remove_directory
-          \"${_broctl_lib_dst}\")
+        execute_process(COMMAND \"${CMAKE_COMMAND}\" -E rm -rf \"${_broctl_lib_dst}\")
       endif ()
     endif ()
   ")
 endif ()
 
-InstallSymlink("./zeekctl" "${LIBDIR}/broctl")
-
-install(DIRECTORY BroControl DESTINATION ${LIBDIR}/zeekctl)
+InstallSymlink("${PY_MOD_INSTALL_DIR}/zeekctl" "${LIBDIR}/broctl")
+install(DIRECTORY BroControl DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl)
 
 ########################################################################
 ## Packaging Setup
@@ -303,6 +324,7 @@ message(
     "\nSpool Dir:         ${spoolDir}"
     "\nLog Dir:           ${logDir}"
     "\nConfig File Dir:   ${ZEEK_ETC_INSTALL_DIR}"
+    "\nPython Module Dir: ${PY_MOD_INSTALL_DIR}"
     "\n"
     "\n================================================================\n"
 )

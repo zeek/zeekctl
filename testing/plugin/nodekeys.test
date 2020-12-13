@@ -6,7 +6,7 @@
 . zeekctl-test-setup
 
 while read line; do installfile $line; done << EOF
-plugins/nodekeystest.py lib/zeekctl/plugins --new
+plugins/nodekeystest.py $ZEEKCTL_INSTALL_PYTHON_DIR/zeekctl/plugins --new
 EOF
 
 # Node configuration using custom node keys defined in nodekeystest.py plugin.

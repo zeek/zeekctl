@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 ZeekBase = "@PREFIX@"
-LibDir = "@LIBDIR@"
 
 import os
 import sys
 
-sys.path = [os.path.join(LibDir, "zeekctl")] + sys.path
+for path in ("@PREFIX@/lib/zeekctl",
+             "@PY_MOD_INSTALL_DIR@",
+             "@PY_MOD_INSTALL_DIR@/zeekctl"):
+    if os.path.isdir(path):
+        sys.path.insert(0, path)
 
 from ZeekControl import zeekctld
 

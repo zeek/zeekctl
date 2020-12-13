@@ -1,4 +1,24 @@
 
+2.2.0-27 | 2020-12-12 20:20:43 -0800
+
+  * Install zeekctl into Zeek's common Python library subdirectory (Christian Kreibich, Corelight)
+
+    - This removes the unused --python-install-dir option from the
+      configure help output, and adds --python-home and --python-prefix to
+      allow specifying custom Python installation folders, as done in the
+      Broker package. Bundled installation with Zeek inherits
+      PY_MOD_INSTALL_DIR, as the rest of the tree.
+
+    - The testsuite no longer hardwires assumptions about the location of
+      the Python module folder, and instead relies on "zeek-config
+      --python_dir" to obtain it. This required some rewiring of the
+       per-test string substitution logic. Cross fingers.
+
+    - Switches cmake's deprecated "remove_directory" command to "rm".
+
+    - Bumps trace-summary submodule to make it find Python modules in the
+      Zeek distribution's installation directory.
+
 2.2.0-25 | 2020-12-10 14:11:47 -0800
 
   * Update Broker Python binding usages to new API (Jon Siwek, Corelight)
