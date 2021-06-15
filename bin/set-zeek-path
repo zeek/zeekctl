@@ -5,7 +5,7 @@
 #
 # Should be sourced.
 
-ZEEKPATH=${tmp_node_dir}:${policydirsiteinstallauto}:${policydir}:${policydir}/policy:${policydir}/site
+ZEEKPATH=${tmp_node_dir}:${policydirsiteinstallauto}:${policydir}:${policydir}/policy:${policydir}/site:${policydir}/builtin-plugins
 
 if [ "$use_installed_policies" = "1" ]; then
    export ZEEKPATH=${policydirsiteinstall}:$ZEEKPATH
