@@ -1,3 +1,7 @@
+2.4.1 | 2022-06-01 09:30:19 -0700
+
+  * Release 2.4.1
+
 2.4.0-5 | 2022-04-08 11:26:28 -0700
 
   * Update cmake submodule to pull in InstallSymlink fix (Christian Kreibich, Corelight)
