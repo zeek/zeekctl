@@ -5,6 +5,20 @@ import ZeekControl.plugin
 import ZeekControl.config
 
 class LBPFRing(ZeekControl.plugin.Plugin):
+    LB_POLICIES_ENV_MAP = {
+        "round-robin": "PCAP_PF_RING_USE_CLUSTER_ROUNDROBIN",
+        "2-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_2_TUPLE",
+        "4-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_4_TUPLE",
+        "5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_5_TUPLE",
+        "tcp-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_TCP_5_TUPLE",
+        "6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW",
+        "inner-2-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_2_TUPLE",
+        "inner-4-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_4_TUPLE",
+        "inner-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_5_TUPLE",
+        "inner-tcp-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_TCP_5_TUPLE",
+        "inner-6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW"
+    }
+
     def __init__(self):
         super(LBPFRing, self).__init__(apiversion=1)
 
@@ -20,18 +34,14 @@ class LBPFRing(ZeekControl.plugin.Plugin):
             return False
 
         pfringtype = ZeekControl.config.Config.pfringclustertype
-        if pfringtype not in ("2-tuple", "4-tuple", "5-tuple", "tcp-5-tuple",
-            "6-tuple", "round-robin"):
+        if pfringtype is None:
+            pfringtype = '6-tuple'
+
+        if pfringtype not in self.LB_POLICIES_ENV_MAP:
             self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
             return False
 
-        # If the cluster type is not round-robin, then choose the corresponding
-        # environment variable.
-        pftype = ""
-        if pfringtype != "round-robin":
-            pftype = "PCAP_PF_RING_USE_CLUSTER_PER_FLOW"
-            if pfringtype != "6-tuple":
-                pftype += "_" + pfringtype.upper().replace("-", "_")
+        pftype = self.LB_POLICIES_ENV_MAP[pfringtype]
 
         useplugin = False
         first_app_instance = ZeekControl.config.Config.pfringfirstappinstance
