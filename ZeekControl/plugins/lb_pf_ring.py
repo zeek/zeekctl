@@ -35,7 +35,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
 
         pfringtype = ZeekControl.config.Config.pfringclustertype
         if pfringtype is None:
-            pfringtype = '6-tuple'
+            pfringtype = "6-tuple"
 
         if pfringtype not in self.LB_POLICIES_ENV_MAP:
             self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
