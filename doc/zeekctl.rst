@@ -425,9 +425,9 @@ defined, then each of the other nodes needs to connect to each of the loggers.
 Note that you can change the port that Zeek listens on by changing the value
 of the "ZeekPort" option in your ``zeekctl.cfg`` file (this should be needed
 only if your system has another process that listens on the same port).  By
-default, a standalone Zeek listens on TCP port 47760.  For a cluster setup,
-the logger listens on TCP port 47761, and the manager listens on TCP port 47762
-(or 47761 if no logger is defined).  Each proxy is assigned its own port
+default, a standalone Zeek listens on TCP port 27760.  For a cluster setup,
+the logger listens on TCP port 27761, and the manager listens on TCP port 27762
+(or 27761 if no logger is defined).  Each proxy is assigned its own port
 number, starting with one number greater than the manager's port.  Likewise,
 each worker is assigned its own port starting one number greater than the
 highest port number assigned to a proxy.
@@ -969,7 +969,7 @@ User Options
 
 .. _ZeekPort:
 
-*ZeekPort* (int, default 47760)
+*ZeekPort* (int, default 27760)
     The TCP port number that Zeek will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on.
 
 

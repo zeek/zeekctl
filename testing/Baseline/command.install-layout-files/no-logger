@@ -2,9 +2,9 @@
 # Automatically generated. Do not edit.
 redef Cluster::manager_is_logger = T;
 redef Cluster::nodes = {
-	["control"] = [$node_type=Cluster::CONTROL, $ip=127.0.0.1, $p=47760/tcp],
-	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=47761/tcp],
-	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=47762/tcp, $manager="manager"],
-	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=47763/tcp, $interface="eth0", $manager="manager"],
-	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=47764/tcp, $interface="eth1", $manager="manager"],
+	["control"] = [$node_type=Cluster::CONTROL, $ip=127.0.0.1, $p=27760/tcp],
+	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=27761/tcp],
+	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=27762/tcp, $manager="manager"],
+	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27763/tcp, $interface="eth0", $manager="manager"],
+	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27764/tcp, $interface="eth1", $manager="manager"],
 };
