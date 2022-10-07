@@ -5,5 +5,5 @@ cronenabled = true
 global-hash-seed = "XXXXXXXX"
 hash-nodecfg = "6e75bc05b3255aaffd6483075e6a6c7b319e1c76"
 hash-zeekctlcfg = "XXXXX"
-zeek-port = 47760
+zeek-port = 27760
 zeekversion = "XXXXX"

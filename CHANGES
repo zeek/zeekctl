@@ -1,3 +1,28 @@
+2.4.1-4 | 2022-10-07 09:16:09 -0700
+
+  * Move ZeekPort out of Linux's ephemeral port range (47760 to 27760) (Arne Welzel, Corelight)
+
+    WARNING: This breaks users that have setup strict firewalls between Zeek
+             nodes, but at the same time fixes spurious worker failures.
+
+    On Linux, port 47760 and the following ports selected by zeekctl fall square
+    into the ephemeral port range. This has resulted in multiple users reporting
+    Zeek workers spuriously failing to start with messages as follows:
+
+        error in /usr/local/zeek-5.0.0/share/zeek/base/frameworks/cluster/./setup-connections.zeek, lines 94-96: Failed to listen on INADDR_ANY:47764 (Broker::listen(Broker::default_listen_address, Cluster::self$p, Broker::default_listen_retry))
+        fatal error: errors occurred while initializing
+
+    This can happen when another process on the system are using a port that
+    a Zeek process is supposed to listen on. They are free to do so, these
+    ports are in the default ephemeral port range. Even the outgoing connection
+    from the same or another worker to the manager or logger has been
+    observed to cause this.
+
+    FreeBSD users have not seen this previously, as its ephemeral port range
+    is above 47760 (49152), but on Linux it starts as low as 32768.
+
+  * Keep make dist from deleting all paths containing 'build' [skip ci] (Tim Wojtulewicz, Corelight)
+
 2.4.1 | 2022-06-01 09:30:19 -0700
 
   * Release 2.4.1

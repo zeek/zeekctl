@@ -8,5 +8,5 @@ hash-zeekctlcfg = "XXXXX"
 zeek-expect-running = true
 zeek-host = "localhost"
 zeek-pid = XXXXX
-zeek-port = 47760
+zeek-port = 27760
 zeekversion = "XXXXX"
