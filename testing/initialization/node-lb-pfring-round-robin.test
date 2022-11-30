@@ -1,0 +1,13 @@
+# Test error when PFRINGClusterType is set to round-robin.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-abspath | $SCRIPTS/diff-remove-localhost-values" btest-diff out
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/node.cfg__pfring
+etc/zeekctl.cfg__pfring_round_robin
+EOF
+
+zeekctl check > out

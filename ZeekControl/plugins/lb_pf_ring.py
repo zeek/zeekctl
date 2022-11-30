@@ -6,7 +6,6 @@ import ZeekControl.config
 
 class LBPFRing(ZeekControl.plugin.Plugin):
     LB_POLICIES_ENV_MAP = {
-        "round-robin": "PCAP_PF_RING_USE_CLUSTER_ROUNDROBIN",
         "2-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_2_TUPLE",
         "4-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_4_TUPLE",
         "5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_5_TUPLE",
@@ -38,7 +37,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
             pfringtype = "6-tuple"
 
         if pfringtype not in self.LB_POLICIES_ENV_MAP:
-            self.error("Invalid configuration: PFRINGClusterType=%s" % pfringtype)
+            self.error('PFRINGClusterType "%s" not supported' % pfringtype)
             return False
 
         pftype = self.LB_POLICIES_ENV_MAP[pfringtype]

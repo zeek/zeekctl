@@ -885,7 +885,7 @@ User Options
 .. _PFRINGClusterType:
 
 *PFRINGClusterType* (string, default "4-tuple")
-    If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Zeek must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work.
+    If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, inner-2-tuple, inner-4-tuple, inner-5-tuple, inner-tcp-5-tuple, or inner-6-tuple.  Zeek must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work.
 
 .. _PFRINGFirstAppInstance:
 
