@@ -1,0 +1,9 @@
+# Don't send emails or summary reports.
+sendmail=
+tracesummary=
+# The "zeekctl stop" command will wait for post-terminate to finish.
+stopwait=1
+# Turn on debug output.
+debug=1
+
+PFRINGClusterType=round-robin

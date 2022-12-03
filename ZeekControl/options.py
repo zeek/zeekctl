@@ -124,7 +124,7 @@ options = [
     Option("PFRINGClusterID", 21, "int", Option.USER, False,
            "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster id is defined.  In order to use PF_RING, the value of this option must be non-zero."),
     Option("PFRINGClusterType", "4-tuple", "string", Option.USER, False,
-           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, or round-robin.  Zeek must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
+           "If PF_RING flow-based load balancing is desired, this is where the PF_RING cluster type is defined.  Allowed values are: 2-tuple, 4-tuple, 5-tuple, tcp-5-tuple, 6-tuple, inner-2-tuple, inner-4-tuple, inner-5-tuple, inner-tcp-5-tuple, or inner-6-tuple.  Zeek must be linked with PF_RING's libpcap wrapper and PFRINGClusterID must be non-zero for this option to work."),
     Option("PFRINGFirstAppInstance", 0, "int", Option.USER, False,
            "The first application instance for a PF_RING dnacluster interface to use.  Zeekctl will start at this application instance number and increment for each new process running on that DNA cluster.  Zeek must be linked with PF_RING's libpcap wrapper, PFRINGClusterID must be non-zero, and you must be using PF_RING+DNA and libzero for this option to work."),
 

@@ -1,3 +1,13 @@
+2.4.1-12 | 2022-12-02 18:05:32 -0800
+
+  * lb_pf_ring: Drop round-robin, make error message say "not supported" (Arne Welzel, Corelight)
+
+  * style: replace simple quotes with double quotes for consistency (V)
+
+  * pf_ring: add new 'inner' load balancing strategies for better balancing of tunneled sessions (V)
+
+  * Add CodeQL workflow (sylwia-budzynska)
+
 2.4.1-4 | 2022-10-07 09:16:09 -0700
 
   * Move ZeekPort out of Linux's ephemeral port range (47760 to 27760) (Arne Welzel, Corelight)
