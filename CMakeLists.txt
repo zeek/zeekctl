@@ -266,9 +266,6 @@ InstallPackageConfigFile(
     ${ETC}
     node.cfg)
 
-# Install legacy BroControl wrappers and links.
-InstallSymlink("${CMAKE_INSTALL_PREFIX}/bin/zeek-wrapper" "${CMAKE_INSTALL_PREFIX}/bin/broctl")
-
 if ( NOT BINARY_PACKAGING_MODE )
   # Need to remove pre-existing broctl dir from previous installs.
   set(_broctl_lib_dst ${LIBDIR}/broctl)
