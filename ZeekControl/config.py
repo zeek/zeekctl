@@ -489,7 +489,7 @@ class Configuration:
             if not node.lb_method:
                 raise ConfigurationError("no load balancing method given for node '%s'" % node.name)
 
-            if node.lb_method not in ("pf_ring", "myricom", "custom", "interfaces"):
+            if node.lb_method not in ("af_packet", "pf_ring", "myricom", "custom", "interfaces"):
                 raise ConfigurationError("unknown load balancing method '%s' given for node '%s'" % (node.lb_method, node.name))
 
             if node.lb_method == "interfaces":

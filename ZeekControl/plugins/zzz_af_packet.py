@@ -11,12 +11,32 @@ class AF_Packet(ZeekControl.plugin.Plugin):
         return 1
 
     def init(self):
-        # Only use the plugin if there is a worker using AF_PACKET for load balancing.
-        for nn in self.nodes():
-            if nn.type == "worker" and nn.interface.startswith("af_packet::") and nn.lb_procs:
-                return True
+        """
+        Only use the plugin if there is a worker using AF_PACKET for load balancing.
 
-        return False
+        There are two ways to recognize AF_PACKET usage:
+          * The specified interface already starts with af_packet:: (lb_custom
+            or interfaces usage).
+          * lb_method is set to "af_packet" in which case the interface
+            is prefixed with af_packet:: by this plugin.
+        """
+        result = False
+        for nn in self.nodes():
+            if nn.type != "worker" or not nn.lb_procs:
+                continue
+
+            if nn.interface.startswith("af_packet::"):
+                result = True
+
+            if nn.lb_method == "af_packet":
+                if nn.interface.startswith("af_packet::"):
+                    self.error("unexpected af_packet:: prefix for interface %s of %s" % (nn.interface, nn))
+                    return False
+
+                nn.interface = "af_packet::%s" % nn.interface
+                result = True
+
+        return result
 
     def nodeKeys(self):
         return ["fanout_id", "fanout_mode", "buffer_size"]

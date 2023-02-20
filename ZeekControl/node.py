@@ -45,9 +45,9 @@ class Node:
 
         ``lb_method`` (string)
             The load balancing method to distribute packets to all of the
-            Zeek workers.  This must be one of: ``pf_ring``, ``myricom``,
-            ``custom``, or ``interfaces``.  This option can have a value
-            only if the ``lb_procs`` option has a value.
+            Zeek workers.  This must be one of: ``af_packet``, ``pf_ring``,
+            ``myricom``, ``custom``, or ``interfaces``.  This option can have
+            a value only if the ``lb_procs`` option has a value.
 
         ``lb_interfaces`` (string)
             A comma-separated list of network interface names for the Zeek
