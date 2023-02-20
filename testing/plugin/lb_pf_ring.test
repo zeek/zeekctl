@@ -25,8 +25,8 @@ zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug1.log
 zeekctl stop
 
-# Round-robin cluster type
-echo "pfringclustertype=round-robin" >> ${zeekctlcfg}
+# 6-tuple cluster type
+echo "pfringclustertype=6-tuple" >> ${zeekctlcfg}
 zeekctl install
 rm ${debuglog}
 
@@ -34,8 +34,8 @@ zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug2.log
 zeekctl stop
 
-# 6-tuple cluster type
-sed "s/pfringclustertype=round-robin/pfringclustertype=6-tuple/" ${zeekctlcfg} > ${zeekctlcfg}.new && mv ${zeekctlcfg}.new ${zeekctlcfg}
+# inner-6-tuple cluster type
+sed "s/pfringclustertype=6-tuple/pfringclustertype=inner-6-tuple/" ${zeekctlcfg} > ${zeekctlcfg}.new && mv ${zeekctlcfg}.new ${zeekctlcfg}
 zeekctl install
 rm ${debuglog}
 
