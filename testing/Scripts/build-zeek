@@ -82,7 +82,7 @@ replaceprefix() {
     pydir="$($INSTALLPREFIX/bin/zeek-config --python_dir)"
 
     oldpath=`grep '^ZEEKSCRIPTDIR' $pydir/zeekctl/ZeekControl/version.py | awk -F \" '{ print $2 }'`
-    newpath=`canonicalpath "$oldpath"`
+    newpath=`realpath "$oldpath"`
     if [ "$newpath" != "$oldpath" ]; then
         for i in $pydir/zeekctl/ZeekControl/version.py ; do
             sed "s#$oldpath#$newpath#" $i > $i.new && cp $i.new $i && rm $i.new
@@ -95,13 +95,6 @@ replaceprefix() {
             return 1
         fi
     done
-}
-
-# Normalize the specified pathname by resolving any symlinks in the path.
-canonicalpath() {
-    newpath=`python -c "from __future__ import print_function; import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"`
-    test $? -ne 0 && exit 1
-    echo $newpath
 }
 
 # Remove the tar file and all test-specific Zeek installation directories.
@@ -129,7 +122,7 @@ definevars() {
     ZEEKSRCDIR=${ZEEKCTLSRCDIR}/../..
 
     # Path to the ZeekControl "build" directory.
-    ZEEKCTLBUILDDIR=`canonicalpath "${ZEEKCTLSRCDIR}/build"`
+    ZEEKCTLBUILDDIR=`realpath "${ZEEKCTLSRCDIR}/build"`
 
     # Absolute path of parent directory where Zeek will be installed.
     ZEEKCTL_TEST=${ZEEKCTLBUILDDIR}/testing
