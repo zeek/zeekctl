@@ -229,7 +229,7 @@ class PluginRegistry:
 
                 dirs[:] = dirs_to_visit_next
 
-                for name in files:
+                for name in sorted(files):
                     if name.endswith(".py") and not name.startswith("__"):
                         self._importPlugin(os.path.join(root, name[:-3]), cmdout)
 

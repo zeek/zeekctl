@@ -1,3 +1,23 @@
+2.5.0-5 | 2023-02-24 09:23:35 +0100
+
+  * Support lb_method af_packet (Arne Welzel, Corelight)
+
+  * GH-2792: plugins: Import af_packet.py (Arne Welzel, Corelight)
+
+    This is an import of af_packet.py from zeek/zeek-af_packet-plugin at
+    revision b8c17c898bedfe020056027036f5a7eabc815c92. However, tabs have
+    been replaced with spaces.
+
+    Further, we're importing this as zzz_af_packet.py to have it be
+    loaded and initialized after lb_custom.py on which it depends.
+
+    Related to zeek/zeek#2792.
+
+  * pluginreg: Sort py files before import (Arne Welzel, Corelight)
+
+    Make import order of plugins predictable so prefixing of filenames
+    with zzz or aaa can be used for basic ordering.
+
 2.5.0 | 2023-02-01 15:47:52 -0700
 
   * Release 2.5.0 (Tim Wojtulewicz, Corelight)
