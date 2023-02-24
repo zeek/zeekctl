@@ -1,3 +1,18 @@
+2.5.0-9 | 2023-02-24 18:59:07 +0100
+
+  * Add a new ZeekPortWarning plugin (Arne Welzel, Corelight)
+
+    This was discussed on Slack:
+
+    1) The issue is pressing enough to actively warn users about it when
+       starting zeekctl.
+
+    2) We should prepare users for the change in default coming with
+       Zeek 5.2. We're a bit late here, but still reasonable for 5.0
+       to 6.0 upgrades.
+
+    This change should be included into a Zeek 5.0.x maintenance release.
+
 2.5.0-5 | 2023-02-24 09:23:35 +0100
 
   * Support lb_method af_packet (Arne Welzel, Corelight)
