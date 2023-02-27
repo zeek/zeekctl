@@ -164,8 +164,8 @@ create_tar() {
     set +e
 
     # Build and install Zeek in the temporary directory.
-    if [ "${TRAVIS}" = "true" ]; then
-        # Show build output in Travis CI to prevent timeout of the build job.
+    if [ -n "${CI}" ]; then
+        # Show build output in CI
         build_zeek
         if [ $? -ne 0 ]; then
             echo "Error: Zeek build failed" 1>&2
