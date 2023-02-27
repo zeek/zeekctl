@@ -26,12 +26,6 @@
 build_zeek() {
     cd "${ZEEKSRCDIR}"
 
-    if [ "${TRAVIS}" = "true" ]; then
-        # This is needed for some Python versions on Travis CI in order to
-        # build pysubnettree (without this, it could fail to find libpython).
-        export LDFLAGS=-L`python-config --exec-prefix`/lib
-    fi
-
     ccache_arg=""
     if command -v ccache; then
         ccache_arg="--ccache"
@@ -58,11 +52,10 @@ build_zeek() {
     test $? -ne 0 && return 1
 
     ncpus=2
-
-    if [ "${TRAVIS}" != "true" ]; then
-        if type nproc >/dev/null 2>&1; then
-            ncpus=$(nproc)
-        fi
+    if [ -n "${ZEEK_CI_CPUS}" ]; then
+        ncpus=${ZEEK_CI_CPUS}
+    elif type nproc >/dev/null 2>&1; then
+        ncpus=$(nproc)
     fi
 
     echo "Building Zeek with ${ncpus} processors ..."
