@@ -1,3 +1,24 @@
+2.5.0-14 | 2023-03-01 10:17:36 +0100
+
+  * build-zeek: Recognize ZEEK_CI_CPUS (Arne Welzel, Corelight)
+
+    nproc on Cirrus CI gives 32 even if we only allocated 4 CPUs and
+    building Spicy with -j32, instant OOM.
+
+    Also, ditch a bit more Travis references.
+
+  * GH-45: testing: Remove pf_ring round-robin usage in tests (Arne Welzel, Corelight)
+
+    In #45, the round-robin load balancing method for pf_ring was
+    removed, but there was a test using it. Fix it up.
+
+  * GH-309: Update peerstatus baselines (Arne Welzel, Corelight)
+
+    This has been reported as a regression via zeek/broker#309, but for
+    the time being updated it to the new world order.
+
+  * build-zeek: Recognize Cirrus CI, not Travis (Arne Welzel, Corelight)
+
 2.5.0-9 | 2023-02-24 18:59:07 +0100
 
   * Add a new ZeekPortWarning plugin (Arne Welzel, Corelight)
