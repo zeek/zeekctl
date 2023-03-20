@@ -1,3 +1,14 @@
+2.5.0-17 | 2023-03-20 10:02:20 -0700
+
+  * Update baseline for command.peerstatus test (Tim Wojtulewicz)
+
+  * Update test baseline for changes to Site::local_nets (Tim Wojtulewicz)
+
+    This required adding a random seed and setting the environment
+    variable for Zeek during testing. Otherwise the set prints out
+    in a different order every time and breaks the determinism
+    of the test.
+
 2.5.0-14 | 2023-03-01 10:17:36 +0100
 
   * build-zeek: Recognize ZEEK_CI_CPUS (Arne Welzel, Corelight)
