@@ -299,6 +299,9 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
     ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize
 
+    if not config.Config.privateaddressspaceislocal:
+        ostr += "redef Site::private_address_space_is_local = F;\n"
+
     seed_str = make_global_hash_seed()
     ostr += 'redef global_hash_seed = "%s";\n' % seed_str
 
