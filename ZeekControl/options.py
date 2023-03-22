@@ -58,6 +58,8 @@ options = [
            "If archived logs will be compressed, the command to use for that. The specified command must compress its standard input to standard output."),
     Option("CompressExtension", "gz", "string", Option.USER, False,
            "If archived logs will be compressed, the file extension to use on compressed log files. When specifying a file extension, don't include the period character (e.g., specify 'gz' instead of '.gz')."),
+    Option("PrivateAddressSpaceIsLocal", 1, "bool", Option.USER, False,
+           "Whether Zeek should automatically consider private address ranges local. Mirrors Site::private_address_space_is_local in Zeek. On by default."),
 
     Option("SendMail", "@SENDMAIL@", "string", Option.USER, False,
            "Location of the sendmail binary.  Make this string blank to prevent email from being sent. The default value is configuration-dependent and determined automatically by CMake at configure-time. This overrides the Zeek script variable Notice::sendmail."),
@@ -216,7 +218,6 @@ options = [
            "Directories to search for local (i.e., site-specific) policy files, separated by colons. For each such directory, all files and subdirectories are copied to PolicyDirSiteInstall during zeekctl 'install' or 'deploy' (however, if the same file or subdirectory is found in more than one such directory, then only the first one encountered will be used)."),
     Option("SitePluginPath", "", "string", Option.USER, False,
            "Directories to search for custom plugins (i.e., plugins that are not included with zeekctl), separated by colons."),
-
 
     Option("PolicyDirSiteInstall", "${SpoolDir}/installed-scripts-do-not-touch/site", "string", Option.AUTOMATIC, False,
            "Directory where the shell copies local (i.e., site-specific) policy scripts when installing."),

@@ -7,6 +7,7 @@
 #
 # @TEST-EXEC: bash %INPUT
 # @TEST-EXEC: btest-diff standalone.out
+# @TEST-EXEC: btest-diff noprivatelocals.out
 # @TEST-EXEC: btest-diff all.out
 # @TEST-EXEC: btest-diff onenode.out
 
@@ -33,9 +34,23 @@ zeekctl print Log::default_rotation_interval > standalone.out
 
 zeekctl stop
 
+# Test with a standalone config and no default-local private space:
+
+cat >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg <<EOF
+PrivateAddressSpaceIsLocal=0
+EOF
+
+zeekctl install
+zeekctl start
+
+zeekctl print Site::local_nets > noprivatelocals.out
+
+zeekctl stop
+
 # Test with a cluster config.
 
 while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__no_email
 etc/node.cfg__no_netifs
 EOF
 
