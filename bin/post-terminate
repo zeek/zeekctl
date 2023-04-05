@@ -163,6 +163,13 @@ archivelogs()
     # Attempt to archive all log files.  Although stdout.log/stderr.log are
     # not really Zeek logs, we try to archive them anyway, because they might
     # contain useful info, especially if Zeek crashes.
+
+    # If there's a .log_suffix file, set ZEEK_ARG_LOG_SUFFIX so that
+    # archive-log and make-archive-name know about it.
+    if [ -f .log_suffix ]; then
+        export ZEEK_ARG_LOG_SUFFIX=$(cat .log_suffix)
+    fi
+
     for logname in *.log; do
         # Get the base name (such as "conn") by removing the file extension.
         basename=`basename "$logname" .log`
