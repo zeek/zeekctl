@@ -1,0 +1,52 @@
+# Start a cluster with a single logger and a very small rotation interval of 3 seconds. Run it for a few seconds and ensure the logs/ contains a few log files.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff logs.out
+# @TEST-EXEC: btest-diff logger_working_dir.out
+# @TEST-SERIALIZE: listen
+
+. zeekctl-test-setup
+
+cp $TEST_BASE/rotation/much-logging.zeek $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/
+echo "@load ./much-logging" >> $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/local.zeek
+
+echo "LogRotationInterval=3" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+installfile etc/node.cfg__logger
+
+zeekctl check >&2
+zeekctl install >&2
+# No workers: They fail listening on interfaces (eth0 does not exist, or permissions).
+zeekctl start loggers manager proxies >&2
+
+set -eu
+
+# With a single logger, should've 2 logs after ~6 seconds.
+expected_logs=2
+force_stop_time=$(date  -d '+20seconds' +%s)
+good=0
+while [ "$(date +%s)" -le "$force_stop_time" ]; do
+	the_logs=$(find $ZEEKCTL_INSTALL_PREFIX/logs/ -regex '.*/much-logging.*\.log\.gz')
+	count=$(echo "$the_logs" | wc -l)
+	if [ "$count" -ge "$expected_logs" ]; then
+		good=1
+		break
+	fi
+
+	sleep 1
+done
+
+if [ "$good" -eq 0 ]; then
+	echo "Did not find enough much-logging logs: Only have ${count}" >&2
+	exit 1
+fi
+
+# Put the found logs into a baseline. We do not expect a logger- output.
+for log in $(echo "$the_logs" | head -$expected_logs); do
+	basename $log | sed 's/[0-9]/X/g' >> logs.out
+done
+
+# Check the loggers working directory contains no .log_suffix files. ls -A: "almost all".
+ls -A $ZEEKCTL_INSTALL_PREFIX/spool/logger/ | grep -E -v '.rotated|.log$' > logger_working_dir.out
+
+set +eu
