@@ -1,3 +1,37 @@
+2.5.0-24 | 2023-04-27 12:13:34 +0200
+
+  * Multi-logger handling (Arne Welzel, Corelight)
+
+    If there are multiple loggers configured in node.cfg, currently they all invoke
+    archive-log for their own logs and overwrite each others files during log rotation
+    due to having the same rotation intervals and creating the same names via
+    `make-archive-name`. There's no easy way to customize the name for individual
+    loggers.
+
+    This PR proposes the following API/interface:
+
+    * Invoke the rotation postprocessor with a new environment variable
+      called ZEEK_ARG_LOG_SUFFIX. This environment variable is set *only*
+      when multiple loggers are configured. It's set to the value of
+      Cluster::node.
+
+    * Place a .log_suffix file within a logger's working directory also
+      *only* when multiple loggers are configured. This can be used by
+      the post-terminate script to set the ZEEK_ARG_LOG_SUFFIX to set it
+      for the archive-log / make-archive-name.
+
+    * Make the `make-archive-name` and `post-terminate` ZEEK_ARG_LOG_SUFFIX
+      and .log_suffix aware.
+
+    The result is that the name of archived logs includes the logger name
+    suffix when multiple loggers are configured. This is configurable using
+    a custom `make-archive-name` script.
+
+        -rw-rw-r-- 1 zeek zeek 8.7K Apr  6 11:58 conn.11:57:00-11:58:00-logger-1.log.gz
+        -rw-rw-r-- 1 zeek zeek 8.7K Apr  6 11:58 conn.11:57:00-11:58:00-logger-2.log.gz
+        -rw-rw-r-- 1 zeek zeek  529 Apr  6 11:58 conn-summary.11:57:00-11:58:00-logger-1.log.gz
+        -rw-rw-r-- 1 zeek zeek  367 Apr  6 11:58 conn-summary.11:57:00-11:58:00-logger-2.log.gz
+
 2.5.0-19 | 2023-03-22 13:32:10 -0700
 
   * Make private address space locality configurable (Christian Kreibich, Corelight)

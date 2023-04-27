@@ -20,6 +20,14 @@
 #                          by another script to create a link to the current
 #                          live version of the file.
 #
+# Additionally, the following environment variables are passed:
+#
+#  ZEEK_ARG_LOG_SUFFIX: A suffix to append to the final archive name to avoid
+#                       filename clashes when running with multiple loggers.
+#                       This is populated with the name of the logger node,
+#                       e.g. logger-1, as specified in cluster-layout.zeek
+#                       only when multiple loggers are configured in node.cfg.
+#
 # The writer is derived from the WRITER_* constants and lower-cased; e.g.,
 # "ascii" for Log::WRITER_ASCII.
 #
@@ -44,9 +52,14 @@ day=`echo $opened  | awk -F - '{printf "%s-%s-%s", $1, $2, $3}'`
 from=`echo $opened | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 to=`echo $closed | awk -F - '{printf "%s:%s:%s", $4, $5, $6}'`
 
+suffix=""
+if [ -n "${ZEEK_ARG_LOG_SUFFIX}" ]; then
+    suffix="-${ZEEK_ARG_LOG_SUFFIX}"
+fi
+
 if [ -n "$closed" ]; then
-   echo $day/$name.$from-$to.$ext
+   echo $day/$name.$from-$to$suffix.$ext
 else
-   echo $day/$name.$from-current.$ext
+   echo $day/$name.$from-current$suffix.$ext
 fi
 

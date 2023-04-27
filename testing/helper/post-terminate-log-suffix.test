@@ -1,0 +1,48 @@
+# Test that if the post-terminate is invoked on a loggers directory and
+# there's a .log_suffix file, the archive-log / make-archive-name pipeline
+# recognizes that and rotation happens with the log suffix added.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff rotated-logs.out
+
+. zeekctl-test-setup
+
+# Command under test.
+postterminate=$ZEEKCTL_INSTALL_PREFIX/share/zeekctl/scripts/post-terminate
+logger_cwd=$ZEEKCTL_INSTALL_PREFIX/spool/logger-1
+
+installfile etc/zeekctl.cfg__no_email
+
+zeekctl install
+
+# Create a logger working directory that
+mkdir $logger_cwd && (
+
+  cd $logger_cwd
+  echo "test-suffix" > .log_suffix
+
+  # When was the logger started? This is faking the bin/run-zeek logic.
+  echo 1681812794 >> .startup
+  echo Tue 18 Apr 2023 12:13:14 PM CEST >> .startup
+  echo 23-04-18_12.13.14 >> .startup
+
+  cat > conn.log << EOF
+# This is a conn.log file. The logger crashed before rotating it!
+EOF
+
+  cat > dns.log << EOF
+# This is a dns.log file. The logger crashed before rotating it!!
+EOF
+
+  cat > http.2023-03-18-20-21-23.log << EOF
+# This is a http.log file. The logger crashed before invoking archive-log.
+# It's start time is expected to be taken from the filename.
+EOF
+
+) # out of logger_cwd
+
+$postterminate logger $ZEEKCTL_INSTALL_PREFIX/spool/logger-1 crash >&2
+
+# List the rotated logs: We only control start time (end time is based
+# on when postterminate runs, so normalize it away...)
+(cd $ZEEKCTL_INSTALL_PREFIX/ && find ./logs  | sort | sed 's/-[0-9][0-9]:[0-9][0-9]:[0-9][0-9]-test-suffix.log.gz/-XX:XX:XX-test-suffix.log.gz/g') > rotated-logs.out
