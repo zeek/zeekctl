@@ -14,8 +14,6 @@ set(ETC "${ZEEK_ETC_INSTALL_DIR}")
 ########################################################################
 ## Dependency Configuration
 
-include(FindRequiredPackage)
-
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/auxil/pysubnettree/CMakeLists.txt)
     add_subdirectory(auxil/pysubnettree)
     set(SUBNETTREE_FOUND true)
@@ -36,8 +34,9 @@ endif ()
 
 find_package(Zeek)
 list(APPEND Python_ADDITIONAL_VERSIONS 3)
-FindRequiredPackage(PythonInterp)
-FindRequiredPackage(SubnetTree)
+set(ZEEKCTL_PYTHON_MIN 3.7.0)
+find_package(Python ${ZEEKCTL_PYTHON_MIN} REQUIRED COMPONENTS Interpreter)
+find_package(SubnetTree)
 find_package(PCAP)
 
 find_program(SENDMAIL sendmail PATHS /usr/sbin)
@@ -49,22 +48,9 @@ if (NOT SENDMAIL)
     set(SENDMAIL /usr/sbin/sendmail)
 endif ()
 
-if (MISSING_PREREQS)
-    foreach (prereq ${MISSING_PREREQ_DESCS})
-        message(SEND_ERROR ${prereq})
-    endforeach ()
-    message(FATAL_ERROR "Configuration aborted due to missing prerequisites")
-endif ()
-
-set(ZEEKCTL_PYTHON_MIN 3.5.0)
-
-if ( PYTHON_VERSION_STRING VERSION_LESS ${ZEEKCTL_PYTHON_MIN} )
-    message(FATAL_ERROR "Python ${ZEEKCTL_PYTHON_MIN} or greater is required.")
-endif ()
-
 if (NOT CMAKE_CROSSCOMPILING)
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sqlite3"
-                    RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
+    execute_process(COMMAND "${Python_EXECUTABLE}" -c "import sqlite3"
+		    RESULT_VARIABLE PYSQLITE3_IMPORT_RESULT)
 
     if ( NOT PYSQLITE3_IMPORT_RESULT EQUAL 0 )
         message(FATAL_ERROR "The sqlite3 python module is required to use "
