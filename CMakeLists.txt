@@ -34,7 +34,7 @@ endif ()
 
 find_package(Zeek)
 list(APPEND Python_ADDITIONAL_VERSIONS 3)
-set(ZEEKCTL_PYTHON_MIN 3.7.0)
+set(ZEEKCTL_PYTHON_MIN 3.5.0)
 find_package(Python ${ZEEKCTL_PYTHON_MIN} REQUIRED COMPONENTS Interpreter)
 find_package(SubnetTree)
 find_package(PCAP)
