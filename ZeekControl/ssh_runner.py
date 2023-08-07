@@ -14,7 +14,7 @@ from queue import Queue, Empty
 
 def get_muxer(shell):
     # The full path of the Python interpreter.  Configured by CMake.
-    pythonpath = "@PYTHON_EXECUTABLE@"
+    pythonpath = "@Python_EXECUTABLE@"
 
     muxer = r"""
 import os,sys,subprocess,signal,select,json
@@ -352,4 +352,3 @@ class MultiMasterManager:
         self.masters = {}
 
     __del__ = shutdown_all
-
