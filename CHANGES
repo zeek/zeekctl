@@ -1,3 +1,11 @@
+2.5.0-39 | 2023-11-07 19:37:51 +0100
+
+  * install: Ignore Cluster$interface deprecation (Arne Welzel, Corelight)
+
+    The idea is that until v7.1, zeekctl continues to populate the interface
+    in cluster-layout.zeek just as before, but accesses by users will cause
+    deprecation warnings.
+
 2.5.0-37 | 2023-08-07 09:32:38 -0700
 
   * Use the right CMake variable for python executable (Tim Wojtulewicz, Corelight)
