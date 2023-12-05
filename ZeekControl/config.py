@@ -386,7 +386,7 @@ class Configuration:
 
     # Parse node.cfg.
     def _read_nodes(self):
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         fname = self.nodecfg
         try:
             if not config.read(fname):
