@@ -1,3 +1,7 @@
+2.5.0-41 | 2023-12-06 20:08:23 -0800
+
+  * Changed the depricated SafeConfigParser attribute to ConfigParser (mute019)
+
 2.5.0-39 | 2023-11-07 19:37:51 +0100
 
   * install: Ignore Cluster$interface deprecation (Arne Welzel, Corelight)
