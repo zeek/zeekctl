@@ -154,6 +154,9 @@ def make_layout(path, cmdout, silent=False):
 
     manager = config.Config.manager()
     zeekport = Port(config.Config.zeekport)
+    metricsport = None
+    if config.Config.metricsport != 0:
+        metricsport = Port(config.Config.metricsport)
 
     if config.Config.standalone:
         if not silent:
@@ -165,6 +168,7 @@ def make_layout(path, cmdout, silent=False):
         # This is the port that standalone nodes listen on for remote
         # control by default.
         ostr += "redef Broker::default_port = %s/tcp;\n" % zeekport.use_port(manager)
+        ostr += "redef Telemetry::metrics_port = %s/tcp;\n" % metricsport.use_port(manager)
         ostr += "event zeek_init()\n"
         ostr += "\t{\n"
         ostr += "\tif ( getenv(\"ZEEKCTL_DISABLE_LISTEN\") == \"\" )\n"
@@ -191,21 +195,34 @@ def make_layout(path, cmdout, silent=False):
         # Control definition.  For now just reuse the manager information.
         ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp],\n' % (util.format_zeek_addr(manager.addr), zeekport.use_port(None))
 
+        # Manager definition. Manager should come first so that the metrics port
+        # set in zeekctl.cfg will be the one used for the manager.
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp' % (manager.name, util.format_zeek_addr(manager.addr), zeekport.use_port(manager))
+        if metricsport:
+            ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(manager)
+        ostr += '],\n'
+
         # Loggers definition
         for lognode in loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $p=%s/tcp],\n' % (lognode.name, util.format_zeek_addr(lognode.addr), zeekport.use_port(lognode))
-
-        # Manager definition
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp],\n' % (manager.name, util.format_zeek_addr(manager.addr), zeekport.use_port(manager))
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $p=%s/tcp' % (lognode.name, util.format_zeek_addr(lognode.addr), zeekport.use_port(lognode))
+            if metricsport:
+                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(lognode)
+            ostr += '],\n'
 
         # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager="%s"],\n' % (p.name, util.format_zeek_addr(p.addr), zeekport.use_port(p), manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager="%s"' % (p.name, util.format_zeek_addr(p.addr), zeekport.use_port(p), manager.name)
+            if metricsport:
+                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(p)
+            ostr += '],\n'
 
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface="%s", $manager="%s"],\n' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), w.interface, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface="%s", $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), w.interface, manager.name)
+            if metricsport:
+                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(w)
+            ostr += '],\n'
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
