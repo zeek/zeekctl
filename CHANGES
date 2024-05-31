@@ -1,3 +1,7 @@
+2.5.0-44 | 2024-05-31 13:35:53 -0700
+
+  * Add MetricsPort option to zeekctl.cfg (Tim Wojtulewicz, Corelight)
+
 2.5.0-41 | 2023-12-06 20:08:23 -0800
 
   * Changed the depricated SafeConfigParser attribute to ConfigParser (mute019)

@@ -44,6 +44,8 @@ options = [
            "The number of seconds to wait for a command to return results."),
     Option("ZeekPort", 27760, "int", Option.USER, False,
            "The TCP port number that Zeek will listen on. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on.", "BroPort"),
+    Option("MetricsPort", 9991, "int", Option.USER, False,
+           "The TCP port number that Zeek will listen on for Prometheus telemetry. For a cluster configuration, each node in the cluster will automatically be assigned a subsequent port to listen on. Setting this to 0 will disable telemetry on all nodes."),
     Option("LogRotationInterval", 3600, "int", Option.USER, False,
            "The frequency of log rotation in seconds for the manager/standalone node (zero to disable rotation). This overrides the Zeek script variable Log::default_rotation_interval."),
     Option("LogDir", "${ZeekBase}/logs", "string", Option.USER, False,
@@ -257,4 +259,3 @@ def print_options(category):
         out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (opt.name, opt.name, opt.type, default, description)
 
     return (out, err)
-
