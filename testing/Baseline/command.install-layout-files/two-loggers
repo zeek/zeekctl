@@ -4,11 +4,11 @@ redef Cluster::manager_is_logger = F;
 @pragma push ignore-deprecations
 redef Cluster::nodes = {
 	["control"] = [$node_type=Cluster::CONTROL, $ip=127.0.0.1, $p=27760/tcp],
-	["logger-1"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=27761/tcp],
-	["logger-2"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=27762/tcp],
-	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=27763/tcp],
-	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=27764/tcp, $manager="manager"],
-	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27765/tcp, $interface="eth0", $manager="manager"],
-	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27766/tcp, $interface="eth1", $manager="manager"],
+	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=27761/tcp, $metrics_port=9991/tcp],
+	["logger-1"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=27762/tcp, $metrics_port=9992/tcp],
+	["logger-2"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=27763/tcp, $metrics_port=9993/tcp],
+	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=27764/tcp, $manager="manager", $metrics_port=9994/tcp],
+	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27765/tcp, $interface="eth0", $manager="manager", $metrics_port=9995/tcp],
+	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27766/tcp, $interface="eth1", $manager="manager", $metrics_port=9996/tcp],
 };
 @pragma pop ignore-deprecations

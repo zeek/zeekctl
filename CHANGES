@@ -1,3 +1,9 @@
+2.5.0-47 | 2024-06-04 14:16:33 -0700
+
+  * Baseline updates for telemetry rework (Tim Wojtulewicz)
+
+  * Don't override zeek-port in the state with the metrics port (Tim Wojtulewicz)
+
 2.5.0-44 | 2024-05-31 13:35:53 -0700
 
   * Add MetricsPort option to zeekctl.cfg (Tim Wojtulewicz, Corelight)

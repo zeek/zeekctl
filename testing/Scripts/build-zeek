@@ -46,6 +46,7 @@ build_zeek() {
         # Additional configure options are used here to reduce the build size.
         ./configure --builddir=${BUILDPREFIX} --prefix="${INSTALLPREFIX}" \
                     --libdir="${INSTALLPREFIX}/lib" --build-type=Release \
+		    --disable-broker-tests \
                     --disable-auxtools ${ZEEKCTL_TEST_BUILDARGS} ${ccache_arg}
     fi
 
