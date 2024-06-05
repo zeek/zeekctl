@@ -29,6 +29,7 @@ def get_syncs():
     # ("${staticdir}", True, False),
     ("${logdir}", False, False),
     ("${spooldir}", False, False),
+    ("${fileextractdir}", False, False),
     ("${tmpdir}", False, False),
     ("${zeekctlconfigdir}/zeekctl-config.sh", True, False)
     ]
@@ -39,6 +40,7 @@ def get_syncs():
 def get_nfssyncs():
     nfssyncs = [
     ("${spooldir}", False, False),
+    ("${fileextractdir}", False, False),
     ("${tmpdir}", False, False),
     ("${policydirsiteinstall}", True, False),
     ("${policydirsiteinstallauto}", True, False),
@@ -326,11 +328,14 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
 
     ostr += 'redef Cluster::default_store_dir = "%s";\n' % config.Config.defaultstoredir
 
-    ostr += plugin_reg.getZeekctlConfig(cmdout)
-
     if config.Config.compresslogsinflight > 0:
         ostr += 'redef LogAscii::gzip_level = %s;\n' % config.Config.compresslogsinflight
         ostr += 'redef LogAscii::gzip_file_extension = "%s";\n' % config.Config.compressextension
+
+    if config.Config.fileextractdir:
+        ostr += 'redef FileExtract::prefix = "%s/" + Cluster::node;\n' % config.Config.fileextractdir
+
+    ostr += plugin_reg.getZeekctlConfig(cmdout)
 
     filename = os.path.join(path, "zeekctl-config.zeek")
     try:

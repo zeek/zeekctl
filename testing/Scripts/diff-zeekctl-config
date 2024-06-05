@@ -5,4 +5,5 @@
 
 sed -e 's/global_hash_seed = "[0-9a-f]*"/global_hash_seed = "XXXXXXXX"/' \
     -e 's/Cluster::default_store_dir = ".*"/Cluster::default_store_dir = "XXXXXXXX"/' \
-    -e 's/Broker::table_store_db_directory = ".*"/Broker::table_store_db_directory = "XXXXXXXX"/'
+    -e 's/Broker::table_store_db_directory = ".*"/Broker::table_store_db_directory = "XXXXXXXX"/' \
+    -e 's/FileExtract::prefix = ".*\/" + Cluster::node;/FileExtract::prefix = "XXXXXXXX\/" + Cluster::node;/'

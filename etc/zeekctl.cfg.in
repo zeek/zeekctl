@@ -74,6 +74,12 @@ SpoolDir = ${SPOOL}
 # Zeek tables are stored.
 BrokerDBDir = ${SPOOL}/brokerstore
 
+# Default base directory for file extraction.
+#
+# The FileExtract module's prefix option will default be set to this
+# value with the Cluster::node value appended.
+FileExtractDir = ${SPOOL}/extract_files
+
 # Location of other configuration files that can be used to customize
 # ZeekControl operation (e.g. local networks, nodes).
 CfgDir = ${ETC}

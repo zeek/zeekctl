@@ -201,6 +201,8 @@ if ( BINARY_PACKAGING_MODE AND NOT APPLE )
             DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${SPOOL}/brokerstore
             DIRECTORY_PERMISSIONS ${perms})
+    install(DIRECTORY DESTINATION ${SPOOL}/extract_files
+            DIRECTORY_PERMISSIONS ${perms})
     install(DIRECTORY DESTINATION ${LOGS}
             DIRECTORY_PERMISSIONS ${perms})
     set(EMPTY_WORLD_DIRS
@@ -210,6 +212,7 @@ else ()
     install(DIRECTORY DESTINATION ${SPOOL})
     install(DIRECTORY DESTINATION ${SPOOL}/tmp)
     install(DIRECTORY DESTINATION ${SPOOL}/brokerstore)
+    install(DIRECTORY DESTINATION ${SPOOL}/extract_files)
     install(DIRECTORY DESTINATION ${LOGS})
 endif ()
 
