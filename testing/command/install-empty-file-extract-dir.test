@@ -1,0 +1,21 @@
+# Test that the install command creates a zeekctl-config.zeek policy file
+# with the correct contents.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-zeekctl-config btest-diff standalone
+
+. zeekctl-test-setup
+
+zeekctlcfg=$ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+# Setting FileExtractDir empty removes it from the generated config file.
+sed -i 's/FileExtractDir = .*/FileExtractDir = /' ${zeekctlcfg}
+
+# Avoid gethostname() in baseline.
+echo "MailFrom=zeekctltestuser@mydomain" >> ${zeekctlcfg}
+
+test ! -e ${zeekctlconfig}
+
+zeekctl install
+cp ${zeekctlconfig} standalone

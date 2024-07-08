@@ -172,6 +172,8 @@ options = [
            "Directory for run-time data."),
     Option("BrokerDBDir", "${ZeekBase}/spool/brokerstore", "string", Option.AUTOMATIC, False,
            "Directory for data stores of persistent Broker-backed tables."),
+    Option("FileExtractDir", "${SpoolDir}/extract_files", "string", Option.AUTOMATIC, False,
+           "Default base directory for file extraction. The FileExtract module's prefix will be set to this value with Cluster::node appended."),
     Option("PolicyDir", "${ZeekScriptDir}", "string", Option.AUTOMATIC, False,
            "Directory for standard policy files."),
     Option("StaticDir", "${ZeekBase}/share/zeekctl", "string", Option.AUTOMATIC, False,

@@ -12,3 +12,4 @@ redef Pcap::snaplen = 1212;
 redef Pcap::bufsize = 256;
 redef global_hash_seed = "XXXXXXXX";
 redef Cluster::default_store_dir = "XXXXXXXX";
+redef FileExtract::prefix = "XXXXXXXX/" + Cluster::node;
