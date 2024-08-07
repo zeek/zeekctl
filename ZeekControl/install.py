@@ -221,7 +221,7 @@ def make_layout(path, cmdout, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface="%s", $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), w.interface, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), manager.name)
             if metricsport:
                 ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
             ostr += '],\n'
