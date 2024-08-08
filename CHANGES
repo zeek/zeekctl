@@ -1,3 +1,7 @@
+2.5.0-58 | 2024-08-08 09:25:59 -0700
+
+  * Stop installing the broctl symlink (Tim Wojtulewicz, Corelight)
+
 2.5.0-56 | 2024-08-08 10:43:44 +0200
 
   * Remove ignore-deprecations pragma from cluster layout (Arne Welzel, Corelight)

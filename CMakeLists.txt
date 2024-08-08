@@ -269,7 +269,6 @@ if ( NOT BINARY_PACKAGING_MODE )
   ")
 endif ()
 
-InstallSymlink("${PY_MOD_INSTALL_DIR}/zeekctl" "${LIBDIR}/broctl")
 install(DIRECTORY BroControl DESTINATION ${PY_MOD_INSTALL_DIR}/zeekctl)
 
 ########################################################################
