@@ -191,7 +191,6 @@ def make_layout(path, cmdout, silent=False):
 
         ostr = "# Automatically generated. Do not edit.\n"
         ostr += "redef Cluster::manager_is_logger = %s;\n" % manager_is_logger
-        ostr += "@pragma push ignore-deprecations\n"
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
@@ -231,7 +230,6 @@ def make_layout(path, cmdout, silent=False):
             ostr += '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
 
         ostr += "};\n"
-        ostr += "@pragma pop ignore-deprecations\n"
 
     try:
         with open(filename, "w") as out:
