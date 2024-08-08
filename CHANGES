@@ -1,3 +1,9 @@
+2.5.0-56 | 2024-08-08 10:43:44 +0200
+
+  * Remove ignore-deprecations pragma from cluster layout (Arne Welzel, Corelight)
+
+  * Remove interface field from cluster node configuration (Tim Wojtulewicz)
+
 2.5.0-49 | 2024-06-25 11:29:01 +0200
 
   * GH-65: zeekctl.cfg: Add FileExtractDir option and default to ${spool}/extract_files/ (Arne Welzel, Corelight)

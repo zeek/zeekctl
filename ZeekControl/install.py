@@ -191,7 +191,6 @@ def make_layout(path, cmdout, silent=False):
 
         ostr = "# Automatically generated. Do not edit.\n"
         ostr += "redef Cluster::manager_is_logger = %s;\n" % manager_is_logger
-        ostr += "@pragma push ignore-deprecations\n"
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
@@ -221,7 +220,7 @@ def make_layout(path, cmdout, silent=False):
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $interface="%s", $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), w.interface, manager.name)
+            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), manager.name)
             if metricsport:
                 ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
             ostr += '],\n'
@@ -231,7 +230,6 @@ def make_layout(path, cmdout, silent=False):
             ostr += '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
 
         ostr += "};\n"
-        ostr += "@pragma pop ignore-deprecations\n"
 
     try:
         with open(filename, "w") as out:
