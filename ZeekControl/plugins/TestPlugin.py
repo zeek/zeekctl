@@ -231,6 +231,3 @@ class TestPlugin(ZeekControl.plugin.Plugin):
 
     def cmd_process_post(self, trace, options, scripts, success):
         self.message("TestPlugin: Test post 'process': %s %s -- %s -> %s" % (trace, options, scripts, success))
-
-
-

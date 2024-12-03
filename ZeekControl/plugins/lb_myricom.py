@@ -28,4 +28,3 @@ class LBMyricom(ZeekControl.plugin.Plugin):
             nn.env_vars.setdefault("SNF_FLAGS", "0x101")
 
         return useplugin
-

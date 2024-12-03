@@ -18,4 +18,3 @@ env_vars=myVar1="some Node val",MYVAR3=nodeval3, Myvar4 = "one;value",myvar6='$P
 type=worker
 host=localhost
 interface=eth1
-

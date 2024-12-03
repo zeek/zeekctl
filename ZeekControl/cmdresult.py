@@ -104,4 +104,3 @@ class CmdResult:
         else:
             self.fail_count += 1
             self.ok = False
-

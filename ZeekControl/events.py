@@ -108,4 +108,3 @@ def _send_event_wait(node, result_event, bc, sub):
         if tries > config.Config.commtimeout:
             logging.debug("broker: timeout during receive from node %s", node.name)
             return (False, "time-out")
-

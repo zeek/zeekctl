@@ -12,4 +12,3 @@ if [ ! -d "$1" ]; then
 fi
 
 df -kP "$1" | awk '{print $1, $2, $3, $4}' | tail -1 | awk -v def_factor=1024 -f "${helperdir}/to-bytes.awk"
-

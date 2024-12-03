@@ -36,4 +36,3 @@ cat testfile | awk -v start_field=2 -v end_field=3 -f ${tobytes} > out5
 
 # test with all options
 cat testfile | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f ${tobytes} > out6
-

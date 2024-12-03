@@ -543,4 +543,3 @@ class ZeekCtl(object):
     @lock_required
     def plugincmd(self, cmd, args):
         return self.plugins.runCustomCommand(cmd, args, self.ui)
-

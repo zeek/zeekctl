@@ -96,4 +96,3 @@ class LBPFRing(ZeekControl.plugin.Plugin):
             nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "zeek-%s" % nn.interface)
 
         return useplugin
-

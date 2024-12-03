@@ -59,4 +59,3 @@ def printLines(lines):
         _Stdscr.insnstr(y, 0, "", 0)
     except:
         pass
-

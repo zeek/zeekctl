@@ -64,4 +64,3 @@ def print_class(cls, tag="", header=True):
         out += print_indented(inspect.getdoc(func), 2)
 
     return out
-

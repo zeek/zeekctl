@@ -42,4 +42,3 @@ rm ${debuglog}
 zeekctl start
 grep CLUSTER_NODE ${debuglog} > debug3.log
 zeekctl stop
-

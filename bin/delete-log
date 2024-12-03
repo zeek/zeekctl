@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
 #
-# This script can be used as a Zeek log postprocessor to simply *delete* 
+# This script can be used as a Zeek log postprocessor to simply *delete*
 # the files after rotation.
 
 rm $1
-

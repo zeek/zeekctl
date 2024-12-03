@@ -28,4 +28,3 @@ awk '{
     # Do not output the header line (it is system-dependent)
     if ( NR > 1 ) { print }
 }' | sort
-

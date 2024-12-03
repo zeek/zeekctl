@@ -50,4 +50,3 @@ def number_unit_str(num):
         if num >= factor:
             return "%3.0f%s" % (num / factor, unit)
     return " %3.0f" % (num)
-

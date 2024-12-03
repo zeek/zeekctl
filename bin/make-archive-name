@@ -62,4 +62,3 @@ if [ -n "$closed" ]; then
 else
    echo $day/$name.$from-current$suffix.$ext
 fi
-

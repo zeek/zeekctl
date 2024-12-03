@@ -110,4 +110,3 @@ class PsZeek(ZeekControl.plugin.Plugin):
             first_node = False
 
         return results
-

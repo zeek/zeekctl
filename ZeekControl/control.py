@@ -1415,4 +1415,3 @@ class Controller:
                 self.ui.info("Output of zeekctl cron:\n%s" % output)
 
         logging.debug("cron done")
-

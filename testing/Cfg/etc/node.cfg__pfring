@@ -14,4 +14,3 @@ host=localhost
 interface=eth0
 lb_procs=11
 lb_method=pf_ring
-

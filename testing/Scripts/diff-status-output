@@ -40,4 +40,3 @@ awk -v tcol=${tcol} -v usetimefmt=${usetimefmt} '{
 
     print
 }'
-

@@ -988,4 +988,3 @@ def _is_valid_addr(ipstr):
         return False
 
     return True
-

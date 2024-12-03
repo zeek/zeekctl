@@ -10,17 +10,17 @@ app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, default=dumps))
 @app.route('/start')
 def start():
     i = app.daemon.call("start")
-    return {"id": i} 
+    return {"id": i}
 
 @app.route('/stop')
 def start():
     i = app.daemon.call("stop")
-    return {"id": i} 
+    return {"id": i}
 
 @app.route('/restart')
 def restart():
     i = app.daemon.call("restart")
-    return {"id": i} 
+    return {"id": i}
 
 
 @app.route('/nodes')
@@ -32,7 +32,7 @@ def nodes():
 @app.route('/exec/:cmd')
 def start(cmd):
     i = app.daemon.call("execute", cmd)
-    return {"id": i} 
+    return {"id": i}
 
 @app.route('/result/:id')
 def result(id):
@@ -49,7 +49,7 @@ def result(id, since=0):
 @app.route('/:cmd')
 def cmd(cmd):
     i = app.daemon.call(cmd)
-    return {"id": i} 
+    return {"id": i}
 
 def run_app(client):
     app.daemon = client

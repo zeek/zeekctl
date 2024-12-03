@@ -90,4 +90,3 @@ fi
 if [ -n "${statslogexpireinterval}" ]; then
     expire_statslog || exit 1
 fi
-

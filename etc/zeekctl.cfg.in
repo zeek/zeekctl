@@ -83,4 +83,3 @@ FileExtractDir = ${SPOOL}/extract_files
 # Location of other configuration files that can be used to customize
 # ZeekControl operation (e.g. local networks, nodes).
 CfgDir = ${ETC}
-

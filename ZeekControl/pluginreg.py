@@ -301,4 +301,3 @@ class PluginRegistry:
 
         if not found:
             cmdout.warn("no plugin found in %s" % module.__file__)
-

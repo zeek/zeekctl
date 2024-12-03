@@ -25,4 +25,3 @@ host=localhost
 interface=eth1
 lb_method=pf_ring
 lb_procs=10
-

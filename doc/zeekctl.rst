@@ -462,13 +462,13 @@ nodes if none are given.
 *check* *[<nodes>]*
     Verifies a modified configuration in terms of syntactical correctness
     (most importantly correct syntax in policy scripts).
-    
+
     Note that this command checks the site-specific policy files as found
     in SitePolicyPath_ rather than the ones installed by the install_
     command.  Therefore, new errors in a policy script can be detected
     before affecting currently running nodes, even when they need to be
     restarted.
-    
+
     This command should be executed for each configuration change *before*
     using install_ to put the change into place.  However, when using the
     deploy command there is no need to first run check, because deploy
@@ -481,7 +481,7 @@ nodes if none are given.
     Clears the nodes' spool directories, but only for nodes that are not
     running. This implies that their persistent state is flushed. Nodes
     that were crashed are reset into the "stopped" state.
-    
+
     If ``--all`` is specified, this command also removes the content of
     the node's TmpDir_, in particular deleting any data
     potentially saved there for reference from previous crashes.
@@ -510,7 +510,7 @@ nodes if none are given.
     instructions. While not intended for interactive use, no harm will be
     caused by executing the command manually: all the maintenance tasks
     will then just be performed one more time.
-    
+
     The second mode is for interactive usage and determines if the regular
     tasks are indeed performed when ``zeekctl cron`` is executed. In other
     words, even with ``zeekctl cron`` in your crontab, you can still
@@ -527,7 +527,7 @@ nodes if none are given.
     by a restart on all nodes.  This command should be run after any
     changes to Zeek policy scripts or the zeekctl configuration, and after
     Zeek is upgraded or even just recompiled.
-    
+
     This command is equivalent to running the check_, install_, and
     restart_ commands, in that order.
 
@@ -577,13 +577,13 @@ nodes if none are given.
 *install* *[--local]*
     Reinstalls on all nodes, including all configuration files and
     local policy scripts.
-    
+
     The ``--local`` option is intended for testing or debugging.  It
     causes only the local host to be installed (i.e., no changes pushed
     out to any other hosts in the Zeek cluster).  Normally all nodes
     should be reinstalled at the same time, as any inconsistencies between
     them will lead to strange effects.
-    
+
     This command must be executed after *all* changes to any part of
     the ZeekControl configuration or after upgrading to a new version
     of Zeek or ZeekControl, otherwise the modifications will not take effect.
@@ -604,7 +604,7 @@ nodes if none are given.
 
 *nodes*
     Prints a list of all configured nodes.
-    
+
     Note that the env_vars attribute includes the set of environment
     variables from the 'env_vars' option in both 'node.cfg' and
     'zeekctl.cfg' and also those set by any plugins.
@@ -639,10 +639,10 @@ nodes if none are given.
     rotation. Additional Zeek command line flags and scripts can
     be given (each argument after a ``--`` argument is interpreted as
     a script).
-    
+
     Upon completion, the command prints a path where the log files can be
     found. Subsequent runs of this command may delete these logs.
-    
+
     In cluster mode, Zeek is run with *both* manager and worker scripts
     loaded into a single instance. While that doesn't fully reproduce the
     live setup, it is often sufficient for debugging analysis scripts.
@@ -660,7 +660,7 @@ nodes if none are given.
     Restarts the given nodes, or all nodes if none are specified. The
     effect is the same as first executing stop_ followed
     by a start_, giving the same nodes in both cases.
-    
+
     If ``--clean`` is given, the installation is reset into a clean state
     before restarting. More precisely, a ``restart --clean`` turns into
     the command sequence stop_, cleanup_, check_, install_, and
@@ -675,7 +675,7 @@ nodes if none are given.
     order they will be parsed by the node at startup.  The pathnames
     of each script are indented such that it is possible to determine
     from where a script was loaded based on the amount of indentation.
-    
+
     If ``-c`` is given, the command operates as check_ does: it reads
     the policy files from their *original* location, not the copies
     installed by install_. The latter option is useful to check a
@@ -693,7 +693,7 @@ nodes if none are given.
 
 *status* *[<nodes>]*
     Prints the current status of the given nodes.
-    
+
     For each node, the information shown includes the node's name and type,
     the host where the node will run, the status, the PID, and the
     date/time when the node was started.  The status column will usually
@@ -1205,16 +1205,16 @@ Class ``Plugin``
 
 class **Plugin**
      The class ``Plugin`` is the base class for all ZeekControl plugins.
-     
+
      The class has a number of methods for plugins to override, and every
      plugin must at least override ``name()`` and ``pluginVersion()``.
-     
+
      For each ZeekControl command ``foo``, there are two methods,
      ``cmd_foo_pre`` and ``cmd_foo_post``, that are called just before the
      command is executed and just after it has finished, respectively. The
      arguments these methods receive correspond to their command-line
      parameters, and are further documented below.
-     
+
      The ``cmd_<XXX>_pre`` methods have the ability to prevent the command's
      execution, either completely or partially for those commands that take
      nodes as parameters. In the latter case, the method receives a list of
@@ -1225,20 +1225,20 @@ class **Plugin**
      the command for a subset, remove the affected ones.  For commands that do
      not receive nodes as arguments, the return value is interpreted as boolean
      indicating whether command execution should proceed (True) or not (False).
-     
+
      The ``cmd_<XXX>_post`` methods likewise receive the commands arguments as
      their parameter, as documented below. For commands taking nodes, the list
      corresponds to those nodes for which the command was actually executed
      (i.e., after any ``cmd_<XXX>_pre`` filtering).
-     
+
      Note that if a plugin prevents a command from executing either completely or
      partially, it should report its reason via the ``message()`` or
      ``error()`` methods.
-     
+
      If multiple plugins hook into the same command, all their
      ``cmd_<XXX>_{pre,post}`` are executed in undefined order. The command is
      executed on the intersection of all ``cmd_<XXX>_pre`` results.
-     
+
      Finally, note that the ``restart`` command is just a combination of other
      commands and thus their callbacks are run in addition to the callbacks
      for ``restart``.
@@ -1281,7 +1281,7 @@ class **Plugin**
      **getGlobalOption** (self, name)
 
          Returns the value of the global ZeekControl option *name*.
-         
+
          See the output of ``zeekctl config`` for a complete list.
 
      .. _Plugin.getOption:
@@ -1289,7 +1289,7 @@ class **Plugin**
      **getOption** (self, name)
 
          Returns the value of one of the plugin's options, *name*.
-         
+
          An option has a default value (see *options()*), which can be
          overridden by a user in ``zeekctl.cfg``. An option's value cannot be
          changed by the plugin.
@@ -1300,10 +1300,10 @@ class **Plugin**
 
          Returns the current value of one of the plugin's state variables,
          *name*. If it has not yet been set, an empty string will be returned.
-         
+
          Different from options, state variables can be set by the plugin.
          They are persistent across restarts.
-         
+
          Note that a plugin cannot query any global ZeekControl state variables.
 
      .. _Plugin.hosts:
@@ -1342,7 +1342,7 @@ class **Plugin**
 
          Sets one of the plugin's state variables, *name*, to *value*.
          The change is permanent and will be recorded to disk.
-         
+
          Note that a plugin cannot change any global ZeekControl state
          variables.
 
@@ -1352,7 +1352,7 @@ class **Plugin**
 
          Called just after the ``capstats`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1364,7 +1364,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *interval* is an integer with the measurement interval in
          seconds.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1375,7 +1375,7 @@ class **Plugin**
          Called just after the ``check`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1386,7 +1386,7 @@ class **Plugin**
          Called just before the ``check`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1396,7 +1396,7 @@ class **Plugin**
 
          Called just after the ``cleanup`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1408,7 +1408,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *all* is boolean indicating whether the ``--all``
          argument has been given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1417,7 +1417,7 @@ class **Plugin**
      **cmd_config_post** (self)
 
          Called just after the ``config`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1427,7 +1427,7 @@ class **Plugin**
 
          Called just before the ``config`` command is run. Returns a boolean
          indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1437,7 +1437,7 @@ class **Plugin**
 
          Called just after the ``cron`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1450,10 +1450,10 @@ class **Plugin**
          one of the strings: ``enable``, ``disable``, ``?``. *watch* is a
          boolean indicating whether the ``cron`` command should restart
          abnormally terminated Zeek processes; it's only valid if *arg* is empty.
-         
+
          Returns a boolean indicating whether or not the ``cron`` command should
          run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1465,10 +1465,10 @@ class **Plugin**
          *cmd* is the command (without the plugin's prefix), and *args* is a
          single string with all arguments.  It returns a CmdResult object
          containing the command results.
-         
+
          If the arguments are actually node names, ``parseNodes`` can
          be used to get the `Node`_ objects.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1477,7 +1477,7 @@ class **Plugin**
      **cmd_deploy_post** (self)
 
          Called just after the ``deploy`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1487,7 +1487,7 @@ class **Plugin**
 
          Called just before the ``deploy`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1497,7 +1497,7 @@ class **Plugin**
 
          Called just after the ``df`` command has finished. Arguments are as
          with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1508,7 +1508,7 @@ class **Plugin**
          Called just before the ``df`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1518,7 +1518,7 @@ class **Plugin**
 
          Called just after the ``diag`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1529,7 +1529,7 @@ class **Plugin**
          Called just before the ``diag`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1539,7 +1539,7 @@ class **Plugin**
 
          Called just after the ``exec`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1549,10 +1549,10 @@ class **Plugin**
 
          Called just before the ``exec`` command is run. *cmdline* is a
          string with the command line to execute.
-         
+
          Returns a boolean indicating whether or not the ``exec`` command
          should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1561,7 +1561,7 @@ class **Plugin**
      **cmd_install_post** (self)
 
          Called just after the ``install`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1571,7 +1571,7 @@ class **Plugin**
 
          Called just before the ``install`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1581,7 +1581,7 @@ class **Plugin**
 
          Called just after the ``netstats`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1592,7 +1592,7 @@ class **Plugin**
          Called just before the ``netstats`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1601,7 +1601,7 @@ class **Plugin**
      **cmd_nodes_post** (self)
 
          Called just after the ``nodes`` command has finished.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1611,7 +1611,7 @@ class **Plugin**
 
          Called just before the ``nodes`` command is run. Returns a
          boolean indicating whether or not the command should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1621,7 +1621,7 @@ class **Plugin**
 
          Called just after the ``peerstatus`` command has finished.
          Arguments are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1632,7 +1632,7 @@ class **Plugin**
          Called just before the ``peerstatus`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1642,7 +1642,7 @@ class **Plugin**
 
          Called just after the ``print`` command has finished. Arguments are
          as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1653,7 +1653,7 @@ class **Plugin**
          Called just before the ``print`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command. *id* is a string with the name of the ID to be printed.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1664,7 +1664,7 @@ class **Plugin**
          Called just after the ``process`` command has finished. Arguments
          are as with the ``pre`` method, plus an additional boolean *success*
          indicating whether Zeek terminated normally.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1675,10 +1675,10 @@ class **Plugin**
          Called just before the ``process`` command is run. It receives the
          *trace* to read from as a string, a list of additional Zeek *options*,
          and a list of additional Zeek *scripts*.
-         
+
          Returns a boolean indicating whether or not the ``process`` command
          should run.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1689,7 +1689,7 @@ class **Plugin**
          Called just after the ``restart`` command has finished. It receives
          a list of *nodes* indicating the nodes on which the command was
          executed.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1701,7 +1701,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *clean* is boolean indicating whether the ``--clean``
          argument has been given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1711,7 +1711,7 @@ class **Plugin**
 
          Called just after the ``scripts`` command has finished. Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1723,7 +1723,7 @@ class **Plugin**
          list of nodes, and returns the list of nodes that should proceed with
          the command. *check* is boolean indicating whether the ``-c``
          option was given.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1734,7 +1734,7 @@ class **Plugin**
          Called just after the ``start`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1745,7 +1745,7 @@ class **Plugin**
          Called just before the ``start`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1755,7 +1755,7 @@ class **Plugin**
 
          Called just after the ``status`` command has finished.  Arguments
          are as with the ``pre`` method.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1766,7 +1766,7 @@ class **Plugin**
          Called just before the ``status`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1777,7 +1777,7 @@ class **Plugin**
          Called just after the ``stop`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1788,7 +1788,7 @@ class **Plugin**
          Called just before the ``stop`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1800,7 +1800,7 @@ class **Plugin**
          as with the ``pre`` method. Note that when ``top`` is run
          interactively to auto-refresh continuously, this method will be called
          once after each update.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1812,7 +1812,7 @@ class **Plugin**
          of nodes, and returns the list of nodes that should proceed with the
          command. Note that when ``top`` is run interactively to auto-refresh
          continuously, this method will be called once before each update.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1823,7 +1823,7 @@ class **Plugin**
          Called just after the ``update`` command has finished. It receives
          the list of 2-tuples ``(node, bool)`` indicating the nodes the command
          was executed for, along with their success status.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1834,7 +1834,7 @@ class **Plugin**
          Called just before the ``update`` command is run. It receives the
          list of nodes, and returns the list of nodes that should proceed with
          the command.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1844,27 +1844,27 @@ class **Plugin**
 
          Returns a set of custom commands provided by the
          plugin.
-         
+
          The return value is a list of 3-tuples each having the following
          elements:
-         
+
              ``command``
                  A string with the command's name. Note that the command name
                  exposed to the user will be prefixed with the plugin's prefix
                  as returned by *prefix()* (e.g., ``myplugin.mycommand``, or
                  just ``myplugin`` if the command name is an empty string).
-         
+
              ``arguments``
                  A string describing the command's arguments in a textual form
                  suitable for use in the ``help`` command summary (e.g.,
                  ``[<nodes>]`` for a command taking an optional list of nodes).
                  Empty if no arguments are expected.
-         
+
              ``description``
                  A string with a description of the command's semantics suitable
                  for use in the ``help`` command summary.
-         
-         
+
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1875,7 +1875,7 @@ class **Plugin**
 
          Called once just before ZeekControl terminates. This method can do
          any cleanup the plugin may require.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1891,11 +1891,11 @@ class **Plugin**
          the name of the *host* and a boolean *status* set to False. Once the
          host becomes available again, the method will be called again for the
          same host with *status* now set to True.
-         
+
          Note that ZeekControl's ``cron`` tracks a host's availability across
          execution, so if the next time it's run the host is still down, this
          method will not be called again.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -1905,15 +1905,15 @@ class **Plugin**
 
          Called once just before ZeekControl starts executing any commands.
          This method can do any initialization that the plugin may require.
-         
+
          Note that when this method executes, ZeekControl guarantees that all
          internals are fully set up (e.g., user-defined options are available).
          This may not be the case when the class ``__init__`` method runs.
-         
+
          Returns a boolean, indicating whether the plugin should be used. If it
          returns ``False``, the plugin will be removed and no other methods
          called.
-         
+
          This method can be overridden by derived classes. The default
          implementation always returns True.
 
@@ -1923,7 +1923,7 @@ class **Plugin**
 
          Returns a string with a descriptive name for the plugin (e.g.,
          ``"TestPlugin"``). The name must not contain any whitespace.
-         
+
          This method must be overridden by derived classes. The implementation
          must not call the parent class' implementation.
 
@@ -1934,11 +1934,11 @@ class **Plugin**
          Returns a list of names of custom keys for nodes (the value of a
          key can be specified in ``node.cfg`` for any node defined there).
          Node key names are not case-sensitive.
-         
+
          The value for a key will be available from the `Node`_ object as
          attribute ``<prefix>_<key>`` (e.g., ``node.myplugin_mykey``). If not
          set, the attribute will be set to an empty string.
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1949,28 +1949,28 @@ class **Plugin**
 
          Returns a set of local configuration options provided by the
          plugin.
-         
+
          The return value is a list of 4-tuples each having the following
          elements:
-         
+
              ``name``
                  A string with name of the option (e.g., ``Path``). Option
                  names are not case-sensitive. Note that the option name exposed
                  to the user will be prefixed with your plugin's prefix as
                  returned by *prefix()* (e.g., ``myplugin.Path``).
-         
+
              ``type``
                  A string with type of the option, which must be one of
                  ``"bool"``, ``"string"``, or ``"int"``.
-         
+
              ``default``
                  The option's default value.  Note that this value must be
                  enclosed in quotes if the type is "string", and must not be
                  enclosed in quotes if the type is not "string".
-         
+
              ``description``
                  A string with a description of the option semantics.
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns an empty list.
@@ -1981,7 +1981,7 @@ class **Plugin**
 
          Returns an integer with a version number for the plugin. Plugins
          should increase their version number with any significant change.
-         
+
          This method must be overridden by derived classes. The implementation
          must not call the parent class' implementation.
 
@@ -1994,11 +1994,11 @@ class **Plugin**
          any whitespace or dots (because dots are used as separators when
          forming the plugin's option names, state variable names, and
          command names).
-         
+
          Note that ZeekControl will refuse to load a plugin if its prefix
          matches the prefix of another loaded plugin (this comparison is not
          case-sensitive).
-         
+
          This method can be overridden by derived classes. The implementation
          must not call the parent class' implementation. The default
          implementation returns a lower-cased version of *name()*.
@@ -2011,7 +2011,7 @@ class **Plugin**
          to have terminated unexpectedly. This method will be called just
          before ZeekControl prepares the node's "crash report" and before it
          cleans up the node's spool directory.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -2023,7 +2023,7 @@ class **Plugin**
          to the dynamically generated Zeek script named "zeekctl-config.zeek".
          This provides a way for plugins to easily add Zeek script code that
          depends on zeekctl settings.
-         
+
          This method can be overridden by derived classes. The default
          implementation does nothing.
 
@@ -2039,55 +2039,55 @@ class **Node**
      type ``manager``, one or more of type ``proxy``, and zero or more of type
      ``worker``.  The manager will handle writing logs if there are no loggers
      defined in a cluster.
-     
+
      A ``Node`` object has a number of keys with values that are set via the
      ``node.cfg`` file and can be accessed directly (from a plugin) via
      corresponding Python attributes (e.g., ``node.name``):
-     
+
          ``name`` (string)
              The name of the node, which corresponds to the ``[<name>]``
              section in ``node.cfg``.
-     
+
          ``type`` (string)
              The type of the node.  In a standalone configuration, the only
              allowed type is ``standalone``.  In a cluster configuration, the
              type must be one of: ``logger``, ``manager``, ``proxy``,
              or ``worker``.
-     
+
          ``host`` (string)
              The hostname or IP address of the system the node is
              running on.  Every node must specify a host.
-     
+
          ``interface`` (string)
              The network interface for the Zeek worker (or standalone node) to
              use; empty if not set.
-     
+
          ``lb_procs`` (integer)
              The number of clustered Zeek workers you'd like to start up.  If
              specified, this number must be greater than zero and a load
              balancing method must also be specified.  This option is valid only
              for worker nodes.
-     
+
          ``lb_method`` (string)
              The load balancing method to distribute packets to all of the
              Zeek workers.  This must be one of: ``af_packet``, ``pf_ring``,
              ``myricom``, ``custom``, or ``interfaces``.  This option can have
              a value only if the ``lb_procs`` option has a value.
-     
+
          ``lb_interfaces`` (string)
              A comma-separated list of network interface names for the Zeek
              worker to use.  The number of interfaces in this list must
              equal the value of the ``lb_procs`` option.
-     
+
              This option can be specified only when the load balancing method
              is ``interfaces``.
-     
+
          ``pin_cpus`` (string)
              A comma-separated list of CPU numbers to which the node's Zeek
              processes will be pinned.  If not specified, then CPU pinning will
              not be used for this node.  This option is supported only on
              Linux and FreeBSD, and is ignored on all other platforms.
-     
+
              CPU numbering starts at zero (e.g.,
              the only valid CPU numbers for a machine with one dual-core
              processor would be 0 and 1).  If the length of this list does not
@@ -2096,31 +2096,31 @@ class **Node**
              than one (if not enough CPU numbers are specified) Zeek processes
              pinned to them.  Only the specified CPU numbers will be used,
              regardless of whether additional CPU cores exist.
-     
+
          ``env_vars`` (string)
              A comma-separated list of environment variables to set when
              running Zeek (e.g., ``env_vars=VAR1=1,VAR2=2``).  These
              node-specific values override any global values specified in
              the ``zeekctl.cfg`` file.
-     
+
          ``aux_scripts`` (string)
              Any node-specific Zeek script configured for this node.
-     
+
          ``zone_id`` (string)
              If ZeekControl is managing a cluster comprised of nodes
              using non-global IPv6 addresses, then this configures the
              :rfc:`4007` ``zone_id`` string that the node associates with
              the common zone that all cluster nodes are a part of.  This
              identifier may differ between nodes.
-     
+
      Any attribute that is not defined in ``node.cfg`` will be empty.
-     
+
      In addition, plugins can override `Plugin.nodeKeys`_ to define their own
      node keys, which can then be likewise set in ``node.cfg``. The key names
      will be prepended with the plugin's `Plugin.prefix`_ (e.g., for the plugin
      ``test``, the node key ``foo`` is set by adding ``test.foo=value`` to
      ``node.cfg``).
-     
+
      Finally, a Node object has the following methods that can be called
      from a plugin:
 

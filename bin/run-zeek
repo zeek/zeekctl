@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Wrapper script around the actual Zeek invocation. 
+# Wrapper script around the actual Zeek invocation.
 #
 # run-zeek <pin_cpu> <zeek_args>
 #
@@ -73,7 +73,7 @@ echo $@ >.cmdline
 # format.
 date +%s >.startup
 date >>.startup
-date +%y-%m-%d_%H.%M.%S >>.startup # Zeek default format when rotating files. 
+date +%y-%m-%d_%H.%M.%S >>.startup # Zeek default format when rotating files.
 
 myzeek=${zeek}
 if [ "${havenfs}" = "1" ]; then

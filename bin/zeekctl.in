@@ -166,7 +166,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
         """- [<nodes>]
 
         Stops the given nodes, or all nodes if none are specified. Nodes that
-        are in the "crashed" state are reset to the "stopped" state, and 
+        are in the "crashed" state are reset to the "stopped" state, and
         nodes that are "stopped" are left untouched.
         """
         results = self.zeekctl.stop(node_list=args)
@@ -812,4 +812,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -84,4 +84,3 @@ def print_zeekctl_docs(mainpath, zeekctlclass):
                     print_plugin()
             else:
                 print(line, end="")
-
