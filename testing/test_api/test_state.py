@@ -1,6 +1,7 @@
 from __future__ import print_function
 from ZeekControl.state import SqliteState
 
+
 def test_state_basic():
     s = SqliteState(":memory:")
 
@@ -14,6 +15,7 @@ def test_state_basic():
     s.set("bool", False)
     assert s.get("bool") == False
 
+
 def test_state_update():
     s = SqliteState(":memory:")
 
@@ -23,6 +25,7 @@ def test_state_update():
     s.set("key", "newvalue")
     assert s.get("key") == "newvalue"
 
+
 def test_state_setdefault():
     s = SqliteState(":memory:")
 
@@ -31,6 +34,7 @@ def test_state_setdefault():
 
     s.setdefault("key", "newvalue")
     assert s.get("key") == "value"
+
 
 def test_state_items():
     s = SqliteState(":memory:")

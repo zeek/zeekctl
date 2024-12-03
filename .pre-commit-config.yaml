@@ -8,3 +8,8 @@ repos:
     exclude: (^testing/Baseline|^auxil)
   - id: end-of-file-fixer
     exclude: (^testing/Baseline|examples/.*Baseline.*|^auxil)
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.8.1
+  hooks:
+    - id: ruff-format

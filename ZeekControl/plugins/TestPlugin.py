@@ -7,6 +7,7 @@
 import ZeekControl.plugin
 import ZeekControl.cmdresult
 
+
 class TestPlugin(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(TestPlugin, self).__init__(apiversion=1)
@@ -28,7 +29,9 @@ class TestPlugin(ZeekControl.plugin.Plugin):
 
         self.message("TestPlugin: Test initialized")
         self.message("TestPlugin: The value of foo is: %s" % foo)
-        self.message("TestPlugin: The current value of bar is: %s" % self.getState("bar"))
+        self.message(
+            "TestPlugin: The current value of bar is: %s" % self.getState("bar")
+        )
 
         for n in self.nodes():
             try:
@@ -42,8 +45,10 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         return True
 
     def options(self):
-        return [("foo", "int", 1, "Just a test option."),
-                ("enabled", "bool", False, "Set to enable plugin")]
+        return [
+            ("foo", "int", 1, "Just a test option."),
+            ("enabled", "bool", False, "Set to enable plugin"),
+        ]
 
     def commands(self):
         return [("bar", "", "A test command from the Test plugin.")]
@@ -59,7 +64,6 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         self.message("TestPlugin: done")
 
     def _nodes(self, nodes):
-
         if not nodes:
             return "<empty>"
 
@@ -69,7 +73,6 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         return ",".join([str(n) for n in nodes])
 
     def _results(self, results):
-
         if not results:
             return "<empty>"
 
@@ -142,7 +145,9 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
 
     def cmd_restart_pre(self, nodes, clean):
-        self.message("TestPlugin: Test pre 'restart':  %s (%s)" % (self._nodes(nodes), clean))
+        self.message(
+            "TestPlugin: Test pre 'restart':  %s (%s)" % (self._nodes(nodes), clean)
+        )
 
     def cmd_restart_post(self, nodes):
         self.message("TestPlugin: Test post 'restart': %s" % self._nodes(nodes))
@@ -202,32 +207,54 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         self.message("TestPlugin: Test post 'top': %s" % self._nodes(nodes))
 
     def cmd_cleanup_pre(self, nodes, all):
-        self.message("TestPlugin: Test pre 'cleanup':  %s (%s)" % (self._nodes(nodes), all))
+        self.message(
+            "TestPlugin: Test pre 'cleanup':  %s (%s)" % (self._nodes(nodes), all)
+        )
 
     def cmd_cleanup_post(self, nodes, all):
-        self.message("TestPlugin: Test post 'cleanup': %s (%s)" % (self._nodes(nodes), all))
+        self.message(
+            "TestPlugin: Test post 'cleanup': %s (%s)" % (self._nodes(nodes), all)
+        )
 
     def cmd_capstats_pre(self, nodes, interval):
-        self.message("TestPlugin: Test pre 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
+        self.message(
+            "TestPlugin: Test pre 'capstats':  %s (%d)" % (self._nodes(nodes), interval)
+        )
 
     def cmd_capstats_post(self, nodes, interval):
-        self.message("TestPlugin: Test post 'capstats':  %s (%d)" % (self._nodes(nodes), interval))
+        self.message(
+            "TestPlugin: Test post 'capstats':  %s (%d)"
+            % (self._nodes(nodes), interval)
+        )
 
     def cmd_scripts_pre(self, nodes, check):
-        self.message("TestPlugin: Test pre 'scripts':  %s (%s)" % (self._nodes(nodes), check))
+        self.message(
+            "TestPlugin: Test pre 'scripts':  %s (%s)" % (self._nodes(nodes), check)
+        )
 
     def cmd_scripts_post(self, nodes, check):
-        self.message("TestPlugin: Test post 'scripts': %s (%s)" % (self._nodes(nodes), check))
+        self.message(
+            "TestPlugin: Test post 'scripts': %s (%s)" % (self._nodes(nodes), check)
+        )
 
     def cmd_print_pre(self, nodes, id):
-        self.message("TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id))
+        self.message(
+            "TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id)
+        )
 
     def cmd_print_post(self, nodes, id):
-        self.message("TestPlugin: Test post 'print': %s (%s)" % (self._nodes(nodes), id))
+        self.message(
+            "TestPlugin: Test post 'print': %s (%s)" % (self._nodes(nodes), id)
+        )
 
     def cmd_process_pre(self, trace, options, scripts):
-        self.message("TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts))
+        self.message(
+            "TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts)
+        )
         return True
 
     def cmd_process_post(self, trace, options, scripts, success):
-        self.message("TestPlugin: Test post 'process': %s %s -- %s -> %s" % (trace, options, scripts, success))
+        self.message(
+            "TestPlugin: Test post 'process': %s %s -- %s -> %s"
+            % (trace, options, scripts, success)
+        )

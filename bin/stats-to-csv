@@ -47,11 +47,9 @@ def readNodes(meta):
 
 # Read the stats.log file, and create/append CSV files for one node.
 def processNode(stats, wwwdir, node, iface):
-
     print("%s ..." % node)
 
     def openFile(tag, columns):
-
         name = os.path.join(wwwdir, "%s.%s.csv" % (node, tag))
 
         if os.path.exists(name):
@@ -142,6 +140,7 @@ def processNode(stats, wwwdir, node, iface):
         iface_mbps.close()
         iface_pkts.close()
 
+
 def main():
     if len(sys.argv) != 4:
         print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
@@ -179,6 +178,7 @@ def main():
     except IOError as err:
         print("Error: %s" % err)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@
 
 import ZeekControl.plugin
 
+
 class LBMyricom(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(LBMyricom, self).__init__(apiversion=1)

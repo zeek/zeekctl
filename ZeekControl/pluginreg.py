@@ -12,6 +12,7 @@ from ZeekControl import plugin
 # Note, when changing this, also adapt doc string for Plugin.__init__.
 _CurrentAPIVersion = 1
 
+
 class PluginRegistry:
     def __init__(self):
         self._plugins = []
@@ -46,11 +47,17 @@ class PluginRegistry:
             try:
                 init = p.init()
             except Exception as err:
-                cmdout.warn("Plugin '%s' not activated because its init() method raised exception: %s" % (p.name(), err))
+                cmdout.warn(
+                    "Plugin '%s' not activated because its init() method raised exception: %s"
+                    % (p.name(), err)
+                )
                 continue
 
             if not init:
-                logging.debug("Plugin '%s' not activated because its init() returned False", p.name())
+                logging.debug(
+                    "Plugin '%s' not activated because its init() returned False",
+                    p.name(),
+                )
                 continue
 
             p.activated = True
@@ -59,7 +66,7 @@ class PluginRegistry:
         """Initialize commands provided by all activated plugins."""
         self._cmds = {}
         for p in self._activeplugins():
-            for (cmd, args, descr) in p.commands():
+            for cmd, args, descr in p.commands():
                 full_cmd = "%s.%s" % (p.prefix(), cmd) if cmd else p.prefix()
                 self._cmds[full_cmd] = (p, args, descr)
 
@@ -79,7 +86,7 @@ class PluginRegistry:
         parameter semantics."""
         for p in self._activeplugins():
             p.zeekProcessDied(node)
-             # TODO: Can we recognize when this is in use to warn about deprecation?
+            # TODO: Can we recognize when this is in use to warn about deprecation?
             p.broProcessDied(node)
 
     def cmdPreWithNodes(self, cmd, nodes, *args):
@@ -156,7 +163,7 @@ class PluginRegistry:
         prefix = myplugin.prefix()
 
         if cmd.startswith("%s." % prefix):
-            cmd = cmd[len(prefix)+1:]
+            cmd = cmd[len(prefix) + 1 :]
 
         return myplugin.cmd_custom(cmd, args, cmdout)
 
@@ -170,7 +177,10 @@ class PluginRegistry:
 
         for p in self._activeplugins():
             if p.broctl_config():
-                cmdout.error("Plugin '%s' uses discontinued method 'broctl_config'; use 'zeekctl_config' instead" % p.name())
+                cmdout.error(
+                    "Plugin '%s' uses discontinued method 'broctl_config'; use 'zeekctl_config' instead"
+                    % p.name()
+                )
 
             code = p.zeekctl_config()
             if code:
@@ -214,9 +224,7 @@ class PluginRegistry:
         visited_dirs = set()
 
         for path in self._dirs:
-
-            for root, dirs, files in os.walk(os.path.abspath(path),
-                                             followlinks=True):
+            for root, dirs, files in os.walk(os.path.abspath(path), followlinks=True):
                 stat = os.stat(root)
                 visited_dirs.add((stat.st_dev, stat.st_ino))
                 dirs_to_visit_next = []
@@ -259,27 +267,44 @@ class PluginRegistry:
                 try:
                     p = cls()
                 except Exception as e:
-                    cmdout.warn("plugin class %s __init__ failed: %s" % (cls.__name__, e))
+                    cmdout.warn(
+                        "plugin class %s __init__ failed: %s" % (cls.__name__, e)
+                    )
                     break
 
                 # verify that the plugin overrides all required methods
                 try:
-                    logging.debug("Found plugin %s from %s (version %d, prefix %s)",
-                               p.name(), module.__file__, p.pluginVersion(), p.prefix())
+                    logging.debug(
+                        "Found plugin %s from %s (version %d, prefix %s)",
+                        p.name(),
+                        module.__file__,
+                        p.pluginVersion(),
+                        p.prefix(),
+                    )
                 except NotImplementedError:
-                    cmdout.warn("failed to load plugin at %s because it doesn't override required methods" % path)
+                    cmdout.warn(
+                        "failed to load plugin at %s because it doesn't override required methods"
+                        % path
+                    )
                     continue
 
                 if p.apiVersion() != _CurrentAPIVersion:
-                    cmdout.warn("failed to load plugin %s due to incompatible API version (uses %d, but current is %s)"
-                                  % (p.name(), p.apiVersion(), _CurrentAPIVersion))
+                    cmdout.warn(
+                        "failed to load plugin %s due to incompatible API version (uses %d, but current is %s)"
+                        % (p.name(), p.apiVersion(), _CurrentAPIVersion)
+                    )
                     continue
 
                 if not p.prefix():
-                    cmdout.warn("failed to load plugin %s because prefix is empty" % p.name())
+                    cmdout.warn(
+                        "failed to load plugin %s because prefix is empty" % p.name()
+                    )
 
                 if "." in p.prefix() or " " in p.prefix():
-                    cmdout.warn("failed to load plugin %s because prefix contains dots or spaces" % p.name())
+                    cmdout.warn(
+                        "failed to load plugin %s because prefix contains dots or spaces"
+                        % p.name()
+                    )
 
                 # Need to convert prefix to lowercase here, because a plugin
                 # can override the prefix() method and might not return a
@@ -293,7 +318,10 @@ class PluginRegistry:
                 for i in self._plugins:
                     if pluginprefix == i.prefix().lower():
                         sameprefix = True
-                        cmdout.warn("failed to load plugin %s (prefix %s) due to plugin %s (prefix %s) having the same prefix" % (p.name(), p.prefix(), i.name(), i.prefix()))
+                        cmdout.warn(
+                            "failed to load plugin %s (prefix %s) due to plugin %s (prefix %s) having the same prefix"
+                            % (p.name(), p.prefix(), i.name(), i.prefix())
+                        )
                         break
 
                 if not sameprefix:

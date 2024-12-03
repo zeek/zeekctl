@@ -46,18 +46,23 @@ def install(src, dstdir, cmdout):
 
     return True
 
+
 # rsyncs paths from localhost to destination hosts.
 def sync(nodes, paths, cmdout):
     result = True
     cmds = []
     for n in nodes:
-        args = ['-rRl', '--delete', '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"']
+        args = [
+            "-rRl",
+            "--delete",
+            '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"',
+        ]
         dst = ["%s:/" % util.format_rsync_addr(n.addr)]
         args += paths + dst
         cmdline = "rsync %s" % " ".join(args)
         cmds += [(n, cmdline, "", None)]
 
-    for (id, success, output) in run_localcmds(cmds):
+    for id, success, output in run_localcmds(cmds):
         if not success:
             cmdout.error("rsync to %s failed: %s" % (id.addr, output))
             result = False
@@ -75,6 +80,7 @@ def run_localcmd(cmd, env=None, inputtext=None):
     proc = _run_localcmd_init("single", cmd, env)
     return _run_localcmd_wait(proc, inputtext)
 
+
 # Same as run_localcmd() but runs a set of local commands in parallel.
 # Cmds is a list of (id, cmd, envs, inputtext) tuples, where id is
 # an arbitrary cookie identifying each command.
@@ -83,18 +89,18 @@ def run_localcmds(cmds):
     results = []
     running = []
 
-    for (id, cmd, envs, inputtext) in cmds:
+    for id, cmd, envs, inputtext in cmds:
         proc = _run_localcmd_init(id, cmd, envs)
         running += [(id, proc, inputtext)]
 
-    for (id, proc, inputtext) in running:
+    for id, proc, inputtext in running:
         success, output = _run_localcmd_wait(proc, inputtext)
         results += [(id, success, output)]
 
     return results
 
-def _run_localcmd_init(id, cmd, env):
 
+def _run_localcmd_init(id, cmd, env):
     if env:
         cmdline = env + " " + cmd
     else:
@@ -103,11 +109,18 @@ def _run_localcmd_init(id, cmd, env):
     logging.debug(cmdline)
 
     # os.setsid makes sure that the child process doesn't receive our CTRL-Cs.
-    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            close_fds=True, shell=True, preexec_fn=os.setsid)
+    proc = subprocess.Popen(
+        [cmdline],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        close_fds=True,
+        shell=True,
+        preexec_fn=os.setsid,
+    )
 
     return proc
+
 
 def _run_localcmd_wait(proc, inputtext):
     if inputtext:
@@ -131,8 +144,9 @@ def _run_localcmd_wait(proc, inputtext):
 # only fix I can come up with.
 def _emptyDel(self):
     pass
-subprocess.Popen.__del__ = _emptyDel
 
+
+subprocess.Popen.__del__ = _emptyDel
 
 
 class Executor:
@@ -190,7 +204,9 @@ class Executor:
                 nodecmdlist.append((zeeknode.addr, cmdargs))
                 logging.debug("%s: %s", zeeknode.host, " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.config.commandtimeout):
+        for host, result in self.sshrunner.exec_multihost_commands(
+            nodecmdlist, shell, self.config.commandtimeout
+        ):
             nodecmd = dd[host].pop(0)
             zeeknode = nodecmd[0]
             if not isinstance(result, Exception):
@@ -228,10 +244,10 @@ class Executor:
         results = []
         cmds = []
 
-        for (node, dir) in dirs:
+        for node, dir in dirs:
             cmds += [(node, "mkdir", ["-p", dir])]
 
-        for (node, success, output) in self.run_cmds(cmds):
+        for node, success, output in self.run_cmds(cmds):
             results += [(node, success, output)]
 
         return results
@@ -247,10 +263,10 @@ class Executor:
         results = []
         cmds = []
 
-        for (node, dir) in dirs:
+        for node, dir in dirs:
             cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
 
-        for (node, success, output) in self.run_cmds(cmds, shell=True):
+        for node, success, output in self.run_cmds(cmds, shell=True):
             results += [(node, success, output)]
 
         return results

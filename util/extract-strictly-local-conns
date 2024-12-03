@@ -5,8 +5,8 @@ import sys
 
 import SubnetTree
 
-def readNetworks(file):
 
+def readNetworks(file):
     nets = SubnetTree.SubnetTree()
 
     for line in open(file):
@@ -23,8 +23,8 @@ def readNetworks(file):
         except KeyError:
             print("cannot parse network specification '%s'" % cidr, file=sys.stderr)
 
-
     return nets
+
 
 if len(sys.argv) != 2:
     print("usage: %s networks.cfg <conn.log" % sys.argv[0], file=sys.stderr)

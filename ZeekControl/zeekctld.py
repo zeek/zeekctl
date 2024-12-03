@@ -16,16 +16,19 @@ from ZeekControl import web
 
 STOP_RUNNING = object()
 
+
 class TermUI:
     def __init__(self):
         pass
 
     def info(self, msg):
         print(msg)
+
     warn = info
 
     def error(self, msg):
         print("ERROR", msg)
+
 
 class Logs:
     def __init__(self):
@@ -38,11 +41,14 @@ class Logs:
         msgs = self.store.get(id) or []
         return msgs[since:]
 
+
 class Common:
     def dump(self, *args):
         return json.dumps(*args)
+
     def load(self, msg):
         return json.loads(msg)
+
 
 class ZeekCtrldWorker(Thread, Common):
     def __init__(self, command_queue):
@@ -56,7 +62,7 @@ class ZeekCtrldWorker(Thread, Common):
         self.q.put((id, cmd, args))
 
     def run(self):
-        #FIXME: deepcopy breaks here if i set ui=self
+        # FIXME: deepcopy breaks here if i set ui=self
         self.zeekctl = ZeekCtl(ui=TermUI())
         self.zeekctl.ui = self
         self.zeekctl.controller.ui = self
@@ -80,10 +86,10 @@ class ZeekCtrldWorker(Thread, Common):
         def respond(r):
             self.call("result", id, r)
 
-        if not hasattr(func, 'api_exposed'):
+        if not hasattr(func, "api_exposed"):
             return respond("invalid function")
 
-        try :
+        try:
             res = func(*args)
         except Exception as e:
             res = traceback.format_exc()
@@ -97,7 +103,9 @@ class ZeekCtrldWorker(Thread, Common):
 
     def error(self, msg):
         return self.call("err", self._id, msg)
+
     warn = error
+
 
 class ZeekCtld(Thread, Common):
     def __init__(self, command_queue, logs):
@@ -131,18 +139,18 @@ class ZeekCtld(Thread, Common):
         return "ok"
 
     def handle_out(self, id, txt):
-        print("Got %s id=%r result=%r" % ('out', id, txt))
-        self.logs.append(id, 'out', txt)
+        print("Got %s id=%r result=%r" % ("out", id, txt))
+        self.logs.append(id, "out", txt)
         return "ok"
 
     def handle_info(self, id, txt):
-        print("Got %s id=%r result=%r" % ('info', id, txt))
-        self.logs.append(id, 'info', txt)
+        print("Got %s id=%r result=%r" % ("info", id, txt))
+        self.logs.append(id, "info", txt)
         return "ok"
 
     def handle_err(self, id, txt):
-        print("Got %s id=%r result=%r" % ('err', id, txt))
-        self.logs.append(id, 'err', txt)
+        print("Got %s id=%r result=%r" % ("err", id, txt))
+        self.logs.append(id, "err", txt)
         return "ok"
 
     def handle_getresult(self, id):
@@ -160,7 +168,7 @@ class ZeekCtld(Thread, Common):
     def _run(self):
         while self.running:
             (rq, cmd, args) = self.recv()
-            func = getattr(self, 'handle_' + cmd, None)
+            func = getattr(self, "handle_" + cmd, None)
             if func:
                 res = func(*args)
                 if rq:
@@ -174,6 +182,7 @@ class ZeekCtld(Thread, Common):
         self.worker.send(t_id, cmd, *args)
         print("started id=%r cmd=%r args=%r" % (t_id, cmd, args))
         return t_id
+
 
 class Client(Common):
     def __init__(self, command_queue):
@@ -202,7 +211,8 @@ class Client(Common):
     def getlog(self, id, since=0):
         return self.call("getlog", id, since)
 
-def main(basedir='/zeek'):
+
+def main(basedir="/zeek"):
     logs = Logs()
 
     command_queue = Queue()
@@ -214,9 +224,10 @@ def main(basedir='/zeek'):
 
     ww = Thread(target=web.run_app, args=[c])
     ww.start()
-    print("I Got:", c.sync_call('status'))
+    print("I Got:", c.sync_call("status"))
     for x in range(20):
         time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

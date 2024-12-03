@@ -9,6 +9,7 @@ from ZeekControl import config
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.
 
+
 # Directories/files in form (path, mirror, optional) which are synced from the manager to
 # all remote hosts.
 # If "mirror" is False, then the path is assumed to be a directory and it will
@@ -17,37 +18,39 @@ from ZeekControl import config
 # the path to not exist on the manager.
 def get_syncs():
     syncs = [
-    ("${zeekbase}", False, False),
-    ("${zeekbase}/share", True, False),
-    ("${cfgdir}", True, False),
-    ("${libdir}", True, True),
-    ("${libdir64}", True, True),
-    ("${bindir}", True, False),
-    ("${policydirsiteinstall}", True, False),
-    ("${policydirsiteinstallauto}", True, False),
-    # ("${policydir}", True, False),
-    # ("${staticdir}", True, False),
-    ("${logdir}", False, False),
-    ("${spooldir}", False, False),
-    ("${fileextractdir}", False, False),
-    ("${tmpdir}", False, False),
-    ("${zeekctlconfigdir}/zeekctl-config.sh", True, False)
+        ("${zeekbase}", False, False),
+        ("${zeekbase}/share", True, False),
+        ("${cfgdir}", True, False),
+        ("${libdir}", True, True),
+        ("${libdir64}", True, True),
+        ("${bindir}", True, False),
+        ("${policydirsiteinstall}", True, False),
+        ("${policydirsiteinstallauto}", True, False),
+        # ("${policydir}", True, False),
+        # ("${staticdir}", True, False),
+        ("${logdir}", False, False),
+        ("${spooldir}", False, False),
+        ("${fileextractdir}", False, False),
+        ("${tmpdir}", False, False),
+        ("${zeekctlconfigdir}/zeekctl-config.sh", True, False),
     ]
 
     return syncs
 
+
 # In NFS-mode, only these will be synced.
 def get_nfssyncs():
     nfssyncs = [
-    ("${spooldir}", False, False),
-    ("${fileextractdir}", False, False),
-    ("${tmpdir}", False, False),
-    ("${policydirsiteinstall}", True, False),
-    ("${policydirsiteinstallauto}", True, False),
-    ("${zeekctlconfigdir}/zeekctl-config.sh", True, False)
+        ("${spooldir}", False, False),
+        ("${fileextractdir}", False, False),
+        ("${tmpdir}", False, False),
+        ("${policydirsiteinstall}", True, False),
+        ("${policydirsiteinstallauto}", True, False),
+        ("${zeekctlconfigdir}/zeekctl-config.sh", True, False),
     ]
 
     return nfssyncs
+
 
 # Determine relative cfg_path
 def splitall(path):
@@ -65,6 +68,7 @@ def splitall(path):
         allparts.insert(0, parts[1])
     return allparts
 
+
 def relpath(src, dst):
     """Calculate the relative path to dst)"""
     srcparts = splitall(src)
@@ -72,14 +76,15 @@ def relpath(src, dst):
     while srcparts and dstparts and srcparts[0] == dstparts[0]:
         srcparts.pop(0)
         dstparts.pop(0)
-    relparts = (len(dstparts) - 1) * ['..'] + srcparts
+    relparts = (len(dstparts) - 1) * [".."] + srcparts
     return os.path.join(*relparts)
+
 
 # Generate a shell script "zeekctl-config.sh" that sets env. vars. that
 # correspond to zeekctl config options.
 def make_zeekctl_config_sh(cmdout):
     ostr = ""
-    for (varname, value) in config.Config.options(dynamic=False):
+    for varname, value in config.Config.options(dynamic=False):
         if isinstance(value, bool):
             # Convert bools to the string "1" or "0"
             value = "1" if value else "0"
@@ -119,7 +124,9 @@ def make_zeekctl_config_sh(cmdout):
 
     # check if the symlink needs to be updated
     try:
-        update_link = not os.path.islink(symlink) or os.readlink(symlink) != sym_cfg_path
+        update_link = (
+            not os.path.islink(symlink) or os.readlink(symlink) != sym_cfg_path
+        )
     except OSError as e:
         cmdout.error("failed to read symlink: %s" % e)
         return False
@@ -129,7 +136,10 @@ def make_zeekctl_config_sh(cmdout):
         try:
             util.force_symlink(sym_cfg_path, symlink)
         except OSError as e:
-            cmdout.error("failed to update symlink '%s' to point to '%s': %s" % (symlink, sym_cfg_path, e.strerror))
+            cmdout.error(
+                "failed to update symlink '%s' to point to '%s': %s"
+                % (symlink, sym_cfg_path, e.strerror)
+            )
             return False
 
     return True
@@ -173,7 +183,7 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Telemetry::metrics_port = %s/tcp;\n" % metricsport.use_port(None)
         ostr += "event zeek_init()\n"
         ostr += "\t{\n"
-        ostr += "\tif ( getenv(\"ZEEKCTL_DISABLE_LISTEN\") == \"\" )\n"
+        ostr += '\tif ( getenv("ZEEKCTL_DISABLE_LISTEN") == "" )\n'
         ostr += "\t\tBroker::listen();\n"
         ostr += "\t}\n"
 
@@ -194,40 +204,70 @@ def make_layout(path, cmdout, silent=False):
         ostr += "redef Cluster::nodes = {\n"
 
         # Control definition.  For now just reuse the manager information.
-        ostr += '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp],\n' % (util.format_zeek_addr(manager.addr), zeekport.use_port(None))
+        ostr += (
+            '\t["control"] = [$node_type=Cluster::CONTROL, $ip=%s, $p=%s/tcp],\n'
+            % (util.format_zeek_addr(manager.addr), zeekport.use_port(None))
+        )
 
         # Manager definition. Manager should come first so that the metrics port
         # set in zeekctl.cfg will be the one used for the manager.
-        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp' % (manager.name, util.format_zeek_addr(manager.addr), zeekport.use_port(manager))
+        ostr += '\t["%s"] = [$node_type=Cluster::MANAGER, $ip=%s, $p=%s/tcp' % (
+            manager.name,
+            util.format_zeek_addr(manager.addr),
+            zeekport.use_port(manager),
+        )
         if metricsport:
-            ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
-        ostr += '],\n'
+            ostr += ", $metrics_port=%s/tcp" % metricsport.use_port(None)
+        ostr += "],\n"
 
         # Loggers definition
         for lognode in loggers:
-            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $p=%s/tcp' % (lognode.name, util.format_zeek_addr(lognode.addr), zeekport.use_port(lognode))
+            ostr += '\t["%s"] = [$node_type=Cluster::LOGGER, $ip=%s, $p=%s/tcp' % (
+                lognode.name,
+                util.format_zeek_addr(lognode.addr),
+                zeekport.use_port(lognode),
+            )
             if metricsport:
-                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
-            ostr += '],\n'
+                ostr += ", $metrics_port=%s/tcp" % metricsport.use_port(None)
+            ostr += "],\n"
 
         # Proxies definition (all proxies use same logger as the manager)
         for p in proxies:
-            ostr += '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager="%s"' % (p.name, util.format_zeek_addr(p.addr), zeekport.use_port(p), manager.name)
+            ostr += (
+                '\t["%s"] = [$node_type=Cluster::PROXY, $ip=%s, $p=%s/tcp, $manager="%s"'
+                % (
+                    p.name,
+                    util.format_zeek_addr(p.addr),
+                    zeekport.use_port(p),
+                    manager.name,
+                )
+            )
             if metricsport:
-                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
-            ostr += '],\n'
+                ostr += ", $metrics_port=%s/tcp" % metricsport.use_port(None)
+            ostr += "],\n"
 
         # Workers definition
         for w in workers:
             p = w.count % len(proxies)
-            ostr += '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $manager="%s"' % (w.name, util.format_zeek_addr(w.addr), zeekport.use_port(w), manager.name)
+            ostr += (
+                '\t["%s"] = [$node_type=Cluster::WORKER, $ip=%s, $p=%s/tcp, $manager="%s"'
+                % (
+                    w.name,
+                    util.format_zeek_addr(w.addr),
+                    zeekport.use_port(w),
+                    manager.name,
+                )
+            )
             if metricsport:
-                ostr += ', $metrics_port=%s/tcp' % metricsport.use_port(None)
-            ostr += '],\n'
+                ostr += ", $metrics_port=%s/tcp" % metricsport.use_port(None)
+            ostr += "],\n"
 
         # Activate time-machine support if configured.
         if config.Config.timemachinehost:
-            ostr += '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n' % (config.Config.timemachinehost, config.Config.timemachineport)
+            ostr += (
+                '\t["time-machine"] = [$node_type=Cluster::TIME_MACHINE, $ip=%s, $p=%s],\n'
+                % (config.Config.timemachinehost, config.Config.timemachineport)
+            )
 
         ostr += "};\n"
 
@@ -243,7 +283,6 @@ def make_layout(path, cmdout, silent=False):
 
 # Reads in a list of networks from file.
 def read_networks(fname):
-
     nets = []
 
     with open(fname, "r") as f:
@@ -264,7 +303,6 @@ def read_networks(fname):
 
 # Create Zeek script which contains a list of local networks.
 def make_local_networks(path, cmdout):
-
     netcfg = config.Config.localnetscfg
 
     try:
@@ -279,7 +317,7 @@ def make_local_networks(path, cmdout):
     ostr = "# Automatically generated. Do not edit.\n\n"
 
     ostr += "redef Site::local_nets = {\n"
-    for (cidr, tag) in nets:
+    for cidr, tag in nets:
         ostr += "\t%s," % cidr
         if tag:
             ostr += "\t# %s" % tag
@@ -297,26 +335,38 @@ def make_local_networks(path, cmdout):
 
 
 def make_zeekctl_config_policy(path, cmdout, plugin_reg):
-    ostr = '# Automatically generated. Do not edit.\n'
+    ostr = "# Automatically generated. Do not edit.\n"
     ostr += 'redef Notice::mail_dest = "%s";\n' % config.Config.mailto
-    ostr += 'redef Notice::mail_dest_pretty_printed = "%s";\n' % config.Config.mailalarmsto
+    ostr += (
+        'redef Notice::mail_dest_pretty_printed = "%s";\n' % config.Config.mailalarmsto
+    )
     ostr += 'redef Notice::sendmail = "%s";\n' % config.Config.sendmail
-    ostr += 'redef Notice::mail_subject_prefix = "%s";\n' % config.Config.mailsubjectprefix
+    ostr += (
+        'redef Notice::mail_subject_prefix = "%s";\n' % config.Config.mailsubjectprefix
+    )
     ostr += 'redef Notice::mail_from = "%s";\n' % config.Config.mailfrom
-    ostr += 'redef Broker::table_store_db_directory = "%s";\n' % config.Config.brokerdbdir
+    ostr += (
+        'redef Broker::table_store_db_directory = "%s";\n' % config.Config.brokerdbdir
+    )
     if not config.Config.standalone:
         loggers = config.Config.loggers()
         ntype = "LOGGER" if loggers else "MANAGER"
-        ostr += '@if ( Cluster::local_node_type() == Cluster::%s )\n' % ntype
+        ostr += "@if ( Cluster::local_node_type() == Cluster::%s )\n" % ntype
 
-    ostr += 'redef Log::default_rotation_interval = %s secs;\n' % config.Config.logrotationinterval
-    ostr += 'redef Log::default_mail_alarms_interval = %s secs;\n' % config.Config.mailalarmsinterval
+    ostr += (
+        "redef Log::default_rotation_interval = %s secs;\n"
+        % config.Config.logrotationinterval
+    )
+    ostr += (
+        "redef Log::default_mail_alarms_interval = %s secs;\n"
+        % config.Config.mailalarmsinterval
+    )
 
     if not config.Config.standalone:
-        ostr += '@endif\n'
+        ostr += "@endif\n"
 
-    ostr += 'redef Pcap::snaplen = %s;\n' % config.Config.pcapsnaplen
-    ostr += 'redef Pcap::bufsize = %s;\n' % config.Config.pcapbufsize
+    ostr += "redef Pcap::snaplen = %s;\n" % config.Config.pcapsnaplen
+    ostr += "redef Pcap::bufsize = %s;\n" % config.Config.pcapbufsize
 
     if not config.Config.privateaddressspaceislocal:
         ostr += "redef Site::private_address_space_is_local = F;\n"
@@ -327,11 +377,19 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     ostr += 'redef Cluster::default_store_dir = "%s";\n' % config.Config.defaultstoredir
 
     if config.Config.compresslogsinflight > 0:
-        ostr += 'redef LogAscii::gzip_level = %s;\n' % config.Config.compresslogsinflight
-        ostr += 'redef LogAscii::gzip_file_extension = "%s";\n' % config.Config.compressextension
+        ostr += (
+            "redef LogAscii::gzip_level = %s;\n" % config.Config.compresslogsinflight
+        )
+        ostr += (
+            'redef LogAscii::gzip_file_extension = "%s";\n'
+            % config.Config.compressextension
+        )
 
     if config.Config.fileextractdir:
-        ostr += 'redef FileExtract::prefix = "%s/" + Cluster::node;\n' % config.Config.fileextractdir
+        ostr += (
+            'redef FileExtract::prefix = "%s/" + Cluster::node;\n'
+            % config.Config.fileextractdir
+        )
 
     ostr += plugin_reg.getZeekctlConfig(cmdout)
 

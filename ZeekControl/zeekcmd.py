@@ -3,6 +3,7 @@ import cmd
 
 from ZeekControl.exceptions import CommandSyntaxError, InvalidNodeError, LockError
 
+
 class ExitValueCmd(cmd.Cmd):
     def cmdloop(self, intro=None):
         """Repeatedly issue a prompt, accept input, parse an initial prefix
@@ -15,6 +16,7 @@ class ExitValueCmd(cmd.Cmd):
         if self.use_rawinput and self.completekey:
             try:
                 import readline
+
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
                 readline.parse_and_bind(self.completekey + ": complete")
@@ -60,6 +62,7 @@ class ExitValueCmd(cmd.Cmd):
             if self.use_rawinput and self.completekey:
                 try:
                     import readline
+
                     readline.set_completer(self.old_completer)
                 except ImportError:
                     pass

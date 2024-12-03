@@ -2,6 +2,7 @@
 
 import ZeekControl.plugin
 
+
 class OptionsTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(OptionsTest, self).__init__(apiversion=1)
@@ -21,6 +22,8 @@ class OptionsTest(ZeekControl.plugin.Plugin):
         return True
 
     def options(self):
-        return [("opt1", "bool", True, "Boolean option"),
-                ("opt2", "string", "test str", "String option"),
-                ("opt3", "int", 42, "Int option")]
+        return [
+            ("opt1", "bool", True, "Boolean option"),
+            ("opt2", "string", "test str", "String option"),
+            ("opt3", "int", 42, "Int option"),
+        ]

@@ -8,6 +8,7 @@ import shutil
 from ZeekControl import execute
 from ZeekControl import node as node_mod
 
+
 class CronUI:
     def __init__(self):
         self.buffer = None
@@ -17,6 +18,7 @@ class CronUI:
             self.buffer.write("%s\n" % txt)
         else:
             print(txt)
+
     error = info
     warn = info
 
@@ -55,19 +57,19 @@ class CronTasks:
 
         try:
             with open(self.config.statslog, "a") as out:
-                for (node, error, vals) in top:
+                for node, error, vals in top:
                     if not error:
-                        for (val, key) in sorted(vals.items()):
+                        for val, key in sorted(vals.items()):
                             out.write("%s %s parent %s %s\n" % (t, node, val, key))
                     else:
                         out.write("%s %s error error %s\n" % (t, node, error))
 
-                for (node, netif, success, vals) in capstats:
+                for node, netif, success, vals in capstats:
                     if not success:
                         out.write("%s %s error error %s\n" % (t, node, vals))
                         continue
 
-                    for (key, val) in sorted(vals.items()):
+                    for key, val in sorted(vals.items()):
                         out.write("%s %s interface %s %s\n" % (t, node, key, val))
 
                         if key == "pkts" and str(node) != "$total":
@@ -78,10 +80,16 @@ class CronTasks:
 
                             if self.config.mailreceivingpackets:
                                 if val == 0.0 and last != 0.0:
-                                    self.ui.info("%s is not seeing any packets on interface %s" % (node.host, netif))
+                                    self.ui.info(
+                                        "%s is not seeing any packets on interface %s"
+                                        % (node.host, netif)
+                                    )
 
                                 if val != 0.0 and last == 0.0:
-                                    self.ui.info("%s is seeing packets again on interface %s" % (node.host, netif))
+                                    self.ui.info(
+                                        "%s is seeing packets again on interface %s"
+                                        % (node.host, netif)
+                                    )
 
                             self.config.set_state(tag, val)
 
@@ -95,7 +103,7 @@ class CronTasks:
             return
 
         results = self.controller.df(self.config.hosts())
-        for (node, _, dfs) in results.get_node_data():
+        for node, _, dfs in results.get_node_data():
             host = node.host
 
             for key, df in dfs.items():
@@ -106,7 +114,7 @@ class CronTasks:
 
                 fs = df.fs
                 perc = df.percent
-                key = ("disk-space-%s%s" % (host, fs.replace("/", "-")))
+                key = "disk-space-%s%s" % (host, fs.replace("/", "-"))
 
                 if perc > 100 - minspace:
                     last = self.config.get_state(key, default=-1)
@@ -114,16 +122,23 @@ class CronTasks:
                         # Already reported.
                         continue
 
-                    self.ui.warn("Disk space low on %s:%s - %.1f%% used." % (host, fs, perc))
+                    self.ui.warn(
+                        "Disk space low on %s:%s - %.1f%% used." % (host, fs, perc)
+                    )
 
                 self.config.set_state(key, perc)
 
     def expire_logs(self):
-        if self.config.logexpireminutes == 0 and self.config.statslogexpireinterval == 0:
+        if (
+            self.config.logexpireminutes == 0
+            and self.config.statslogexpireinterval == 0
+        ):
             return
 
         if self.config.standalone:
-            success, output = execute.run_localcmd(os.path.join(self.config.scriptsdir, "expire-logs"))
+            success, output = execute.run_localcmd(
+                os.path.join(self.config.scriptsdir, "expire-logs")
+            )
 
             if not success:
                 self.ui.error("expire-logs failed\n%s" % output)
@@ -136,12 +151,11 @@ class CronTasks:
             expirelogs = os.path.join(self.config.scriptsdir, "expire-logs")
             cmds = [(node, expirelogs, []) for node in nodes]
 
-            for (node, success, output) in self.executor.run_cmds(cmds):
+            for node, success, output in self.executor.run_cmds(cmds):
                 if not success:
                     self.ui.error("expire-logs failed for node %s\n" % node)
                     if output:
                         self.ui.error(output)
-
 
     def expire_crash(self):
         if self.config.crashexpireinterval == 0:
@@ -150,7 +164,7 @@ class CronTasks:
         expirecrash = os.path.join(self.config.scriptsdir, "expire-crash")
         cmds = [(node, expirecrash, []) for node in self.config.hosts()]
 
-        for (node, success, output) in self.executor.run_cmds(cmds):
+        for node, success, output in self.executor.run_cmds(cmds):
             if not success:
                 self.ui.error("expire-crash failed for node %s\n" % node)
                 if output:
@@ -180,7 +194,9 @@ class CronTasks:
             try:
                 os.makedirs(self.config.statsdir)
             except OSError as err:
-                self.ui.error("failure creating directory in zeekctl option statsdir: %s" % err)
+                self.ui.error(
+                    "failure creating directory in zeekctl option statsdir: %s" % err
+                )
                 return
 
             self.ui.info("creating directory for stats file: %s" % self.config.statsdir)
@@ -223,7 +239,9 @@ class CronTasks:
         # Update the WWW data
         statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
 
-        success, output = execute.run_localcmd("%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir))
+        success, output = execute.run_localcmd(
+            "%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir)
+        )
         if success:
             shutil.copy(metadat, wwwdir)
         else:
@@ -240,7 +258,6 @@ class CronTasks:
             return
 
         os.unlink(self.config.statslog)
-
 
     def run_cron_cmd(self):
         # Run external command if we have one.

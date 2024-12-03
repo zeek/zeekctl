@@ -14,6 +14,7 @@ import os, atexit, getopt, signal, sys, time
 livemode = False
 statusfile = None
 
+
 # Write the given string to the Zeek status file.  If no status file defined,
 # then do nothing.
 def setprocstate(str):
@@ -38,17 +39,22 @@ def catchsigterm(signum, frame):
 # Create the loaded_scripts.log file.
 def createloadedscriptslog(thisnode):
     with open("loaded_scripts.log", "w") as fout:
-        fout.write("Node %s: This is the contents of loaded_scripts.log for zeekctl testing.\n" % thisnode)
+        fout.write(
+            "Node %s: This is the contents of loaded_scripts.log for zeekctl testing.\n"
+            % thisnode
+        )
 
 
 # Parse cmd-line args.
 def getcmdargs():
     global livemode, statusfile
 
-    optlist, args = getopt.getopt(sys.argv[1:], "abde:f:ghi:p:r:s:t:vw:x:CFG:H:I:NPQR:ST:U:WX:")
+    optlist, args = getopt.getopt(
+        sys.argv[1:], "abde:f:ghi:p:r:s:t:vw:x:CFG:H:I:NPQR:ST:U:WX:"
+    )
 
     # Process only those options that are relevant for zeekctl testing.
-    for (opt, val) in optlist:
+    for opt, val in optlist:
         if opt == "-v":
             # zeekctl runs "zeek -v" and expects the output to be in a specific
             # format, but the exact version number reported doesn't matter.
@@ -59,7 +65,9 @@ def getcmdargs():
             # test the "zeekctl diag" command.
             print("Zeek::ARP - ARP Parsing (built-in)")
             print("Zeek::ZIP - Generic ZIP support analyzer (built-in)")
-            print("Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)")
+            print(
+                "Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynamic, version 0.1)"
+            )
             sys.exit(0)
         elif opt == "-U":
             statusfile = val
@@ -69,7 +77,7 @@ def getcmdargs():
 
 
 # Class that represents contents of zeekctltest.cfg file.
-class ZeekctlTestCfg():
+class ZeekctlTestCfg:
     def __init__(self, keylist):
         for key in keylist:
             setattr(self, key, "")
@@ -98,11 +106,14 @@ def readzeekctltestcfg():
 
     with open(cfgfilepath, "r") as fin:
         for line in fin:
-            key, val = line.strip().split('=', 1)
+            key, val = line.strip().split("=", 1)
             key = key.strip()
             val = val.strip().split()
             if key not in keys:
-                print("Error: unknown option '%s' in: %s" % (zeekvar, cfgfilepath), file=sys.stderr)
+                print(
+                    "Error: unknown option '%s' in: %s" % (zeekvar, cfgfilepath),
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             setattr(testcfg, key, val)
 
@@ -189,6 +200,7 @@ def main():
     # unwanted processes running if a test script fails to cleanup (this
     # should never happen).
     time.sleep(1000)
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,5 @@
+target-version = "py39"
+
+# Skip anything in the auxil directory. This includes pysubnetree which
+# should be handled separately.
+exclude = ["auxil"]

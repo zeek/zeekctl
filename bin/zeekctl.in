@@ -8,9 +8,11 @@ import sys
 import time
 import logging
 
-for path in ("@PREFIX@/lib/zeekctl",
-             "@PY_MOD_INSTALL_DIR@",
-             "@PY_MOD_INSTALL_DIR@/zeekctl"):
+for path in (
+    "@PREFIX@/lib/zeekctl",
+    "@PY_MOD_INSTALL_DIR@",
+    "@PY_MOD_INSTALL_DIR@/zeekctl",
+):
     if os.path.isdir(path):
         sys.path.insert(0, path)
 
@@ -20,9 +22,10 @@ from ZeekControl import util
 from ZeekControl import utilcurses
 from ZeekControl import version
 
+
 # Main command loop.
 class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
-    prompt = '[ZeekControl] > '
+    prompt = "[ZeekControl] > "
 
     def __init__(self, zeekctl_class=ZeekCtl, interactive=False, cmd=""):
         zeekcmd.ExitValueCmd.__init__(self)
@@ -104,7 +107,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
             raise CommandSyntaxError("the nodes command does not take any arguments")
 
         results = self.zeekctl.nodes()
-        for (node, success, data) in results.get_node_data():
+        for node, success, data in results.get_node_data():
             self.info(data["description"])
 
         return results.ok
@@ -115,7 +118,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
             raise CommandSyntaxError("the config command does not take any arguments")
 
         results = self.zeekctl.get_config()
-        for (key, val) in results.keyval:
+        for key, val in results.keyval:
             self.info("%s = %s" % (key, val))
 
         return results.ok
@@ -146,7 +149,9 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
             if arg == "--local":
                 local = True
             else:
-                raise CommandSyntaxError("invalid argument for the install command: %s" % arg)
+                raise CommandSyntaxError(
+                    "invalid argument for the install command: %s" % arg
+                )
 
         results = self.zeekctl.install(local)
         return results.ok
@@ -273,9 +278,21 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
                 typewidth = 10
                 hostwidth = 13
 
-        lines = ["%-12s %-*s %-*s %-7s %-6s %-4s %-5s %s" % ("Name",
-                typewidth, "Type", hostwidth, "Host", "Pid", "VSize",
-                "Rss", "Cpu", "Cmd")]
+        lines = [
+            "%-12s %-*s %-*s %-7s %-6s %-4s %-5s %s"
+            % (
+                "Name",
+                typewidth,
+                "Type",
+                hostwidth,
+                "Host",
+                "Pid",
+                "VSize",
+                "Rss",
+                "Cpu",
+                "Cmd",
+            )
+        ]
         for data in results.get_node_data():
             procinfo = data[2]["procs"]
             msg = ["%-12s" % procinfo["name"]]
@@ -320,7 +337,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
                 success, lines = self._do_top_once(args)
                 utilcurses.clearScreen()
                 utilcurses.printLines(lines)
-            time.sleep(.1)
+            time.sleep(0.1)
             count += 1
 
         utilcurses.leaveCurses()
@@ -341,7 +358,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.diag(node_list=args)
 
-        for (node, success, output) in results.get_node_output():
+        for node, success, output in results.get_node_output():
             self.info("[%s]" % node)
             self.info(output)
 
@@ -393,7 +410,6 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         return True
 
-
     def do_check(self, args):
         """- [<nodes>]
 
@@ -413,7 +429,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.check(node_list=args)
 
-        for (node, success, output) in results.get_node_output():
+        for node, success, output in results.get_node_output():
             if success:
                 self.info("%s scripts are ok." % node)
             else:
@@ -471,14 +487,20 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         def outputcapstats(tag, data):
             def output_one(tag, vals):
-                return "%-21s %-10s %s" % (tag, vals.get("kpps", ""), vals.get("mbps", ""))
+                return "%-21s %-10s %s" % (
+                    tag,
+                    vals.get("kpps", ""),
+                    vals.get("mbps", ""),
+                )
 
-            self.info("%-21s %-10s %-10s (%ds average)\n%s" % (tag, "kpps", "mbps", interval, "-" * 40))
+            self.info(
+                "%-21s %-10s %-10s (%ds average)\n%s"
+                % (tag, "kpps", "mbps", interval, "-" * 40)
+            )
 
             totals = None
 
-            for (node, success, vals) in data:
-
+            for node, success, vals in data:
                 if not success:
                     self.err(vals["output"])
                     continue
@@ -499,7 +521,9 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
         if nodedata:
             outputcapstats("Interface", nodedata)
         else:
-            self.error("No network interfaces suitable for use with capstats were found.")
+            self.error(
+                "No network interfaces suitable for use with capstats were found."
+            )
 
         return results.ok
 
@@ -511,16 +535,25 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.df(node_list=args)
 
-        self.info("%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity"))
-        for (node, success, dfs) in results.get_node_data():
+        self.info(
+            "%27s  %15s  %-5s  %-5s  %-5s" % ("", "", "total", "avail", "capacity")
+        )
+        for node, success, dfs in results.get_node_data():
             for key, diskinfo in sorted(dfs.items()):
                 if key == "FAIL":
                     self.error("df helper failed on %s: %s" % (node, diskinfo))
                     continue
                 nodehost = "%s/%s" % (node.name, node.host)
-                self.info("%28s  %15s  %-5s  %-5s  %-5.1f%%" % (nodehost,
-                    diskinfo.fs, util.number_unit_str(diskinfo.total),
-                    util.number_unit_str(diskinfo.available), diskinfo.percent))
+                self.info(
+                    "%28s  %15s  %-5s  %-5s  %-5.1f%%"
+                    % (
+                        nodehost,
+                        diskinfo.fs,
+                        util.number_unit_str(diskinfo.total),
+                        util.number_unit_str(diskinfo.available),
+                        diskinfo.percent,
+                    )
+                )
 
         return results.ok
 
@@ -544,7 +577,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.print_id(id=id, node_list=args)
 
-        for (node, success, msg) in results.get_node_output():
+        for node, success, msg in results.get_node_output():
             if success:
                 out = msg.split("\n", 1)
                 self.info("%12s   %s = %s" % (node, out[0], out[1]))
@@ -562,7 +595,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.peerstatus(node_list=args)
 
-        for (node, success, msg) in results.get_node_output():
+        for node, success, msg in results.get_node_output():
             if success:
                 self.info("%11s\n%s" % (node, msg))
             else:
@@ -578,7 +611,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.netstats(node_list=args)
 
-        for (node, success, msg) in results.get_node_output():
+        for node, success, msg in results.get_node_output():
             if success:
                 self.info("%11s: %s" % (node, msg))
             else:
@@ -622,14 +655,15 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         try:
             while args[0].startswith("-"):
-
                 opt = args[0]
 
                 if opt == "-c":
                     # Check non-installed policies.
                     check = True
                 else:
-                    raise CommandSyntaxError("invalid argument for the scripts command: %s" % opt)
+                    raise CommandSyntaxError(
+                        "invalid argument for the scripts command: %s" % opt
+                    )
 
                 args = args[1:]
 
@@ -640,7 +674,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         results = self.zeekctl.scripts(check=check, node_list=args)
 
-        for (node, success, output) in results.get_node_output():
+        for node, success, output in results.get_node_output():
             if success:
                 self.info("%s scripts are ok." % node)
                 for line in output.splitlines():
@@ -674,14 +708,15 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
         in_scripts = False
 
         for arg in args.split():
-
             if not trace:
                 trace = arg
                 continue
 
             if arg == "--":
                 if in_scripts:
-                    raise CommandSyntaxError('cannot parse the arguments of the process command (too many "--")')
+                    raise CommandSyntaxError(
+                        'cannot parse the arguments of the process command (too many "--")'
+                    )
 
                 in_scripts = True
                 continue
@@ -693,7 +728,9 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
                 scripts += [arg]
 
         if not trace:
-            raise CommandSyntaxError("the process command requires the pathname of a trace file")
+            raise CommandSyntaxError(
+                "the process command requires the pathname of a trace file"
+            )
 
         results = self.zeekctl.process(trace, options, scripts)
 
@@ -701,9 +738,23 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
     def completedefault(self, text, line, begidx, endidx):
         # Commands that take a "<nodes>" argument.
-        nodes_cmds = ["capstats", "check", "cleanup", "df", "diag", "netstats",
-                      "print", "restart", "start", "status", "stop", "top",
-                      "update", "peerstatus", "scripts"]
+        nodes_cmds = [
+            "capstats",
+            "check",
+            "cleanup",
+            "df",
+            "diag",
+            "netstats",
+            "print",
+            "restart",
+            "start",
+            "status",
+            "stop",
+            "top",
+            "update",
+            "peerstatus",
+            "scripts",
+        ]
 
         args = line.split()
 
@@ -719,7 +770,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
 
         plugin_help = ""
 
-        for (cmd, args, descr) in self.zeekctl.plugins.allCustomCommands():
+        for cmd, args, descr in self.zeekctl.plugins.allCustomCommands():
             if not plugin_help:
                 plugin_help += "\nCommands provided by plugins:\n\n"
 
@@ -729,7 +780,7 @@ class ZeekCtlCmdLoop(zeekcmd.ExitValueCmd):
             plugin_help += "  %-32s - %s\n" % (cmd, descr)
 
         self.info(
-"""
+            """
 ZeekControl Version %s
 
   capstats [<nodes>] [<secs>]      - Report interface statistics with capstats
@@ -756,12 +807,16 @@ ZeekControl Version %s
   status [<nodes>]                 - Summarize node status
   stop [<nodes>]                   - Stop processing
   top [<nodes>]                    - Show Zeek processes ala top
-  %s""" % (version.VERSION, plugin_help))
+  %s"""
+            % (version.VERSION, plugin_help)
+        )
+
 
 def main():
     # Undocumented option to print the documentation.
     if len(sys.argv) == 3 and sys.argv[1] == "--print-doc":
         from ZeekControl import printdoc
+
         printdoc.print_zeekctl_docs(sys.argv[2], ZeekCtlCmdLoop)
         return 0
 
@@ -799,7 +854,10 @@ def main():
 
     else:
         try:
-            cmdsuccess = loop.cmdloop('\nWelcome to ZeekControl %s\n\nType "help" for help.\n' % version.VERSION)
+            cmdsuccess = loop.cmdloop(
+                '\nWelcome to ZeekControl %s\n\nType "help" for help.\n'
+                % version.VERSION
+            )
         except ZeekControlError as e:
             cmdsuccess = False
             print("Error: %s" % e, file=sys.stderr)
@@ -809,6 +867,7 @@ def main():
             loop.finish()
 
     return not cmdsuccess
+
 
 if __name__ == "__main__":
     sys.exit(main())

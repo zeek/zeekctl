@@ -4,6 +4,7 @@
 
 import inspect
 
+
 def api(*deco_args):
     if len(deco_args) == 1 and callable(deco_args[0]):
         # No argument to decorator.
@@ -16,7 +17,9 @@ def api(*deco_args):
         def _api(method):
             method._doc = deco_args[0]
             return method
+
         return _api
+
 
 def print_indented(text, level):
     out = ""
@@ -29,6 +32,7 @@ def print_indented(text, level):
 
     return out
 
+
 # Prints API documentation for a class. Includes all methods tagged with
 # @api(tag). (Use an unknown tag to not exclude all methods.) If header is
 # False, the class's name and doc string is not included.
@@ -36,7 +40,7 @@ def print_class(cls, tag="", header=True):
     out = ""
     methods = {}
 
-    for (key, val) in cls.__dict__.items():
+    for key, val in cls.__dict__.items():
         if not inspect.isfunction(val):
             continue
 

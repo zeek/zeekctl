@@ -2,6 +2,7 @@
 
 import ZeekControl.plugin
 
+
 class ZeekctlConfigTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(ZeekctlConfigTest, self).__init__(apiversion=1)

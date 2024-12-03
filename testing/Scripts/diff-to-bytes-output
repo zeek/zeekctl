@@ -7,7 +7,7 @@
 from __future__ import print_function
 import sys
 
-bignumber = 2**31-1
+bignumber = 2**31 - 1
 
 for line in sys.stdin:
     outstr = ""

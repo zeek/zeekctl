@@ -3,4 +3,5 @@
 #
 
 import ZeekControl.cmdresult
+
 CmdResult = ZeekControl.cmdresult.CmdResult

@@ -2,6 +2,7 @@
 
 from ZeekControl import node as node_mod
 
+
 class CmdResult:
     """Class representing the result of a zeekctl command."""
 

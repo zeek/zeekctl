@@ -3,6 +3,7 @@
 
 import BroControl.plugin
 
+
 class BroctlConfigTest(BroControl.plugin.Plugin):
     def __init__(self):
         super(BroctlConfigTest, self).__init__(apiversion=1)

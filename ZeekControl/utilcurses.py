@@ -6,15 +6,18 @@ import atexit
 
 _Stdscr = None
 
+
 def _finishCurses():
     curses.nocbreak()
     curses.echo()
     curses.endwin()
 
+
 def _initCurses():
     global _Stdscr
     atexit.register(_finishCurses)
     _Stdscr = curses.initscr()
+
 
 def enterCurses():
     if not _Stdscr:
@@ -26,9 +29,11 @@ def enterCurses():
 
     signal.signal(signal.SIGWINCH, signal.SIG_IGN)
 
+
 def leaveCurses():
     curses.reset_shell_mode()
     signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+
 
 # Check non-blockingly for a key press and returns it, or return None if no
 # key is found. enter/leaveCurses must surround the getc() call.
@@ -40,11 +45,13 @@ def getCh():
 
     return chr(ch)
 
+
 def clearScreen():
     if not _Stdscr:
         _initCurses()
 
     _Stdscr.clear()
+
 
 def printLines(lines):
     y = 0

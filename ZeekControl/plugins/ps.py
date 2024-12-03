@@ -7,6 +7,7 @@
 import ZeekControl.plugin
 import ZeekControl.cmdresult
 
+
 class PsZeek(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(PsZeek, self).__init__(apiversion=1)
@@ -25,7 +26,7 @@ class PsZeek(ZeekControl.plugin.Plugin):
     def cmd_custom(self, cmd, args, cmdout):
         results = ZeekControl.cmdresult.CmdResult()
 
-        assert(cmd == "zeek") # Can't be anything else.
+        assert cmd == "zeek"  # Can't be anything else.
 
         # Get the nodes the user wants.
         if args:
@@ -65,7 +66,7 @@ class PsZeek(ZeekControl.plugin.Plugin):
 
         first_node = True
 
-        for (n, success, output) in self.executeParallel(cmds):
+        for n, success, output in self.executeParallel(cmds):
             outlines = output.splitlines()
             # Remove stderr output (if any)
             while outlines and not outlines[0].startswith("USER"):
@@ -85,7 +86,6 @@ class PsZeek(ZeekControl.plugin.Plugin):
                 continue
 
             for line in outlines[1:]:
-
                 m = line.split()
                 try:
                     pid, ppid = int(m[1]), int(m[2])
@@ -98,7 +98,7 @@ class PsZeek(ZeekControl.plugin.Plugin):
                     results.ok = False
                     continue
                 try:
-                    known = (pid in pids[n.host] or ppid in pids[n.host])
+                    known = pid in pids[n.host] or ppid in pids[n.host]
                 except KeyError:
                     known = False
 

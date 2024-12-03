@@ -2,6 +2,7 @@
 
 import ZeekControl.plugin
 
+
 class StateTest(ZeekControl.plugin.Plugin):
     def __init__(self):
         super(StateTest, self).__init__(apiversion=1)

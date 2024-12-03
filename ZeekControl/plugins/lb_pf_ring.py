@@ -4,6 +4,7 @@
 import ZeekControl.plugin
 import ZeekControl.config
 
+
 class LBPFRing(ZeekControl.plugin.Plugin):
     LB_POLICIES_ENV_MAP = {
         "2-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_FLOW_2_TUPLE",
@@ -15,7 +16,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
         "inner-4-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_4_TUPLE",
         "inner-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_5_TUPLE",
         "inner-tcp-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_TCP_5_TUPLE",
-        "inner-6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW"
+        "inner-6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW",
     }
 
     def __init__(self):
@@ -90,7 +91,9 @@ class LBPFRing(ZeekControl.plugin.Plugin):
                 nn.interface = "%s@%d" % (nn.interface, app_instance)
 
             else:
-                nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
+                nn.env_vars.setdefault(
+                    "PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface]
+                )
 
             app_instance += 1
             nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "zeek-%s" % nn.interface)

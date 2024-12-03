@@ -8,6 +8,7 @@ import logging
 from ZeekControl import config
 from ZeekControl import doc
 
+
 class Plugin(object):
     """The class ``Plugin`` is the base class for all ZeekControl plugins.
 
@@ -66,7 +67,9 @@ class Plugin(object):
         See the output of ``zeekctl config`` for a complete list."""
         val = config.Config.get_option(name)
         if val is None:
-            raise KeyError("plugin %s lookup of unknown config option %s" % (self.name(), name))
+            raise KeyError(
+                "plugin %s lookup of unknown config option %s" % (self.name(), name)
+            )
 
         return val
 
@@ -82,7 +85,9 @@ class Plugin(object):
 
         val = config.Config.get_option(name)
         if val is None:
-            raise KeyError("plugin %s lookup of unknown plugin option %s" % (self.name(), name))
+            raise KeyError(
+                "plugin %s lookup of unknown plugin option %s" % (self.name(), name)
+            )
 
         return val
 
@@ -109,7 +114,10 @@ class Plugin(object):
         variables.
         """
         if "." in name or " " in name:
-            self.error('plugin %s state variable name "%s" must not contain dots or spaces' % (self.name(), name))
+            self.error(
+                'plugin %s state variable name "%s" must not contain dots or spaces'
+                % (self.name(), name)
+            )
             return
 
         name = "%s.state.%s" % (self.prefix(), name)
@@ -410,8 +418,8 @@ class Plugin(object):
 
     # Per-command help currently not supported by zeekctl. May add this later.
     #
-    #@doc.api(override):
-    #def help_custom(self, cmd):
+    # @doc.api(override):
+    # def help_custom(self, cmd):
     #    """Called for getting the ``help`` text for a custom command defined
     #    by Plugin.commands_. Returns a string with the text, or an empty
     #    string if no help is available.
@@ -922,18 +930,20 @@ class Plugin(object):
             return False
         raise ValueError("invalid boolean: '%s'" % val)
 
-
     def _registerOptions(self):
         type_converters = {"bool": self._to_bool, "int": int, "string": str}
         pytype = {"bool": bool, "int": int, "string": str}
 
-        for (name, ty, default, descr) in self.options():
+        for name, ty, default, descr in self.options():
             if not name:
                 self.error("plugin %s option name must not be empty" % self.name())
                 continue
 
             if "." in name or " " in name:
-                self.error('plugin %s option name "%s" must not contain dots or spaces' % (self.name(), name))
+                self.error(
+                    'plugin %s option name "%s" must not contain dots or spaces'
+                    % (self.name(), name)
+                )
                 continue
 
             optname = "%s.%s" % (self.prefix(), name)
@@ -943,7 +953,9 @@ class Plugin(object):
                 continue
 
             if not isinstance(default, pytype[ty]):
-                self.error("plugin option %s default value must be type %s" % (optname, ty))
+                self.error(
+                    "plugin option %s default value must be type %s" % (optname, ty)
+                )
                 continue
 
             val = config.Config.get_option(optname)
@@ -953,7 +965,10 @@ class Plugin(object):
                 try:
                     newval = type_converters[ty](val)
                 except ValueError:
-                    self.error('zeekctl option "%s" has invalid value "%s" for type %s' % (optname, val, ty))
+                    self.error(
+                        'zeekctl option "%s" has invalid value "%s" for type %s'
+                        % (optname, val, ty)
+                    )
                     continue
 
                 config.Config.set_option(optname, newval)

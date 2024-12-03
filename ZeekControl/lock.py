@@ -5,6 +5,7 @@ from ZeekControl import config
 
 lockCount = 0
 
+
 # Return: 0 if no lock, >0 for PID of lock, or -1 on error
 def _break_lock(cmdout):
     from ZeekControl import execute
@@ -18,7 +19,9 @@ def _break_lock(cmdout):
         cmdout.error("failed to read lock file: %s" % err)
         return -1
 
-    success, output = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
+    success, output = execute.run_localcmd(
+        "%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid)
+    )
     if success and output.strip() == "running":
         # Process still exists.
         try:
@@ -35,6 +38,7 @@ def _break_lock(cmdout):
         return -1
 
     return 0
+
 
 # Return: 0 if lock is acquired, or if failed to acquire lock return >0 for
 # PID of lock, or -1 on error
@@ -58,7 +62,7 @@ def _acquire_lock(cmdout):
             os.link(tmpfile, config.Config.lockfile)
             m = os.stat(tmpfile)[3]
 
-            if n == m-1:
+            if n == m - 1:
                 return 0
 
             # File is locked.
@@ -84,11 +88,13 @@ def _acquire_lock(cmdout):
 
     return lockpid
 
+
 def _release_lock(cmdout):
     try:
         os.unlink(config.Config.lockfile)
     except OSError as e:
         cmdout.error("cannot remove lock file: %s" % e)
+
 
 def lock(cmdout, showwait=True):
     global lockCount
@@ -116,6 +122,7 @@ def lock(cmdout, showwait=True):
 
     lockCount = 1
     return True
+
 
 def unlock(cmdout):
     global lockCount
