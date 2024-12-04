@@ -1418,7 +1418,7 @@ class Controller:
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
         try:
             util.force_symlink(node_cwd, current)
-        except (IOError, OSError) as err:
+        except OSError as err:
             results.ok = False
             self.ui.error("failed to update symlink '%s': %s" % (current, err))
             return results

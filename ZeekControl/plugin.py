@@ -2,14 +2,13 @@
 # ZeekControl Plugin API.
 #
 
-from __future__ import print_function
 import logging
 
 from ZeekControl import config
 from ZeekControl import doc
 
 
-class Plugin(object):
+class Plugin:
     """The class ``Plugin`` is the base class for all ZeekControl plugins.
 
     The class has a number of methods for plugins to override, and every

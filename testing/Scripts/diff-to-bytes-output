@@ -4,7 +4,6 @@
 # exponential format, because some versions of awk output large integers in
 # that format.
 
-from __future__ import print_function
 import sys
 
 bignumber = 2**31 - 1

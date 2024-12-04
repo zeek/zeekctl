@@ -5,7 +5,7 @@ import ZeekControl.plugin
 
 class OptionsTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(OptionsTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "optionstest"

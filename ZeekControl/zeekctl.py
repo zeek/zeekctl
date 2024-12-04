@@ -1,6 +1,5 @@
 # The ZeekControl interactive shell.
 
-from __future__ import print_function
 import os
 import sys
 import logging
@@ -69,7 +68,7 @@ def check_config(func):
     return wrapper
 
 
-class ZeekCtl(object):
+class ZeekCtl:
     def __init__(
         self,
         basedir=version.ZEEKBASE,
@@ -107,7 +106,7 @@ class ZeekCtl(object):
                     datefmt=self.config.timefmt,
                     level=logging.DEBUG,
                 )
-            except IOError as err:
+            except OSError as err:
                 raise RuntimeEnvironmentError(
                     "%s\nCheck if the user running ZeekControl has write access to the debug log file."
                     % err

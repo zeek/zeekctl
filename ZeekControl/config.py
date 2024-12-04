@@ -683,7 +683,7 @@ class Configuration:
             if opt.legacy_name:
                 opt_names.add(opt.legacy_name.lower())
 
-        with open(fname, "r") as f:
+        with open(fname) as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#"):
@@ -923,7 +923,7 @@ class Configuration:
                     filehash=True
                 ):
                     return True
-        except IOError:
+        except OSError:
             # If we can't read the config files, then do nothing.
             pass
 
@@ -1038,7 +1038,7 @@ class Configuration:
     # Return a hash value (as a string) of the current zeekctl configuration.
     def _get_zeekctlcfg_hash(self, filehash=False):
         if filehash:
-            with open(self.cfgfile, "r") as ff:
+            with open(self.cfgfile) as ff:
                 data = ff.read()
         else:
             data = str(sorted(self.config.items()))
@@ -1052,7 +1052,7 @@ class Configuration:
     # Return a hash value (as a string) of the current zeekctl node config.
     def _get_nodecfg_hash(self, filehash=False):
         if filehash:
-            with open(self.nodecfg, "r") as ff:
+            with open(self.nodecfg) as ff:
                 data = ff.read()
         else:
             nn = []
@@ -1122,7 +1122,7 @@ def _is_valid_addr(ipstr):
             socket.inet_pton(socket.AF_INET6, ipstr)
         else:
             socket.inet_pton(socket.AF_INET, ipstr)
-    except socket.error:
+    except OSError:
         return False
 
     return True

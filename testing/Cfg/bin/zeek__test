@@ -8,7 +8,6 @@
 # fails to cleanup, and this script can be controlled by a config file to
 # simulate various scenarios (crash, slow to start, etc.).
 
-from __future__ import print_function
 import os, atexit, getopt, signal, sys, time
 
 livemode = False
@@ -104,7 +103,7 @@ def readzeekctltestcfg():
     if not os.path.isfile(cfgfilepath):
         return testcfg
 
-    with open(cfgfilepath, "r") as fin:
+    with open(cfgfilepath) as fin:
         for line in fin:
             key, val = line.strip().split("=", 1)
             key = key.strip()

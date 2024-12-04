@@ -106,7 +106,7 @@ def make_zeekctl_config_sh(cmdout):
     try:
         with open(tmp_path, "w") as out:
             out.write(ostr)
-    except IOError as e:
+    except OSError as e:
         cmdout.error("failed to write file: %s" % e)
         return False
 
@@ -274,7 +274,7 @@ def make_layout(path, cmdout, silent=False):
     try:
         with open(filename, "w") as out:
             out.write(ostr)
-    except IOError as e:
+    except OSError as e:
         cmdout.error("failed to write file: %s" % e)
         return False
 
@@ -285,7 +285,7 @@ def make_layout(path, cmdout, silent=False):
 def read_networks(fname):
     nets = []
 
-    with open(fname, "r") as f:
+    with open(fname) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -310,7 +310,7 @@ def make_local_networks(path, cmdout):
     except IndexError:
         cmdout.error("invalid CIDR notation in file: %s" % netcfg)
         return False
-    except IOError as e:
+    except OSError as e:
         cmdout.error("failed to read file: %s" % e)
         return False
 
@@ -327,7 +327,7 @@ def make_local_networks(path, cmdout):
     try:
         with open(os.path.join(path, "local-networks.zeek"), "w") as out:
             out.write(ostr)
-    except IOError as e:
+    except OSError as e:
         cmdout.error("failed to write file: %s" % e)
         return False
 
@@ -397,7 +397,7 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     try:
         with open(filename, "w") as out:
             out.write(ostr)
-    except IOError as e:
+    except OSError as e:
         cmdout.error("failed to write file: %s" % e)
         return False
 

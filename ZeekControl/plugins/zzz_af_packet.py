@@ -3,7 +3,7 @@ import ZeekControl.plugin
 
 class AF_Packet(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(AF_Packet, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "af_packet"

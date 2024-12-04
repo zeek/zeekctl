@@ -10,7 +10,7 @@ import ZeekControl.cmdresult
 
 class TestPlugin(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(TestPlugin, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "TestPlugin"

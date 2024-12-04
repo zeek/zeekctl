@@ -9,7 +9,7 @@ import ZeekControl.plugin
 
 class LBCustom(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(LBCustom, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "lb_custom"

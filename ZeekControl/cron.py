@@ -1,5 +1,4 @@
 # Tasks which are to be done on a regular basis from cron.
-from __future__ import print_function
 import io
 import os
 import time
@@ -93,7 +92,7 @@ class CronTasks:
 
                             self.config.set_state(tag, val)
 
-        except IOError as err:
+        except OSError as err:
             self.ui.error("failed to append to file: %s" % err)
             return
 
@@ -224,7 +223,7 @@ class CronTasks:
                 else:
                     meta.write("host <error>\n")
 
-        except IOError as err:
+        except OSError as err:
             self.ui.error("failure creating file: %s" % err)
             return
 
@@ -250,10 +249,10 @@ class CronTasks:
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
         try:
-            with open(self.config.statslog, "r") as fsrc:
+            with open(self.config.statslog) as fsrc:
                 with open(dst, "a") as fdst:
                     shutil.copyfileobj(fsrc, fdst)
-        except IOError as err:
+        except OSError as err:
             self.ui.error("failed to append file: %s" % err)
             return
 

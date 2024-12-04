@@ -7,7 +7,6 @@
 # If any of these files already exists, we append (without writing the header
 # line again).
 
-from __future__ import print_function
 import os
 import sys
 
@@ -19,7 +18,7 @@ def readNodes(meta):
     proxies = set()
     workers = set()
 
-    with open(meta, "r") as f:
+    with open(meta) as f:
         for line in f:
             m = line.split()
             if not m:
@@ -104,7 +103,7 @@ def processNode(stats, wwwdir, node, iface):
     entry = {}
     first = -1
 
-    with open(stats, "r") as ff:
+    with open(stats) as ff:
         for line in ff:
             m = line.split()
 
@@ -159,7 +158,7 @@ def main():
 
     try:
         manager, loggers, proxies, workers = readNodes(meta)
-    except IOError as err:
+    except OSError as err:
         print("Error: failed to read file: %s" % err)
         sys.exit(1)
 
@@ -175,7 +174,7 @@ def main():
 
         if manager:
             processNode(stats, wwwdir, manager, False)
-    except IOError as err:
+    except OSError as err:
         print("Error: %s" % err)
         sys.exit(1)
 

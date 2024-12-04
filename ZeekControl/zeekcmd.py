@@ -1,4 +1,3 @@
-from __future__ import print_function
 import cmd
 
 from ZeekControl.exceptions import CommandSyntaxError, InvalidNodeError, LockError

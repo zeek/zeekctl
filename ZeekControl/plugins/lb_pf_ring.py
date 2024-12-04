@@ -20,7 +20,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
     }
 
     def __init__(self):
-        super(LBPFRing, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "lb_pf_ring"

@@ -5,7 +5,7 @@ import ZeekControl.plugin
 
 class NodeKeysTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(NodeKeysTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "nodekeystest"

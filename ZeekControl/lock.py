@@ -12,10 +12,10 @@ def _break_lock(cmdout):
 
     try:
         # Check whether lock is stale.
-        with open(config.Config.lockfile, "r") as f:
+        with open(config.Config.lockfile) as f:
             pid = f.readline().strip()
 
-    except (OSError, IOError) as err:
+    except OSError as err:
         cmdout.error("failed to read lock file: %s" % err)
         return -1
 
@@ -33,7 +33,7 @@ def _break_lock(cmdout):
     try:
         # Break lock.
         os.unlink(config.Config.lockfile)
-    except (OSError, IOError) as err:
+    except OSError as err:
         cmdout.error("failed to remove lock file: %s" % err)
         return -1
 
@@ -76,14 +76,14 @@ def _acquire_lock(cmdout):
             if lockpid == 0:
                 return _acquire_lock(cmdout)
 
-        except IOError as e:
+        except OSError as e:
             cmdout.error("cannot acquire lock: %s" % e)
             return lockpid
 
     finally:
         try:
             os.unlink(tmpfile)
-        except (OSError, IOError):
+        except OSError:
             pass
 
     return lockpid

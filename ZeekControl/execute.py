@@ -40,7 +40,7 @@ def install(src, dstdir, cmdout):
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
         pass
-    except IOError as err:
+    except OSError as err:
         cmdout.error("failed to copy: %s" % err)
         return False
 

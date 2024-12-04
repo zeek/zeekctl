@@ -6,7 +6,7 @@ import ZeekControl.plugin
 
 class LBMyricom(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(LBMyricom, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "lb_myricom"
