@@ -17,8 +17,8 @@ for line in sys.stdin:
             num = 0
 
         if num > bignumber:
-            outstr += "%.5e " % num
+            outstr += f"{num:.5e} "
         else:
-            outstr += "%s " % field
+            outstr += f"{field} "
 
     print(outstr[:-1])

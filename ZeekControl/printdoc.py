@@ -28,16 +28,16 @@ def print_commands(cls):
             args = ""
 
         if args:
-            args = " *%s*" % args
+            args = f" *{args}*"
 
         output = ""
         for line in docstr.splitlines():
-            output += "    %s\n" % line.strip()
+            output += f"    {line.strip()}\n"
 
         output = output.strip()
 
         print()
-        print(".. _%s:\n\n*%s*%s\n    %s" % (cmd, cmd, args, output))
+        print(f".. _{cmd}:\n\n*{cmd}*{args}\n    {output}")
         print()
 
 

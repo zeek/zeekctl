@@ -20,13 +20,13 @@ def readNetworks(file):
         try:
             nets[cidr] = descr
         except KeyError:
-            print("cannot parse network specification '%s'" % cidr, file=sys.stderr)
+            print(f"cannot parse network specification '{cidr}'", file=sys.stderr)
 
     return nets
 
 
 if len(sys.argv) != 2:
-    print("usage: %s networks.cfg <conn.log" % sys.argv[0], file=sys.stderr)
+    print(f"usage: {sys.argv[0]} networks.cfg <conn.log", file=sys.stderr)
     sys.exit(1)
 
 nets = readNetworks(sys.argv[1])

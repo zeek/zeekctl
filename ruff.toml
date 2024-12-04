@@ -6,4 +6,3 @@ exclude = ["auxil"]
 
 [lint]
 select = ["UP"]
-ignore = ["UP031"]

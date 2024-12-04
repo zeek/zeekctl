@@ -15,9 +15,9 @@ class OptionsTest(ZeekControl.plugin.Plugin):
 
     def init(self):
         with open("options.out", "w") as f:
-            f.write("%s\n" % self.getOption("opt1"))
-            f.write("%s\n" % self.getOption("opt2"))
-            f.write("%s\n" % self.getOption("opt3"))
+            f.write(f"{self.getOption('opt1')}\n")
+            f.write(f"{self.getOption('opt2')}\n")
+            f.write(f"{self.getOption('opt3')}\n")
 
         return True
 

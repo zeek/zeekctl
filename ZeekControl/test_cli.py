@@ -7,7 +7,7 @@ import json
 
 
 def log(id, last):
-    res = requests.get("http://localhost:8082/log/%d/%d" % (id, last)).json()
+    res = requests.get(f"http://localhost:8082/log/{id}/{last}").json()
     if not res["log"]:
         sys.stdout.write("waiting...\r")
         sys.stdout.flush()
@@ -19,10 +19,10 @@ def log(id, last):
 
 
 def wait(id):
-    print("Waiting for job %d to finish" % id)
+    print(f"Waiting for job {id} to finish")
     last = 0
     while True:
-        res = requests.get("http://localhost:8082/result/%d" % id).json()
+        res = requests.get(f"http://localhost:8082/result/{id}").json()
         last = log(id, last)
         if res["result"] is not None:
             return json.loads(res["result"])
@@ -30,12 +30,12 @@ def wait(id):
 
 
 def run(action):
-    res = requests.get("http://localhost:8082/%s" % action).json()
+    res = requests.get(f"http://localhost:8082/{action}").json()
     print(wait(res["id"]))
 
 
 def call(action):
-    out = requests.get("http://localhost:8082/%s" % action).text
+    out = requests.get(f"http://localhost:8082/{action}").text
     try:
         return json.loads(out)
     except:

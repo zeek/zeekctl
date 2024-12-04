@@ -21,6 +21,6 @@ class StateTest(ZeekControl.plugin.Plugin):
         self.setState("statevar", sv + 1)
 
         with open("state.out", "w") as f:
-            f.write("statevar: %s\n" % self.getState("statevar"))
+            f.write(f"statevar: {self.getState('statevar')}\n")
 
         return True

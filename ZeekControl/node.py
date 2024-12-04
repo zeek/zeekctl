@@ -130,6 +130,9 @@ class Node:
     def __str__(self):
         return self.name
 
+    def __format__(self, format_str):
+        return format(self.name, format_str)
+
     def copy(self):
         n = Node(self._config, self.name)
 
@@ -149,9 +152,7 @@ class Node:
 
         def tostr(v):
             if isinstance(v, dict):
-                return ",".join(
-                    ["%s=%s" % (key, val) for (key, val) in sorted(v.items())]
-                )
+                return ",".join([f"{key}={val}" for (key, val) in sorted(v.items())])
             else:
                 return str(v)
 
@@ -166,15 +167,15 @@ class Node:
             if isinstance(v, list):
                 v = ",".join(v)
             elif isinstance(v, dict):
-                v = ",".join(["%s=%s" % (key, val) for (key, val) in sorted(v.items())])
+                v = ",".join([f"{key}={val}" for (key, val) in sorted(v.items())])
 
             return v
 
         # Do not output attributes starting with underscore, because they are
         # for internal use and don't provide useful information to the user.
-        return ("%16s - " % self.name) + " ".join(
+        return f"{self.name:>16s} - " + " ".join(
             [
-                "%s=%s" % (k, fmt(self.__dict__[k]))
+                f"{k}={fmt(self.__dict__[k])}"
                 for k in sorted(self.__dict__.keys())
                 if not k.startswith("_")
             ]
@@ -193,39 +194,39 @@ class Node:
 
     def setPID(self, pid):
         """Stores the process ID of the node's Zeek process."""
-        key = "%s-pid" % self.name
+        key = f"{self.name}-pid"
         self._config.set_state(key, pid)
-        key = "%s-host" % self.name
+        key = f"{self.name}-host"
         self._config.set_state(key, self.host)
 
     @doc.api
     def getPID(self):
         """Returns the process ID of the node's Zeek process if running, and
         None otherwise."""
-        key = "%s-pid" % self.name
+        key = f"{self.name}-pid"
         return self._config.get_state(key)
 
     def clearPID(self):
         """Clears the stored process ID for the node's Zeek process, indicating
         that it is no longer running."""
-        key = "%s-pid" % self.name
+        key = f"{self.name}-pid"
         self._config.set_state(key, None)
 
     def setCrashed(self):
         """Marks node's Zeek process as having terminated unexpectedly."""
-        key = "%s-crashed" % self.name
+        key = f"{self.name}-crashed"
         self._config.set_state(key, True)
 
     def clearCrashed(self):
         """Clears the mark for the node's Zeek process having terminated
         unexpectedly."""
-        key = "%s-crashed" % self.name
+        key = f"{self.name}-crashed"
         self._config.set_state(key, False)
 
     @doc.api
     def hasCrashed(self):
         """Returns True if the node's Zeek process has exited abnormally."""
-        key = "%s-crashed" % self.name
+        key = f"{self.name}-crashed"
         val = self._config.get_state(key)
         if val is None:
             val = False
@@ -233,19 +234,19 @@ class Node:
 
     def getExpectRunning(self):
         """Returns True if we expect the node's Zeek process to be running."""
-        key = "%s-expect-running" % self.name
+        key = f"{self.name}-expect-running"
         val = self._config.get_state(key)
         if val is None:
             val = False
         return val
 
     def setExpectRunning(self, val):
-        key = "%s-expect-running" % self.name
+        key = f"{self.name}-expect-running"
         self._config.set_state(key, val)
 
     def setPort(self, port):
         """Set the Zeek port this node is using."""
-        key = "%s-port" % self.name
+        key = f"{self.name}-port"
         self._config.set_state(key, port)
 
     @doc.api
@@ -254,7 +255,7 @@ class Node:
         communication system is listening on for incoming connections, or -1 if
         no such port has been set yet.
         """
-        key = "%s-port" % self.name
+        key = f"{self.name}-port"
         return self._config.get_state(key) or -1
 
     @staticmethod

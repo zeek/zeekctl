@@ -48,7 +48,7 @@ class NodeStore:
                     matchname = nn
                     break
             raise ConfigurationError(
-                'node name "%s" is a duplicate of "%s"' % (node.name, matchname)
+                f'node name "{node.name}" is a duplicate of "{matchname}"'
             )
 
         self.nodestore[node.name] = node
@@ -114,8 +114,7 @@ class Configuration:
                 old_key = opt.legacy_name.lower()
                 if old_key in self.config:
                     self.ui.error(
-                        "option '%s' is no longer supported, please use '%s' instead"
-                        % (opt.legacy_name, opt.name)
+                        f"option '{opt.legacy_name}' is no longer supported, please use '{opt.name}' instead"
                     )
                     errors = True
                     continue
@@ -126,14 +125,14 @@ class Configuration:
             sys.exit(1)
 
         # Set defaults for options we derive dynamically.
-        self.init_option("mailto", "%s" % os.getenv("USER"))
-        self.init_option("mailfrom", "Zeek <zeek@%s>" % socket.gethostname())
+        self.init_option("mailto", "{}".format(os.getenv("USER")))
+        self.init_option("mailfrom", f"Zeek <zeek@{socket.gethostname()}>")
         self.init_option("mailalarmsto", self.config["mailto"])
 
         # Determine operating system.
         success, output = execute.run_localcmd("uname")
         if not success or not output:
-            raise RuntimeEnvironmentError("failed to run uname: %s" % output)
+            raise RuntimeEnvironmentError(f"failed to run uname: {output}")
         self.init_option("os", output.strip())
 
         # Determine the CPU pinning command.
@@ -170,12 +169,11 @@ class Configuration:
         for key, value in self.config.items():
             if re.match(allowedchars, key) is None:
                 raise ConfigurationError(
-                    'zeekctl option name "%s" contains invalid characters (allowed characters: a-z, 0-9, ., and _)'
-                    % key
+                    f'zeekctl option name "{key}" contains invalid characters (allowed characters: a-z, 0-9, ., and _)'
                 )
             if re.match(nostartdigit, key) is None:
                 raise ConfigurationError(
-                    'zeekctl option name "%s" cannot start with a number' % key
+                    f'zeekctl option name "{key}" cannot start with a number'
                 )
 
             # No zeekctl option ever requires the entire value to be wrapped in
@@ -188,7 +186,7 @@ class Configuration:
                     and value.endswith("'")
                 ):
                     raise ConfigurationError(
-                        'value of zeekctl option "%s" cannot be wrapped in quotes' % key
+                        f'value of zeekctl option "{key}" cannot be wrapped in quotes'
                     )
 
         dirs = (
@@ -208,15 +206,13 @@ class Configuration:
             v = self.config[d]
             if not os.path.isdir(v):
                 raise ConfigurationError(
-                    'zeekctl option "%s" directory not found: %s' % (d, v)
+                    f'zeekctl option "{d}" directory not found: {v}'
                 )
 
         for f in files:
             v = self.config[f]
             if not os.path.isfile(v):
-                raise ConfigurationError(
-                    'zeekctl option "%s" file not found: %s' % (f, v)
-                )
+                raise ConfigurationError(f'zeekctl option "{f}" file not found: {v}')
 
         # Verify that logs don't expire more quickly than the rotation interval
         logexpireseconds = 60 * self.config["logexpireminutes"]
@@ -244,8 +240,7 @@ class Configuration:
         mm = re.match("([0-9]+) ?(day|hr|min)s?$", ss)
         if mm is None:
             raise ConfigurationError(
-                'value of zeekctl option "%s" is invalid (value must be integer followed by a time unit "day", "hr", or "min"): %s'
-                % (optname, ss)
+                f'value of zeekctl option "{optname}" is invalid (value must be integer followed by a time unit "day", "hr", or "min"): {ss}'
             )
 
         v = int(mm.group(1))
@@ -263,7 +258,7 @@ class Configuration:
             try:
                 global_env_vars = self._get_env_var_dict(varlist)
             except ConfigurationError as err:
-                raise ConfigurationError("zeekctl config: %s" % err)
+                raise ConfigurationError(f"zeekctl config: {err}")
 
             for node in self.nodes():
                 for key, val in global_env_vars.items():
@@ -287,7 +282,7 @@ class Configuration:
             return self.config[attr]
         if attr in self.state:
             return self.state[attr]
-        raise AttributeError("unknown config attribute %s" % attr)
+        raise AttributeError(f"unknown config attribute {attr}")
 
     # Returns a sorted list of all zeekctl.cfg entries.
     # Includes dynamic variables if dynamic is true.
@@ -410,14 +405,13 @@ class Configuration:
                     key, val = keyval.split("=", 1)
                 except ValueError:
                     raise ConfigurationError(
-                        "missing '=' in env_vars option value: %s" % keyval
+                        f"missing '=' in env_vars option value: {keyval}"
                     )
 
                 key = key.strip()
                 if not key:
                     raise ConfigurationError(
-                        "env_vars option value must contain at least one environment variable name: %s"
-                        % keyval
+                        f"env_vars option value must contain at least one environment variable name: {keyval}"
                     )
 
                 env_vars[key] = val.strip()
@@ -430,7 +424,7 @@ class Configuration:
         fname = self.nodecfg
         try:
             if not config.read(fname):
-                raise ConfigurationError("cannot read node config file: %s" % fname)
+                raise ConfigurationError(f"cannot read node config file: {fname}")
         except configparser.MissingSectionHeaderError as err:
             raise ConfigurationError(err)
 
@@ -446,8 +440,7 @@ class Configuration:
 
                 if key not in node_mod.Node._keys:
                     self.ui.warn(
-                        "ignoring unrecognized node config option '%s' given for node '%s'"
-                        % (key, sec)
+                        f"ignoring unrecognized node config option '{key}' given for node '{sec}'"
                     )
                     continue
 
@@ -464,22 +457,21 @@ class Configuration:
 
     def _check_node(self, node, nodestore, counts):
         if not node.type:
-            raise ConfigurationError("no type given for node %s" % node.name)
+            raise ConfigurationError(f"no type given for node {node.name}")
 
         if node.type not in node_mod.node_types():
             raise ConfigurationError(
-                "unknown node type '%s' given for node '%s'" % (node.type, node.name)
+                f"unknown node type '{node.type}' given for node '{node.name}'"
             )
 
         if not node.host:
-            raise ConfigurationError("no host given for node '%s'" % node.name)
+            raise ConfigurationError(f"no host given for node '{node.name}'")
 
         try:
             addrinfo = socket.getaddrinfo(node.host, None, 0, 0, socket.SOL_TCP)
         except socket.gaierror as e:
             raise ConfigurationError(
-                "hostname lookup failed for '%s' in node config [%s]"
-                % (node.host, e.args[1])
+                f"hostname lookup failed for '{node.host}' in node config [{e.args[1]}]"
             )
 
         addrs = [addr[4][0] for addr in addrinfo]
@@ -500,7 +492,7 @@ class Configuration:
         try:
             node.env_vars = self._get_env_var_dict(node.env_vars)
         except ConfigurationError as err:
-            raise ConfigurationError("node '%s' config: %s" % (node.name, err))
+            raise ConfigurationError(f"node '{node.name}' config: {err}")
 
         # Each node gets a number unique across its type.
         try:
@@ -515,33 +507,28 @@ class Configuration:
         if node.lb_procs:
             if not node_mod.is_worker(node):
                 raise ConfigurationError(
-                    "node '%s' config: load balancing node config options are only for worker nodes"
-                    % node.name
+                    f"node '{node.name}' config: load balancing node config options are only for worker nodes"
                 )
             try:
                 numprocs = int(node.lb_procs)
             except ValueError:
                 raise ConfigurationError(
-                    "number of load-balanced processes must be an integer for node '%s'"
-                    % node.name
+                    f"number of load-balanced processes must be an integer for node '{node.name}'"
                 )
             if numprocs < 1:
                 raise ConfigurationError(
-                    "number of load-balanced processes must be greater than zero for node '%s'"
-                    % node.name
+                    f"number of load-balanced processes must be greater than zero for node '{node.name}'"
                 )
         elif node.lb_method:
             raise ConfigurationError(
-                "number of load-balanced processes not specified for node '%s'"
-                % node.name
+                f"number of load-balanced processes not specified for node '{node.name}'"
             )
 
         try:
             pin_cpus = self._get_pin_cpu_list(node.pin_cpus, numprocs)
         except ValueError:
             raise ConfigurationError(
-                "pin cpus list must contain only non-negative integers for node '%s'"
-                % node.name
+                f"pin cpus list must contain only non-negative integers for node '{node.name}'"
             )
 
         if pin_cpus:
@@ -550,7 +537,7 @@ class Configuration:
         if node.lb_procs:
             if not node.lb_method:
                 raise ConfigurationError(
-                    "no load balancing method given for node '%s'" % node.name
+                    f"no load balancing method given for node '{node.name}'"
                 )
 
             if node.lb_method not in (
@@ -561,15 +548,13 @@ class Configuration:
                 "interfaces",
             ):
                 raise ConfigurationError(
-                    "unknown load balancing method '%s' given for node '%s'"
-                    % (node.lb_method, node.name)
+                    f"unknown load balancing method '{node.lb_method}' given for node '{node.name}'"
                 )
 
             if node.lb_method == "interfaces":
                 if not node.lb_interfaces:
                     raise ConfigurationError(
-                        "list of load-balanced interfaces not specified for node '%s'"
-                        % node.name
+                        f"list of load-balanced interfaces not specified for node '{node.name}'"
                     )
 
                 # get list of interfaces to use, and assign one to each node
@@ -577,21 +562,20 @@ class Configuration:
 
                 if len(netifs) != numprocs:
                     raise ConfigurationError(
-                        "number of load-balanced interfaces is not same as number of load-balanced processes for node '%s'"
-                        % node.name
+                        f"number of load-balanced interfaces is not same as number of load-balanced processes for node '{node.name}'"
                     )
 
                 node.interface = netifs.pop().strip()
 
             origname = node.name
             # node names will have a numerical suffix
-            node.name = "%s-1" % node.name
+            node.name = f"{node.name}-1"
 
             for num in range(2, numprocs + 1):
                 newnode = node.copy()
 
                 # Update the node attrs that need to be changed
-                newname = "%s-%d" % (origname, num)
+                newname = f"{origname}-{num:d}"
                 newnode.name = newname
                 counts[node.type] += 1
                 newnode.count = counts[node.type]
@@ -629,8 +613,9 @@ class Configuration:
 
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError(
-                        "must run zeekctl on same machine as the manager node. The manager node has IP address %s and this machine has IP addresses: %s"
-                        % (n.addr, ", ".join(self.localaddrs))
+                        "must run zeekctl on same machine as the manager node. The manager node has IP address {} and this machine has IP addresses: {}".format(
+                            n.addr, ", ".join(self.localaddrs)
+                        )
                     )
 
             elif node_mod.is_proxy(n):
@@ -640,8 +625,9 @@ class Configuration:
                 standalone = True
                 if n.addr not in self.localaddrs:
                     raise ConfigurationError(
-                        "must run zeekctl on same machine as the standalone node. The standalone node has IP address %s and this machine has IP addresses: %s"
-                        % (n.addr, ", ".join(self.localaddrs))
+                        "must run zeekctl on same machine as the standalone node. The standalone node has IP address {} and this machine has IP addresses: {}".format(
+                            n.addr, ", ".join(self.localaddrs)
+                        )
                     )
 
         if standalone:
@@ -668,7 +654,7 @@ class Configuration:
             return True
         if val.lower() in ("0", "false"):
             return False
-        raise ValueError("invalid boolean: '%s'" % val)
+        raise ValueError(f"invalid boolean: '{val}'")
 
     # Parses zeekctl.cfg and returns a dictionary of all entries.
     def _read_config(self, fname):
@@ -691,7 +677,7 @@ class Configuration:
 
                 args = line.split("=", 1)
                 if len(args) != 2:
-                    raise ConfigurationError("zeekctl config syntax error: %s" % line)
+                    raise ConfigurationError(f"zeekctl config syntax error: {line}")
 
                 key, val = args
                 # Option names are not case-sensitive.
@@ -700,7 +686,7 @@ class Configuration:
                 # Warn about unrecognized options, but we can't check plugin
                 # options here because no plugins have been loaded yet.
                 if "." not in key and key not in opt_names:
-                    self.ui.warn("ignoring unrecognized zeekctl option: %s" % key)
+                    self.ui.warn(f"ignoring unrecognized zeekctl option: {key}")
                     continue
 
                 # if the key already exists, just overwrite with new value
@@ -715,8 +701,7 @@ class Configuration:
                     config[key] = type_converters[opt.type](config[key])
                 except ValueError:
                     raise ConfigurationError(
-                        "zeekctl option '%s' has invalid value '%s' for type %s"
-                        % (key, config[key], opt.type)
+                        f"zeekctl option '{key}' has invalid value '{config[key]}' for type {opt.type}"
                     )
 
         return config
@@ -1025,8 +1010,7 @@ class Configuration:
             # we must warn about dangling Zeek node.
             if nname not in nodes or hname != nodes[nname]:
                 self.ui.warn(
-                    'Zeek node "%s" possibly still running on host "%s" (PID %s)'
-                    % (nname, hname, pid)
+                    f'Zeek node "{nname}" possibly still running on host "{hname}" (PID {pid})'
                 )
                 # Set the "expected running" flag to False so cron doesn't try
                 # to start this node.
@@ -1088,22 +1072,22 @@ class Configuration:
 
         zeek = self.config["zeek"]
         if not os.path.lexists(zeek):
-            raise ConfigurationError("cannot find Zeek binary: %s" % zeek)
+            raise ConfigurationError(f"cannot find Zeek binary: {zeek}")
 
         version = ""
-        success, output = execute.run_localcmd("%s -v" % zeek)
+        success, output = execute.run_localcmd(f"{zeek} -v")
         if success and output:
             version = output.splitlines()[-1]
         else:
             msg = " with no output"
             if output:
-                msg = " with output:\n%s" % output
-            raise RuntimeEnvironmentError('running "zeek -v" failed%s' % msg)
+                msg = f" with output:\n{output}"
+            raise RuntimeEnvironmentError(f'running "zeek -v" failed{msg}')
 
         match = re.search(".* version ([^ ]*).*$", version)
         if not match:
             raise RuntimeEnvironmentError(
-                'cannot determine Zeek version ("zeek -v" output: %s)' % version.strip()
+                f'cannot determine Zeek version ("zeek -v" output: {version.strip()})'
             )
 
         version = match.group(1)

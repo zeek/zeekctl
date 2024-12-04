@@ -27,7 +27,7 @@ def _make_zeek_params(node, live):
         try:
             # Interface name needs quotes so that shell doesn't interpret any
             # potential metacharacters in the name.
-            args += ["-i", "'%s'" % node.interface]
+            args += ["-i", f"'{node.interface}'"]
         except AttributeError:
             pass
 
@@ -44,9 +44,9 @@ def _make_zeek_params(node, live):
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
-        args += ["-p", "%s" % prefix]
+        args += ["-p", f"{prefix}"]
 
-    args += ["-p", "%s" % node.name]
+    args += ["-p", f"{node.name}"]
 
     # The order of loaded scripts is as follows:
     # 1) SitePolicyScripts (local.zeek by default) gives a common set of loaded
@@ -83,9 +83,9 @@ def _make_zeek_params(node, live):
 def _make_env_params(node, returnlist=False):
     envs = []
     if not node_mod.is_standalone(node):
-        envs.append("CLUSTER_NODE=%s" % node.name)
+        envs.append(f"CLUSTER_NODE={node.name}")
 
-    envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
+    envs += [f"{key}={val}" for (key, val) in sorted(node.env_vars.items())]
 
     if returnlist:
         envlist = [("-v", i) for i in envs]
@@ -149,7 +149,7 @@ class Controller:
 
     # Starts the given nodes.
     def _start_nodes(self, nodes, results):
-        self.ui.info("starting %s ..." % node_mod.nodes_describe(nodes))
+        self.ui.info(f"starting {node_mod.nodes_describe(nodes)} ...")
 
         filtered = []
         # Ignore nodes which are still running.
@@ -163,8 +163,9 @@ class Controller:
         crashed = [node for node in nodes if node.hasCrashed()]
         if crashed:
             self.ui.info(
-                "creating crash report for previously crashed nodes: %s"
-                % ", ".join([n.name for n in crashed])
+                "creating crash report for previously crashed nodes: {}".format(
+                    ", ".join([n.name for n in crashed])
+                )
             )
             self._make_crash_reports(crashed)
 
@@ -175,7 +176,7 @@ class Controller:
             if success:
                 nodes += [node]
             else:
-                self.ui.error("cannot create working directory for %s" % node.name)
+                self.ui.error(f"cannot create working directory for {node.name}")
                 results.set_node_fail(node)
 
         # Start Zeek process.
@@ -203,7 +204,7 @@ class Controller:
         for node, success, output in self.executor.run_helper(cmds, shell=True):
             if success:
                 if not output:
-                    self.ui.error("failed to get PID of %s" % node.name)
+                    self.ui.error(f"failed to get PID of {node.name}")
                     results.set_node_fail(node)
                     continue
 
@@ -211,14 +212,14 @@ class Controller:
                 try:
                     pid = int(pidstr)
                 except ValueError:
-                    self.ui.error("invalid PID for %s: %s" % (node.name, pidstr))
+                    self.ui.error(f"invalid PID for {node.name}: {pidstr}")
                     results.set_node_fail(node)
                     continue
 
                 nodes += [node]
                 node.setPID(pid)
             else:
-                self.ui.error('cannot start %s; check output of "diag"' % node.name)
+                self.ui.error(f'cannot start {node.name}; check output of "diag"')
                 results.set_node_fail(node)
                 if output:
                     self.ui.error(output)
@@ -241,13 +242,12 @@ class Controller:
         for node, success in self._waitforzeeks(hanging, "TERMINATED", 0, False):
             if success:
                 self.ui.error(
-                    '%s terminated immediately after starting; check output with "diag"'
-                    % node.name
+                    f'{node.name} terminated immediately after starting; check output with "diag"'
                 )
                 node.clearPID()
                 results.set_node_fail(node)
             else:
-                self.ui.info("(%s still initializing)" % node.name)
+                self.ui.info(f"({node.name} still initializing)")
                 running += [node]
 
         for node in running:
@@ -272,7 +272,7 @@ class Controller:
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                self.ui.error("failed to run check-pid on node %s" % node.name)
+                self.ui.error(f"failed to run check-pid on node {node.name}")
                 continue
 
             running = output.strip() == "running"
@@ -314,7 +314,7 @@ class Controller:
             # Check nodes' .status file
             cmds = []
             for node in nodelist:
-                cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", [f"{node.cwd()}/.status"])]
 
             for node, success, output in self.executor.run_helper(cmds):
                 if not success or not output:
@@ -365,7 +365,7 @@ class Controller:
             return
         t = time.time()
         with open(self.config.statslog, "a") as out:
-            out.write("%s %s action %s\n" % (t, node, action))
+            out.write(f"{t} {node} action {action}\n")
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
@@ -395,15 +395,15 @@ class Controller:
                     msg = msg_header_no_backtrace + crashreport
 
                 msuccess, moutput = self._sendmail(
-                    "Crash report from %s" % node.name, msg
+                    f"Crash report from {node.name}", msg
                 )
                 if not msuccess:
                     self.ui.error(
-                        "error occurred while trying to send mail: %s" % moutput
+                        f"error occurred while trying to send mail: {moutput}"
                     )
             else:
                 self.ui.error(
-                    "error running post-terminate for %s:\n%s" % (node.name, output)
+                    f"error running post-terminate for {node.name}:\n{output}"
                 )
 
             node.clearCrashed()
@@ -412,7 +412,9 @@ class Controller:
         if not self.config.sendmail:
             return True, ""
 
-        cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
+        cmd = "{} '{}'".format(
+            os.path.join(self.config.scriptsdir, "send-mail"), subject
+        )
         return execute.run_localcmd(cmd, inputtext=body)
 
     # Stop Zeek processes on nodes.
@@ -456,7 +458,7 @@ class Controller:
         return results
 
     def _stop_nodes(self, nodes, results):
-        self.ui.info("stopping %s ..." % node_mod.nodes_describe(nodes))
+        self.ui.info(f"stopping {node_mod.nodes_describe(nodes)} ...")
 
         running = []
 
@@ -471,8 +473,9 @@ class Controller:
         crashed = [node for node in nodes if node.hasCrashed()]
         if crashed:
             self.ui.info(
-                "creating crash report for previously crashed nodes: %s"
-                % ", ".join([n.name for n in crashed])
+                "creating crash report for previously crashed nodes: {}".format(
+                    ", ".join([n.name for n in crashed])
+                )
             )
             self._make_crash_reports(crashed)
 
@@ -489,7 +492,7 @@ class Controller:
             if not success:
                 # Give up on this node.  Most likely either we cannot connect
                 # to the host, or we don't have permission to kill the process.
-                self.ui.error("unable to stop %s: %s" % (node.name, output))
+                self.ui.error(f"unable to stop {node.name}: {output}")
                 results.set_node_fail(node)
                 running.remove(node)
 
@@ -507,11 +510,11 @@ class Controller:
                 result = self._isrunning([node])
                 for node, isrunning in result:
                     if isrunning:
-                        self.ui.info("%s did not terminate ... killing ..." % node.name)
+                        self.ui.info(f"{node.name} did not terminate ... killing ...")
                         kill += [node]
                     else:
                         # crashed flag is set by _isrunning().
-                        self.ui.info("%s crashed during shutdown" % node.name)
+                        self.ui.info(f"{node.name} crashed during shutdown")
 
         if kill:
             # Kill those which did not terminate gracefully.
@@ -568,7 +571,7 @@ class Controller:
                 self._log_action(node, "stopped")
             else:
                 self.ui.error(
-                    "error running post-terminate for %s:\n%s" % (node.name, output)
+                    f"error running post-terminate for {node.name}:\n{output}"
                 )
                 self._log_action(node, "stopped (failed)")
 
@@ -597,7 +600,7 @@ class Controller:
                     (
                         node,
                         "first-line",
-                        ["%s/.status" % node.cwd(), "%s/.startup" % node.cwd()],
+                        [f"{node.cwd()}/.status", f"{node.cwd()}/.startup"],
                     )
                 ]
 
@@ -679,7 +682,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         nodetmpdirs = [
-            (node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name))
+            (node, os.path.join(self.config.tmpdir, f"check-config-{node.name}"))
             for node in nodes
         ]
 
@@ -689,14 +692,14 @@ class Controller:
                 try:
                     shutil.rmtree(cwd)
                 except OSError as err:
-                    self.ui.error("cannot remove directory %s: %s" % (cwd, err))
+                    self.ui.error(f"cannot remove directory {cwd}: {err}")
                     results.ok = False
                     return results
 
             try:
                 os.makedirs(cwd)
             except OSError as err:
-                self.ui.error("cannot create temporary directory: %s" % err)
+                self.ui.error(f"cannot create temporary directory: {err}")
                 results.ok = False
                 return results
 
@@ -724,7 +727,7 @@ class Controller:
 
             cmd = os.path.join(
                 self.config.scriptsdir, "check-config"
-            ) + " %s %s %s %s" % (
+            ) + " {} {} {} {}".format(
                 installed_policies,
                 print_scripts,
                 cwd,
@@ -792,7 +795,7 @@ class Controller:
         notrunning = [node for (node, on) in result if not on]
 
         for node in running:
-            self.ui.info("   %s is still running, not cleaning work directory" % node)
+            self.ui.info(f"   {node} is still running, not cleaning work directory")
 
         results1 = self.executor.rmdirs([(n, n.cwd()) for n in notrunning])
         results2 = self.executor.mkdirs([(n, n.cwd()) for n in notrunning])
@@ -804,7 +807,7 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
-            self.ui.info("cleaning %s ..." % self.config.tmpdir)
+            self.ui.info(f"cleaning {self.config.tmpdir} ...")
             results3 = self.executor.rmdirs(
                 [(n, self.config.tmpdir) for n in running + notrunning]
             )
@@ -831,7 +834,7 @@ class Controller:
 
         for node, success, output in self.executor.run_cmds(cmds):
             if not success:
-                errmsgs = "error running crash-diag for %s\n" % node.name
+                errmsgs = f"error running crash-diag for {node.name}\n"
                 errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
@@ -919,17 +922,17 @@ class Controller:
                             node,
                             netif,
                             False,
-                            "%s: capstats failed (%s)" % (node.name, outputline),
+                            f"{node.name}: capstats failed ({outputline})",
                         )
                     ]
                 else:
                     results += [
-                        (node, netif, False, "%s: cannot execute capstats" % node.name)
+                        (node, netif, False, f"{node.name}: cannot execute capstats")
                     ]
                 continue
 
             if not output:
-                results += [(node, netif, False, "%s: no capstats output" % node.name)]
+                results += [(node, netif, False, f"{node.name}: no capstats output")]
                 continue
 
             fields = outputline.split()[1:]
@@ -940,7 +943,7 @@ class Controller:
                         node,
                         netif,
                         False,
-                        "%s: unexpected capstats output: %s" % (node.name, outputline),
+                        f"{node.name}: unexpected capstats output: {outputline}",
                     )
                 ]
                 continue
@@ -964,7 +967,7 @@ class Controller:
                         node,
                         netif,
                         False,
-                        "%s: unexpected capstats output: %s" % (node.name, outputline),
+                        f"{node.name}: unexpected capstats output: {outputline}",
                     )
                 ]
                 continue
@@ -1064,7 +1067,7 @@ class Controller:
                     used = float(fields[2])
                     avail = float(fields[3])
                 except ValueError as err:
-                    df[node.name]["FAIL"] = "bad output from df helper: %s" % err
+                    df[node.name]["FAIL"] = f"bad output from df helper: {err}"
                     continue
 
                 perc = used * 100.0 / (used + avail)
@@ -1134,7 +1137,7 @@ class Controller:
                 # The error msg gets written to stats.log, so we only want
                 # the first line.
                 errmsg = output.splitlines()[0] if output else ""
-                results += [(node, "top failed: %s" % errmsg, {})]
+                results += [(node, f"top failed: {errmsg}", {})]
                 continue
 
             if not output:
@@ -1150,7 +1153,7 @@ class Controller:
                         procinfo = line.split()
                         break
             except (IndexError, ValueError) as err:
-                results += [(node, "bad output from top: %s" % err, {})]
+                results += [(node, f"bad output from top: {err}", {})]
                 continue
 
             if not procinfo:
@@ -1170,7 +1173,7 @@ class Controller:
                 vals["cpu"] = procinfo[3]
                 vals["cmd"] = " ".join(procinfo[4:])
             except (IndexError, ValueError) as err:
-                results += [(node, "unexpected top output: %s" % err, {})]
+                results += [(node, f"unexpected top output: {err}", {})]
                 continue
 
             results += [(node, None, vals)]
@@ -1291,7 +1294,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         if not os.path.isfile(trace):
-            self.ui.error("trace file not found: %s" % trace)
+            self.ui.error(f"trace file not found: {trace}")
             results.ok = False
             return results
 
@@ -1306,14 +1309,14 @@ class Controller:
             try:
                 shutil.rmtree(cwd)
             except OSError as err:
-                self.ui.error("cannot remove directory: %s" % err)
+                self.ui.error(f"cannot remove directory: {err}")
                 results.ok = False
                 return results
 
         try:
             os.makedirs(cwd)
         except OSError as err:
-            self.ui.error("cannot create directory: %s" % err)
+            self.ui.error(f"cannot create directory: {err}")
             results.ok = False
             return results
 
@@ -1325,9 +1328,10 @@ class Controller:
         if zeek_scripts:
             zeek_args += " " + " ".join(zeek_scripts)
 
-        cmd = os.path.join(
-            self.config.scriptsdir, "run-zeek-on-trace"
-        ) + " %s %s %s %s" % (0, cwd, trace, zeek_args)
+        cmd = (
+            os.path.join(self.config.scriptsdir, "run-zeek-on-trace")
+            + f" {0} {cwd} {trace} {zeek_args}"
+        )
 
         self.ui.info(cmd)
 
@@ -1337,7 +1341,7 @@ class Controller:
             results.ok = False
 
         self.ui.info(output)
-        self.ui.info("### Zeek output in %s" % cwd)
+        self.ui.info(f"### Zeek output in {cwd}")
 
         return results
 
@@ -1347,7 +1351,7 @@ class Controller:
         try:
             self.config.record_zeek_version()
         except config.ConfigurationError as err:
-            self.ui.error("%s" % err)
+            self.ui.error(f"{err}")
             results.ok = False
             return results
 
@@ -1361,11 +1365,11 @@ class Controller:
 
         for dirpath in policies:
             if os.path.isdir(dirpath):
-                self.ui.info("removing old policies in %s ..." % dirpath)
+                self.ui.info(f"removing old policies in {dirpath} ...")
                 try:
                     shutil.rmtree(dirpath)
                 except OSError as err:
-                    self.ui.error("failed to remove directory %s: %s" % (dirpath, err))
+                    self.ui.error(f"failed to remove directory {dirpath}: {err}")
                     results.ok = False
                     return results
 
@@ -1374,7 +1378,7 @@ class Controller:
             try:
                 os.makedirs(dirpath)
             except OSError as err:
-                self.ui.error("failed to create directory: %s" % err)
+                self.ui.error(f"failed to create directory: {err}")
                 results.ok = False
                 return results
 
@@ -1420,7 +1424,7 @@ class Controller:
             util.force_symlink(node_cwd, current)
         except OSError as err:
             results.ok = False
-            self.ui.error("failed to update symlink '%s': %s" % (current, err))
+            self.ui.error(f"failed to update symlink '{current}': {err}")
             return results
 
         self.ui.info("generating zeekctl-config.sh ...")
@@ -1469,7 +1473,7 @@ class Controller:
 
         for node, success, output in self.executor.mkdirs(dirs):
             if not success:
-                self.ui.error("cannot create a directory on node %s" % node.name)
+                self.ui.error(f"cannot create a directory on node {node.name}")
                 if output:
                     self.ui.error(output)
                 results.ok = False
@@ -1548,7 +1552,7 @@ class Controller:
         if output:
             success, out = self._sendmail("cron: " + output.splitlines()[0], output)
             if not success:
-                self.ui.error("zeekctl cron failed to send mail: %s" % out)
-                self.ui.info("Output of zeekctl cron:\n%s" % output)
+                self.ui.error(f"zeekctl cron failed to send mail: {out}")
+                self.ui.info(f"Output of zeekctl cron:\n{output}")
 
         logging.debug("cron done")

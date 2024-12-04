@@ -12,14 +12,11 @@ import os
 
 
 def filterOutput(tag, host):
-    os.system(
-        "cat %s/%s.dat | egrep '%s|^ *time' >%s/%s.%s.dat"
-        % (Dest, tag, host, Dest, tag, host)
-    )
+    os.system(f"cat {Dest}/{tag}.dat | egrep '{host}|^ *time' >{Dest}/{tag}.{host}.dat")
 
 
 def makeOutput(file, tag):
-    out = open("%s/%s.dat" % (Dest, tag), "w")
+    out = open(f"{Dest}/{tag}.dat", "w")
 
     hosts = {}
     data = {}
@@ -37,7 +34,7 @@ def makeOutput(file, tag):
                 (time, host, t, key) = f
                 val = "-"
             except ValueError:
-                print("cannot parse '%s'" % line, file=sys.stderr)
+                print(f"cannot parse '{line}'", file=sys.stderr)
                 continue
 
         if t != tag:
@@ -65,9 +62,9 @@ def makeOutput(file, tag):
 
     keys = keys.keys()
 
-    out.write("%10s %10s" % ("time", "node"))
+    out.write(f"{time:>10s} {node:>10s}")
     for k in keys:
-        out.write(" %10s" % k)
+        out.write(f" {k:>10s}")
     out.write("\n")
 
     for t in intervals:
@@ -79,13 +76,13 @@ def makeOutput(file, tag):
         for idx in idxs:
             vals = itv[idx]
 
-            out.write("%10.0f %10s" % (t, idx))
+            out.write(f"{t:10.0f} {idx:>10s}".format(t, idx))
 
             for k in keys:
                 if k in vals:
-                    out.write(" %10s" % vals[k])
+                    out.write(f" {vals[k]:>10s}")
                 else:
-                    out.write(" %10s" % "-")
+                    out.write(f" {'-':>10s}")
 
             out.write("\n")
 
@@ -96,10 +93,10 @@ def makeOutput(file, tag):
     for host in hosts:
         filterOutput(tag, host)
 
-    hostlist = open("%s/%s.hosts.dat" % (Dest, tag), "w")
+    hostlist = open(f"{Dest}/{tag}.hosts.dat", "w")
     hostlist.write("name\n")
     for host in hosts:
-        hostlist.write("%s\n" % host)
+        hostlist.write(f"{host}\n")
 
 
 if len(sys.argv) != 3:
@@ -109,7 +106,7 @@ if len(sys.argv) != 3:
 
 Dest = sys.argv[2]
 
-os.system("rm -rf %s" % Dest)
+os.system(f"rm -rf {Dest}")
 os.mkdir(Dest)
 
 for tag in ["parent", "child", "interface"]:

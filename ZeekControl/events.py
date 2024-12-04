@@ -36,7 +36,7 @@ def send_events_parallel(events, topic):
 
     for node, event, args, result_event in events:
         if not broker:
-            results += [(node, False, "Python bindings for Broker: %s" % errmsg)]
+            results += [(node, False, f"Python bindings for Broker: {errmsg}")]
             continue
 
         success, endpoint, sub = _send_event_init(

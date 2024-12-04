@@ -21,10 +21,10 @@ class Option:
 
         if type == "string":
             if not isinstance(default, str):
-                raise ValueError("option '%s' default value must be string" % name)
+                raise ValueError(f"option '{name}' default value must be string")
         else:
             if not isinstance(default, int):
-                raise ValueError("option '%s' default value must be int" % name)
+                raise ValueError(f"option '{name}' default value must be int")
 
 
 options = [
@@ -745,25 +745,19 @@ def print_options(category):
             continue
 
         if not opt.type:
-            err += "no type given for %s\n" % opt.name
+            err += f"no type given for {opt.name}\n"
 
         if opt.type == "string":
             if opt.default:
-                opt.default = '"%s"' % opt.default
+                opt.default = f'"{opt.default}"'
             else:
                 opt.default = "_empty_"
 
-        default = ", default %s" % opt.default
+        default = f", default {opt.default}"
 
         default = default.replace("{", "\\{")
         description = opt.description.replace("{", "\\{")
 
-        out += ".. _%s:\n\n*%s* (%s%s)\n    %s\n\n" % (
-            opt.name,
-            opt.name,
-            opt.type,
-            default,
-            description,
-        )
+        out += f".. _{opt.name}:\n\n*{opt.name}* ({opt.type}{default})\n    {description}\n\n"
 
     return (out, err)

@@ -32,12 +32,11 @@ class AF_Packet(ZeekControl.plugin.Plugin):
             if nn.lb_method == "af_packet":
                 if nn.interface.startswith("af_packet::"):
                     self.error(
-                        "unexpected af_packet:: prefix for interface %s of %s"
-                        % (nn.interface, nn)
+                        f"unexpected af_packet:: prefix for interface {nn.interface} of {nn}"
                     )
                     return False
 
-                nn.interface = "af_packet::%s" % nn.interface
+                nn.interface = f"af_packet::{nn.interface}"
                 result = True
 
         return result
@@ -56,22 +55,17 @@ class AF_Packet(ZeekControl.plugin.Plugin):
             params = ""
 
             if nn.af_packet_fanout_id:
-                params += (
-                    "\n  redef AF_Packet::fanout_id = %s;" % nn.af_packet_fanout_id
-                )
+                params += f"\n  redef AF_Packet::fanout_id = {nn.af_packet_fanout_id};"
             if nn.af_packet_fanout_mode:
                 params += (
-                    "\n  redef AF_Packet::fanout_mode = %s;" % nn.af_packet_fanout_mode
+                    f"\n  redef AF_Packet::fanout_mode = {nn.af_packet_fanout_mode};"
                 )
             if nn.af_packet_buffer_size:
                 params += (
-                    "\n  redef AF_Packet::buffer_size = %s;" % nn.af_packet_buffer_size
+                    f"\n  redef AF_Packet::buffer_size = {nn.af_packet_buffer_size};"
                 )
 
             if params:
-                script += '\n@if( peer_description == "%s" ) %s\n@endif' % (
-                    nn.name,
-                    params,
-                )
+                script += f'\n@if( peer_description == "{nn.name}" ) {params}\n@endif'
 
         return script

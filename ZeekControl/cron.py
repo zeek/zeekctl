@@ -14,7 +14,7 @@ class CronUI:
 
     def info(self, txt):
         if self.buffer:
-            self.buffer.write("%s\n" % txt)
+            self.buffer.write(f"{txt}\n")
         else:
             print(txt)
 
@@ -59,41 +59,39 @@ class CronTasks:
                 for node, error, vals in top:
                     if not error:
                         for val, key in sorted(vals.items()):
-                            out.write("%s %s parent %s %s\n" % (t, node, val, key))
+                            out.write(f"{t} {node} parent {val} {key}\n")
                     else:
-                        out.write("%s %s error error %s\n" % (t, node, error))
+                        out.write(f"{t} {node} error error {error}\n")
 
                 for node, netif, success, vals in capstats:
                     if not success:
-                        out.write("%s %s error error %s\n" % (t, node, vals))
+                        out.write(f"{t} {node} error error {vals}\n")
                         continue
 
                     for key, val in sorted(vals.items()):
-                        out.write("%s %s interface %s %s\n" % (t, node, key, val))
+                        out.write(f"{t} {node} interface {key} {val}\n")
 
                         if key == "pkts" and str(node) != "$total":
                             # Report if we don't see packets on an interface.
-                            tag = "lastpkts-%s" % node.name
+                            tag = f"lastpkts-{node.name}"
 
                             last = self.config.get_state(tag, default=-1.0)
 
                             if self.config.mailreceivingpackets:
                                 if val == 0.0 and last != 0.0:
                                     self.ui.info(
-                                        "%s is not seeing any packets on interface %s"
-                                        % (node.host, netif)
+                                        f"{node.host} is not seeing any packets on interface {netif}"
                                     )
 
                                 if val != 0.0 and last == 0.0:
                                     self.ui.info(
-                                        "%s is seeing packets again on interface %s"
-                                        % (node.host, netif)
+                                        f"{node.host} is seeing packets again on interface {netif}"
                                     )
 
                             self.config.set_state(tag, val)
 
         except OSError as err:
-            self.ui.error("failed to append to file: %s" % err)
+            self.ui.error(f"failed to append to file: {err}")
             return
 
     def check_disk_space(self):
@@ -113,7 +111,7 @@ class CronTasks:
 
                 fs = df.fs
                 perc = df.percent
-                key = "disk-space-%s%s" % (host, fs.replace("/", "-"))
+                key = "disk-space-{}{}".format(host, fs.replace("/", "-"))
 
                 if perc > 100 - minspace:
                     last = self.config.get_state(key, default=-1)
@@ -121,9 +119,7 @@ class CronTasks:
                         # Already reported.
                         continue
 
-                    self.ui.warn(
-                        "Disk space low on %s:%s - %.1f%% used." % (host, fs, perc)
-                    )
+                    self.ui.warn(f"Disk space low on {host}:{fs} - {perc:.1f}% used.")
 
                 self.config.set_state(key, perc)
 
@@ -140,7 +136,7 @@ class CronTasks:
             )
 
             if not success:
-                self.ui.error("expire-logs failed\n%s" % output)
+                self.ui.error(f"expire-logs failed\n{output}")
         else:
             nodes = self.config.hosts(tag=node_mod.logger_group())
 
@@ -152,7 +148,7 @@ class CronTasks:
 
             for node, success, output in self.executor.run_cmds(cmds):
                 if not success:
-                    self.ui.error("expire-logs failed for node %s\n" % node)
+                    self.ui.error(f"expire-logs failed for node {node}\n")
                     if output:
                         self.ui.error(output)
 
@@ -165,13 +161,13 @@ class CronTasks:
 
         for node, success, output in self.executor.run_cmds(cmds):
             if not success:
-                self.ui.error("expire-crash failed for node %s\n" % node)
+                self.ui.error(f"expire-crash failed for node {node}\n")
                 if output:
                     self.ui.error(output)
 
     def check_hosts(self):
         for host, status in self.executor.host_status():
-            tag = "alive-%s" % host
+            tag = f"alive-{host}"
             alive = status
 
             previous = self.config.get_state(tag)
@@ -180,7 +176,7 @@ class CronTasks:
                     self.pluginregistry.hostStatusChanged(host, alive)
                     if self.config.mailhostupdown:
                         up_or_down = "up" if alive else "down"
-                        self.ui.info("host %s %s" % (host, up_or_down))
+                        self.ui.info(f"host {host} {up_or_down}")
 
             self.config.set_state(tag, alive)
 
@@ -194,37 +190,37 @@ class CronTasks:
                 os.makedirs(self.config.statsdir)
             except OSError as err:
                 self.ui.error(
-                    "failure creating directory in zeekctl option statsdir: %s" % err
+                    f"failure creating directory in zeekctl option statsdir: {err}"
                 )
                 return
 
-            self.ui.info("creating directory for stats file: %s" % self.config.statsdir)
+            self.ui.info(f"creating directory for stats file: {self.config.statsdir}")
 
         metadat = os.path.join(self.config.statsdir, "meta.dat")
         try:
             with open(metadat, "w") as meta:
                 for node in self.config.hosts():
-                    meta.write("node %s %s %s\n" % (node, node.type, node.host))
+                    meta.write(f"node {node} {node.type} {node.host}\n")
 
-                meta.write("time %s\n" % time.asctime())
-                meta.write("version %s\n" % self.config.version)
+                meta.write(f"time {time.asctime()}\n")
+                meta.write(f"version {self.config.version}\n")
 
                 success, output = execute.run_localcmd("uname -a")
                 if success and output:
                     # Note: "output" already has a '\n'
-                    meta.write("os %s" % output)
+                    meta.write(f"os {output}")
                 else:
                     meta.write("os <error>\n")
 
                 success, output = execute.run_localcmd("hostname")
                 if success and output:
                     # Note: "output" already has a '\n'
-                    meta.write("host %s" % output)
+                    meta.write(f"host {output}")
                 else:
                     meta.write("host <error>\n")
 
         except OSError as err:
-            self.ui.error("failure creating file: %s" % err)
+            self.ui.error(f"failure creating file: {err}")
             return
 
         wwwdir = os.path.join(self.config.statsdir, "www")
@@ -232,19 +228,19 @@ class CronTasks:
             try:
                 os.makedirs(wwwdir)
             except OSError as err:
-                self.ui.error("failed to create directory: %s" % err)
+                self.ui.error(f"failed to create directory: {err}")
                 return
 
         # Update the WWW data
         statstocsv = os.path.join(self.config.scriptsdir, "stats-to-csv")
 
         success, output = execute.run_localcmd(
-            "%s %s %s %s" % (statstocsv, self.config.statslog, metadat, wwwdir)
+            f"{statstocsv} {self.config.statslog} {metadat} {wwwdir}"
         )
         if success:
             shutil.copy(metadat, wwwdir)
         else:
-            self.ui.error("error reported by stats-to-csv\n%s" % output)
+            self.ui.error(f"error reported by stats-to-csv\n{output}")
 
         # Append the current stats.log in spool to the one in ${statsdir}
         dst = os.path.join(self.config.statsdir, os.path.basename(self.config.statslog))
@@ -253,7 +249,7 @@ class CronTasks:
                 with open(dst, "a") as fdst:
                     shutil.copyfileobj(fsrc, fdst)
         except OSError as err:
-            self.ui.error("failed to append file: %s" % err)
+            self.ui.error(f"failed to append file: {err}")
             return
 
         os.unlink(self.config.statslog)
@@ -263,4 +259,4 @@ class CronTasks:
         if self.config.croncmd:
             success, output = execute.run_localcmd(self.config.croncmd)
             if not success:
-                self.ui.error("failure running croncmd: %s" % self.config.croncmd)
+                self.ui.error(f"failure running croncmd: {self.config.croncmd}")

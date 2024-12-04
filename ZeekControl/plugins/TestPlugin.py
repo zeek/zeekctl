@@ -28,19 +28,19 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         foo = self.getOption("foo")
 
         self.message("TestPlugin: Test initialized")
-        self.message("TestPlugin: The value of foo is: %s" % foo)
+        self.message(f"TestPlugin: The value of foo is: {foo}")
         self.message(
-            "TestPlugin: The current value of bar is: %s" % self.getState("bar")
+            "TestPlugin: The current value of bar is: {}".format(self.getState("bar"))
         )
 
         for n in self.nodes():
             try:
-                self.message("TestPlugin: mykey is: %s" % n.test_mykey)
+                self.message(f"TestPlugin: mykey is: {n.test_mykey}")
             except AttributeError:
                 self.message("TestPlugin: mykey is not set")
 
         for h in self.hosts():
-            self.message("TestPlugin: host %s" % h.host)
+            self.message(f"TestPlugin: host {h.host}")
 
         return True
 
@@ -76,13 +76,13 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         if not results:
             return "<empty>"
 
-        return ",".join(["%s/%s" % (str(n[0]), n[1]) for n in results])
+        return ",".join([f"{str(n[0])}/{n[1]}" for n in results])
 
     def zeekProcessDied(self, node):
-        self.message("TestPlugin: Zeek process died for %s" % node)
+        self.message(f"TestPlugin: Zeek process died for {node}")
 
     def hostStatusChanged(self, host, status):
-        self.message("TestPlugin: host status changed: %s -> %s" % (host, status))
+        self.message(f"TestPlugin: host status changed: {host} -> {status}")
 
     def cmd_custom(self, cmd, args, cmdout):
         results = ZeekControl.cmdresult.CmdResult()
@@ -92,15 +92,15 @@ class TestPlugin(ZeekControl.plugin.Plugin):
             bar = 1
 
         self.setState("bar", bar + 1)
-        self.message("TestPlugin: My command: %s" % args)
+        self.message(f"TestPlugin: My command: {args}")
 
         return results
 
     def cmd_check_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'check':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'check':  {self._nodes(nodes)}")
 
     def cmd_check_post(self, results):
-        self.message("TestPlugin: Test post 'check': %s" % self._results(results))
+        self.message(f"TestPlugin: Test post 'check': {self._results(results)}")
 
     def cmd_nodes_pre(self):
         self.message("TestPlugin: Test pre 'nodes'")
@@ -124,11 +124,11 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         self.message("TestPlugin: Test post 'deploy'")
 
     def cmd_exec_pre(self, cmdline):
-        self.message("TestPlugin: Test pre 'exec':  %s" % cmdline)
+        self.message(f"TestPlugin: Test pre 'exec':  {cmdline}")
         return True
 
     def cmd_exec_post(self, cmdline):
-        self.message("TestPlugin: Test post 'exec': %s" % cmdline)
+        self.message(f"TestPlugin: Test post 'exec': {cmdline}")
 
     def cmd_install_pre(self):
         self.message("TestPlugin: Test pre 'install'")
@@ -138,123 +138,105 @@ class TestPlugin(ZeekControl.plugin.Plugin):
         self.message("TestPlugin: Test post 'install'")
 
     def cmd_cron_pre(self, arg, watch):
-        self.message("TestPlugin: Test pre 'cron':  %s/%s" % (arg, watch))
+        self.message(f"TestPlugin: Test pre 'cron':  {arg}/{watch}")
         return True
 
     def cmd_cron_post(self, arg, watch):
-        self.message("TestPlugin: Test post 'cron': %s/%s" % (arg, watch))
+        self.message(f"TestPlugin: Test post 'cron': {arg}/{watch}")
 
     def cmd_restart_pre(self, nodes, clean):
-        self.message(
-            "TestPlugin: Test pre 'restart':  %s (%s)" % (self._nodes(nodes), clean)
-        )
+        self.message(f"TestPlugin: Test pre 'restart':  {self._nodes(nodes)} ({clean})")
 
     def cmd_restart_post(self, nodes):
-        self.message("TestPlugin: Test post 'restart': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'restart': {self._nodes(nodes)}")
 
     def cmd_start_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'start':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'start':  {self._nodes(nodes)}")
 
     def cmd_start_post(self, results):
-        self.message("TestPlugin: Test post 'start': %s" % self._results(results))
+        self.message(f"TestPlugin: Test post 'start': {self._results(results)}")
 
     def cmd_stop_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'stop':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'stop':  {self._nodes(nodes)}")
 
     def cmd_stop_post(self, results):
-        self.message("TestPlugin: Test post 'stop': %s" % self._results(results))
+        self.message(f"TestPlugin: Test post 'stop': {self._results(results)}")
 
     def cmd_status_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'status':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'status':  {self._nodes(nodes)}")
 
     def cmd_status_post(self, nodes):
-        self.message("TestPlugin: Test post 'status': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'status': {self._nodes(nodes)}")
 
     def cmd_update_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'update':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'update':  {self._nodes(nodes)}")
 
     def cmd_update_post(self, results):
-        self.message("TestPlugin: Test post 'update': %s" % self._results(results))
+        self.message(f"TestPlugin: Test post 'update': {self._results(results)}")
 
     def cmd_df_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'df':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'df':  {self._nodes(nodes)}")
 
     def cmd_df_post(self, nodes):
-        self.message("TestPlugin: Test post 'df': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'df': {self._nodes(nodes)}")
 
     def cmd_diag_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'diag':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'diag':  {self._nodes(nodes)}")
 
     def cmd_diag_post(self, nodes):
-        self.message("TestPlugin: Test post 'diag': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'diag': {self._nodes(nodes)}")
 
     def cmd_peerstatus_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'peerstatus':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'peerstatus':  {self._nodes(nodes)}")
 
     def cmd_peerstatus_post(self, nodes):
-        self.message("TestPlugin: Test post 'peerstatus': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'peerstatus': {self._nodes(nodes)}")
 
     def cmd_netstats_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'netstats':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'netstats':  {self._nodes(nodes)}")
 
     def cmd_netstats_post(self, nodes):
-        self.message("TestPlugin: Test post 'netstats': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'netstats': {self._nodes(nodes)}")
 
     def cmd_top_pre(self, nodes):
-        self.message("TestPlugin: Test pre 'top':  %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test pre 'top':  {self._nodes(nodes)}")
 
     def cmd_top_post(self, nodes):
-        self.message("TestPlugin: Test post 'top': %s" % self._nodes(nodes))
+        self.message(f"TestPlugin: Test post 'top': {self._nodes(nodes)}")
 
     def cmd_cleanup_pre(self, nodes, all):
-        self.message(
-            "TestPlugin: Test pre 'cleanup':  %s (%s)" % (self._nodes(nodes), all)
-        )
+        self.message(f"TestPlugin: Test pre 'cleanup':  {self._nodes(nodes)} ({all})")
 
     def cmd_cleanup_post(self, nodes, all):
-        self.message(
-            "TestPlugin: Test post 'cleanup': %s (%s)" % (self._nodes(nodes), all)
-        )
+        self.message(f"TestPlugin: Test post 'cleanup': {self._nodes(nodes)} ({all})")
 
     def cmd_capstats_pre(self, nodes, interval):
         self.message(
-            "TestPlugin: Test pre 'capstats':  %s (%d)" % (self._nodes(nodes), interval)
+            f"TestPlugin: Test pre 'capstats':  {self._nodes(nodes)} ({interval})"
         )
 
     def cmd_capstats_post(self, nodes, interval):
         self.message(
-            "TestPlugin: Test post 'capstats':  %s (%d)"
-            % (self._nodes(nodes), interval)
+            f"TestPlugin: Test post 'capstats':  {self._nodes(nodes)} ({interval})"
         )
 
     def cmd_scripts_pre(self, nodes, check):
-        self.message(
-            "TestPlugin: Test pre 'scripts':  %s (%s)" % (self._nodes(nodes), check)
-        )
+        self.message(f"TestPlugin: Test pre 'scripts':  {self._nodes(nodes)} ({check})")
 
     def cmd_scripts_post(self, nodes, check):
-        self.message(
-            "TestPlugin: Test post 'scripts': %s (%s)" % (self._nodes(nodes), check)
-        )
+        self.message(f"TestPlugin: Test post 'scripts': {self._nodes(nodes)} ({check})")
 
     def cmd_print_pre(self, nodes, id):
-        self.message(
-            "TestPlugin: Test pre 'print':  %s (%s)" % (self._nodes(nodes), id)
-        )
+        self.message(f"TestPlugin: Test pre 'print':  {self._nodes(nodes)} ({id})")
 
     def cmd_print_post(self, nodes, id):
-        self.message(
-            "TestPlugin: Test post 'print': %s (%s)" % (self._nodes(nodes), id)
-        )
+        self.message(f"TestPlugin: Test post 'print': {self._nodes(nodes)} ({id})")
 
     def cmd_process_pre(self, trace, options, scripts):
-        self.message(
-            "TestPlugin: Test pre 'process': %s %s -- %s" % (trace, options, scripts)
-        )
+        self.message(f"TestPlugin: Test pre 'process': {trace} {options} -- {scripts}")
         return True
 
     def cmd_process_post(self, trace, options, scripts, success):
         self.message(
-            "TestPlugin: Test post 'process': %s %s -- %s -> %s"
-            % (trace, options, scripts, success)
+            f"TestPlugin: Test post 'process': {trace} {options} -- {scripts} -> {success}"
         )

@@ -32,7 +32,7 @@ class PsZeek(ZeekControl.plugin.Plugin):
         if args:
             nodes, notnodes = self.parseNodes(args)
             for n in notnodes:
-                cmdout.error("unknown node '%s'" % n)
+                cmdout.error(f"unknown node '{n}'")
         else:
             nodes = self.nodes()
 
@@ -74,12 +74,12 @@ class PsZeek(ZeekControl.plugin.Plugin):
 
             # Print the header line.
             if first_node and outlines:
-                cmdout.info("        %s" % outlines[0])
+                cmdout.info(f"        {outlines[0]}")
 
             if success:
-                cmdout.info(">>> %s" % n.host)
+                cmdout.info(f">>> {n.host}")
             else:
-                cmdout.error(">>> %s failed" % n.host)
+                cmdout.error(f">>> {n.host} failed")
                 results.ok = False
 
             if not outlines:
@@ -90,11 +90,11 @@ class PsZeek(ZeekControl.plugin.Plugin):
                 try:
                     pid, ppid = int(m[1]), int(m[2])
                 except IndexError:
-                    cmdout.error("unexpected output from ps command: %s" % line)
+                    cmdout.error(f"unexpected output from ps command: {line}")
                     results.ok = False
                     continue
                 except ValueError as err:
-                    cmdout.error("%s" % err)
+                    cmdout.error(f"{err}")
                     results.ok = False
                     continue
                 try:
@@ -103,9 +103,9 @@ class PsZeek(ZeekControl.plugin.Plugin):
                     known = False
 
                 if known:
-                    cmdout.info("   (+) %s" % line.strip())
+                    cmdout.info(f"   (+) {line.strip()}")
                 else:
-                    cmdout.info("   (-) %s" % line.strip())
+                    cmdout.info(f"   (-) {line.strip()}")
 
             first_node = False
 

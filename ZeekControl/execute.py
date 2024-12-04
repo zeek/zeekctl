@@ -15,7 +15,7 @@ from ZeekControl import util
 # recursively).  If the target pathname already exists, it is not clobbered.
 def install(src, dstdir, cmdout):
     if not os.path.lexists(src):
-        cmdout.error("pathname not found: %s" % src)
+        cmdout.error(f"pathname not found: {src}")
         return False
 
     dst = os.path.join(dstdir, os.path.basename(src))
@@ -34,14 +34,14 @@ def install(src, dstdir, cmdout):
         elif os.path.isdir(src):
             shutil.copytree(src, dst, symlinks=True)
         else:
-            cmdout.error("failed to copy %s: not a file, dir, or symlink" % src)
+            cmdout.error(f"failed to copy {src}: not a file, dir, or symlink")
             return False
     except OSError:
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
         pass
     except OSError as err:
-        cmdout.error("failed to copy: %s" % err)
+        cmdout.error(f"failed to copy: {err}")
         return False
 
     return True
@@ -57,14 +57,14 @@ def sync(nodes, paths, cmdout):
             "--delete",
             '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"',
         ]
-        dst = ["%s:/" % util.format_rsync_addr(n.addr)]
+        dst = [f"{util.format_rsync_addr(n.addr)}:/"]
         args += paths + dst
-        cmdline = "rsync %s" % " ".join(args)
+        cmdline = "rsync {}".format(" ".join(args))
         cmds += [(n, cmdline, "", None)]
 
     for id, success, output in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (id.addr, output))
+            cmdout.error(f"rsync to {id.addr} failed: {output}")
             result = False
 
     return result
@@ -197,7 +197,7 @@ class Executor:
 
                 if shell:
                     if args:
-                        cmdargs = ["%s %s" % (cmdargs[0], " ".join(args))]
+                        cmdargs = ["{} {}".format(cmdargs[0], " ".join(args))]
                 else:
                     cmdargs += args
 
@@ -264,7 +264,7 @@ class Executor:
         cmds = []
 
         for node, dir in dirs:
-            cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
+            cmds += [(node, f"if [ -d {dir} ]; then rm -rf {dir} ; fi", [])]
 
         for node, success, output in self.run_cmds(cmds, shell=True):
             results += [(node, success, output)]

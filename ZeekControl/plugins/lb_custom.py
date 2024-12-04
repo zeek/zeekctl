@@ -28,7 +28,7 @@ class LBCustom(ZeekControl.plugin.Plugin):
 
             prefix = self.getOption("InterfacePrefix")
             suffix = self.getOption("InterfaceSuffix")
-            nn.interface = "%s%s%s" % (prefix, nn.interface, suffix)
+            nn.interface = f"{prefix}{nn.interface}{suffix}"
 
         return useplugin
 

@@ -38,7 +38,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
             pfringtype = "6-tuple"
 
         if pfringtype not in self.LB_POLICIES_ENV_MAP:
-            self.error('PFRINGClusterType "%s" not supported' % pfringtype)
+            self.error(f'PFRINGClusterType "{pfringtype}" not supported')
             return False
 
         pftype = self.LB_POLICIES_ENV_MAP[pfringtype]
@@ -72,23 +72,23 @@ class LBPFRing(ZeekControl.plugin.Plugin):
                 # load-balancing with zbalance_ipc (through libpcap over
                 # pf_ring)
                 nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("pf_ring::zc:"):
                 # For the case where a user is doing RSS with ZC or
                 # load-balancing with zbalance_ipc (through the zeek::pf_ring
                 # plugin)
                 nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("dnacl"):
                 # For the case where a user is running pfdnacluster_master (deprecated)
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("dna"):
                 # For the case where a user is doing symmetric RSS with DNA (deprecated)
                 nn.env_vars.setdefault("PCAP_PF_RING_DNA_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             else:
                 nn.env_vars.setdefault(
@@ -96,6 +96,6 @@ class LBPFRing(ZeekControl.plugin.Plugin):
                 )
 
             app_instance += 1
-            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "zeek-%s" % nn.interface)
+            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", f"zeek-{nn.interface}")
 
         return useplugin

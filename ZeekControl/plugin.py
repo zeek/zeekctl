@@ -67,7 +67,7 @@ class Plugin:
         val = config.Config.get_option(name)
         if val is None:
             raise KeyError(
-                "plugin %s lookup of unknown config option %s" % (self.name(), name)
+                f"plugin {self.name()} lookup of unknown config option {name}"
             )
 
         return val
@@ -80,12 +80,12 @@ class Plugin:
         overridden by a user in ``zeekctl.cfg``. An option's value cannot be
         changed by the plugin.
         """
-        name = "%s.%s" % (self.prefix(), name)
+        name = f"{self.prefix()}.{name}"
 
         val = config.Config.get_option(name)
         if val is None:
             raise KeyError(
-                "plugin %s lookup of unknown plugin option %s" % (self.name(), name)
+                f"plugin {self.name()} lookup of unknown plugin option {name}"
             )
 
         return val
@@ -100,7 +100,7 @@ class Plugin:
 
         Note that a plugin cannot query any global ZeekControl state variables.
         """
-        name = "%s.state.%s" % (self.prefix(), name)
+        name = f"{self.prefix()}.state.{name}"
 
         return config.Config.get_state(name, "")
 
@@ -114,12 +114,11 @@ class Plugin:
         """
         if "." in name or " " in name:
             self.error(
-                'plugin %s state variable name "%s" must not contain dots or spaces'
-                % (self.name(), name)
+                f'plugin {self.name()} state variable name "{name}" must not contain dots or spaces'
             )
             return
 
-        name = "%s.state.%s" % (self.prefix(), name)
+        name = f"{self.prefix()}.state.{name}"
         config.Config.set_state(name, value)
 
     @doc.api
@@ -147,7 +146,7 @@ class Plugin:
     @doc.api
     def message(self, msg):
         """Reports a message to the user."""
-        print("%s" % msg)
+        print(f"{msg}")
 
     @doc.api
     def debug(self, msg):
@@ -157,7 +156,7 @@ class Plugin:
     @doc.api
     def error(self, msg):
         """Reports an error to the user."""
-        print("error: %s" % msg)
+        print(f"error: {msg}")
 
     @doc.api
     def execute(self, node, cmd):
@@ -927,7 +926,7 @@ class Plugin:
             return True
         if val.lower() in ("0", "false"):
             return False
-        raise ValueError("invalid boolean: '%s'" % val)
+        raise ValueError(f"invalid boolean: '{val}'")
 
     def _registerOptions(self):
         type_converters = {"bool": self._to_bool, "int": int, "string": str}
@@ -935,26 +934,23 @@ class Plugin:
 
         for name, ty, default, descr in self.options():
             if not name:
-                self.error("plugin %s option name must not be empty" % self.name())
+                self.error(f"plugin {self.name()} option name must not be empty")
                 continue
 
             if "." in name or " " in name:
                 self.error(
-                    'plugin %s option name "%s" must not contain dots or spaces'
-                    % (self.name(), name)
+                    f'plugin {self.name()} option name "{name}" must not contain dots or spaces'
                 )
                 continue
 
-            optname = "%s.%s" % (self.prefix(), name)
+            optname = f"{self.prefix()}.{name}"
 
             if ty not in pytype:
-                self.error('plugin option %s has invalid type "%s"' % (optname, ty))
+                self.error(f'plugin option {optname} has invalid type "{ty}"')
                 continue
 
             if not isinstance(default, pytype[ty]):
-                self.error(
-                    "plugin option %s default value must be type %s" % (optname, ty)
-                )
+                self.error(f"plugin option {optname} default value must be type {ty}")
                 continue
 
             val = config.Config.get_option(optname)
@@ -965,8 +961,7 @@ class Plugin:
                     newval = type_converters[ty](val)
                 except ValueError:
                     self.error(
-                        'zeekctl option "%s" has invalid value "%s" for type %s'
-                        % (optname, val, ty)
+                        f'zeekctl option "{optname}" has invalid value "{val}" for type {ty}'
                     )
                     continue
 

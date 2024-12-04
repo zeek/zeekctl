@@ -133,22 +133,22 @@ class ZeekCtld(Thread, Common):
         return self._run()
 
     def handle_result(self, id, result):
-        print("Got result id=%r result=%r" % (id, result))
+        print(f"Got result id={id!r} result={result!r}")
         self.results[id] = result
         return "ok"
 
     def handle_out(self, id, txt):
-        print("Got %s id=%r result=%r" % ("out", id, txt))
+        print("Got {} id={!r} result={!r}".format("out", id, txt))
         self.logs.append(id, "out", txt)
         return "ok"
 
     def handle_info(self, id, txt):
-        print("Got %s id=%r result=%r" % ("info", id, txt))
+        print("Got {} id={!r} result={!r}".format("info", id, txt))
         self.logs.append(id, "info", txt)
         return "ok"
 
     def handle_err(self, id, txt):
-        print("Got %s id=%r result=%r" % ("err", id, txt))
+        print("Got {} id={!r} result={!r}".format("err", id, txt))
         self.logs.append(id, "err", txt)
         return "ok"
 
@@ -156,12 +156,12 @@ class ZeekCtld(Thread, Common):
         result = self.results.get(id)
         if result:
             del self.results[id]
-        print("sending result=%r for id=%r" % (result, id))
+        print(f"sending result={result!r} for id={id!r}")
         return result
 
     def handle_getlog(self, id, since):
         result = self.logs.get(id, since)
-        print("sending log=%r for id=%r" % (result, id))
+        print(f"sending log={result!r} for id={id!r}")
         return result
 
     def _run(self):
@@ -179,7 +179,7 @@ class ZeekCtld(Thread, Common):
     def send_to_worker(self, cmd, *args):
         t_id = self.id_gen()
         self.worker.send(t_id, cmd, *args)
-        print("started id=%r cmd=%r args=%r" % (t_id, cmd, args))
+        print(f"started id={t_id!r} cmd={cmd!r} args={args!r}")
         return t_id
 
 

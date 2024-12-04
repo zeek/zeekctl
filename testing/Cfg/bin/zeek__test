@@ -39,8 +39,7 @@ def catchsigterm(signum, frame):
 def createloadedscriptslog(thisnode):
     with open("loaded_scripts.log", "w") as fout:
         fout.write(
-            "Node %s: This is the contents of loaded_scripts.log for zeekctl testing.\n"
-            % thisnode
+            f"Node {thisnode}: This is the contents of loaded_scripts.log for zeekctl testing.\n"
         )
 
 
@@ -110,7 +109,7 @@ def readzeekctltestcfg():
             val = val.strip().split()
             if key not in keys:
                 print(
-                    "Error: unknown option '%s' in: %s" % (zeekvar, cfgfilepath),
+                    f"Error: unknown option '{zeekvar}' in: {cfgfilepath}",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -191,7 +190,7 @@ def main():
     if envvars:
         for envvar in envvars:
             envval = os.getenv(envvar, "")
-            print("%s=%s" % (envvar, envval), file=sys.stderr)
+            print(f"{envvar}={envval}", file=sys.stderr)
         sys.stderr.flush()
 
     # Now that all work has been done, just wait long enough so that the

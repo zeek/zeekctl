@@ -108,8 +108,7 @@ class ZeekCtl:
                 )
             except OSError as err:
                 raise RuntimeEnvironmentError(
-                    "%s\nCheck if the user running ZeekControl has write access to the debug log file."
-                    % err
+                    f"{err}\nCheck if the user running ZeekControl has write access to the debug log file."
                 )
         else:
             # Add a log handler that does nothing.
@@ -185,7 +184,7 @@ class ZeekCtl:
             for arg in args.split():
                 nodelist = self.config.nodes(arg)
                 if not nodelist:
-                    raise InvalidNodeError("unknown node '%s'" % arg)
+                    raise InvalidNodeError(f"unknown node '{arg}'")
 
                 nodes += nodelist
 
@@ -353,7 +352,7 @@ class ZeekCtl:
         if not results.ok:
             for node, success, output in results.get_node_output():
                 if not success:
-                    self.ui.info("%s scripts failed." % node)
+                    self.ui.info(f"{node} scripts failed.")
                     self.ui.info(output)
 
             return results

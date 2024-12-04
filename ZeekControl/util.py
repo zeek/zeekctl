@@ -23,7 +23,7 @@ def format_zeek_addr(addr):
     if ":" not in addr:
         return addr
     else:
-        return "[%s]" % addr
+        return f"[{addr}]"
 
 
 # Returns an IP prefix string suitable for embedding in a Zeek script,
@@ -34,7 +34,7 @@ def format_zeek_prefix(prefix):
         return prefix
     else:
         parts = prefix.split("/")
-        return "[%s]/%s" % (parts[0], parts[1])
+        return f"[{parts[0]}]/{parts[1]}"
 
 
 # Returns an IP address string suitable for use with rsync, which requires
@@ -44,7 +44,7 @@ def format_rsync_addr(addr):
     if ":" not in addr:
         return addr
     else:
-        return "'[%s]'" % addr
+        return f"'[{addr}]'"
 
 
 # Convert a number into a string with a unit (e.g., 1024 into "1K").
@@ -52,5 +52,5 @@ def number_unit_str(num):
     units = (("G", 1024 * 1024 * 1024), ("M", 1024 * 1024), ("K", 1024))
     for unit, factor in units:
         if num >= factor:
-            return "%3.0f%s" % (num / factor, unit)
-    return " %3.0f" % (num)
+            return f"{num / factor:3.0f}{unit}"
+    return f" {num:3.0f}"

@@ -33,7 +33,7 @@ class CommandTest(BroControl.plugin.Plugin):
         else:
             results.ok = True
 
-        cmdout.info("Command name: %s" % cmd)
-        cmdout.info("Command args: %s" % args)
+        cmdout.info(f"Command name: {cmd}")
+        cmdout.info(f"Command args: {args}")
 
         return results

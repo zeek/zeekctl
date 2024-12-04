@@ -25,7 +25,7 @@ class ExitValueCmd(cmd.Cmd):
             if intro is not None:
                 self.intro = intro
             if self.intro:
-                self.stdout.write("%s\n" % self.intro)
+                self.stdout.write(f"{self.intro}\n")
             self._stopping = False
             success = True
             while not self._stopping:
@@ -54,7 +54,7 @@ class ExitValueCmd(cmd.Cmd):
                     # avoid getting in an unknown state (e.g. error while
                     # reloading the config).
                     success = False
-                    print("Error: %s" % err)
+                    print(f"Error: {err}")
                 self.postcmd(False, line)
             self.postloop()
         finally:
