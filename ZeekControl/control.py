@@ -735,7 +735,7 @@ class Controller:
             results.set_node_output(node, success, output)
             try:
                 shutil.rmtree(cwd)
-            except OSError as err:
+            except OSError:
                 # Don't bother reporting an error now.
                 pass
 
@@ -1516,9 +1516,9 @@ class Controller:
                     stoplist.append(node)
 
             if startlist:
-                results = self.start(startlist)
+                self.start(startlist)
             if stoplist:
-                results = self.stop(stoplist)
+                self.stop(stoplist)
 
         # Check for dead hosts.
         tasks.check_hosts()

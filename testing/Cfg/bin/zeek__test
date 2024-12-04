@@ -114,7 +114,7 @@ def readzeekctltestcfg():
             val = val.strip().split()
             if key not in keys:
                 print(
-                    f"Error: unknown option '{zeekvar}' in: {cfgfilepath}",
+                    f"Error: unknown option '{key}' in: {cfgfilepath}",
                     file=sys.stderr,
                 )
                 sys.exit(1)

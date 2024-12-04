@@ -62,7 +62,7 @@ def makeOutput(file, tag):
 
     keys = keys.keys()
 
-    out.write(f"{time:>10s} {node:>10s}")
+    out.write(f"{time:>10s} {tag:>10s}")
     for k in keys:
         out.write(f" {k:>10s}")
     out.write("\n")

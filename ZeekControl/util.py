@@ -1,8 +1,6 @@
 import errno
 import os
 
-from ZeekControl import config
-
 
 # 'src' is the file to which the link will point, and 'dst' is the link to make
 def force_symlink(src, dst):

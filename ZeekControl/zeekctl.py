@@ -6,7 +6,7 @@ import sys
 
 from ZeekControl import cmdresult, config, control, execute, lock, pluginreg, version
 from ZeekControl import node as node_mod
-from ZeekControl.exceptions import *
+from ZeekControl.exceptions import InvalidNodeError, LockError, RuntimeEnvironmentError
 
 
 class TermUI:

@@ -1,14 +1,12 @@
-import os
-import random
 import time
 import traceback
 from collections import defaultdict
-from threading import Lock, Thread
+from threading import Thread
 
 from Queue import Queue
 
-from ZeekControl import config, version, web
 from ZeekControl import ser as json
+from ZeekControl import web
 from ZeekControl.zeekctl import ZeekCtl
 
 STOP_RUNNING = object()
@@ -88,7 +86,7 @@ class ZeekCtrldWorker(Thread, Common):
 
         try:
             res = func(*args)
-        except Exception as e:
+        except Exception:
             res = traceback.format_exc()
         respond(res)
 
