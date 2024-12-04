@@ -1,19 +1,19 @@
 # Functions to read and access the zeekctl configuration.
 
+import configparser
 import hashlib
 import os
+import re
 import socket
 import subprocess
-import re
 import sys
-import configparser
 
 from ZeekControl import node as node_mod
 from ZeekControl import options
 from ZeekControl.exceptions import ConfigurationError, RuntimeEnvironmentError
+
 from .state import SqliteState
 from .version import VERSION
-
 
 # Class storing the zeekctl configuration.
 #

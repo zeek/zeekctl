@@ -4,8 +4,8 @@ A plugin warning about the ZeekPort change coming with Zeek 5.2.
 
 import textwrap
 
-import ZeekControl.plugin
 import ZeekControl.cmdresult
+import ZeekControl.plugin
 
 
 class ZeekPortWarningPlugin(ZeekControl.plugin.Plugin):

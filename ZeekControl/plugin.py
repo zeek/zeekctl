@@ -4,8 +4,7 @@
 
 import logging
 
-from ZeekControl import config
-from ZeekControl import doc
+from ZeekControl import config, doc
 
 
 class Plugin:

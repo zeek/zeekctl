@@ -8,7 +8,12 @@
 # fails to cleanup, and this script can be controlled by a config file to
 # simulate various scenarios (crash, slow to start, etc.).
 
-import os, atexit, getopt, signal, sys, time
+import atexit
+import getopt
+import os
+import signal
+import sys
+import time
 
 livemode = False
 statusfile = None

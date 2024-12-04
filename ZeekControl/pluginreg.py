@@ -1,13 +1,11 @@
 #
 # Registry managing plugins.
 
-import sys
-import os
 import logging
+import os
+import sys
 
-from ZeekControl import cmdresult
-from ZeekControl import node
-from ZeekControl import plugin
+from ZeekControl import cmdresult, node, plugin
 
 # Note, when changing this, also adapt doc string for Plugin.__init__.
 _CurrentAPIVersion = 1

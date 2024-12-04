@@ -1,8 +1,8 @@
 # This plugin sets necessary environment variables to run Zeek with
 # PF_RING load balancing.
 
-import ZeekControl.plugin
 import ZeekControl.config
+import ZeekControl.plugin
 
 
 class LBPFRing(ZeekControl.plugin.Plugin):

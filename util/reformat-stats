@@ -6,9 +6,9 @@
 #
 # Existing data in dst-dir will be deleted.
 
-import sys
 import math
 import os
+import sys
 
 
 def filterOutput(tag, host):

@@ -1,17 +1,15 @@
-from collections import defaultdict
-from threading import Thread, Lock
-from Queue import Queue
 import os
-import time
 import random
+import time
 import traceback
+from collections import defaultdict
+from threading import Lock, Thread
 
-from ZeekControl import config
-from ZeekControl import version
-from ZeekControl.zeekctl import ZeekCtl
+from Queue import Queue
+
+from ZeekControl import config, version, web
 from ZeekControl import ser as json
-
-from ZeekControl import web
+from ZeekControl.zeekctl import ZeekCtl
 
 STOP_RUNNING = object()
 

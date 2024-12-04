@@ -1,15 +1,15 @@
 import ast
+import base64
 import collections
 import json
-import subprocess
-import select
-import time
-import os
-import base64
-import zlib
 import logging
+import os
+import select
+import subprocess
+import time
+import zlib
+from queue import Empty, Queue
 from threading import Thread
-from queue import Queue, Empty
 
 
 def get_muxer(shell):

@@ -1,9 +1,6 @@
 import sys
 
-from ZeekControl import options
-from ZeekControl import doc
-from ZeekControl import plugin
-from ZeekControl import node
+from ZeekControl import doc, node, options, plugin
 
 
 # Prints the command docstrings in a form suitable for direct inclusion

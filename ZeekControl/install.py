@@ -1,10 +1,9 @@
 # Functions to install files on all nodes.
 
-import os
 import binascii
+import os
 
-from ZeekControl import util
-from ZeekControl import config
+from ZeekControl import config, util
 
 # In all paths given in this file, ${<option>} will replaced with the value of
 # the corresponding configuration option.

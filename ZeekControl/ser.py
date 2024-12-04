@@ -1,7 +1,6 @@
 import json
 
-from ZeekControl import node
-from ZeekControl import cmdresult
+from ZeekControl import cmdresult, node
 
 
 class MyJsonEncoder(json.JSONEncoder):

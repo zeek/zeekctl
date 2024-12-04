@@ -4,8 +4,8 @@
 #
 # The plugin is off by default. To enable it, add "test.enabled=1" to zeekctl.cfg.
 
-import ZeekControl.plugin
 import ZeekControl.cmdresult
+import ZeekControl.plugin
 
 
 class TestPlugin(ZeekControl.plugin.Plugin):

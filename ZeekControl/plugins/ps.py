@@ -4,8 +4,8 @@
 # not controlled by this zeekctl. The latter are marked with "(-)", while "our"
 # processes get a "(+)".
 
-import ZeekControl.plugin
 import ZeekControl.cmdresult
+import ZeekControl.plugin
 
 
 class PsZeek(ZeekControl.plugin.Plugin):

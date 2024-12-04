@@ -2,8 +2,8 @@
 # One ZeekControl node.
 #
 
-import os
 import copy
+import os
 
 from ZeekControl import doc
 

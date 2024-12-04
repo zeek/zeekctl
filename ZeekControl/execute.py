@@ -1,13 +1,12 @@
 # These modules provides a set of functions to execute actions on a host.
 # If the host is local, it's done direcly; if it's remote we log in via SSH.
 
+import logging
 import os
 import shutil
 import subprocess
-import logging
 
-from ZeekControl import ssh_runner
-from ZeekControl import util
+from ZeekControl import ssh_runner, util
 
 
 # Copy src to dstdir, preserving permission bits and file type.  The src

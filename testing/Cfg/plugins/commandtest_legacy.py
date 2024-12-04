@@ -1,8 +1,8 @@
 # Zeekctl test plugin that defines custom commands using the old BroControl
 # legacy API.
 
-import BroControl.plugin
 import BroControl.cmdresult
+import BroControl.plugin
 
 
 class CommandTest(BroControl.plugin.Plugin):

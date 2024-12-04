@@ -2,10 +2,10 @@
 #
 # The ZeekControl interactive shell.
 
+import logging
 import os.path
 import sys
 import time
-import logging
 
 for path in (
     "@PREFIX@/lib/zeekctl",
@@ -15,11 +15,9 @@ for path in (
     if os.path.isdir(path):
         sys.path.insert(0, path)
 
-from ZeekControl.zeekctl import ZeekCtl, ZeekControlError, CommandSyntaxError
-from ZeekControl import zeekcmd
-from ZeekControl import util
-from ZeekControl import utilcurses
-from ZeekControl import version
+from ZeekControl import util, utilcurses, version, zeekcmd
+from ZeekControl.exceptions import CommandSyntaxError, ZeekControlError
+from ZeekControl.zeekctl import ZeekCtl
 
 
 # Main command loop.

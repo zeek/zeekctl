@@ -1,8 +1,10 @@
+import json
+import os
+
+import bottle
+
 from ZeekControl import version
 from ZeekControl.ser import dumps
-import os
-import bottle
-import json
 
 app = bottle.Bottle(autojson=False)
 app.install(bottle.JSONPlugin(json_dumps=lambda s: json.dumps(s, default=dumps)))

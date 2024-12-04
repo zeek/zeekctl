@@ -1,8 +1,8 @@
 # Tasks which are to be done on a regular basis from cron.
 import io
 import os
-import time
 import shutil
+import time
 
 from ZeekControl import execute
 from ZeekControl import node as node_mod

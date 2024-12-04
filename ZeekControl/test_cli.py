@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import sys
-import requests
-import time
-import pprint
 import json
+import pprint
+import sys
+import time
+
+import requests
 
 
 def log(id, last):

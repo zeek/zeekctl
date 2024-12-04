@@ -1,16 +1,10 @@
 # The ZeekControl interactive shell.
 
+import logging
 import os
 import sys
-import logging
 
-from ZeekControl import lock
-from ZeekControl import config
-from ZeekControl import cmdresult
-from ZeekControl import execute
-from ZeekControl import control
-from ZeekControl import version
-from ZeekControl import pluginreg
+from ZeekControl import cmdresult, config, control, execute, lock, pluginreg, version
 from ZeekControl import node as node_mod
 from ZeekControl.exceptions import *
 

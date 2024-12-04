@@ -1,20 +1,14 @@
 # Functions to control the nodes' operations.
 
-from collections import namedtuple
 import glob
+import logging
 import os
 import shutil
 import time
-import logging
+from collections import namedtuple
 
-from ZeekControl import execute
-from ZeekControl import events
-from ZeekControl import util
-from ZeekControl import config
-from ZeekControl import install
-from ZeekControl import cron
+from ZeekControl import cmdresult, config, cron, events, execute, install, util
 from ZeekControl import node as node_mod
-from ZeekControl import cmdresult
 
 
 # Waits for the nodes' Zeek processes to reach the given status.

@@ -1,8 +1,8 @@
 # Curses functions
 
-import signal
-import curses
 import atexit
+import curses
+import signal
 
 _Stdscr = None
 
