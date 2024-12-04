@@ -187,7 +187,7 @@ class Plugin:
         of configured nodes."""
 
         if not nodes:
-            return [n for n in config.Config.hosts()]
+            return list(config.Config.hosts())
 
         result = []
         h = {}

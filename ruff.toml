@@ -5,4 +5,4 @@ target-version = "py39"
 exclude = ["auxil"]
 
 [lint]
-select = ["UP"]
+select = ["C4", "UP"]
