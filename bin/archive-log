@@ -13,7 +13,7 @@
 #                          format YY-MM-DD_HH.MM.SS).
 #  terminating:  0 during normal log rotation, or 1 if Zeek is shutting down.
 #  writer:  a string indicating the log writer type, such as "ascii".
-# 
+#
 # Example:
 # archive-log conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
 

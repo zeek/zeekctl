@@ -1,7 +1,7 @@
 import json
 
-from ZeekControl import node
-from ZeekControl import cmdresult
+from ZeekControl import cmdresult, node
+
 
 class MyJsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -10,6 +10,7 @@ class MyJsonEncoder(json.JSONEncoder):
         if isinstance(obj, cmdresult.CmdResult):
             return obj.to_dict()
         return json.JSONEncoder.default(self, obj)
+
 
 def dumps(obj):
     return json.dumps(obj, cls=MyJsonEncoder)

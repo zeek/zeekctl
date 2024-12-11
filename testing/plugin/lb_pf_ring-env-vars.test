@@ -20,4 +20,3 @@ zeekctl start
 grep CLUSTER_NODE $ZEEKCTL_INSTALL_PREFIX/spool/debug.log > debug.log
 
 zeekctl stop
-

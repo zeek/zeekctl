@@ -13,4 +13,3 @@ sed 's/This is a ZEEKCTL TEST/<compressed>/'
 
 # show that command-line options are recognized
 echo $msg
-

@@ -1,13 +1,12 @@
 # These modules provides a set of functions to execute actions on a host.
 # If the host is local, it's done direcly; if it's remote we log in via SSH.
 
+import logging
 import os
 import shutil
 import subprocess
-import logging
 
-from ZeekControl import ssh_runner
-from ZeekControl import util
+from ZeekControl import ssh_runner, util
 
 
 # Copy src to dstdir, preserving permission bits and file type.  The src
@@ -15,7 +14,7 @@ from ZeekControl import util
 # recursively).  If the target pathname already exists, it is not clobbered.
 def install(src, dstdir, cmdout):
     if not os.path.lexists(src):
-        cmdout.error("pathname not found: %s" % src)
+        cmdout.error(f"pathname not found: {src}")
         return False
 
     dst = os.path.join(dstdir, os.path.basename(src))
@@ -34,32 +33,37 @@ def install(src, dstdir, cmdout):
         elif os.path.isdir(src):
             shutil.copytree(src, dst, symlinks=True)
         else:
-            cmdout.error("failed to copy %s: not a file, dir, or symlink" % src)
+            cmdout.error(f"failed to copy {src}: not a file, dir, or symlink")
             return False
     except OSError:
         # Python 2.6 has a bug where this may fail on NFS. So we just
         # ignore errors.
         pass
-    except IOError as err:
-        cmdout.error("failed to copy: %s" % err)
+    except OSError as err:
+        cmdout.error(f"failed to copy: {err}")
         return False
 
     return True
+
 
 # rsyncs paths from localhost to destination hosts.
 def sync(nodes, paths, cmdout):
     result = True
     cmds = []
     for n in nodes:
-        args = ['-rRl', '--delete', '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"']
-        dst = ["%s:/" % util.format_rsync_addr(n.addr)]
+        args = [
+            "-rRl",
+            "--delete",
+            '--rsh="ssh -o BatchMode=yes -o LogLevel=error -o ConnectTimeout=30"',
+        ]
+        dst = [f"{util.format_rsync_addr(n.addr)}:/"]
         args += paths + dst
-        cmdline = "rsync %s" % " ".join(args)
+        cmdline = "rsync {}".format(" ".join(args))
         cmds += [(n, cmdline, "", None)]
 
-    for (id, success, output) in run_localcmds(cmds):
+    for id, success, output in run_localcmds(cmds):
         if not success:
-            cmdout.error("rsync to %s failed: %s" % (id.addr, output))
+            cmdout.error(f"rsync to {id.addr} failed: {output}")
             result = False
 
     return result
@@ -75,6 +79,7 @@ def run_localcmd(cmd, env=None, inputtext=None):
     proc = _run_localcmd_init("single", cmd, env)
     return _run_localcmd_wait(proc, inputtext)
 
+
 # Same as run_localcmd() but runs a set of local commands in parallel.
 # Cmds is a list of (id, cmd, envs, inputtext) tuples, where id is
 # an arbitrary cookie identifying each command.
@@ -83,18 +88,18 @@ def run_localcmds(cmds):
     results = []
     running = []
 
-    for (id, cmd, envs, inputtext) in cmds:
+    for id, cmd, envs, inputtext in cmds:
         proc = _run_localcmd_init(id, cmd, envs)
         running += [(id, proc, inputtext)]
 
-    for (id, proc, inputtext) in running:
+    for id, proc, inputtext in running:
         success, output = _run_localcmd_wait(proc, inputtext)
         results += [(id, success, output)]
 
     return results
 
-def _run_localcmd_init(id, cmd, env):
 
+def _run_localcmd_init(id, cmd, env):
     if env:
         cmdline = env + " " + cmd
     else:
@@ -103,11 +108,18 @@ def _run_localcmd_init(id, cmd, env):
     logging.debug(cmdline)
 
     # os.setsid makes sure that the child process doesn't receive our CTRL-Cs.
-    proc = subprocess.Popen([cmdline], stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            close_fds=True, shell=True, preexec_fn=os.setsid)
+    proc = subprocess.Popen(
+        [cmdline],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        close_fds=True,
+        shell=True,
+        preexec_fn=os.setsid,
+    )
 
     return proc
+
 
 def _run_localcmd_wait(proc, inputtext):
     if inputtext:
@@ -131,8 +143,9 @@ def _run_localcmd_wait(proc, inputtext):
 # only fix I can come up with.
 def _emptyDel(self):
     pass
-subprocess.Popen.__del__ = _emptyDel
 
+
+subprocess.Popen.__del__ = _emptyDel
 
 
 class Executor:
@@ -183,14 +196,16 @@ class Executor:
 
                 if shell:
                     if args:
-                        cmdargs = ["%s %s" % (cmdargs[0], " ".join(args))]
+                        cmdargs = ["{} {}".format(cmdargs[0], " ".join(args))]
                 else:
                     cmdargs += args
 
                 nodecmdlist.append((zeeknode.addr, cmdargs))
                 logging.debug("%s: %s", zeeknode.host, " ".join(cmdargs))
 
-        for host, result in self.sshrunner.exec_multihost_commands(nodecmdlist, shell, self.config.commandtimeout):
+        for host, result in self.sshrunner.exec_multihost_commands(
+            nodecmdlist, shell, self.config.commandtimeout
+        ):
             nodecmd = dd[host].pop(0)
             zeeknode = nodecmd[0]
             if not isinstance(result, Exception):
@@ -228,10 +243,10 @@ class Executor:
         results = []
         cmds = []
 
-        for (node, dir) in dirs:
+        for node, dir in dirs:
             cmds += [(node, "mkdir", ["-p", dir])]
 
-        for (node, success, output) in self.run_cmds(cmds):
+        for node, success, output in self.run_cmds(cmds):
             results += [(node, success, output)]
 
         return results
@@ -247,14 +262,13 @@ class Executor:
         results = []
         cmds = []
 
-        for (node, dir) in dirs:
-            cmds += [(node, "if [ -d %s ]; then rm -rf %s ; fi" % (dir, dir), [])]
+        for node, dir in dirs:
+            cmds += [(node, f"if [ -d {dir} ]; then rm -rf {dir} ; fi", [])]
 
-        for (node, success, output) in self.run_cmds(cmds, shell=True):
+        for node, success, output in self.run_cmds(cmds, shell=True):
             results += [(node, success, output)]
 
         return results
 
     def host_status(self):
         return self.sshrunner.host_status()
-

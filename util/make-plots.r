@@ -1,15 +1,15 @@
 # Text & pch scaling.
-scale.cex		<- 1.4 
+scale.cex		<- 1.4
 scale.cex.lab	<- 1.4
 scale.cex.legend <- 1.0
 
 # Parameters for nicer plotting
 sample <- 10
-num <- 50 
+num <- 50
 shift <- 0
 
 plotLoad <- function(tag, host, key, style, factor=1)
-{                       
+{
     file <- paste(tag, ".", host, ".dat", sep="")
     data <- read.table(file, header=TRUE)
     print(file)
@@ -43,7 +43,7 @@ plotSeries <- function(tag, hosts, type, factor=1)
 
 plotScale <- function(file, tag, host, ymax, title, xlab, ylab)
 {
- 	postscript(file, paper="special", width=11, height=6.5)    
+ 	postscript(file, paper="special", width=11, height=6.5)
     par(cex=1.3)
     file <- paste(tag, ".", host, ".dat", sep="")
     data <- read.table(file, header=TRUE)
@@ -69,9 +69,9 @@ time2str<-function(unixt, timezone=1)
 
 timeticks <- function (start, end, tickdist=NULL, labeldist=NULL, offset=1, timezone=1)
 {
-	if(identical(tickdist,NULL)) 
+	if(identical(tickdist,NULL))
 		tickdist<-timetickdist(start, end)
-	if(identical(labeldist, NULL)) 
+	if(identical(labeldist, NULL))
 		labeldist<-tickdist
 	pos<-start-1
 	res=list(ticks=c(), labels=c())
@@ -81,9 +81,9 @@ timeticks <- function (start, end, tickdist=NULL, labeldist=NULL, offset=1, time
 		if(pos<=end)
 		{
 			res$ticks<-c(res$ticks, pos)
-			if (identical((pos+offset*3600)%%labeldist,0)) 
-				res$labels<-c(res$labels, time2str(pos, timezone=offset)) 
-			else 
+			if (identical((pos+offset*3600)%%labeldist,0))
+				res$labels<-c(res$labels, time2str(pos, timezone=offset))
+			else
 				res$labels<-c(res$labels, " ")
 
 		}
@@ -91,13 +91,13 @@ timeticks <- function (start, end, tickdist=NULL, labeldist=NULL, offset=1, time
 	res
 }
 
-nexttick <- function (cur, dist, offset=1) 
+nexttick <- function (cur, dist, offset=1)
 {
 	nextt <- cur
 	curTZ = cur+offset*3600
-	if (identical(curTZ%%dist,0)) 
-		nextt <- cur+dist 
-	else 
+	if (identical(curTZ%%dist,0))
+		nextt <- cur+dist
+	else
 		nextt <- cur+(dist-(curTZ%%dist))
 
 	nextt
@@ -129,16 +129,16 @@ timestamp<-function (unixt, offset)
 	unixt<-(unixt%/%60) + offset
 	hrs<-unixt%%24
 	unixt<-unixt%/%24
-	days<-(unixt-3)%%7 
+	days<-(unixt-3)%%7
 	c(days,hrs,mins,secs)
 }
 
 timeaxis <- function(xrange, offset=1, labels=T, timezone=1)
 {
 	t <- timeticks(xrange[1], xrange[2], offset=offset, timezone=timezone)
-	if (labels) 
+	if (labels)
 		axis(1, at=t$ticks, labels=t$labels)
-	else 
+	else
 		axis(1, at=t$ticks, labels=F)
 }
 
@@ -226,4 +226,3 @@ plotSeries("parent", hosts, "vsize", factor=1024*1024*1024)
 hosts <- read.table("child.hosts.dat", header=TRUE, as.is=TRUE)$name
 plotScale("mem-child.eps", "child", hosts[1], 2, "Memory - Child Process", "Time", "GBytes")
 plotSeries("child", hosts, "vsize", factor=1024*1024*1024)
-

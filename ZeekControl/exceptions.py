@@ -8,21 +8,27 @@
 # exceptions are not expected to occur, so if one is raised a stack trace
 # can provide valuable information on the source of the problem.
 
+
 class ZeekControlError(Exception):
     """This is the base class for ZeekControl exceptions."""
 
+
 class LockError(ZeekControlError):
     """Indicates that ZeekControl was unable to obtain a lock."""
+
 
 class RuntimeEnvironmentError(ZeekControlError):
     """Indicates an error in the runtime environment (e.g. running as wrong
     user, or some files/directories have wrong permissions or location)."""
 
+
 class InvalidNodeError(ZeekControlError):
     """Indicates an attempt to lookup an invalid node name."""
 
+
 class ConfigurationError(ZeekControlError):
     """Indicates a problem with the ZeekControl configuration."""
+
 
 class CommandSyntaxError(ZeekControlError):
     """Indicates a syntax error in a ZeekControl command."""

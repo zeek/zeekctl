@@ -2,9 +2,10 @@
 
 import ZeekControl.plugin
 
+
 class StateTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(StateTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "statetest"
@@ -20,6 +21,6 @@ class StateTest(ZeekControl.plugin.Plugin):
         self.setState("statevar", sv + 1)
 
         with open("state.out", "w") as f:
-            f.write("statevar: %s\n" % self.getState("statevar"))
+            f.write(f"statevar: {self.getState('statevar')}\n")
 
         return True

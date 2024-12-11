@@ -29,18 +29,19 @@ except ImportError as e:
 #   result event, or [] if no result_event was specified.
 #   If success is False, results_args is a string with an error message.
 
-def send_events_parallel(events, topic):
 
+def send_events_parallel(events, topic):
     results = []
     sent = []
 
-    for (node, event, args, result_event) in events:
-
+    for node, event, args, result_event in events:
         if not broker:
-            results += [(node, False, "Python bindings for Broker: %s" % errmsg)]
+            results += [(node, False, f"Python bindings for Broker: {errmsg}")]
             continue
 
-        success, endpoint, sub = _send_event_init(node, event, args, result_event, topic)
+        success, endpoint, sub = _send_event_init(
+            node, event, args, result_event, topic
+        )
 
         if success and result_event:
             sent += [(node, result_event, endpoint, sub)]
@@ -49,7 +50,7 @@ def send_events_parallel(events, topic):
             endpoint.shutdown()
             results += [(node, success, "")]
 
-    for (node, result_event, endpoint, sub) in sent:
+    for node, result_event, endpoint, sub in sent:
         success, result_args = _send_event_wait(node, result_event, endpoint, sub)
         sub.reset()
         endpoint.shutdown()
@@ -57,8 +58,8 @@ def send_events_parallel(events, topic):
 
     return results
 
-def _send_event_init(node, event, args, result_event, topic):
 
+def _send_event_init(node, event, args, result_event, topic):
     host = node.addr
     endpoint = broker.Endpoint()
     subscriber = endpoint.make_subscriber(topic)
@@ -76,14 +77,19 @@ def _send_event_init(node, event, args, result_event, topic):
                     if msg.code() == broker.SC.PeerAdded:
                         ev = broker.zeek.Event(event, *args)
                         endpoint.publish(topic + "/" + repr(msg.context()), ev)
-                        logging.debug("broker: %s(%s) to node %s", event,
-                                      ", ".join(args), node.name)
+                        logging.debug(
+                            "broker: %s(%s) to node %s",
+                            event,
+                            ", ".join(args),
+                            node.name,
+                        )
                         return (True, endpoint, subscriber)
 
             tries += 1
 
             if tries > config.Config.commtimeout:
                 return (False, "time-out", None)
+
 
 def _send_event_wait(node, result_event, bc, sub):
     if not result_event:
@@ -99,8 +105,9 @@ def _send_event_wait(node, result_event, bc, sub):
             (topic, event) = msg
             ev = broker.zeek.Event(event)
             args = ev.args()
-            logging.debug("broker: %s(%s) from node %s", result_event,
-                          ", ".join(args), node.name)
+            logging.debug(
+                "broker: %s(%s) from node %s", result_event, ", ".join(args), node.name
+            )
             return (True, args)
 
         tries += 1
@@ -108,4 +115,3 @@ def _send_event_wait(node, result_event, bc, sub):
         if tries > config.Config.commtimeout:
             logging.debug("broker: timeout during receive from node %s", node.name)
             return (False, "time-out")
-

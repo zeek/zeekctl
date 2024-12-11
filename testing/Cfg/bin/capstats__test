@@ -12,7 +12,7 @@ while [ -n "$1" ]; do
       interval=$2
       shift
   fi
-  shift 
+  shift
 done
 
 if [ "$netif" = "eth0" ]; then
@@ -27,4 +27,3 @@ sleep $interval
 # Note: the capstats command outputs to stderr
 
 echo $msg 1>&2
-

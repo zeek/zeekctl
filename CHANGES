@@ -1,3 +1,38 @@
+2.5.0-74 | 2024-12-10 17:22:23 -0700
+
+  * Update cmake submodule to master (Tim Wojtulewicz, Corelight)
+
+  * Update trace-summary submodule for python upgrade (Tim Wojtulewicz, Corelight)
+
+  * Update pysubnettree submodule (Tim Wojtulewicz, Corelight)
+
+  * Add workflow for running pre-commit (Tim Wojtulewicz, Corelight)
+
+  * Update codeql action versions, add linting for workflows (Tim Wojtulewicz, Corelight)
+
+  * Fix references to python 3.5 in CMakeLists and docs (Tim Wojtulewicz, Corelight)
+
+  * Add 'F' to ruff, fix findings (Tim Wojtulewicz, Corelight)
+
+  * Add 'ISC' to ruff, fix findings (there weren't any) (Tim Wojtulewicz, Corelight)
+
+  * Add 'I' to ruff, fix findings (Tim Wojtulewicz, Corelight)
+
+  * Add 'C4' to ruff, fix findings (Tim Wojtulewicz, Corelight)
+
+  * Use f-strings or .format() for string formatting (Tim Wojtulewicz, Corelight)
+
+  * Add ruff linting, enabling and fixing the 'upgrade' finds (Tim Wojtulewicz, Corelight)
+
+    This disables the format string finding (UP031) temporarily. It is
+    handled in a separate commit because it's so many changes.
+
+  * Add pre-commit hook for ruff-format, fix all of the findings (Tim Wojtulewicz, Corelight)
+
+  * Add pre-commit for trailing whitespace, fix findings (Tim Wojtulewicz, Corelight)
+
+  * Remove long-outdated travis configuration (Tim Wojtulewicz, Corelight)
+
 2.5.0-58 | 2024-08-08 09:25:59 -0700
 
   * Stop installing the broctl symlink (Tim Wojtulewicz, Corelight)

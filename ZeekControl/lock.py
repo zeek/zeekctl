@@ -5,20 +5,23 @@ from ZeekControl import config
 
 lockCount = 0
 
+
 # Return: 0 if no lock, >0 for PID of lock, or -1 on error
 def _break_lock(cmdout):
     from ZeekControl import execute
 
     try:
         # Check whether lock is stale.
-        with open(config.Config.lockfile, "r") as f:
+        with open(config.Config.lockfile) as f:
             pid = f.readline().strip()
 
-    except (OSError, IOError) as err:
-        cmdout.error("failed to read lock file: %s" % err)
+    except OSError as err:
+        cmdout.error(f"failed to read lock file: {err}")
         return -1
 
-    success, output = execute.run_localcmd("%s %s" % (os.path.join(config.Config.helperdir, "check-pid"), pid))
+    success, output = execute.run_localcmd(
+        "{} {}".format(os.path.join(config.Config.helperdir, "check-pid"), pid)
+    )
     if success and output.strip() == "running":
         # Process still exists.
         try:
@@ -30,11 +33,12 @@ def _break_lock(cmdout):
     try:
         # Break lock.
         os.unlink(config.Config.lockfile)
-    except (OSError, IOError) as err:
-        cmdout.error("failed to remove lock file: %s" % err)
+    except OSError as err:
+        cmdout.error(f"failed to remove lock file: {err}")
         return -1
 
     return 0
+
 
 # Return: 0 if lock is acquired, or if failed to acquire lock return >0 for
 # PID of lock, or -1 on error
@@ -45,20 +49,20 @@ def _acquire_lock(cmdout):
 
     lockdir = os.path.dirname(config.Config.lockfile)
     if not os.path.exists(lockdir):
-        cmdout.info("creating directory for lock file: %s" % lockdir)
+        cmdout.info(f"creating directory for lock file: {lockdir}")
         os.makedirs(lockdir)
 
     try:
         try:
             # This should be NFS-safe.
             with open(tmpfile, "w") as f:
-                f.write("%s\n" % pid)
+                f.write(f"{pid}\n")
 
             n = os.stat(tmpfile)[3]
             os.link(tmpfile, config.Config.lockfile)
             m = os.stat(tmpfile)[3]
 
-            if n == m-1:
+            if n == m - 1:
                 return 0
 
             # File is locked.
@@ -72,23 +76,25 @@ def _acquire_lock(cmdout):
             if lockpid == 0:
                 return _acquire_lock(cmdout)
 
-        except IOError as e:
-            cmdout.error("cannot acquire lock: %s" % e)
+        except OSError as e:
+            cmdout.error(f"cannot acquire lock: {e}")
             return lockpid
 
     finally:
         try:
             os.unlink(tmpfile)
-        except (OSError, IOError):
+        except OSError:
             pass
 
     return lockpid
+
 
 def _release_lock(cmdout):
     try:
         os.unlink(config.Config.lockfile)
     except OSError as e:
-        cmdout.error("cannot remove lock file: %s" % e)
+        cmdout.error(f"cannot remove lock file: {e}")
+
 
 def lock(cmdout, showwait=True):
     global lockCount
@@ -104,7 +110,7 @@ def lock(cmdout, showwait=True):
 
     if lockpid:
         if showwait:
-            cmdout.info("waiting for lock (owned by PID %d) ..." % lockpid)
+            cmdout.info(f"waiting for lock (owned by PID {lockpid:d}) ...")
 
         count = 0
         while _acquire_lock(cmdout) != 0:
@@ -116,6 +122,7 @@ def lock(cmdout, showwait=True):
 
     lockCount = 1
     return True
+
 
 def unlock(cmdout):
     global lockCount

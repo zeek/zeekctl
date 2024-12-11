@@ -6,9 +6,10 @@
 
 import ZeekControl.plugin
 
+
 class LBCustom(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(LBCustom, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "lb_custom"
@@ -27,13 +28,23 @@ class LBCustom(ZeekControl.plugin.Plugin):
 
             prefix = self.getOption("InterfacePrefix")
             suffix = self.getOption("InterfaceSuffix")
-            nn.interface = "%s%s%s" % (prefix, nn.interface, suffix)
+            nn.interface = f"{prefix}{nn.interface}{suffix}"
 
         return useplugin
 
     def options(self):
         custom_options = [
-          ("InterfacePrefix", "string", "", "Prefix to prepend to the configured interface name."),
-          ("InterfaceSuffix", "string", "", "Suffix to append to the configured interface name."),
+            (
+                "InterfacePrefix",
+                "string",
+                "",
+                "Prefix to prepend to the configured interface name.",
+            ),
+            (
+                "InterfaceSuffix",
+                "string",
+                "",
+                "Suffix to append to the configured interface name.",
+            ),
         ]
         return custom_options

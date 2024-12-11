@@ -1,20 +1,14 @@
 # Functions to control the nodes' operations.
 
-from collections import namedtuple
 import glob
+import logging
 import os
 import shutil
 import time
-import logging
+from collections import namedtuple
 
-from ZeekControl import execute
-from ZeekControl import events
-from ZeekControl import util
-from ZeekControl import config
-from ZeekControl import install
-from ZeekControl import cron
+from ZeekControl import cmdresult, config, cron, events, execute, install, util
 from ZeekControl import node as node_mod
-from ZeekControl import cmdresult
 
 
 # Waits for the nodes' Zeek processes to reach the given status.
@@ -27,7 +21,7 @@ def _make_zeek_params(node, live):
         try:
             # Interface name needs quotes so that shell doesn't interpret any
             # potential metacharacters in the name.
-            args += ["-i", "'%s'" % node.interface]
+            args += ["-i", f"'{node.interface}'"]
         except AttributeError:
             pass
 
@@ -44,9 +38,9 @@ def _make_zeek_params(node, live):
         args += ["-p", "standalone"]
 
     for prefix in config.Config.prefixes.split(":"):
-        args += ["-p", "%s" % prefix]
+        args += ["-p", f"{prefix}"]
 
-    args += ["-p", "%s" % node.name]
+    args += ["-p", f"{node.name}"]
 
     # The order of loaded scripts is as follows:
     # 1) SitePolicyScripts (local.zeek by default) gives a common set of loaded
@@ -78,13 +72,14 @@ def _make_zeek_params(node, live):
 
     return args
 
+
 # Build the environment variables for the given node.
 def _make_env_params(node, returnlist=False):
     envs = []
     if not node_mod.is_standalone(node):
-        envs.append("CLUSTER_NODE=%s" % node.name)
+        envs.append(f"CLUSTER_NODE={node.name}")
 
-    envs += ["%s=%s" % (key, val) for (key, val) in sorted(node.env_vars.items())]
+    envs += [f"{key}={val}" for (key, val) in sorted(node.env_vars.items())]
 
     if returnlist:
         envlist = [("-v", i) for i in envs]
@@ -121,7 +116,7 @@ class Controller:
             self._start_nodes(loggers, results)
 
             if not results.ok:
-                for n in (manager + proxies + workers):
+                for n in manager + proxies + workers:
                     results.set_node_fail(n)
                 return results
 
@@ -129,7 +124,7 @@ class Controller:
             self._start_nodes(manager, results)
 
             if not results.ok:
-                for n in (proxies + workers):
+                for n in proxies + workers:
                     results.set_node_fail(n)
                 return results
 
@@ -146,14 +141,13 @@ class Controller:
 
         return results
 
-
     # Starts the given nodes.
     def _start_nodes(self, nodes, results):
-        self.ui.info("starting %s ..." % node_mod.nodes_describe(nodes))
+        self.ui.info(f"starting {node_mod.nodes_describe(nodes)} ...")
 
         filtered = []
         # Ignore nodes which are still running.
-        for (node, isrunning) in self._isrunning(nodes):
+        for node, isrunning in self._isrunning(nodes):
             if not isrunning:
                 filtered += [node]
 
@@ -162,17 +156,21 @@ class Controller:
         # Generate crash report for any crashed nodes.
         crashed = [node for node in nodes if node.hasCrashed()]
         if crashed:
-            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self.ui.info(
+                "creating crash report for previously crashed nodes: {}".format(
+                    ", ".join([n.name for n in crashed])
+                )
+            )
             self._make_crash_reports(crashed)
 
         # Make working directories.
         dirs = [(node, node.cwd()) for node in nodes]
         nodes = []
-        for (node, success, output) in self.executor.mkdirs(dirs):
+        for node, success, output in self.executor.mkdirs(dirs):
             if success:
                 nodes += [node]
             else:
-                self.ui.error("cannot create working directory for %s" % node.name)
+                self.ui.error(f"cannot create working directory for {node.name}")
                 results.set_node_fail(node)
 
         # Start Zeek process.
@@ -186,15 +184,21 @@ class Controller:
                 pin_cpu = -1
 
             envs = _make_env_params(node, True)
-            cmds += [(node, "start", envs + [node.cwd(), str(pin_cpu)] + _make_zeek_params(node, True))]
+            cmds += [
+                (
+                    node,
+                    "start",
+                    envs + [node.cwd(), str(pin_cpu)] + _make_zeek_params(node, True),
+                )
+            ]
 
         nodes = []
         # Note: the shell is used to interpret the command because zeekargs
         # might contain quoted arguments.
-        for (node, success, output) in self.executor.run_helper(cmds, shell=True):
+        for node, success, output in self.executor.run_helper(cmds, shell=True):
             if success:
                 if not output:
-                    self.ui.error("failed to get PID of %s" % node.name)
+                    self.ui.error(f"failed to get PID of {node.name}")
                     results.set_node_fail(node)
                     continue
 
@@ -202,14 +206,14 @@ class Controller:
                 try:
                     pid = int(pidstr)
                 except ValueError:
-                    self.ui.error("invalid PID for %s: %s" % (node.name, pidstr))
+                    self.ui.error(f"invalid PID for {node.name}: {pidstr}")
                     results.set_node_fail(node)
                     continue
 
                 nodes += [node]
                 node.setPID(pid)
             else:
-                self.ui.error('cannot start %s; check output of "diag"' % node.name)
+                self.ui.error(f'cannot start {node.name}; check output of "diag"')
                 results.set_node_fail(node)
                 if output:
                     self.ui.error(output)
@@ -218,7 +222,7 @@ class Controller:
         hanging = []
         running = []
 
-        for (node, success) in self._waitforzeeks(nodes, "RUNNING", 3, True):
+        for node, success in self._waitforzeeks(nodes, "RUNNING", 3, True):
             if success:
                 running += [node]
             else:
@@ -229,13 +233,15 @@ class Controller:
         # that the process has been started (_waitforzeeks ensures that).
         # If by now there is not a TERMINATED status, we assume that it
         # is doing fine and will move on to RUNNING once DNS is done.
-        for (node, success) in self._waitforzeeks(hanging, "TERMINATED", 0, False):
+        for node, success in self._waitforzeeks(hanging, "TERMINATED", 0, False):
             if success:
-                self.ui.error('%s terminated immediately after starting; check output with "diag"' % node.name)
+                self.ui.error(
+                    f'{node.name} terminated immediately after starting; check output with "diag"'
+                )
                 node.clearPID()
                 results.set_node_fail(node)
             else:
-                self.ui.info("(%s still initializing)" % node.name)
+                self.ui.info(f"({node.name} still initializing)")
                 running += [node]
 
         for node in running:
@@ -245,7 +251,6 @@ class Controller:
         return results
 
     def _isrunning(self, nodes, setcrashed=True):
-
         results = []
         cmds = []
 
@@ -257,11 +262,11 @@ class Controller:
 
             cmds += [(node, "check-pid", [str(pid)])]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for node, success, output in self.executor.run_helper(cmds):
             # If we cannot run the helper script, then we ignore this node
             # because the process might actually be running but we can't tell.
             if not success:
-                self.ui.error("failed to run check-pid on node %s" % node.name)
+                self.ui.error(f"failed to run check-pid on node {node.name}")
                 continue
 
             running = output.strip() == "running"
@@ -287,7 +292,7 @@ class Controller:
 
         # Determine set of nodes still to check.
         todo = {}
-        for (node, isrunning) in running:
+        for node, isrunning in running:
             if isrunning:
                 todo[node.name] = node
             else:
@@ -303,9 +308,9 @@ class Controller:
             # Check nodes' .status file
             cmds = []
             for node in nodelist:
-                cmds += [(node, "first-line", ["%s/.status" % node.cwd()])]
+                cmds += [(node, "first-line", [f"{node.cwd()}/.status"])]
 
-            for (node, success, output) in self.executor.run_helper(cmds):
+            for node, success, output in self.executor.run_helper(cmds):
                 if not success or not output:
                     continue
 
@@ -320,7 +325,7 @@ class Controller:
                     del todo[node.name]
                     results += [(node, False)]
 
-            for (node, isrunning) in running:
+            for node, isrunning in running:
                 if node.name in todo and not isrunning:
                     # Alright, a dead node's status will not change anymore.
                     del todo[node.name]
@@ -354,7 +359,7 @@ class Controller:
             return
         t = time.time()
         with open(self.config.statslog, "a") as out:
-            out.write("%s %s action %s\n" % (t, node, action))
+            out.write(f"{t} {node} action {action}\n")
 
     # Do a "post-terminate crash" for the given nodes.
     def _make_crash_reports(self, nodes):
@@ -366,9 +371,11 @@ class Controller:
         msg_header_no_backtrace = "This crash report does not include a backtrace.  In order for crash reports\nto be useful when Zeek crashes, a backtrace is needed.\n"
 
         postterminate = os.path.join(self.config.scriptsdir, "post-terminate")
-        cmds = [(node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes]
+        cmds = [
+            (node, postterminate, [node.type, node.cwd(), "crash"]) for node in nodes
+        ]
 
-        for (node, success, output) in self.executor.run_cmds(cmds):
+        for node, success, output in self.executor.run_cmds(cmds):
             if success:
                 crashreport = output
 
@@ -381,11 +388,17 @@ class Controller:
                 else:
                     msg = msg_header_no_backtrace + crashreport
 
-                msuccess, moutput = self._sendmail("Crash report from %s" % node.name, msg)
+                msuccess, moutput = self._sendmail(
+                    f"Crash report from {node.name}", msg
+                )
                 if not msuccess:
-                    self.ui.error("error occurred while trying to send mail: %s" % moutput)
+                    self.ui.error(
+                        f"error occurred while trying to send mail: {moutput}"
+                    )
             else:
-                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
+                self.ui.error(
+                    f"error running post-terminate for {node.name}:\n{output}"
+                )
 
             node.clearCrashed()
 
@@ -393,7 +406,9 @@ class Controller:
         if not self.config.sendmail:
             return True, ""
 
-        cmd = "%s '%s'" % (os.path.join(self.config.scriptsdir, "send-mail"), subject)
+        cmd = "{} '{}'".format(
+            os.path.join(self.config.scriptsdir, "send-mail"), subject
+        )
         return execute.run_localcmd(cmd, inputtext=body)
 
     # Stop Zeek processes on nodes.
@@ -411,7 +426,7 @@ class Controller:
             self._stop_nodes(workers, results)
 
             if not results.ok:
-                for n in (proxies + manager + loggers):
+                for n in proxies + manager + loggers:
                     results.set_node_fail(n)
                 return results
 
@@ -419,7 +434,7 @@ class Controller:
             self._stop_nodes(proxies, results)
 
             if not results.ok:
-                for n in (manager + loggers):
+                for n in manager + loggers:
                     results.set_node_fail(n)
                 return results
 
@@ -437,12 +452,12 @@ class Controller:
         return results
 
     def _stop_nodes(self, nodes, results):
-        self.ui.info("stopping %s ..." % node_mod.nodes_describe(nodes))
+        self.ui.info(f"stopping {node_mod.nodes_describe(nodes)} ...")
 
         running = []
 
         # Check which nodes are still running.
-        for (node, isrunning) in self._isrunning(nodes):
+        for node, isrunning in self._isrunning(nodes):
             if isrunning:
                 running += [node]
             else:
@@ -451,7 +466,11 @@ class Controller:
         # Generate crash report for any crashed nodes.
         crashed = [node for node in nodes if node.hasCrashed()]
         if crashed:
-            self.ui.info("creating crash report for previously crashed nodes: %s" % ", ".join([n.name for n in crashed]))
+            self.ui.info(
+                "creating crash report for previously crashed nodes: {}".format(
+                    ", ".join([n.name for n in crashed])
+                )
+            )
             self._make_crash_reports(crashed)
 
         # Helper function to stop nodes with given signal.
@@ -463,11 +482,11 @@ class Controller:
             return self.executor.run_helper(cmds)
 
         # Stop nodes.
-        for (node, success, output) in stop(running, 15):
+        for node, success, output in stop(running, 15):
             if not success:
                 # Give up on this node.  Most likely either we cannot connect
                 # to the host, or we don't have permission to kill the process.
-                self.ui.error("unable to stop %s: %s" % (node.name, output))
+                self.ui.error(f"unable to stop {node.name}: {output}")
                 results.set_node_fail(node)
                 running.remove(node)
 
@@ -477,17 +496,19 @@ class Controller:
         # Check whether they terminated.
         terminated = []
         kill = []
-        for (node, success) in self._waitforzeeks(running, "TERMINATED", self.config.stoptimeout, False):
+        for node, success in self._waitforzeeks(
+            running, "TERMINATED", self.config.stoptimeout, False
+        ):
             if not success:
                 # Check whether it crashed during shutdown ...
                 result = self._isrunning([node])
-                for (node, isrunning) in result:
+                for node, isrunning in result:
                     if isrunning:
-                        self.ui.info("%s did not terminate ... killing ..." % node.name)
+                        self.ui.info(f"{node.name} did not terminate ... killing ...")
                         kill += [node]
                     else:
                         # crashed flag is set by _isrunning().
-                        self.ui.info("%s crashed during shutdown" % node.name)
+                        self.ui.info(f"{node.name} crashed during shutdown")
 
         if kill:
             # Kill those which did not terminate gracefully.
@@ -504,11 +525,10 @@ class Controller:
             todo[node.name] = node
 
         while True:
-
             nodelist = sorted(todo.values(), key=node_mod.sortnode)
             running = self._isrunning(nodelist, setcrashed=False)
 
-            for (node, isrunning) in running:
+            for node, isrunning in running:
                 if node.name in todo and not isrunning:
                     # Alright, it's gone.
                     del todo[node.name]
@@ -540,18 +560,19 @@ class Controller:
 
             cmds += [(node, postterminate, [node.type, node.cwd(), crashflag])]
 
-        for (node, success, output) in self.executor.run_cmds(cmds):
+        for node, success, output in self.executor.run_cmds(cmds):
             if success:
                 self._log_action(node, "stopped")
             else:
-                self.ui.error("error running post-terminate for %s:\n%s" % (node.name, output))
+                self.ui.error(
+                    f"error running post-terminate for {node.name}:\n{output}"
+                )
                 self._log_action(node, "stopped (failed)")
 
             node.clearPID()
             node.clearCrashed()
 
         return results
-
 
     # Output status summary for nodes.
     def status(self, nodes):
@@ -566,14 +587,20 @@ class Controller:
         running = []
 
         cmds = []
-        for (node, isrunning) in nodestatus:
+        for node, isrunning in nodestatus:
             if isrunning:
                 running += [node]
-                cmds += [(node, "first-line", ["%s/.status" % node.cwd(), "%s/.startup" % node.cwd()])]
+                cmds += [
+                    (
+                        node,
+                        "first-line",
+                        [f"{node.cwd()}/.status", f"{node.cwd()}/.startup"],
+                    )
+                ]
 
         statuses = {}
         startups = {}
-        for (n, success, output) in self.executor.run_helper(cmds):
+        for n, success, output in self.executor.run_helper(cmds):
             out = output.splitlines()
             try:
                 val = out[0].split()[0].lower() if (success and out[0]) else "???"
@@ -593,7 +620,7 @@ class Controller:
             self.ui.info("Getting peer status ...")
             peers = {}
             nodes = [n for n in running if statuses[n.name] == "running"]
-            for (node, success, args) in self._query_peerstatus(nodes):
+            for node, success, args in self._query_peerstatus(nodes):
                 if success and args:
                     peers[node.name] = []
                     for f in args[0].split():
@@ -604,7 +631,7 @@ class Controller:
                         if val:
                             peers[node.name] += [val]
 
-        for (node, isrunning) in nodestatus:
+        for node, isrunning in nodestatus:
             node_info = {
                 "name": node.name,
                 "type": node.type,
@@ -645,34 +672,35 @@ class Controller:
     def scripts(self, nodes, check):
         return self._check_config(nodes, not check, True)
 
-
     def _check_config(self, nodes, installed, list_scripts):
         results = cmdresult.CmdResult()
 
-        nodetmpdirs = [(node, os.path.join(self.config.tmpdir, "check-config-%s" % node.name)) for node in nodes]
+        nodetmpdirs = [
+            (node, os.path.join(self.config.tmpdir, f"check-config-{node.name}"))
+            for node in nodes
+        ]
 
         nodes = []
-        for (node, cwd) in nodetmpdirs:
+        for node, cwd in nodetmpdirs:
             if os.path.isdir(cwd):
                 try:
                     shutil.rmtree(cwd)
                 except OSError as err:
-                    self.ui.error("cannot remove directory %s: %s" % (cwd, err))
+                    self.ui.error(f"cannot remove directory {cwd}: {err}")
                     results.ok = False
                     return results
 
             try:
                 os.makedirs(cwd)
             except OSError as err:
-                self.ui.error("cannot create temporary directory: %s" % err)
+                self.ui.error(f"cannot create temporary directory: {err}")
                 results.ok = False
                 return results
 
             nodes += [(node, cwd)]
 
         cmds = []
-        for (node, cwd) in nodes:
-
+        for node, cwd in nodes:
             env = _make_env_params(node)
 
             installed_policies = "1" if installed else "0"
@@ -685,20 +713,29 @@ class Controller:
                 results.ok = False
                 return results
 
-            if not install.make_zeekctl_config_policy(cwd, self.ui, self.pluginregistry):
+            if not install.make_zeekctl_config_policy(
+                cwd, self.ui, self.pluginregistry
+            ):
                 results.ok = False
                 return results
 
-            cmd = os.path.join(self.config.scriptsdir, "check-config") + " %s %s %s %s" % (installed_policies, print_scripts, cwd, " ".join(_make_zeek_params(node, False)))
+            cmd = os.path.join(
+                self.config.scriptsdir, "check-config"
+            ) + " {} {} {} {}".format(
+                installed_policies,
+                print_scripts,
+                cwd,
+                " ".join(_make_zeek_params(node, False)),
+            )
             cmd += " zeekctl/check"
 
             cmds += [((node, cwd), cmd, env, None)]
 
-        for ((node, cwd), success, output) in execute.run_localcmds(cmds):
+        for (node, cwd), success, output in execute.run_localcmds(cmds):
             results.set_node_output(node, success, output)
             try:
                 shutil.rmtree(cwd)
-            except OSError as err:
+            except OSError:
                 # Don't bother reporting an error now.
                 pass
 
@@ -708,16 +745,25 @@ class Controller:
         running = self._isrunning(nodes)
 
         eventlist = []
-        for (node, isrunning) in running:
+        for node, isrunning in running:
             if isrunning:
-                eventlist += [(node, "Control::peer_status_request", [], "Control::peer_status_response")]
+                eventlist += [
+                    (
+                        node,
+                        "Control::peer_status_request",
+                        [],
+                        "Control::peer_status_response",
+                    )
+                ]
 
         return events.send_events_parallel(eventlist, config.Config.controltopic)
 
     def execute_cmd(self, nodes, cmd):
         results = cmdresult.CmdResult()
 
-        for node, success, out in self.executor.run_shell_cmds([(n, cmd) for n in nodes]):
+        for node, success, out in self.executor.run_shell_cmds(
+            [(n, cmd) for n in nodes]
+        ):
             results.set_node_output(node, success, out)
 
         return results
@@ -729,22 +775,21 @@ class Controller:
         # Given a set of node names "orig" and command results "res", add
         # all node names to "orig" that have a failed result in "res".
         def addfailed(orig, res):
-            for (node, status, output) in res:
+            for node, status, output in res:
                 # if status is Fail, then add the node name
                 if not status:
                     orig.add(node.name)
 
             return orig
 
-
         results = cmdresult.CmdResult()
 
         result = self._isrunning(nodes)
-        running    = [node for (node, on) in result if on]
+        running = [node for (node, on) in result if on]
         notrunning = [node for (node, on) in result if not on]
 
         for node in running:
-            self.ui.info("   %s is still running, not cleaning work directory" % node)
+            self.ui.info(f"   {node} is still running, not cleaning work directory")
 
         results1 = self.executor.rmdirs([(n, n.cwd()) for n in notrunning])
         results2 = self.executor.mkdirs([(n, n.cwd()) for n in notrunning])
@@ -756,9 +801,13 @@ class Controller:
             node.clearCrashed()
 
         if cleantmp:
-            self.ui.info("cleaning %s ..." % self.config.tmpdir)
-            results3 = self.executor.rmdirs([(n, self.config.tmpdir) for n in running + notrunning])
-            results4 = self.executor.mkdirs([(n, self.config.tmpdir) for n in running + notrunning])
+            self.ui.info(f"cleaning {self.config.tmpdir} ...")
+            results3 = self.executor.rmdirs(
+                [(n, self.config.tmpdir) for n in running + notrunning]
+            )
+            results4 = self.executor.mkdirs(
+                [(n, self.config.tmpdir) for n in running + notrunning]
+            )
             failed = addfailed(failed, results3)
             failed = addfailed(failed, results4)
 
@@ -777,9 +826,9 @@ class Controller:
         crashdiag = os.path.join(self.config.scriptsdir, "crash-diag")
         cmds = [(node, crashdiag, [node.cwd()]) for node in nodes]
 
-        for (node, success, output) in self.executor.run_cmds(cmds):
+        for node, success, output in self.executor.run_cmds(cmds):
             if not success:
-                errmsgs = "error running crash-diag for %s\n" % node.name
+                errmsgs = f"error running crash-diag for {node.name}\n"
                 errmsgs += output
                 results.set_node_output(node, False, errmsgs)
                 continue
@@ -792,10 +841,16 @@ class Controller:
         results = cmdresult.CmdResult()
 
         if not self.config.capstatspath:
-            results.set_node_data(nodes[0], False, {"output": 'Error: cannot run capstats because zeekctl option "capstatspath" is not defined'})
+            results.set_node_data(
+                nodes[0],
+                False,
+                {
+                    "output": 'Error: cannot run capstats because zeekctl option "capstatspath" is not defined'
+                },
+            )
             return results
 
-        for (node, netif, success, vals) in self.get_capstats_output(nodes, interval):
+        for node, netif, success, vals in self.get_capstats_output(nodes, interval):
             if not success:
                 vals = {"output": vals}
             results.set_node_data(node, success, vals)
@@ -837,13 +892,16 @@ class Controller:
                 nodenetifs.append((node, netif))
 
         capstats = self.config.capstatspath
-        cmds = [(node, capstats, ["-I", str(interval), "-n", "1", "-i", interface]) for (node, interface) in nodenetifs]
+        cmds = [
+            (node, capstats, ["-I", str(interval), "-n", "1", "-i", interface])
+            for (node, interface) in nodenetifs
+        ]
 
         outputs = self.executor.run_cmds(cmds)
 
         totals = {}
 
-        for (node, success, output) in outputs:
+        for node, success, output in outputs:
             netif = self._capstats_interface(node)
 
             if output:
@@ -853,19 +911,35 @@ class Controller:
 
             if not success:
                 if output:
-                    results += [(node, netif, False, "%s: capstats failed (%s)" % (node.name, outputline))]
+                    results += [
+                        (
+                            node,
+                            netif,
+                            False,
+                            f"{node.name}: capstats failed ({outputline})",
+                        )
+                    ]
                 else:
-                    results += [(node, netif, False, "%s: cannot execute capstats" % node.name)]
+                    results += [
+                        (node, netif, False, f"{node.name}: cannot execute capstats")
+                    ]
                 continue
 
             if not output:
-                results += [(node, netif, False, "%s: no capstats output" % node.name)]
+                results += [(node, netif, False, f"{node.name}: no capstats output")]
                 continue
 
             fields = outputline.split()[1:]
 
             if not fields:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
+                results += [
+                    (
+                        node,
+                        netif,
+                        False,
+                        f"{node.name}: unexpected capstats output: {outputline}",
+                    )
+                ]
                 continue
 
             vals = {}
@@ -882,7 +956,14 @@ class Controller:
                         totals[key] = val
 
             except ValueError:
-                results += [(node, netif, False, "%s: unexpected capstats output: %s" % (node.name, outputline))]
+                results += [
+                    (
+                        node,
+                        netif,
+                        False,
+                        f"{node.name}: unexpected capstats output: {outputline}",
+                    )
+                ]
                 continue
 
             results += [(node, netif, True, vals)]
@@ -892,7 +973,6 @@ class Controller:
             results += [(node_mod.Node(self.config, "$total"), None, True, totals)]
 
         return results
-
 
     # Convert a Zeek network interface name to one that capstats can use.
     def _capstats_interface(self, node):
@@ -924,9 +1004,22 @@ class Controller:
     def df(self, nodes):
         results = cmdresult.CmdResult()
 
-        DiskInfo = namedtuple("DiskInfo", ("fs", "total", "used", "available", "percent"))
-        dirs = ("logdir", "bindir", "helperdir", "cfgdir", "spooldir",
-                "policydir", "libdir", "libdir64", "tmpdir", "staticdir", "scriptsdir")
+        DiskInfo = namedtuple(
+            "DiskInfo", ("fs", "total", "used", "available", "percent")
+        )
+        dirs = (
+            "logdir",
+            "bindir",
+            "helperdir",
+            "cfgdir",
+            "spooldir",
+            "policydir",
+            "libdir",
+            "libdir64",
+            "tmpdir",
+            "staticdir",
+            "scriptsdir",
+        )
 
         df = {}
         for node in nodes:
@@ -935,7 +1028,11 @@ class Controller:
         cmds = []
         for node in nodes:
             for key in dirs:
-                if key == "logdir" and not (node_mod.is_logger(node) or node_mod.is_manager(node) or node_mod.is_standalone(node)):
+                if key == "logdir" and not (
+                    node_mod.is_logger(node)
+                    or node_mod.is_manager(node)
+                    or node_mod.is_standalone(node)
+                ):
                     # Don't need to check this on nodes that don't write logs.
                     continue
 
@@ -947,7 +1044,7 @@ class Controller:
 
                 cmds += [(node, "df", [path])]
 
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for node, success, output in self.executor.run_helper(cmds):
             if success:
                 fields = output.split()
                 if len(fields) != 4:
@@ -964,7 +1061,7 @@ class Controller:
                     used = float(fields[2])
                     avail = float(fields[3])
                 except ValueError as err:
-                    df[node.name]["FAIL"] = "bad output from df helper: %s" % err
+                    df[node.name]["FAIL"] = f"bad output from df helper: {err}"
                     continue
 
                 perc = used * 100.0 / (used + avail)
@@ -983,7 +1080,6 @@ class Controller:
     # dict which maps tags to their values.  Tags are "pid", "vsize",
     # "rss", "cpu", and "cmd".
     def get_top_output(self, nodes):
-
         results = []
 
         running = self._isrunning(nodes)
@@ -992,7 +1088,7 @@ class Controller:
 
         pids = {}
 
-        for (node, isrunning) in running:
+        for node, isrunning in running:
             if isrunning:
                 pids[node.name] = node.getPID()
             else:
@@ -1006,7 +1102,7 @@ class Controller:
         hosts = {}
 
         # Now run top once per host.
-        for node in nodes:   # Do the loop again to keep the order.
+        for node in nodes:  # Do the loop again to keep the order.
             if node.name not in pids:
                 continue
 
@@ -1021,7 +1117,7 @@ class Controller:
             return results
 
         res = {}
-        for (node, success, output) in self.executor.run_helper(cmds):
+        for node, success, output in self.executor.run_helper(cmds):
             res[node.host] = success, output
 
         # Gather results for all the nodes that are running
@@ -1035,7 +1131,7 @@ class Controller:
                 # The error msg gets written to stats.log, so we only want
                 # the first line.
                 errmsg = output.splitlines()[0] if output else ""
-                results += [(node, "top failed: %s" % errmsg, {})]
+                results += [(node, f"top failed: {errmsg}", {})]
                 continue
 
             if not output:
@@ -1051,7 +1147,7 @@ class Controller:
                         procinfo = line.split()
                         break
             except (IndexError, ValueError) as err:
-                results += [(node, "bad output from top: %s" % err, {})]
+                results += [(node, f"bad output from top: {err}", {})]
                 continue
 
             if not procinfo:
@@ -1064,12 +1160,14 @@ class Controller:
             try:
                 pid = int(procinfo[0])
                 vals["pid"] = pid
-                vals["vsize"] = int(float(procinfo[1])) #May be something like 2.17684e+9
+                vals["vsize"] = int(
+                    float(procinfo[1])
+                )  # May be something like 2.17684e+9
                 vals["rss"] = int(float(procinfo[2]))
                 vals["cpu"] = procinfo[3]
                 vals["cmd"] = " ".join(procinfo[4:])
             except (IndexError, ValueError) as err:
-                results += [(node, "unexpected top output: %s" % err, {})]
+                results += [(node, f"unexpected top output: {err}", {})]
                 continue
 
             results += [(node, None, vals)]
@@ -1080,11 +1178,18 @@ class Controller:
     def top(self, nodes):
         results = cmdresult.CmdResult()
 
-        for (node, error, vals) in self.get_top_output(nodes):
-            top_info = {"name": node.name, "type": node.type,
-                        "host": node.host, "pid": None,
-                        "vsize": None, "rss": None, "cpu": None,
-                        "cmd": None, "error": None}
+        for node, error, vals in self.get_top_output(nodes):
+            top_info = {
+                "name": node.name,
+                "type": node.type,
+                "host": node.host,
+                "pid": None,
+                "vsize": None,
+                "rss": None,
+                "cpu": None,
+                "cmd": None,
+                "error": None,
+            }
             if error:
                 top_info["error"] = error
                 results.set_node_data(node, False, {"procs": top_info})
@@ -1102,15 +1207,24 @@ class Controller:
         running = self._isrunning(nodes)
 
         eventlist = []
-        for (node, isrunning) in running:
+        for node, isrunning in running:
             if isrunning:
-                eventlist += [(node, "Control::id_value_request", [id], "Control::id_value_response")]
+                eventlist += [
+                    (
+                        node,
+                        "Control::id_value_request",
+                        [id],
+                        "Control::id_value_response",
+                    )
+                ]
 
         if not eventlist:
             results.set_node_output(nodes[0], False, "no running instances of Zeek")
             return results
 
-        for (node, success, args) in events.send_events_parallel(eventlist, config.Config.controltopic):
+        for node, success, args in events.send_events_parallel(
+            eventlist, config.Config.controltopic
+        ):
             if success:
                 out = "\n".join(args)
             else:
@@ -1119,20 +1233,26 @@ class Controller:
 
         return results
 
-
     def _query_netstats(self, nodes):
         running = self._isrunning(nodes)
 
         eventlist = []
-        for (node, isrunning) in running:
+        for node, isrunning in running:
             if isrunning:
-                eventlist += [(node, "Control::net_stats_request", [], "Control::net_stats_response")]
+                eventlist += [
+                    (
+                        node,
+                        "Control::net_stats_request",
+                        [],
+                        "Control::net_stats_response",
+                    )
+                ]
 
         return events.send_events_parallel(eventlist, config.Config.controltopic)
 
     def peerstatus(self, nodes):
         results = cmdresult.CmdResult()
-        for (node, success, args) in self._query_peerstatus(nodes):
+        for node, success, args in self._query_peerstatus(nodes):
             if success:
                 if args:
                     out = args[0]
@@ -1149,7 +1269,7 @@ class Controller:
 
     def netstats(self, nodes):
         results = cmdresult.CmdResult()
-        for (node, success, args) in self._query_netstats(nodes):
+        for node, success, args in self._query_netstats(nodes):
             if success:
                 if args:
                     out = args[0].strip()
@@ -1168,7 +1288,7 @@ class Controller:
         results = cmdresult.CmdResult()
 
         if not os.path.isfile(trace):
-            self.ui.error("trace file not found: %s" % trace)
+            self.ui.error(f"trace file not found: {trace}")
             results.ok = False
             return results
 
@@ -1183,14 +1303,14 @@ class Controller:
             try:
                 shutil.rmtree(cwd)
             except OSError as err:
-                self.ui.error("cannot remove directory: %s" % err)
+                self.ui.error(f"cannot remove directory: {err}")
                 results.ok = False
                 return results
 
         try:
             os.makedirs(cwd)
         except OSError as err:
-            self.ui.error("cannot create directory: %s" % err)
+            self.ui.error(f"cannot create directory: {err}")
             results.ok = False
             return results
 
@@ -1202,7 +1322,10 @@ class Controller:
         if zeek_scripts:
             zeek_args += " " + " ".join(zeek_scripts)
 
-        cmd = os.path.join(self.config.scriptsdir, "run-zeek-on-trace") + " %s %s %s %s" % (0, cwd, trace, zeek_args)
+        cmd = (
+            os.path.join(self.config.scriptsdir, "run-zeek-on-trace")
+            + f" {0} {cwd} {trace} {zeek_args}"
+        )
 
         self.ui.info(cmd)
 
@@ -1212,7 +1335,7 @@ class Controller:
             results.ok = False
 
         self.ui.info(output)
-        self.ui.info("### Zeek output in %s" % cwd)
+        self.ui.info(f"### Zeek output in {cwd}")
 
         return results
 
@@ -1222,22 +1345,25 @@ class Controller:
         try:
             self.config.record_zeek_version()
         except config.ConfigurationError as err:
-            self.ui.error("%s" % err)
+            self.ui.error(f"{err}")
             results.ok = False
             return results
 
         manager = self.config.manager()
 
         # Delete previously installed policy files to not mix things up.
-        policies = [self.config.policydirsiteinstall, self.config.policydirsiteinstallauto]
+        policies = [
+            self.config.policydirsiteinstall,
+            self.config.policydirsiteinstallauto,
+        ]
 
         for dirpath in policies:
             if os.path.isdir(dirpath):
-                self.ui.info("removing old policies in %s ..." % dirpath)
+                self.ui.info(f"removing old policies in {dirpath} ...")
                 try:
                     shutil.rmtree(dirpath)
                 except OSError as err:
-                    self.ui.error("failed to remove directory %s: %s" % (dirpath, err))
+                    self.ui.error(f"failed to remove directory {dirpath}: {err}")
                     results.ok = False
                     return results
 
@@ -1246,7 +1372,7 @@ class Controller:
             try:
                 os.makedirs(dirpath)
             except OSError as err:
-                self.ui.error("failed to create directory: %s" % err)
+                self.ui.error(f"failed to create directory: {err}")
                 results.ok = False
                 return results
 
@@ -1267,12 +1393,16 @@ class Controller:
             return results
 
         self.ui.info("generating local-networks.zeek ...")
-        if not install.make_local_networks(self.config.policydirsiteinstallauto, self.ui):
+        if not install.make_local_networks(
+            self.config.policydirsiteinstallauto, self.ui
+        ):
             results.ok = False
             return results
 
         self.ui.info("generating zeekctl-config.zeek ...")
-        if not install.make_zeekctl_config_policy(self.config.policydirsiteinstallauto, self.ui, self.pluginregistry):
+        if not install.make_zeekctl_config_policy(
+            self.config.policydirsiteinstallauto, self.ui, self.pluginregistry
+        ):
             results.ok = False
             return results
 
@@ -1286,9 +1416,9 @@ class Controller:
         current = self.config.subst(os.path.join(self.config.logdir, "current"))
         try:
             util.force_symlink(node_cwd, current)
-        except (IOError, OSError) as err:
+        except OSError as err:
             results.ok = False
-            self.ui.error("failed to update symlink '%s': %s" % (current, err))
+            self.ui.error(f"failed to update symlink '{current}': {err}")
             return results
 
         self.ui.info("generating zeekctl-config.sh ...")
@@ -1324,16 +1454,20 @@ class Controller:
 
             syncs = install.get_nfssyncs()
 
-        syncs = [(dir, mirror) for (dir, mirror, optional) in syncs if not optional or os.path.exists(self.config.subst(dir))]
+        syncs = [
+            (dir, mirror)
+            for (dir, mirror, optional) in syncs
+            if not optional or os.path.exists(self.config.subst(dir))
+        ]
 
         createdirs = [self.config.subst(dir) for (dir, mirror) in syncs if not mirror]
         for n in nodes:
             for dir in createdirs:
                 dirs.append((n, dir))
 
-        for (node, success, output) in self.executor.mkdirs(dirs):
+        for node, success, output in self.executor.mkdirs(dirs):
             if not success:
-                self.ui.error("cannot create a directory on node %s" % node.name)
+                self.ui.error(f"cannot create a directory on node {node.name}")
                 if output:
                     self.ui.error(output)
                 results.ok = False
@@ -1349,7 +1483,6 @@ class Controller:
 
         return results
 
-
     # Triggers all activity which is to be done regularly via cron.
     def cron(self, watch):
         if not self.config.cronenabled:
@@ -1363,7 +1496,9 @@ class Controller:
             return
 
         cronui = cron.CronUI()
-        tasks = cron.CronTasks(cronui, self.config, self, self.executor, self.pluginregistry)
+        tasks = cron.CronTasks(
+            cronui, self.config, self, self.executor, self.pluginregistry
+        )
 
         cronui.buffer_output()
 
@@ -1372,7 +1507,7 @@ class Controller:
             # necessary.
             startlist = []
             stoplist = []
-            for (node, isrunning) in self._isrunning(self.config.nodes()):
+            for node, isrunning in self._isrunning(self.config.nodes()):
                 expectrunning = node.getExpectRunning()
 
                 if not isrunning and expectrunning:
@@ -1381,9 +1516,9 @@ class Controller:
                     stoplist.append(node)
 
             if startlist:
-                results = self.start(startlist)
+                self.start(startlist)
             if stoplist:
-                results = self.stop(stoplist)
+                self.stop(stoplist)
 
         # Check for dead hosts.
         tasks.check_hosts()
@@ -1411,8 +1546,7 @@ class Controller:
         if output:
             success, out = self._sendmail("cron: " + output.splitlines()[0], output)
             if not success:
-                self.ui.error("zeekctl cron failed to send mail: %s" % out)
-                self.ui.info("Output of zeekctl cron:\n%s" % output)
+                self.ui.error(f"zeekctl cron failed to send mail: {out}")
+                self.ui.info(f"Output of zeekctl cron:\n{output}")
 
         logging.debug("cron done")
-

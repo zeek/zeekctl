@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 #
-#  top 
+#  top
 #
 #  Outputs one line per active process as follows:
-# 
+#
 #           <pid> <vsize bytes> <rss in bytes> <%cpu> <cmdline>
 
 . `dirname $0`/../zeekctl-config.sh
@@ -39,4 +39,3 @@ unset LINES
 unset COLUMNS
 
 eval $cmd | awk -v start_field=2 -v end_field=3 -v def_factor=1024 -f "${helperdir}/to-bytes.awk"
-

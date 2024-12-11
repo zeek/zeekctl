@@ -31,7 +31,7 @@ In order to run the tests you must clone the entire Zeek repo (not just the
 zeekctl repo).  Next, either use the ``make all`` or ``make brief``
 ``Makefile`` targets to run all the tests (these will automatically build
 Zeek before running any of the zeekctl tests).  If Zeek fails to build, you can
-define an environment variable ZEEKCTL_TEST_BUILDARGS which specifies 
+define an environment variable ZEEKCTL_TEST_BUILDARGS which specifies
 additional options that will be passed to Zeek's "configure" script.
 If Zeek builds successfully, but one or more tests fail, then you can
 re-run all failed tests with ``make rerun``.

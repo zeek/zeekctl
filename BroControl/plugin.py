@@ -3,4 +3,5 @@
 #
 
 import ZeekControl.plugin
+
 Plugin = ZeekControl.plugin.Plugin

@@ -1,20 +1,16 @@
-from __future__ import print_function
-from collections import defaultdict
-from threading import Thread, Lock
-from Queue import Queue
-import os
 import time
-import random
 import traceback
+from collections import defaultdict
+from threading import Thread
 
-from ZeekControl import config
-from ZeekControl import version
-from ZeekControl.zeekctl import ZeekCtl
+from Queue import Queue
+
 from ZeekControl import ser as json
-
 from ZeekControl import web
+from ZeekControl.zeekctl import ZeekCtl
 
 STOP_RUNNING = object()
+
 
 class TermUI:
     def __init__(self):
@@ -22,10 +18,12 @@ class TermUI:
 
     def info(self, msg):
         print(msg)
+
     warn = info
 
     def error(self, msg):
         print("ERROR", msg)
+
 
 class Logs:
     def __init__(self):
@@ -38,11 +36,14 @@ class Logs:
         msgs = self.store.get(id) or []
         return msgs[since:]
 
+
 class Common:
     def dump(self, *args):
         return json.dumps(*args)
+
     def load(self, msg):
         return json.loads(msg)
+
 
 class ZeekCtrldWorker(Thread, Common):
     def __init__(self, command_queue):
@@ -56,7 +57,7 @@ class ZeekCtrldWorker(Thread, Common):
         self.q.put((id, cmd, args))
 
     def run(self):
-        #FIXME: deepcopy breaks here if i set ui=self
+        # FIXME: deepcopy breaks here if i set ui=self
         self.zeekctl = ZeekCtl(ui=TermUI())
         self.zeekctl.ui = self
         self.zeekctl.controller.ui = self
@@ -80,12 +81,12 @@ class ZeekCtrldWorker(Thread, Common):
         def respond(r):
             self.call("result", id, r)
 
-        if not hasattr(func, 'api_exposed'):
+        if not hasattr(func, "api_exposed"):
             return respond("invalid function")
 
-        try :
+        try:
             res = func(*args)
-        except Exception as e:
+        except Exception:
             res = traceback.format_exc()
         respond(res)
 
@@ -97,7 +98,9 @@ class ZeekCtrldWorker(Thread, Common):
 
     def error(self, msg):
         return self.call("err", self._id, msg)
+
     warn = error
+
 
 class ZeekCtld(Thread, Common):
     def __init__(self, command_queue, logs):
@@ -126,41 +129,41 @@ class ZeekCtld(Thread, Common):
         return self._run()
 
     def handle_result(self, id, result):
-        print("Got result id=%r result=%r" % (id, result))
+        print(f"Got result id={id!r} result={result!r}")
         self.results[id] = result
         return "ok"
 
     def handle_out(self, id, txt):
-        print("Got %s id=%r result=%r" % ('out', id, txt))
-        self.logs.append(id, 'out', txt)
+        print("Got {} id={!r} result={!r}".format("out", id, txt))
+        self.logs.append(id, "out", txt)
         return "ok"
 
     def handle_info(self, id, txt):
-        print("Got %s id=%r result=%r" % ('info', id, txt))
-        self.logs.append(id, 'info', txt)
+        print("Got {} id={!r} result={!r}".format("info", id, txt))
+        self.logs.append(id, "info", txt)
         return "ok"
 
     def handle_err(self, id, txt):
-        print("Got %s id=%r result=%r" % ('err', id, txt))
-        self.logs.append(id, 'err', txt)
+        print("Got {} id={!r} result={!r}".format("err", id, txt))
+        self.logs.append(id, "err", txt)
         return "ok"
 
     def handle_getresult(self, id):
         result = self.results.get(id)
         if result:
             del self.results[id]
-        print("sending result=%r for id=%r" % (result, id))
+        print(f"sending result={result!r} for id={id!r}")
         return result
 
     def handle_getlog(self, id, since):
         result = self.logs.get(id, since)
-        print("sending log=%r for id=%r" % (result, id))
+        print(f"sending log={result!r} for id={id!r}")
         return result
 
     def _run(self):
         while self.running:
             (rq, cmd, args) = self.recv()
-            func = getattr(self, 'handle_' + cmd, None)
+            func = getattr(self, "handle_" + cmd, None)
             if func:
                 res = func(*args)
                 if rq:
@@ -172,8 +175,9 @@ class ZeekCtld(Thread, Common):
     def send_to_worker(self, cmd, *args):
         t_id = self.id_gen()
         self.worker.send(t_id, cmd, *args)
-        print("started id=%r cmd=%r args=%r" % (t_id, cmd, args))
+        print(f"started id={t_id!r} cmd={cmd!r} args={args!r}")
         return t_id
+
 
 class Client(Common):
     def __init__(self, command_queue):
@@ -202,7 +206,8 @@ class Client(Common):
     def getlog(self, id, since=0):
         return self.call("getlog", id, since)
 
-def main(basedir='/zeek'):
+
+def main(basedir="/zeek"):
     logs = Logs()
 
     command_queue = Queue()
@@ -214,9 +219,10 @@ def main(basedir='/zeek'):
 
     ww = Thread(target=web.run_app, args=[c])
     ww.start()
-    print("I Got:", c.sync_call('status'))
+    print("I Got:", c.sync_call("status"))
     for x in range(20):
         time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

@@ -2,9 +2,10 @@
 
 import ZeekControl.plugin
 
+
 class OptionsTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(OptionsTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "optionstest"
@@ -14,13 +15,15 @@ class OptionsTest(ZeekControl.plugin.Plugin):
 
     def init(self):
         with open("options.out", "w") as f:
-            f.write("%s\n" % self.getOption("opt1"))
-            f.write("%s\n" % self.getOption("opt2"))
-            f.write("%s\n" % self.getOption("opt3"))
+            f.write(f"{self.getOption('opt1')}\n")
+            f.write(f"{self.getOption('opt2')}\n")
+            f.write(f"{self.getOption('opt3')}\n")
 
         return True
 
     def options(self):
-        return [("opt1", "bool", True, "Boolean option"),
-                ("opt2", "string", "test str", "String option"),
-                ("opt3", "int", 42, "Int option")]
+        return [
+            ("opt1", "bool", True, "Boolean option"),
+            ("opt2", "string", "test str", "String option"),
+            ("opt3", "int", 42, "Int option"),
+        ]

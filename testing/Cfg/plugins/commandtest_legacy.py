@@ -1,12 +1,13 @@
 # Zeekctl test plugin that defines custom commands using the old BroControl
 # legacy API.
 
-import BroControl.plugin
 import BroControl.cmdresult
+import BroControl.plugin
+
 
 class CommandTest(BroControl.plugin.Plugin):
     def __init__(self):
-        super(CommandTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "commandtest"
@@ -18,8 +19,10 @@ class CommandTest(BroControl.plugin.Plugin):
         return True
 
     def commands(self):
-        return [("testcmd", "[<nodes>]", "Test command that expects arguments"),
-                ("", "", "Another test command")]
+        return [
+            ("testcmd", "[<nodes>]", "Test command that expects arguments"),
+            ("", "", "Another test command"),
+        ]
 
     def cmd_custom(self, cmd, args, cmdout):
         results = BroControl.cmdresult.CmdResult()
@@ -30,7 +33,7 @@ class CommandTest(BroControl.plugin.Plugin):
         else:
             results.ok = True
 
-        cmdout.info("Command name: %s" % cmd)
-        cmdout.info("Command args: %s" % args)
+        cmdout.info(f"Command name: {cmd}")
+        cmdout.info(f"Command args: {args}")
 
         return results

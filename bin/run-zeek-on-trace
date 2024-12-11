@@ -35,4 +35,3 @@ fi
 echo $@ >.cmdline
 
 ZEEKCTL_DISABLE_LISTEN=1 "${zeek}" -r "$trace" "$@"
-

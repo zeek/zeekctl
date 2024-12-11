@@ -2,9 +2,10 @@
 
 import ZeekControl.plugin
 
+
 class CommandTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(CommandTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "commandtest"
@@ -16,8 +17,10 @@ class CommandTest(ZeekControl.plugin.Plugin):
         return True
 
     def commands(self):
-        return [("testcmd", "[<nodes>]", "Test command that expects arguments"),
-                ("", "", "Another test command")]
+        return [
+            ("testcmd", "[<nodes>]", "Test command that expects arguments"),
+            ("", "", "Another test command"),
+        ]
 
     def cmd_custom(self, cmd, args, cmdout):
         results = ZeekControl.cmdresult.CmdResult()
@@ -28,7 +31,7 @@ class CommandTest(ZeekControl.plugin.Plugin):
         else:
             results.ok = True
 
-        cmdout.info("Command name: %s" % cmd)
-        cmdout.info("Command args: %s" % args)
+        cmdout.info(f"Command name: {cmd}")
+        cmdout.info(f"Command args: {args}")
 
         return results

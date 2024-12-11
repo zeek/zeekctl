@@ -10,4 +10,3 @@ if [ -n "${ZEEKCTL_INSTALL_PREFIX}" ]; then
 fi
 
 exit 1
-

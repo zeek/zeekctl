@@ -2,9 +2,10 @@
 
 import ZeekControl.plugin
 
+
 class NodeKeysTest(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(NodeKeysTest, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "nodekeystest"
@@ -15,8 +16,8 @@ class NodeKeysTest(ZeekControl.plugin.Plugin):
     def init(self):
         with open("keys.out", "w") as f:
             for n in self.nodes():
-                f.write("key1: %s\n" % n.nodekeystest_key1)
-                f.write("key2: %s\n" % n.nodekeystest_key2)
+                f.write(f"key1: {n.nodekeystest_key1}\n")
+                f.write(f"key2: {n.nodekeystest_key2}\n")
 
         return True
 

@@ -1,15 +1,15 @@
 import ast
+import base64
 import collections
 import json
-import subprocess
-import select
-import time
-import os
-import base64
-import zlib
 import logging
+import os
+import select
+import subprocess
+import time
+import zlib
+from queue import Empty, Queue
 from threading import Thread
-from queue import Queue, Empty
 
 
 def get_muxer(shell):
@@ -83,7 +83,7 @@ w("done")
     muxer = muxer.encode()
     muxer = base64.b64encode(zlib.compress(muxer))
     muxer = muxer.decode()
-    muxer = "%s -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"%s\")))'\n" % (pythonpath, muxer)
+    muxer = f"{pythonpath} -c 'import zlib,base64; exec(zlib.decompress(base64.b64decode(b\"{muxer}\")))'\n"
     muxer = muxer.encode()
 
     return muxer
@@ -91,14 +91,17 @@ w("done")
 
 CmdResult = collections.namedtuple("CmdResult", "status stdout stderr")
 
+
 class SSHMaster:
     def __init__(self, host, localaddrs):
         # The BatchMode=yes disables interactive prompting.  The LogLevel=error
         # prevents seeing login banners but allows error messages from ssh.
         self.base_cmd = [
             "ssh",
-            "-o", "BatchMode=yes",
-            "-o", "LogLevel=error",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "LogLevel=error",
             host,
         ]
         self.host = host
@@ -114,7 +117,14 @@ class SSHMaster:
                 cmd = ["sh"]
             else:
                 cmd = self.base_cmd + ["sh"]
-            self.master = subprocess.Popen(cmd, bufsize=0, stdout=subprocess.PIPE, stdin=subprocess.PIPE, close_fds=True, preexec_fn=os.setsid)
+            self.master = subprocess.Popen(
+                cmd,
+                bufsize=0,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                close_fds=True,
+                preexec_fn=os.setsid,
+            )
             self.need_connect = False
 
     def readline_with_timeout(self, timeout):
@@ -144,7 +154,7 @@ class SSHMaster:
         self.readline_with_timeout(timeout)
 
         for cmd in cmds:
-            jcmd = "%s\n" % json.dumps(cmd)
+            jcmd = f"{json.dumps(cmd)}\n"
             jcmd = jcmd.encode()
             self.master.stdin.write(jcmd)
         # Note: the "b" string prefix here for Py3 is ignored by Py2.6-2.7
@@ -153,7 +163,9 @@ class SSHMaster:
         self.sent_commands = len(cmds)
 
     def collect_results(self, timeout):
-        outputs = [Exception("Command timeout on host %s" % self.host)] * self.sent_commands
+        outputs = [
+            Exception(f"Command timeout on host {self.host}")
+        ] * self.sent_commands
 
         while True:
             line = self.readline_with_timeout(timeout)
@@ -184,10 +196,12 @@ class SSHMaster:
         self.master.wait()
         self.master = None
         self.need_connect = True
+
     __del__ = close
 
 
 STOP_RUNNING = object()
+
 
 class HostHandler(Thread):
     def __init__(self, host, localaddrs, timeout):
@@ -213,9 +227,9 @@ class HostHandler(Thread):
 
         # Error message shows if a connection was previously established.
         if self.alive:
-            msg = "Lost %sconnection to host %s" % (msgstr, self.host)
+            msg = f"Lost {msgstr}connection to host {self.host}"
         else:
-            msg = "Failed to establish %sconnection to host %s" % (msgstr, self.host)
+            msg = f"Failed to establish {msgstr}connection to host {self.host}"
 
         # This will be set to True below only if the "ping" is received.
         self.alive = False
@@ -226,7 +240,7 @@ class HostHandler(Thread):
             # This happens most likely due to broken pipe (i.e., ssh
             # terminates, usually because it couldn't connect, or its own
             # timeout occurred).
-            return "%s: %s" % (msg, e)
+            return f"{msg}: {e}"
 
         try:
             ping_recvd = resp.stdout.strip() == "ping"
@@ -241,7 +255,7 @@ class HostHandler(Thread):
             return ""
 
         # This should probably never happen.
-        return "Communication failure with host %s when checking connection" % self.host
+        return f"Communication failure with host {self.host} when checking connection"
 
     def connect_and_ping(self):
         if not self.alive:
@@ -275,7 +289,7 @@ class HostHandler(Thread):
         except Exception as e:
             self.alive = False
             msgstr = "" if self.host in self.localaddrs else "ssh "
-            msg = "Lost %sconnection while running command on host %s: %s" % (msgstr, self.host, e)
+            msg = f"Lost {msgstr}connection while running command on host {self.host}: {e}"
             logging.debug(msg)
             resp = [Exception(msg)] * len(item)
             time.sleep(2)
@@ -316,7 +330,9 @@ class MultiMasterManager:
             self.shutdown(host)
             # This can happen due to commands that take a while to run, a
             # loss of connectivity to remote host, or both.
-            return [Exception("Timeout waiting for commands to finish on host %s" % host)] #FIXME: needs to be the right length
+            return [
+                Exception(f"Timeout waiting for commands to finish on host {host}")
+            ]  # FIXME: needs to be the right length
 
     def exec_command(self, host, command, timeout=30):
         return self.exec_commands(host, [command], timeout)[0]

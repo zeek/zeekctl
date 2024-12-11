@@ -15,4 +15,3 @@ ${makearchivename} zeekctltest.extension ascii 2013-01-02-00-03-05 2013-01-02-00
 
 # Test without the last optional argument
 ${makearchivename} test.log ascii 2013-01-02-00-03-05 > out3
-

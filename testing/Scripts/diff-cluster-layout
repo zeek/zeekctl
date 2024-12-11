@@ -3,4 +3,3 @@
 # Replace IPv6 localhost in cluster-layout.zeek with IPv4 localhost.
 
 sed "s/ip=\[::1\]/ip=127.0.0.1/"
-

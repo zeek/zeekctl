@@ -7,7 +7,6 @@
 # If any of these files already exists, we append (without writing the header
 # line again).
 
-from __future__ import print_function
 import os
 import sys
 
@@ -19,7 +18,7 @@ def readNodes(meta):
     proxies = set()
     workers = set()
 
-    with open(meta, "r") as f:
+    with open(meta) as f:
         for line in f:
             m = line.split()
             if not m:
@@ -47,18 +46,16 @@ def readNodes(meta):
 
 # Read the stats.log file, and create/append CSV files for one node.
 def processNode(stats, wwwdir, node, iface):
-
-    print("%s ..." % node)
+    print(f"{node} ...")
 
     def openFile(tag, columns):
-
-        name = os.path.join(wwwdir, "%s.%s.csv" % (node, tag))
+        name = os.path.join(wwwdir, f"{node}.{tag}.csv")
 
         if os.path.exists(name):
             f = open(name, "a")
         else:
             f = open(name, "w")
-            f.write("time,%s\n" % ",".join(columns))
+            f.write("time,{}\n".format(",".join(columns)))
 
         return f
 
@@ -76,7 +73,7 @@ def processNode(stats, wwwdir, node, iface):
             val = int(entry["parent-cpu"])
             if "child-cpu" in entry:
                 val += int(entry["child-cpu"])
-            cpu.write("%s,%s\n" % (t, val))
+            cpu.write(f"{t},{val}\n")
         except (ValueError, KeyError):
             pass
 
@@ -84,21 +81,21 @@ def processNode(stats, wwwdir, node, iface):
             val = int(entry["parent-vsize"])
             if "child-vsize" in entry:
                 val += int(entry["child-vsize"])
-            mem.write("%s,%s\n" % (t, val))
+            mem.write(f"{t},{val}\n")
         except (ValueError, KeyError):
             pass
 
         if iface:
             e = entry.get("interface-mbps")
             if e:
-                iface_mbps.write("%s,%s\n" % (t, e))
+                iface_mbps.write(f"{t},{e}\n")
 
             try:
                 tc = entry["interface-t"]
                 ud = entry["interface-u"]
                 ic = entry["interface-i"]
                 ot = entry["interface-o"]
-                iface_pkts.write("%s,%s,%s,%s,%s\n" % (t, tc, ud, ic, ot))
+                iface_pkts.write(f"{t},{tc},{ud},{ic},{ot}\n")
 
             except KeyError:
                 pass
@@ -106,7 +103,7 @@ def processNode(stats, wwwdir, node, iface):
     entry = {}
     first = -1
 
-    with open(stats, "r") as ff:
+    with open(stats) as ff:
         for line in ff:
             m = line.split()
 
@@ -131,7 +128,7 @@ def processNode(stats, wwwdir, node, iface):
             first = t
 
             if len(m) > 4:
-                entry["%s-%s" % (m[2], m[3])] = m[4]
+                entry[f"{m[2]}-{m[3]}"] = m[4]
 
     if first >= 0:
         printEntry(t, entry)
@@ -142,9 +139,10 @@ def processNode(stats, wwwdir, node, iface):
         iface_mbps.close()
         iface_pkts.close()
 
+
 def main():
     if len(sys.argv) != 4:
-        print("usage: %s <stats.log> <meta.dat> <www-dir>" % sys.argv[0])
+        print(f"usage: {sys.argv[0]} <stats.log> <meta.dat> <www-dir>")
         sys.exit(1)
 
     stats = sys.argv[1]
@@ -155,13 +153,13 @@ def main():
         if not os.path.exists(wwwdir):
             os.mkdir(wwwdir)
     except OSError as err:
-        print("Error: failed to create directory: %s" % err)
+        print(f"Error: failed to create directory: {err}")
         sys.exit(1)
 
     try:
         manager, loggers, proxies, workers = readNodes(meta)
-    except IOError as err:
-        print("Error: failed to read file: %s" % err)
+    except OSError as err:
+        print(f"Error: failed to read file: {err}")
         sys.exit(1)
 
     try:
@@ -176,9 +174,10 @@ def main():
 
         if manager:
             processNode(stats, wwwdir, manager, False)
-    except IOError as err:
-        print("Error: %s" % err)
+    except OSError as err:
+        print(f"Error: {err}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

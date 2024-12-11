@@ -1,19 +1,13 @@
 # The ZeekControl interactive shell.
 
-from __future__ import print_function
+import logging
 import os
 import sys
-import logging
 
-from ZeekControl import lock
-from ZeekControl import config
-from ZeekControl import cmdresult
-from ZeekControl import execute
-from ZeekControl import control
-from ZeekControl import version
-from ZeekControl import pluginreg
+from ZeekControl import cmdresult, config, control, execute, lock, pluginreg, version
 from ZeekControl import node as node_mod
-from ZeekControl.exceptions import *
+from ZeekControl.exceptions import InvalidNodeError, LockError, RuntimeEnvironmentError
+
 
 class TermUI:
     def info(self, txt):
@@ -21,6 +15,7 @@ class TermUI:
 
     def error(self, txt):
         print(txt, file=sys.stderr)
+
     warn = error
 
 
@@ -33,6 +28,7 @@ def expose(func):
     func.api_exposed = True
     return func
 
+
 def lock_required(func):
     def wrapper(self, *args, **kwargs):
         self.lock()
@@ -40,8 +36,10 @@ def lock_required(func):
             return func(self, *args, **kwargs)
         finally:
             self.unlock()
+
     wrapper.lock_required = True
     return wrapper
+
 
 def lock_required_silent(func):
     def wrapper(self, *args, **kwargs):
@@ -50,8 +48,10 @@ def lock_required_silent(func):
             return func(self, *args, **kwargs)
         finally:
             self.unlock()
+
     wrapper.lock_required = True
     return wrapper
+
 
 def check_config(func):
     def wrapper(self, *args, **kwargs):
@@ -61,18 +61,32 @@ def check_config(func):
 
     return wrapper
 
-class ZeekCtl(object):
-    def __init__(self, basedir=version.ZEEKBASE, libdir=version.LIBDIR,
-                 libdirinternal=version.LIBDIRINTERNAL, cfgfile=version.CFGFILE,
-                 zeekscriptdir=version.ZEEKSCRIPTDIR, ui=TermUI(), state=None):
+
+class ZeekCtl:
+    def __init__(
+        self,
+        basedir=version.ZEEKBASE,
+        libdir=version.LIBDIR,
+        libdirinternal=version.LIBDIRINTERNAL,
+        cfgfile=version.CFGFILE,
+        zeekscriptdir=version.ZEEKSCRIPTDIR,
+        ui=TermUI(),
+        state=None,
+    ):
         self.ui = ui
         self.zeekbase = basedir
         self.libdir = libdir
         self.libdirinternal = libdirinternal
 
         self.config = config.Configuration(
-            self.zeekbase, self.libdir, self.libdirinternal, cfgfile,
-            zeekscriptdir, self.ui, state)
+            self.zeekbase,
+            self.libdir,
+            self.libdirinternal,
+            cfgfile,
+            zeekscriptdir,
+            self.ui,
+            state,
+        )
 
         # Remove all log handlers (set by any previous calls to logging.*)
         logging.getLogger().handlers = []
@@ -80,12 +94,16 @@ class ZeekCtl(object):
         if self.config.debug:
             # Add a log handler that logs to a file.
             try:
-                logging.basicConfig(filename=self.config.debuglog,
-                            format="%(asctime)s [%(module)s] %(message)s",
-                            datefmt=self.config.timefmt,
-                            level=logging.DEBUG)
-            except IOError as err:
-                raise RuntimeEnvironmentError("%s\nCheck if the user running ZeekControl has write access to the debug log file." % err)
+                logging.basicConfig(
+                    filename=self.config.debuglog,
+                    format="%(asctime)s [%(module)s] %(message)s",
+                    datefmt=self.config.timefmt,
+                    level=logging.DEBUG,
+                )
+            except OSError as err:
+                raise RuntimeEnvironmentError(
+                    f"{err}\nCheck if the user running ZeekControl has write access to the debug log file."
+                )
         else:
             # Add a log handler that does nothing.
             h = NullHandler()
@@ -94,7 +112,9 @@ class ZeekCtl(object):
         self.executor = execute.Executor(self.config)
         self.plugins = pluginreg.PluginRegistry()
         self.setup()
-        self.controller = control.Controller(self.config, self.ui, self.executor, self.plugins)
+        self.controller = control.Controller(
+            self.config, self.ui, self.executor, self.plugins
+        )
 
     def setup(self):
         plugindirs = self.config.sitepluginpath.split(":")
@@ -122,10 +142,12 @@ class ZeekCtl(object):
             if isinstance(logging.getLogger().handlers[0], NullHandler):
                 # Remove the null handler and configure logging to a file.
                 logging.getLogger().handlers = []
-                logging.basicConfig(filename=self.config.debuglog,
-                            format="%(asctime)s [%(module)s] %(message)s",
-                            datefmt=self.config.timefmt,
-                            level=logging.DEBUG)
+                logging.basicConfig(
+                    filename=self.config.debuglog,
+                    format="%(asctime)s [%(module)s] %(message)s",
+                    datefmt=self.config.timefmt,
+                    level=logging.DEBUG,
+                )
 
             # Re-enable all log levels.
             logging.disable(logging.NOTSET)
@@ -156,7 +178,7 @@ class ZeekCtl(object):
             for arg in args.split():
                 nodelist = self.config.nodes(arg)
                 if not nodelist:
-                    raise InvalidNodeError("unknown node '%s'" % arg)
+                    raise InvalidNodeError(f"unknown node '{arg}'")
 
                 nodes += nodelist
 
@@ -204,7 +226,7 @@ class ZeekCtl(object):
         lock.unlock(self.ui)
 
     def node_names(self):
-        return [ n.name for n in self.config.nodes() ]
+        return [n.name for n in self.config.nodes()]
 
     def node_groups(self):
         return node_mod.node_groups()
@@ -322,9 +344,9 @@ class ZeekCtl(object):
         self.ui.info("checking configurations ...")
         results = self.check(check_node_types=True)
         if not results.ok:
-            for (node, success, output) in results.get_node_output():
+            for node, success, output in results.get_node_output():
                 if not success:
-                    self.ui.info("%s scripts failed." % node)
+                    self.ui.info(f"{node} scripts failed.")
                     self.ui.info(output)
 
             return results
@@ -543,4 +565,3 @@ class ZeekCtl(object):
     @lock_required
     def plugincmd(self, cmd, args):
         return self.plugins.runCustomCommand(cmd, args, self.ui)
-

@@ -1,7 +1,7 @@
-from __future__ import print_function
 import cmd
 
 from ZeekControl.exceptions import CommandSyntaxError, InvalidNodeError, LockError
+
 
 class ExitValueCmd(cmd.Cmd):
     def cmdloop(self, intro=None):
@@ -15,6 +15,7 @@ class ExitValueCmd(cmd.Cmd):
         if self.use_rawinput and self.completekey:
             try:
                 import readline
+
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
                 readline.parse_and_bind(self.completekey + ": complete")
@@ -24,7 +25,7 @@ class ExitValueCmd(cmd.Cmd):
             if intro is not None:
                 self.intro = intro
             if self.intro:
-                self.stdout.write("%s\n" % self.intro)
+                self.stdout.write(f"{self.intro}\n")
             self._stopping = False
             success = True
             while not self._stopping:
@@ -53,13 +54,14 @@ class ExitValueCmd(cmd.Cmd):
                     # avoid getting in an unknown state (e.g. error while
                     # reloading the config).
                     success = False
-                    print("Error: %s" % err)
+                    print(f"Error: {err}")
                 self.postcmd(False, line)
             self.postloop()
         finally:
             if self.use_rawinput and self.completekey:
                 try:
                     import readline
+
                     readline.set_completer(self.old_completer)
                 except ImportError:
                     pass

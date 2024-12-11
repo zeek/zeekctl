@@ -1,16 +1,16 @@
 """
 A plugin warning about the ZeekPort change coming with Zeek 5.2.
 """
+
 import textwrap
 
-import ZeekControl.plugin
 import ZeekControl.cmdresult
-
+import ZeekControl.plugin
 
 
 class ZeekPortWarningPlugin(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(ZeekPortWarningPlugin, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "ZeekPort warning"
@@ -40,21 +40,25 @@ class ZeekPortWarningPlugin(ZeekControl.plugin.Plugin):
             return
 
         zeek_port = self.getGlobalOption("ZeekPort")
-        uses_old_default_port = (zeek_port == 47760)
+        uses_old_default_port = zeek_port == 47760
 
         if uses_old_default_port:
             self.warning_banner("*" * 80)
             if self.getGlobalOption("os") == "Linux":
-                self.warning_banner(textwrap.dedent(
-                    """
+                self.warning_banner(
+                    textwrap.dedent(
+                        """
                     You're using Linux with the default ZeekPort setting 47760. This configuration
                     is know to cause persistent worker failures with error messages as follows:
 
                         error in <...>/cluster/setup-connections.zeek, lines 94-96: Failed to listen on INADDR_ANY:47764 (...)
 
-                    """))
+                    """
+                    )
+                )
 
-            self.warning_banner(textwrap.dedent("""
+            self.warning_banner(
+                textwrap.dedent("""
                 Starting with Zeek 5.2, the default ZeekPort used by zeekctl will
                 change from 47760 to 27760 in order to avoid potential port collisions
                 with other processes due to 47760 falling right into Linux's default
@@ -78,6 +82,7 @@ class ZeekPortWarningPlugin(ZeekControl.plugin.Plugin):
 
                 Feel free to reach out on zeekorg.slack.com or community.zeek.org if
                 you have any questions around this change.
-            """))
+            """)
+            )
 
             self.warning_banner("*" * 80)

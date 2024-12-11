@@ -10,4 +10,3 @@ redef Log::default_rotation_postprocessor_cmd = "archive-log";
 # This will only be happen if the -w flag is given on the command line.
 @load misc/trim-trace-file
 redef record_all_packets = T;
-

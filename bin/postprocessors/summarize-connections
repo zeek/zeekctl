@@ -83,4 +83,3 @@ fi
 
 # Archive the conn-summary log file.
 "${scriptsdir}"/archive-log $output $output_basename $open $close $terminating ascii
-

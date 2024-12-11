@@ -4,12 +4,13 @@
 # not controlled by this zeekctl. The latter are marked with "(-)", while "our"
 # processes get a "(+)".
 
-import ZeekControl.plugin
 import ZeekControl.cmdresult
+import ZeekControl.plugin
+
 
 class PsZeek(ZeekControl.plugin.Plugin):
     def __init__(self):
-        super(PsZeek, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "ps"
@@ -25,13 +26,13 @@ class PsZeek(ZeekControl.plugin.Plugin):
     def cmd_custom(self, cmd, args, cmdout):
         results = ZeekControl.cmdresult.CmdResult()
 
-        assert(cmd == "zeek") # Can't be anything else.
+        assert cmd == "zeek"  # Can't be anything else.
 
         # Get the nodes the user wants.
         if args:
             nodes, notnodes = self.parseNodes(args)
             for n in notnodes:
-                cmdout.error("unknown node '%s'" % n)
+                cmdout.error(f"unknown node '{n}'")
         else:
             nodes = self.nodes()
 
@@ -65,7 +66,7 @@ class PsZeek(ZeekControl.plugin.Plugin):
 
         first_node = True
 
-        for (n, success, output) in self.executeParallel(cmds):
+        for n, success, output in self.executeParallel(cmds):
             outlines = output.splitlines()
             # Remove stderr output (if any)
             while outlines and not outlines[0].startswith("USER"):
@@ -73,41 +74,39 @@ class PsZeek(ZeekControl.plugin.Plugin):
 
             # Print the header line.
             if first_node and outlines:
-                cmdout.info("        %s" % outlines[0])
+                cmdout.info(f"        {outlines[0]}")
 
             if success:
-                cmdout.info(">>> %s" % n.host)
+                cmdout.info(f">>> {n.host}")
             else:
-                cmdout.error(">>> %s failed" % n.host)
+                cmdout.error(f">>> {n.host} failed")
                 results.ok = False
 
             if not outlines:
                 continue
 
             for line in outlines[1:]:
-
                 m = line.split()
                 try:
                     pid, ppid = int(m[1]), int(m[2])
                 except IndexError:
-                    cmdout.error("unexpected output from ps command: %s" % line)
+                    cmdout.error(f"unexpected output from ps command: {line}")
                     results.ok = False
                     continue
                 except ValueError as err:
-                    cmdout.error("%s" % err)
+                    cmdout.error(f"{err}")
                     results.ok = False
                     continue
                 try:
-                    known = (pid in pids[n.host] or ppid in pids[n.host])
+                    known = pid in pids[n.host] or ppid in pids[n.host]
                 except KeyError:
                     known = False
 
                 if known:
-                    cmdout.info("   (+) %s" % line.strip())
+                    cmdout.info(f"   (+) {line.strip()}")
                 else:
-                    cmdout.info("   (-) %s" % line.strip())
+                    cmdout.info(f"   (-) {line.strip()}")
 
             first_node = False
 
         return results
-

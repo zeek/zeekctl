@@ -1,8 +1,9 @@
 # This plugin sets necessary environment variables to run Zeek with
 # PF_RING load balancing.
 
-import ZeekControl.plugin
 import ZeekControl.config
+import ZeekControl.plugin
+
 
 class LBPFRing(ZeekControl.plugin.Plugin):
     LB_POLICIES_ENV_MAP = {
@@ -15,11 +16,11 @@ class LBPFRing(ZeekControl.plugin.Plugin):
         "inner-4-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_4_TUPLE",
         "inner-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_5_TUPLE",
         "inner-tcp-5-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW_TCP_5_TUPLE",
-        "inner-6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW"
+        "inner-6-tuple": "PCAP_PF_RING_USE_CLUSTER_PER_INNER_FLOW",
     }
 
     def __init__(self):
-        super(LBPFRing, self).__init__(apiversion=1)
+        super().__init__(apiversion=1)
 
     def name(self):
         return "lb_pf_ring"
@@ -37,7 +38,7 @@ class LBPFRing(ZeekControl.plugin.Plugin):
             pfringtype = "6-tuple"
 
         if pfringtype not in self.LB_POLICIES_ENV_MAP:
-            self.error('PFRINGClusterType "%s" not supported' % pfringtype)
+            self.error(f'PFRINGClusterType "{pfringtype}" not supported')
             return False
 
         pftype = self.LB_POLICIES_ENV_MAP[pfringtype]
@@ -71,29 +72,30 @@ class LBPFRing(ZeekControl.plugin.Plugin):
                 # load-balancing with zbalance_ipc (through libpcap over
                 # pf_ring)
                 nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("pf_ring::zc:"):
                 # For the case where a user is doing RSS with ZC or
                 # load-balancing with zbalance_ipc (through the zeek::pf_ring
                 # plugin)
                 nn.env_vars.setdefault("PCAP_PF_RING_ZC_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("dnacl"):
                 # For the case where a user is running pfdnacluster_master (deprecated)
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             elif nn.interface.startswith("dna"):
                 # For the case where a user is doing symmetric RSS with DNA (deprecated)
                 nn.env_vars.setdefault("PCAP_PF_RING_DNA_RSS", "1")
-                nn.interface = "%s@%d" % (nn.interface, app_instance)
+                nn.interface = f"{nn.interface}@{app_instance}"
 
             else:
-                nn.env_vars.setdefault("PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface])
+                nn.env_vars.setdefault(
+                    "PCAP_PF_RING_CLUSTER_ID", dd[nn.host][nn.interface]
+                )
 
             app_instance += 1
-            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", "zeek-%s" % nn.interface)
+            nn.env_vars.setdefault("PCAP_PF_RING_APPNAME", f"zeek-{nn.interface}")
 
         return useplugin
-

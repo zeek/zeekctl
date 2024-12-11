@@ -3,6 +3,7 @@ import sqlite3
 
 from ZeekControl.exceptions import RuntimeEnvironmentError
 
+
 class SqliteState:
     def __init__(self, path):
         self.path = path
@@ -10,21 +11,25 @@ class SqliteState:
         try:
             self.db = sqlite3.connect(self.path)
         except sqlite3.Error as err:
-            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running ZeekControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself." % (err, path))
+            raise RuntimeEnvironmentError(
+                f"{err}: {path}\nCheck if the user running ZeekControl has both write and search permission to\nthe directory containing the database file and has both read and write\npermission to the database file itself."
+            )
 
         self.c = self.db.cursor()
 
         try:
             self.setup()
         except sqlite3.Error as err:
-            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running ZeekControl has write access to the database file.\nOtherwise, the database file is possibly corrupt." % (err, path))
+            raise RuntimeEnvironmentError(
+                f"{err}: {path}\nCheck if the user running ZeekControl has write access to the database file.\nOtherwise, the database file is possibly corrupt."
+            )
 
     def setup(self):
         # Create table
-        self.c.execute('''CREATE TABLE IF NOT EXISTS state (
+        self.c.execute("""CREATE TABLE IF NOT EXISTS state (
             key   TEXT  PRIMARY KEY  NOT NULL,
             value TEXT
-        )''')
+        )""")
 
         self.db.commit()
 
@@ -40,7 +45,9 @@ class SqliteState:
         try:
             self.c.execute("REPLACE INTO state (key, value) VALUES (?,?)", [key, value])
         except sqlite3.Error as err:
-            raise RuntimeEnvironmentError("%s: %s\nCheck if the user running ZeekControl has write access to the database file." % (err, self.path))
+            raise RuntimeEnvironmentError(
+                f"{err}: {self.path}\nCheck if the user running ZeekControl has write access to the database file."
+            )
 
         self.db.commit()
 
