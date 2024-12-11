@@ -1,3 +1,7 @@
+2.5.0-76 | 2024-12-11 15:31:45 -0700
+
+  * Remove old obsolete BroControl directory (Tim Wojtulewicz, Corelight)
+
 2.5.0-74 | 2024-12-10 17:22:23 -0700
 
   * Update cmake submodule to master (Tim Wojtulewicz, Corelight)
