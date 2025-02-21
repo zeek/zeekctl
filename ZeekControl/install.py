@@ -178,7 +178,10 @@ def make_layout(path, cmdout, silent=False):
         # This is the port that standalone nodes listen on for remote
         # control by default.
         ostr += f"redef Broker::default_port = {zeekport.use_port(manager)}/tcp;\n"
+        ostr += '@if ( getenv("ZEEKCTL_DISABLE_LISTEN") == "" )\n'
         ostr += f"redef Telemetry::metrics_port = {metricsport.use_port(None)}/tcp;\n"
+        ostr += "@endif\n"
+        ostr += "\n"
         ostr += "event zeek_init()\n"
         ostr += "\t{\n"
         ostr += '\tif ( getenv("ZEEKCTL_DISABLE_LISTEN") == "" )\n'
