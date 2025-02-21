@@ -164,7 +164,7 @@ options = [
         "bool",
         Option.USER,
         False,
-        "Whether Zeek should automatically consider private address ranges local. Mirrors Site::private_address_space_is_local in Zeek. On by default.",
+        "This flag, enabled by default, controls whether Zeek should automatically consider private address space as local to your site. This is the zeekctl equivalent of Zeek's 'Site::private_address_space_is_local' setting. Setting this to 0 separates local and private address spaces, and you need to list any private address space explicitly in your 'network.cfg' for it to be considered local.",
     ),
     Option(
         "SendMail",
