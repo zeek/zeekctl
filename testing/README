@@ -59,6 +59,30 @@ options/arguments.  Examples:
 	is useful when testing a single failing test or when developing
 	a new test.
 
+How The Tests Work
+==================
+
+The zeekctl testsuite uses btest, but not all test artifacts reside in each
+test's subdirectory below .tmp/. Instead, the tests use the Zeek build created
+as described above, copying it into per-test subdirectories to achieve isolation
+of config tweaks. Those directories are $ZEEKCTLSRCDIR/build/testing/test.<num>,
+where $ZEEKCTLSRCDIR is the parent of the directory this README resides
+in. Inspect the generated cluster-layout.zeek and other resulting scripts in
+those directory trees.
+
+The tests normally wipe these temporary directories. btest.cfg provides a
+"debug" environment ("btest -a debug" ...) that preserves them. The individual
+test's .stdout/stderr files contain enough information to tell you which of
+those temporary directories they relied on.
+
+In many cases, zeekctl's tests don't actually run Zeek. Instead, they run a
+Python stub script, ./Cfg/bin/zeek__test, to allow controlled injection of
+failure modes. This is why you don't see rampant listening-port collisions when
+running this testsuite.
+
+A subset of tests is serialized at the btest level via @TEST-SERIALIZE -- those
+are tests that require actual listening ports.
+
 Adding Tests
 ============
 
