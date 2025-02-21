@@ -27,7 +27,11 @@ def print_indented(text, level):
         text = text.splitlines()
 
     for line in text:
-        out += "{} {}\n".format("    " * level, line)
+        if line:
+            out += "{} {}\n".format("    " * level, line)
+        else:
+            out += "\n"
+
     out += "\n"
 
     return out
