@@ -29,7 +29,10 @@ def print_commands(cls):
 
         output = ""
         for line in docstr.splitlines():
-            output += f"    {line.strip()}\n"
+            if line:
+                output += f"    {line.strip()}\n"
+            else:
+                output += "\n"
 
         output = output.strip()
 

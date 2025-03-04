@@ -1,3 +1,21 @@
+2.6.0-11 | 2025-03-04 12:50:51 -0800
+
+  * Re-generate docs. (Christian Kreibich, Corelight)
+
+  * Don't write lines containing just indent whitespace during docs generation. (Christian Kreibich, Corelight)
+
+  * GH-77: Fix broken links in the documentation (Christian Kreibich, Corelight)
+
+  * Adjust comment for PrivateAddressSpaceIsLocal setting (Christian Kreibich, Corelight)
+
+  * Fix docs generation for Python 3 era (Christian Kreibich, Corelight)
+
+  * GH-72: In singlehost mode, don't use a telemetry port with ZEEKCTL_DISABLE_LISTEN (Christian Kreibich, Corelight)
+
+  * Add btest environment to preserve the tests' build/testing/test.* temp dirs (Christian Kreibich, Corelight)
+
+  * Add additional clarification on how this testsuite operates to README (Christian Kreibich, Corelight)
+
 2.6.0-2 | 2025-01-13 08:16:57 -0700
 
   * Update command.print btest for additional public subnets (Tim Wojtulewicz)
