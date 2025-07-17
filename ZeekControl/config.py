@@ -8,8 +8,8 @@ import socket
 import subprocess
 import sys
 
+from ZeekControl import events, options
 from ZeekControl import node as node_mod
-from ZeekControl import options
 from ZeekControl.exceptions import ConfigurationError, RuntimeEnvironmentError
 
 from .state import SqliteState
@@ -227,6 +227,19 @@ class Configuration:
             raise ConfigurationError(
                 f"invalid ClusterBackend '{clusterbackend}' (expected ZeroMQ or Broker)"
             )
+
+        if self.config["usewebsocket"]:
+            if events.websockets_errmsg is not None:
+                self.ui.warn(
+                    f"zeekctl option UseWebSocket is set, but websockets non-functional: {events.websockets_errmsg}"
+                )
+        if not self.config["usewebsocket"]:
+            # If we're not using WebSocket to interact with other nodes,
+            # only the Broker backend will work. Warn the user.
+            if clusterbackend.lower() != "broker":
+                self.ui.warn(
+                    f"zeekctl netstats and print commands with cluster backend '{clusterbackend}' require UseWebSocket = 1"
+                )
 
     # Convert a time interval string (from the value of the given option name)
     # to an integer number of minutes.
