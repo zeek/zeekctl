@@ -8,8 +8,8 @@ import socket
 import subprocess
 import sys
 
+from ZeekControl import events, options
 from ZeekControl import node as node_mod
-from ZeekControl import options
 from ZeekControl.exceptions import ConfigurationError, RuntimeEnvironmentError
 
 from .state import SqliteState
@@ -220,6 +220,23 @@ class Configuration:
             raise ConfigurationError(
                 "Log expire interval cannot be shorter than the log rotation interval"
             )
+
+        if self.config["usewebsocket"]:
+            if events.websockets_errmsg is not None:
+                self.ui.warn(
+                    f"zeekctl option UseWebSocket is set, but websockets non-functional: {events.websockets_errmsg}"
+                )
+
+        if not self.config["usewebsocket"]:
+            # If UseWebSocket isn't configured, then commands for non-Broker
+            # backends will not work. Warn the user here. We could imply UseWebSocket = 1,
+            # but that results in the manager listening on a new port, so better
+            # to not have the user explicitly toggle it on.
+            clusterbackend = self.config["clusterbackend"]
+            if clusterbackend.lower() != "broker":
+                self.ui.warn(
+                    f"zeekctl netstats and print commands with cluster backend '{clusterbackend}' require UseWebSocket = 1"
+                )
 
     # Convert a time interval string (from the value of the given option name)
     # to an integer number of minutes.

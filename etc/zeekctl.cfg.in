@@ -88,3 +88,14 @@ CfgDir = ${ETC}
 # in 8.0 with ZeroMQ planned to become the default in Zeek 8.1 and later.
 #
 # ClusterBackend = Broker
+
+# Toggle to enable a WebSocket server on the manager listening on
+# ws://<WebSocketHost>:<WebSocketPort> and have zeekctl communicate with
+# the cluster using python-websockets instead of the native Broker
+# communication.
+# UseWebSocket = 0
+
+# The address of the manager's WebSocket server. Only used if UseWebSocket is set.
+# WebSocketHost = 127.0.0.1
+# The port of the manager's WebSocket server. Only used if UseWebSocket is set.
+# WebSocketPort = 27759
