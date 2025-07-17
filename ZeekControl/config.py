@@ -221,6 +221,13 @@ class Configuration:
                 "Log expire interval cannot be shorter than the log rotation interval"
             )
 
+        # Ad-hoc validation for the supported cluster backends.
+        clusterbackend = self.config["clusterbackend"]
+        if clusterbackend.lower() not in ["broker", "zeromq"]:
+            raise ConfigurationError(
+                f"invalid ClusterBackend '{clusterbackend}' (expected ZeroMQ or Broker)"
+            )
+
     # Convert a time interval string (from the value of the given option name)
     # to an integer number of minutes.
     def _get_interval_minutes(self, optname):

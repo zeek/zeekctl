@@ -346,6 +346,15 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     if config.Config.fileextractdir:
         ostr += f'redef FileExtract::prefix = "{config.Config.fileextractdir}/" + Cluster::node;\n'
 
+    clusterbackend = config.Config.clusterbackend.lower()
+
+    if clusterbackend == "broker":
+        pass  # just the default in 8.0, nothing to do here.
+    elif clusterbackend == "zeromq":
+        ostr += "\n@load policy/frameworks/cluster/backend/zeromq/connect\n"
+    else:
+        raise NotImplementedError(clusterbackend)
+
     ostr += plugin_reg.getZeekctlConfig(cmdout)
 
     filename = os.path.join(path, "zeekctl-config.zeek")

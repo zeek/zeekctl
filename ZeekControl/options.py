@@ -46,6 +46,14 @@ options = [
         "True if shared files are mounted across all nodes via NFS (see the FAQ_).",
     ),
     Option(
+        "ClusterBackend",
+        "Broker",
+        "string",
+        Option.USER,
+        False,
+        "Supported values: Broker or ZeroMQ",
+    ),
+    Option(
         "SaveTraces",
         0,
         "bool",
