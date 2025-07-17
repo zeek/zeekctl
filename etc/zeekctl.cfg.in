@@ -83,3 +83,8 @@ FileExtractDir = ${SPOOL}/extract_files
 # Location of other configuration files that can be used to customize
 # ZeekControl operation (e.g. local networks, nodes).
 CfgDir = ${ETC}
+
+# The backend to use for cluster communication. Broker is the default
+# in 8.0 with ZeroMQ planned to become the default in Zeek 8.1 and later.
+#
+# ClusterBackend = Broker

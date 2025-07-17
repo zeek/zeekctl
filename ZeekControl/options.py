@@ -46,6 +46,14 @@ options = [
         "True if shared files are mounted across all nodes via NFS (see the FAQ_).",
     ),
     Option(
+        "ClusterBackend",
+        "Broker",
+        "string",
+        Option.USER,
+        False,
+        "Supported values: Broker or ZeroMQ",
+    ),
+    Option(
         "SaveTraces",
         0,
         "bool",
@@ -732,6 +740,14 @@ options = [
            configuration file. If this is changed, the symlink created in
            CMakeLists.txt must be adapted as well.""",
         "BroCtlConfigDir",
+    ),
+    Option(
+        "ClusterTopicSeparator",
+        "",
+        "string",
+        Option.INTERNAL,
+        False,
+        "Separator used for joining node topics. This is set by cluster backend plugins.",
     ),
 ]
 
