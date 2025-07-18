@@ -1,0 +1,19 @@
+# Test that the install command recognizes the ClusterBackend and adds an @load statement for ZeroMQ if configured.
+#
+# @TEST-EXEC: bash %INPUT
+#
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff zeekctl-config-base-load
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff zeekctl-config-zeromq-load
+
+. zeekctl-test-setup
+
+config=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+installfile etc/node.cfg__cluster
+zeekctl install
+grep '@load' $config > zeekctl-config-base-load || true
+
+# Change the configuration to enable the WebSocket for Zeekctl interaction.
+echo "ClusterBackend = ZeroMQ" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+zeekctl install
+grep '@load' $config > zeekctl-config-zeromq-load

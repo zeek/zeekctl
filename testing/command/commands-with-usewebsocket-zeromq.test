@@ -1,0 +1,49 @@
+# Test that the print and netstats command work when running with UseWebSocket = 1 and ClusterBackend = ZeroMQ
+#
+# This test needs to be serialized because it'll listen on the WebSocket
+# and ZeroMQ ports.
+# @TEST-SERIALIZE: listen
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff all-netstats.out
+# @TEST-EXEC: btest-diff worker-2-local-nets.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff cluster-zeekctl.log
+
+. zeekctl-test-setup
+
+installfile etc/zeekctl.cfg__no_email
+installfile etc/networks.cfg__ipv4
+installfile etc/node.cfg__no_netifs
+
+echo "clusterbackend=zeromq" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+echo "usewebsocket=1" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+# Test with a cluster config.
+zeekctl install
+zeekctl start
+
+# Print a single-line value from all nodes
+zeekctl print Log::default_rotation_interval > all.out
+
+# Print a multi-line value from one node
+zeekctl print Site::local_nets worker-2 > worker-2-local-nets.out
+
+zeekctl netstats > all-netstats.out
+
+zeekctl stop
+
+# Get the cluster.log entries for the zeekctl WebSocket client after
+# tearing everything down. This is to ensure we've actually used the
+# Cluster-level WebSocket API to gather the information, but requires
+# to rip out a bunch of non-static information from the log.
+zcat $ZEEKCTL_INSTALL_PREFIX/logs/*/cluster*log.gz \
+	| grep zeekctl \
+	| sed -E 's/client .*\)/client xxx/' \
+	| sed -E 's,zeekctl/[^ ]+,zeekctl/<version>,' \
+	> cluster-zeekctl.log
+
+# No nodes are running, so zeekctl cannot get any results
+! zeekctl print Log::default_rotation_interval > stopped.out
+# The file size should be zero
+test ! -s stopped.out
