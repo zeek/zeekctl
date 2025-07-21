@@ -1,22 +1,26 @@
+DIAG := diag.log
+BTEST := ../../btest/btest
 
-DIAG=diag.log
-BTEST=../../btest/btest
+ZEEK_TAR := ../build/testing/zeek-test-install.tar
 
-all: cleanup buildzeek btest-verbose
+all: btest-verbose
 
 # Showing all tests.
-btest-verbose:
+btest-verbose: $(ZEEK_TAR)
 	@$(BTEST) -j -f $(DIAG)
 
-brief: cleanup buildzeek btest-brief
+brief: cleanup btest-brief
 
 # Brief output showing only failed tests.
-btest-brief:
+btest-brief: $(ZEEK_TAR)
 	@$(BTEST) -j -b -f $(DIAG)
 
 # Rerun only the failed tests.
-rerun:
+rerun: $(ZEEK_TAR)
 	@$(BTEST) -r -j -f $(DIAG)
+
+$(ZEEK_TAR):
+	@./Scripts/build-zeek
 
 buildzeek:
 	@./Scripts/build-zeek
