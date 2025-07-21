@@ -277,7 +277,7 @@ another sting
         Time interval that archived log files are kept (a value of 0 means log files never expire).
         The time interval is expressed as an integer followed by one of the following time units: day, hr, min.
 
-|    Note that you need to edit the crontab to let "zeekctl cron" work properly.
+|    Note that you need to edit the crontab to let ``zeekctl cron`` work properly.
 |    Refer to `zeekctl cron <#zeekcontrol-cron-command>`_ for details.
 
 
