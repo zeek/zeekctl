@@ -264,7 +264,7 @@ name of a directory where any such unarchived logs can be found.
 Log expiration and Log retention
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need to retains only a certain period of log you can setup the following variable in `/etc/zeekctl.conf` and then use `zeekctl cron`_ to remove older logs:
+The ``LogExpireMinutes`` and ``LogExpireDelay`` options in ``zeekctl.conf`` can configure ``zeekctl`` to only retain certain amounts of archived logs.
 
     # Check "Option Reference" for more info
     
