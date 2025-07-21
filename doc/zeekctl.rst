@@ -197,7 +197,6 @@ be run (deploy will check all policy scripts, install all needed files, and
 restart Zeek). No changes will take effect until deploy_ is run.
 
 
-.. _zeekctl cron:
 ZeekControl cron command
 -----------------------
 
@@ -266,7 +265,7 @@ Log expiration and Log retention
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``LogExpireMinutes`` and ``LogExpireDelay`` options in ``zeekctl.conf`` can configure ``zeekctl`` to only retain certain amounts of archived logs.
-This functionality work with :ref:`zeekctl cron` see :ref:`cron` for more details.
+This functionality work with `zeekctl cron <#zeekcontrol-cron-command>` see cron_ for more details.
 
 
     # Check "Option Reference" for more info
@@ -277,14 +276,8 @@ This functionality work with :ref:`zeekctl cron` see :ref:`cron` for more detail
         Time interval that archived log files are kept (a value of 0 means log files never expire).
         The time interval is expressed as an integer followed by one of the following time units: day, hr, min.
 
-Note that you need to edit the crontab to let :ref:`zeekctl cron` work properly.
-
-For example, to setup a cron job that runs once every
-five minutes, insert the following entry into the crontab of the
-user running ZeekControl (change the path to the actual location of zeekctl
-on your system) by running the ``crontab -e`` command::
-
-      */5 * * * * /usr/local/zeek/bin/zeekctl cron
+Note that you need to edit the crontab to let "zeekctl cron" work properly.
+Refer to `zeekctl cron <#zeekcontrol-cron-command>` for details.
 
 
 Log files created only when using ZeekControl
