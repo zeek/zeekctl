@@ -7,6 +7,7 @@
 .. Version number is filled in automatically.
 .. |version| replace:: 2.6.0-2
 
+
 ===========
 ZeekControl
 ===========
@@ -260,8 +261,19 @@ Zeek or tries to restart a crashed Zeek, it will try to archive such log files
 again.  If this attempt fails, then an email is sent which contains the
 name of a directory where any such unarchived logs can be found.
 
+
+Log expiration and Log retention
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The LogExpireMinutes_ and LogExpireDelay_ options in ``zeekctl.conf`` can configure
+``zeekctl`` to only retain certain amounts of archived logs. See the documentation for
+those options for more details.
+
+Note that you'll need to setup ``zeekctl cron`` for this to work properly. See `ZeekControl cron command`_ for details.
+
+
 Log files created only when using ZeekControl
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are several log files that are not created by Zeek, but rather are
 created only when using ZeekControl to run Zeek.
