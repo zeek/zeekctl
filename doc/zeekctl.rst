@@ -264,15 +264,17 @@ name of a directory where any such unarchived logs can be found.
 Log expiration and Log retention
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need to retains only a certain period of log you can setup the following variable in `/etc/zeekctl.conf` and then use [zeekctl cron](https://github.com/zeek/zeekctl#zeekcontrol-cron-command) to remove older logs:
+If you need to retains only a certain period of log you can setup the following variable in `/etc/zeekctl.conf` and then use `zeekctl cron`_ to remove older logs:
 
-    * LogExpireMinutes=0
+    # Check "Option Reference" for more info
+    
+    * LogExpireMinutes_=0
         Time interval (in minutes) that archived log files are kept (0 means they never expire). Users should never modify this value (see the LogExpireInterval option).
     * LogExpireInterval=<N>day
         Time interval that archived log files are kept (a value of 0 means log files never expire).
         The time interval is expressed as an integer followed by one of the following time units: day, hr, min.
 
-Note that you need to edit the crontab to let zeekctl cron work properly.
+Note that you need to edit the crontab to let `zeekctl cron`_ work properly.
 
 For example, to setup a cron job that runs once every
 five minutes, insert the following entry into the crontab of the
@@ -280,6 +282,8 @@ user running ZeekControl (change the path to the actual location of zeekctl
 on your system) by running the ``crontab -e`` command::
 
       */5 * * * * /usr/local/zeek/bin/zeekctl cron
+
+.. _zeekctl cron: https://github.com/zeek/zeekctl#zeekcontrol-cron-command
 
 
 Log files created only when using ZeekControl
