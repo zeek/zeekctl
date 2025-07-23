@@ -1,0 +1,69 @@
+# @TEST-DOC: Test that the print and netstats command work when running with UseWebSocket = 1. Testing Broker and ZeroMQ backends.
+#
+# This test needs to be serialized because it'll listen on the WebSocket
+# and broker ports.
+# @TEST-SERIALIZE: listen
+#
+# @TEST-EXEC: chmod +x test.sh
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff all-netstats.out
+# @TEST-EXEC: btest-diff worker-2-local-nets.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-remove-timestamps-unix btest-diff cluster-zeekctl.log
+
+exec ./test.sh Broker
+
+@TEST-START-NEXT
+exec ./test.sh ZeroMQ
+
+@TEST-START-FILE my-local.zeek
+
+module ZeekctlTest;
+export {
+	global local_nets: set[subnet] = { 1.2.3.4/32, 5.6.7.8/16, [fe80::1]/128, [::1]/128};
+}
+
+@TEST-END-FILE
+
+@TEST-START-FILE test.sh
+# Common test functionality.
+
+. zeekctl-test-setup
+installfile etc/zeekctl.cfg__no_email
+installfile etc/networks.cfg__ipv4
+installfile etc/node.cfg__no_netifs
+
+echo "UseWebSocket = 1" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+echo "ClusterBackend = $1" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
+# Replace local.zeek
+cp my-local.zeek $ZEEKCTL_INSTALL_PREFIX/share/zeek/site/local.zeek
+
+# Test with a cluster config.
+zeekctl install
+zeekctl start
+
+# Print a single-line value from all nodes
+zeekctl print Cluster::node >> all.out
+zeekctl print Cluster::backend >> all.out
+
+# Print a multi-line value from one node
+zeekctl print ZeekctlTest::local_nets worker-2 > worker-2-local-nets.out
+
+zeekctl netstats >> all-netstats.out
+zeekctl netstats manager logger >> all-netstats.out
+
+zeekctl stop
+
+# Get the cluster.log entries for the zeekctl WebSocket client after
+# tearing everything down. This is to ensure we've actually used the
+# Cluster-level WebSocket API to gather the information, but requires
+# to rip out a bunch of non-static information from the log.
+zcat $ZEEKCTL_INSTALL_PREFIX/logs/*/cluster*log.gz \
+	| grep zeekctl \
+	| sed -E 's/client .*\)/client xxx/' \
+	| sed -E 's,zeekctl/[^ ]+,zeekctl/<version>,' \
+	> cluster-zeekctl.log
+
+# No nodes are running, so zeekctl cannot get any results
+! zeekctl print Log::default_rotation_interval

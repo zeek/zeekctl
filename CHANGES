@@ -1,3 +1,41 @@
+2.6.0-18 | 2025-07-23 19:29:53 +0200
+
+  * Add basic tests for ZeroMQ, UseWebSocket and using them together (Arne Welzel, Corelight)
+
+  * Add WebSocket API support for interacting with nodes (Arne Welzel, Corelight)
+
+    This introduces a new configuration option called UseWebsocket.
+    If set, the manager node will spawn a WebSocket server and listen on
+    WebSocketHost (default 127.0.0.1) and WebSocketPort (default 27759/tcp).
+
+    Zeekctl will establish a short-lived WebSocket connection to the manager
+    and publish command events to node specific topics, then waiting for the
+    reply event from the corresponding node. That is, the manager just forwards
+    events between Zeekctl and other nodes. This works for both cluster backends,
+    Broker and ZeroMQ. When UseWebSocket is not set, there will be a warning
+    that print and netstats will not function.
+
+    This does not support TLS configuration for the WebSocket server. If you need
+    this, put a proxy (nginx, caddy, traefik, ...) in front of Zeek and use the
+    new WebSocketUrl setting of zeekctl.cfg to point it at the proxy with wss://.
+
+    This functionality requires the Python package websockets with at least
+    version 11.0. If that's not found and UseWebSocket is set, zeekctl will
+    warn about the issue during startup.
+
+  * Introduce ClusterBackend option to zeekctl.cfg and plugins (Arne Welzel, Corelight)
+
+    This adds a new global ClusterBackend option and adds 3 new plugins.
+    One for Broker, one for ZeroMQ, and one that ensures that the new
+    internal ClusterTopicSeparator setting is set by a cluster backend
+    and otherwise vetoes the install command with a descriptive message.
+
+    The separator is used by the WebSocket code to construct node specific
+    topics to publish to. For ZeroMQ this isn't exactly important as topics
+    are just a sequence of bytes (same for Broker), but for other pub-sub
+    systems, wild-card or prefix matching may only be possible on parts of
+    the topic (e.g., NATS subject has a more rigid structure).
+
 2.6.0-14 | 2025-07-09 12:32:57 -0700
 
   * Require C++20 for builds (Tim Wojtulewicz, Corelight)

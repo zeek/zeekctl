@@ -46,6 +46,14 @@ options = [
         "True if shared files are mounted across all nodes via NFS (see the FAQ_).",
     ),
     Option(
+        "ClusterBackend",
+        "Broker",
+        "string",
+        Option.USER,
+        False,
+        "Supported values: Broker or ZeroMQ",
+    ),
+    Option(
         "SaveTraces",
         0,
         "bool",
@@ -431,6 +439,46 @@ options = [
         False,
         "If the manager should connect to a Time Machine, the port it is running on (in Zeek syntax, e.g., 47757/tcp).",
     ),
+    Option(
+        "UseWebSocket",
+        0,
+        "bool",
+        Option.USER,
+        False,
+        "True to switch Zeekctl to use the /v1/messages/json WebSocket API for communicating with the cluster. Setting this to true will spawn a WebSocket server on the manager node. This requires the Python websockets package version 11.0 or higher.",
+    ),
+    Option(
+        "WebSocketHost",
+        "127.0.0.1",
+        "string",
+        Option.USER,
+        False,
+        "If UseWebSocket is true, the WebSocket address the manager will listen on.",
+    ),
+    Option(
+        "WebSocketPort",
+        27759,
+        "int",
+        Option.USER,
+        False,
+        "If UseWebSocket is true, the WebSocket port the manager will listen on.",
+    ),
+    Option(
+        "WebSocketUrl",
+        "",
+        "string",
+        Option.USER,
+        False,
+        "Override the WebSocket URL used by zeekctl. Only used when UseWebSocket is true.",
+    ),
+    Option(
+        "WebSocketTimeout",
+        10,
+        "int",
+        Option.USER,
+        False,
+        "The timeout for WebSocket operations (connect, close and waiting for events).",
+    ),
     # Automatically set.
     Option(
         "ZeekBase",
@@ -732,6 +780,14 @@ options = [
            configuration file. If this is changed, the symlink created in
            CMakeLists.txt must be adapted as well.""",
         "BroCtlConfigDir",
+    ),
+    Option(
+        "ClusterTopicSeparator",
+        "",
+        "string",
+        Option.INTERNAL,
+        False,
+        "Separator used for joining node topics. This is set by cluster backend plugins.",
     ),
 ]
 

@@ -242,6 +242,17 @@ def make_layout(path, cmdout, silent=False):
 
         ostr += "};\n"
 
+    # If UseWebSocket is True, render a zeek_init() handler that starts a WebSocket
+    # server on the manager node.
+    if config.Config.usewebsocket:
+        ostr += "\n"
+        ostr += "event zeek_init()\n\t{\n"
+        ostr += '\tif ( getenv("ZEEKCTL_DISABLE_LISTEN") == "" && (Cluster::local_node_type() == Cluster::MANAGER || ! Cluster::is_enabled()) )\n'
+        ostr += "\t\t{\n"
+        ostr += f"\t\tCluster::listen_websocket([$listen_addr={config.Config.websockethost}, $listen_port={config.Config.websocketport}/tcp]);\n"
+        ostr += "\t\t}\n"
+        ostr += "\t}\n"
+
     try:
         with open(filename, "w") as out:
             out.write(ostr)
