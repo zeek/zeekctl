@@ -1,3 +1,7 @@
+2.6.0-20 | 2025-07-25 11:55:15 -0700
+
+  * Add section on log expiration and retention (Giuseppe)
+
 2.6.0-18 | 2025-07-23 19:29:53 +0200
 
   * Add basic tests for ZeroMQ, UseWebSocket and using them together (Arne Welzel, Corelight)
