@@ -262,10 +262,10 @@ again.  If this attempt fails, then an email is sent which contains the
 name of a directory where any such unarchived logs can be found.
 
 
-Log expiration and Log retention
+Log expiration and retention
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The LogExpireMinutes_ and LogExpireDelay_ options in ``zeekctl.conf`` can configure
+The LogExpireMinutes_ and LogExpireInterval_ options in ``zeekctl.conf`` can configure
 ``zeekctl`` to only retain certain amounts of archived logs. See the documentation for
 those options for more details.
 
