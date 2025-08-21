@@ -12,3 +12,6 @@ redef Pcap::snaplen = 9216;
 redef Pcap::bufsize = 128;
 redef global_hash_seed = "XXXXXXXX";
 redef Cluster::default_store_dir = "XXXXXXXX";
+@if ( |Telemetry::metrics_address| == 0 )
+redef Telemetry::metrics_address = "127.0.0.1";
+@endif

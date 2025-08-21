@@ -357,6 +357,18 @@ def make_zeekctl_config_policy(path, cmdout, plugin_reg):
     if config.Config.fileextractdir:
         ostr += f'redef FileExtract::prefix = "{config.Config.fileextractdir}/" + Cluster::node;\n'
 
+    if config.Config.metricsaddress:
+        # Telemetry::metrics_address is a string, so need extra quotes.
+        #
+        # Not that if Telemetry::metrics_address is already set, e.g via the
+        # ZEEK_DEFAULT_LISTEN_ADDRESS environment variable or an explicit
+        # redef in local.zeek, then MetricsAddress has no effect.
+        ostr += "@if ( |Telemetry::metrics_address| == 0 )\n"
+        ostr += (
+            f'redef Telemetry::metrics_address = "{config.Config.metricsaddress}";\n'
+        )
+        ostr += "@endif\n"
+
     ostr += plugin_reg.getZeekctlConfig(cmdout)
 
     filename = os.path.join(path, "zeekctl-config.zeek")
