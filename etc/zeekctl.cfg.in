@@ -99,3 +99,24 @@ CfgDir = ${ETC}
 # WebSocketHost = 127.0.0.1
 # The port of the manager's WebSocket server. Only used if UseWebSocket is set.
 # WebSocketPort = 27759
+
+# The default address on which Zeek's internal Prometheus server listens on.
+#
+# This defaults to 0.0.0.0 for convenience with setups where the Prometheus
+# server runs on a host other than Zeek. Particularly in container environments
+# this is common occurrence.
+#
+# To disable the Prometheus server, set the MetricsPort option below to 0.
+#
+# If you require a per-node metrics address, redef Telemetry::metrics_address
+# per node in your local.zeek script.
+MetricsAddress = 0.0.0.0
+
+# The base port to use for Zeek's internal Prometheus server.
+#
+# Every node in a Zeek cluster starts a Prometheus server. The manager uses
+# the port below. Other nodes will automatically be assigned a subsequent
+# port to listen on.
+#
+# Set this value to 0 to disable Prometheus telemetry on all nodes.
+MetricsPort = 9991
