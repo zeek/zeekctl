@@ -258,6 +258,15 @@ Zeek or tries to restart a crashed Zeek, it will try to archive such log files
 again.  If this attempt fails, then an email is sent which contains the
 name of a directory where any such unarchived logs can be found.
 
+Log expiration and retention
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The LogExpireMinutes_ and LogExpireInterval_ options in ``zeekctl.conf`` can configure
+``zeekctl`` to only retain certain amounts of archived logs. See the documentation for
+those options for more details.
+
+Note that you'll need to setup ``zeekctl cron`` for this to work properly. See `ZeekControl cron command`_ for details.
+
 Log files created only when using ZeekControl
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
