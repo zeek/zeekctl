@@ -103,6 +103,14 @@ options = [
         "BroPort",
     ),
     Option(
+        "MetricsAddress",
+        "0.0.0.0",
+        "string",
+        Option.USER,
+        False,
+        "The address on which the Prometheus HTTP server listens on (Telemetry::metrics_address).",
+    ),
+    Option(
         "MetricsPort",
         9991,
         "int",

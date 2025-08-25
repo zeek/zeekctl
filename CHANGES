@@ -1,3 +1,13 @@
+2.6.0-24 | 2025-08-25 12:27:17 -0700
+
+  * doc/main.rst: Add section added to doc/zeekctl.rst (Arne Welzel, Corelight)
+
+  * Add MetricsAddress, update zeekctl.cfg.in with metrics options (Arne Welzel, Corelight)
+
+    Closes #88
+
+  * Fix typo in option name in docs (Tim Wojtulewicz, Corelight)
+
 2.6.0-20 | 2025-07-25 11:55:15 -0700
 
   * Add section on log expiration and retention (Giuseppe)
