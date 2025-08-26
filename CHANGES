@@ -1,3 +1,14 @@
+2.6.0-28 | 2025-08-26 08:56:46 -0700
+
+  * update-changes: Also update doc/zeekctl.rst version (Arne Welzel, Corelight)
+
+    Just to stay in sync with doc/main.rst in case there were no other
+    changes to documentation, but a version bump.
+
+  * github-workflows: Add job to check for doc changes (Arne Welzel, Corelight)
+
+  * Update docs (Arne Welzel, Corelight)
+
 2.6.0-24 | 2025-08-25 12:27:17 -0700
 
   * doc/main.rst: Add section added to doc/zeekctl.rst (Arne Welzel, Corelight)
