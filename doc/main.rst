@@ -268,7 +268,7 @@ those options for more details.
 Note that you'll need to setup ``zeekctl cron`` for this to work properly. See `ZeekControl cron command`_ for details.
 
 Log files created only when using ZeekControl
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are several log files that are not created by Zeek, but rather are
 created only when using ZeekControl to run Zeek.
