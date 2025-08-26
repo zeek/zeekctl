@@ -1,0 +1,21 @@
+name: Check documentation changes
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Generate documentation
+        run: cd doc && make
+      - name: Check documentation changes
+        run: test "$(git diff | tee -a /dev/stderr | wc -l)" -eq 0
