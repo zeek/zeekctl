@@ -1,3 +1,7 @@
+2.6.0-30 | 2025-09-12 09:22:44 -0700
+
+  * Bump trace-summary and pysubnettree submodules (Tim Wojtulewicz, Corelight)
+
 2.6.0-28 | 2025-08-26 08:56:46 -0700
 
   * update-changes: Also update doc/zeekctl.rst version (Arne Welzel, Corelight)
