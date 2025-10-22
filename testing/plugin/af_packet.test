@@ -1,0 +1,21 @@
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-remove-timestamps-dd-mmm-hh-mm-ss | $SCRIPTS/diff-remove-abspath" btest-diff debug.log
+# @TEST-EXEC: btest-diff zeekctl-config.zeek
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__debug
+etc/node.cfg__af_packet
+bin/zeek__test
+EOF
+
+zeekctl install
+
+zeekctl start
+grep CLUSTER_NODE $ZEEKCTL_INSTALL_PREFIX/spool/debug.log > debug.log
+
+# Pull out just the section from the zeekctl config for the af_packet plugin
+sed -n '/af_packet plugin/,/af_packet plugin/{p;}' $ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek > zeekctl-config.zeek
+
+zeekctl stop
