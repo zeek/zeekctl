@@ -1,0 +1,26 @@
+# Cluster myricom configuration.
+
+[manager]
+type=manager
+host=localhost
+
+[proxy-1]
+type=proxy
+host=localhost
+
+[worker-1]
+type=worker
+host=localhost
+interface=af_packet::eth0
+lb_method=custom
+lb_procs=1
+af_packet_block_size=0
+af_packet_block_timeout=0
+af_packet_buffer_size=0
+af_packet_checksum_validation_mode=CHECKSUM_OFF
+af_packet_enable_defrag=T
+af_packet_enable_fanout=T
+af_packet_enable_hw_timestamping=T
+af_packet_fanout_id=123
+af_packet_fanout_mode=AF_Packet::FANOUT_HASH
+af_packet_link_type=2
