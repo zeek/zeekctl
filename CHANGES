@@ -1,3 +1,7 @@
+2.6.0-35 | 2025-10-24 08:35:32 -0700
+
+  * Update other btest baselines after af_packet plugin changes (Tim Wojtulewicz, Corelight)
+
 2.6.0-33 | 2025-10-23 12:01:33 -0700
 
   * Make all af_packet options available via node.cfg (Tim Wojtulewicz, Corelight)
