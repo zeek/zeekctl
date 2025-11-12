@@ -28,6 +28,16 @@ class ClusterBackendBroker(ZeekControl.plugin.Plugin):
 
     def zeekctl_config(self):
         """
-        Nothing to do here, it's default loaded for now.
+        If the version of Zeek already has the broker policy scripts, load
+        these, otherwise Broker is anyhow enabled by default.
         """
-        return ""
+        script = "\n".join(
+            [
+                "# Load Broker's policy scripts if they exist.",
+                '@if ( can_load("policy/frameworks/cluster/backend/broker") )',
+                "@load policy/frameworks/cluster/backend/broker",
+                "@endif",
+            ]
+        )
+
+        return script
