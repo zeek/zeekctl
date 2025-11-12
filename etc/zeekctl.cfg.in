@@ -84,16 +84,18 @@ FileExtractDir = ${SPOOL}/extract_files
 # ZeekControl operation (e.g. local networks, nodes).
 CfgDir = ${ETC}
 
-# The backend to use for cluster communication. Broker is the default
-# in 8.0 with ZeroMQ planned to become the default in Zeek 8.1 and later.
+# The backend to use for cluster communication. Broker was the default
+# until Zeek 8.1, when ZeroMQ became the default.
 #
-# ClusterBackend = Broker
+# ClusterBackend = ZeroMQ
 
 # Toggle to enable a WebSocket server on the manager listening on
 # ws://<WebSocketHost>:<WebSocketPort> and have zeekctl communicate with
 # the cluster using python-websockets instead of the native Broker
-# communication.
-# UseWebSocket = 0
+# communication. This defaults to 1 since Zeek 8.1 as it is required
+# to send commands from Zeekctl to the Zeek cluster with ZeroMQ or non-Broker
+# cluster backends.
+# UseWebSocket = 1
 
 # The address of the manager's WebSocket server. Only used if UseWebSocket is set.
 # WebSocketHost = 127.0.0.1
