@@ -8,3 +8,11 @@ redef Cluster::nodes = {
 	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27763/tcp, $manager="manager", $metrics_port=9993/tcp],
 	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=27764/tcp, $manager="manager", $metrics_port=9994/tcp],
 };
+
+event zeek_init()
+	{
+	if ( getenv("ZEEKCTL_DISABLE_LISTEN") == "" && (Cluster::local_node_type() == Cluster::MANAGER || ! Cluster::is_enabled()) )
+		{
+		Cluster::listen_websocket([$listen_addr=127.0.0.1, $listen_port=27759/tcp]);
+		}
+	}
