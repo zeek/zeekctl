@@ -33,9 +33,33 @@ class ClusterBackendZeroMQ(ZeekControl.plugin.Plugin):
         """
         script = "\n".join(
             [
-                "# Enable ZeroMQ",
+                "# Enable ZeroMQ - the zeromq/connect script was deprecated with 8.1",
+                '@if ( Version::at_least("8.1.0") )',
+                "@load policy/frameworks/cluster/backend/zeromq",
+                "@else",
                 "@load policy/frameworks/cluster/backend/zeromq/connect",
+                "@endif",
+                "",
             ]
         )
+
+        # Usually this runs automatically on the manager, but Zeectl supports
+        # standalone mode and the node doesn't know it should run the proxy
+        # thread for WebSocket functionality.
+        if ZeekControl.config.Config.standalone:
+            script += "\n".join(
+                [
+                    "",
+                    "# Standalone: Run the XPUB/XSUB thread in standalone mode",
+                    "redef Cluster::Backend::ZeroMQ::run_proxy_thread = T;",
+                    "",
+                    "# Standalone: Subscribe to zeek.cluster.node.zeek.",
+                    "#             for controllee WebSocket interactions.",
+                    "event zeek_init()",
+                    "	{",
+                    '	Cluster::subscribe("zeek.cluster.node.zeek.");',
+                    "	}",
+                ]
+            )
 
         return script

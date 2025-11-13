@@ -742,7 +742,7 @@ User Options
 ~~~~~~~~~~~~
 .. _ClusterBackend:
 
-*ClusterBackend* (string, default "Broker")
+*ClusterBackend* (string, default "ZeroMQ")
     Supported values: Broker or ZeroMQ
 
 .. _CommTimeout:
@@ -992,7 +992,7 @@ User Options
 
 .. _UseWebSocket:
 
-*UseWebSocket* (bool, default 0)
+*UseWebSocket* (bool, default 1)
     True to switch Zeekctl to use the /v1/messages/json WebSocket API for communicating with the cluster. Setting this to true will spawn a WebSocket server on the manager node. This requires the Python websockets package version 11.0 or higher.
 
 .. _WebSocketHost:
