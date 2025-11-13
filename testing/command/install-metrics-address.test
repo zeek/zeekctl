@@ -13,13 +13,13 @@ zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/
 # Plain - no UseWebSocket.
 installfile etc/node.cfg__cluster
 zeekctl install
-tail -5 "$zeekctlconfig" > default
+grep -C1 Telemetry "$zeekctlconfig" > default
 
 echo "MetricsAddress = 192.168.0.1" >> "$ZEEKCTL_INSTALL_PREFIX"/etc/zeekctl.cfg
 zeekctl install
-tail -5 "$zeekctlconfig" > custom
+grep -C1 Telemetry "$zeekctlconfig" > custom
 
 # Explicitly set the option to empty in order to skip the redef.
 sed -i 's/MetricsAddress = .*/MetricsAddress = /g' "$ZEEKCTL_INSTALL_PREFIX"/etc/zeekctl.cfg
 zeekctl install
-tail -5 "$zeekctlconfig" > empty
+grep Telemetry "$zeekctlconfig" || echo "<no Telemetry found>" > empty
