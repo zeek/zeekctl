@@ -16,6 +16,9 @@ etc/zeekctl.cfg__no_email
 etc/node.cfg__no_netifs
 EOF
 
+# The peerstatus command only works with Broker.
+echo "ClusterBackend = Broker" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+
 zeekctl install
 zeekctl start
 
