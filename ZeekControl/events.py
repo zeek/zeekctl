@@ -360,7 +360,11 @@ def ws_send_events(events, topic):
                 else:
                     rnode = rtopic.rsplit(topic_sep, 1)[-1]
 
-                if rnode != node.name:
+                # Expect a reply from the addressed node, or an empty node if
+                # this a standalone setup.
+                if rnode != node.name and not (
+                    config.Config.standalone and rnode == ""
+                ):
                     results += [
                         (
                             node,
