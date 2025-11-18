@@ -2,13 +2,13 @@
 # Automatically generated. Do not edit.
 redef Cluster::manager_is_logger = F;
 redef Cluster::nodes = {
-	["control"] = [$node_type=Cluster::CONTROL, $ip=127.0.0.1, $p=41234/tcp],
-	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=41235/tcp, $metrics_port=9991/tcp],
-	["logger-1"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=41236/tcp, $metrics_port=9992/tcp],
-	["logger-2"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=41237/tcp, $metrics_port=9993/tcp],
-	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=41238/tcp, $manager="manager", $metrics_port=9994/tcp],
-	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=41239/tcp, $manager="manager", $metrics_port=9995/tcp],
-	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=41240/tcp, $manager="manager", $metrics_port=9996/tcp],
+	["control"] = [$node_type=Cluster::CONTROL, $ip=127.0.0.1, $p=41236/tcp],
+	["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1, $p=41237/tcp, $metrics_port=9991/tcp],
+	["logger-1"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=41238/tcp, $metrics_port=9992/tcp],
+	["logger-2"] = [$node_type=Cluster::LOGGER, $ip=127.0.0.1, $p=41239/tcp, $metrics_port=9993/tcp],
+	["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, $p=41240/tcp, $manager="manager", $metrics_port=9994/tcp],
+	["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=41241/tcp, $manager="manager", $metrics_port=9995/tcp],
+	["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1, $p=41242/tcp, $manager="manager", $metrics_port=9996/tcp],
 };
 
 event zeek_init()
