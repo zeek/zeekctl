@@ -27,4 +27,9 @@ redef Telemetry::metrics_address = "0.0.0.0";
 @load policy/frameworks/cluster/backend/zeromq/connect
 @endif
 
+redef Cluster::Backend::ZeroMQ::listen_xpub_endpoint = "tcp://127.0.0.1:27760";
+redef Cluster::Backend::ZeroMQ::listen_xsub_endpoint = "tcp://127.0.0.1:27761";
+redef Cluster::Backend::ZeroMQ::connect_xpub_endpoint = "tcp://127.0.0.1:27761";
+redef Cluster::Backend::ZeroMQ::connect_xsub_endpoint = "tcp://127.0.0.1:27760";
+
 # End code from cluster_backend_zeromq plugin
