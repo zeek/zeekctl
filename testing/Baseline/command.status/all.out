@@ -2,8 +2,8 @@
 Getting process status ...
 Getting peer status ...
 Name         Type    Host             Status    Pid    Peers  Started
-logger logger localhost running XXXXX 5 XX XXX XX:XX:XX
-manager manager localhost running XXXXX 5 XX XXX XX:XX:XX
-proxy-1 proxy localhost running XXXXX 5 XX XXX XX:XX:XX
-worker-1 worker localhost running XXXXX 4 XX XXX XX:XX:XX
-worker-2 worker localhost running XXXXX 4 XX XXX XX:XX:XX
+logger logger localhost running XXXXX 0 XX XXX XX:XX:XX
+manager manager localhost running XXXXX 0 XX XXX XX:XX:XX
+proxy-1 proxy localhost running XXXXX 0 XX XXX XX:XX:XX
+worker-1 worker localhost running XXXXX 0 XX XXX XX:XX:XX
+worker-2 worker localhost running XXXXX 0 XX XXX XX:XX:XX
