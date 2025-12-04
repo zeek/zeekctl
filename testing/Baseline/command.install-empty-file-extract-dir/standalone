@@ -15,3 +15,27 @@ redef Cluster::default_store_dir = "XXXXXXXX";
 @if ( |Telemetry::metrics_address| == 0 )
 redef Telemetry::metrics_address = "0.0.0.0";
 @endif
+
+# Begin code from cluster_backend_zeromq plugin
+# Enable ZeroMQ - the zeromq/connect script was deprecated with 8.1
+@if ( Version::at_least("8.1.0") )
+@load policy/frameworks/cluster/backend/zeromq
+@else
+@load policy/frameworks/cluster/backend/zeromq/connect
+@endif
+
+redef Cluster::Backend::ZeroMQ::listen_xpub_endpoint = "tcp://127.0.0.1:27760";
+redef Cluster::Backend::ZeroMQ::listen_xsub_endpoint = "tcp://127.0.0.1:27761";
+redef Cluster::Backend::ZeroMQ::connect_xpub_endpoint = "tcp://127.0.0.1:27761";
+redef Cluster::Backend::ZeroMQ::connect_xsub_endpoint = "tcp://127.0.0.1:27760";
+
+# Standalone: Run the XPUB/XSUB thread in standalone mode
+redef Cluster::Backend::ZeroMQ::run_proxy_thread = T;
+
+# Standalone: Subscribe to zeek.cluster.node.zeek.
+#             for controllee WebSocket interactions.
+event zeek_init()
+	{
+	Cluster::subscribe("zeek.cluster.node.zeek.");
+	}
+# End code from cluster_backend_zeromq plugin

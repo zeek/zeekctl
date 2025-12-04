@@ -1,8 +1,8 @@
-# @TEST-DOC: Test that the install command recognizes the ClusterBackend and adds an @load to zeekctl-config if ZeroMQ is configured.
+# @TEST-DOC: Test that the install command recognizes the ClusterBackend and adds an @load to zeekctl-config if Broker is configured.
 #
 # @TEST-EXEC: bash %INPUT
 #
-# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff zeekctl-config-zeromq-load
+# @TEST-EXEC: TEST_DIFF_CANONIFIER=$SCRIPTS/diff-cluster-layout btest-diff zeekctl-config-broker-load
 
 . zeekctl-test-setup
 
@@ -14,6 +14,6 @@ zeekctl install
 
 # Change the configuration to use the ZeroMQ cluster backend and
 # check the configuration for a @load line for zeromq/connect.
-echo "ClusterBackend = ZeroMQ" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+echo "ClusterBackend = Broker" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 zeekctl install
-grep -C1 '@load' $config > zeekctl-config-zeromq-load
+grep '@load' $config > zeekctl-config-broker-load

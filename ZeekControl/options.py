@@ -47,7 +47,7 @@ options = [
     ),
     Option(
         "ClusterBackend",
-        "Broker",
+        "ZeroMQ",
         "string",
         Option.USER,
         False,
@@ -449,7 +449,7 @@ options = [
     ),
     Option(
         "UseWebSocket",
-        0,
+        1,
         "bool",
         Option.USER,
         False,

@@ -1,3 +1,50 @@
+2.6.0-44 | 2025-12-04 11:15:41 +0100
+
+  * cluster_backend_zeromq: Allocate XPUB/XSUB for proxy using ZeekPort (Arne Welzel, Corelight)
+
+    This modifies the cluster_backend_zeromq plugin to read the ZeekPort
+    option write back ZeekPort + 2, using up two ports for ZeroMQ.
+
+    This causes a bunch of baseline diffs because the generated cluster
+    layouts start a different ports now. This is a bit annoying because
+    technically there's no reason for manager, worker and proxy nodes to
+    have the $p member in the cluster-layout. At the same time, keep it
+    there to make it easier to quickly switch back to Broker for testing
+    without needing to re-generate the cluster-layout.
+
+    We could have the cluster backend plugin propagate to install.py
+    information about which nodes require port allocations, but I'm a
+    bit conflicted if that is worth it (and see the argument for having
+    ports populated for testing Broker above).
+
+  * Update baselines (Arne Welzel, Corelight)
+
+  * testing/peerstatus: Update (Arne Welzel, Corelight)
+
+    This test now defaults to using WebSocket instead of the Python bindings
+    which is why there's one less peer in the output for all nodes. Seems
+    more reasonable to me.
+
+  * events: Handle standalone WebSocket interaction (Arne Welzel, Corelight)
+
+    When running in standalone mode, the controllee script does not have a
+    Cluster::node set and the last part of the reply topic will be empty.
+    Handle that case. See policy/frameworks/control/controllee.zeek for
+    more details. IMO we should just deprecate standalone mode.
+
+  * cluster_backend_zeromq: Avoid zeromq/connect script, support standalone (Arne Welzel, Corelight)
+
+    The standalone logic is a bit annoying: We need to explicitly start the
+    XPUB/XSUB proxy and also subscribe to a zeek.cluster.node.zeek. so that
+    the standalone node receives the controllee events that are directed via
+    the WebSocket connection to it.
+
+  * options/zeekctl.cfg: Default ClusterBackend to ZeroMQ, UseWebSocket to 1 (Arne Welzel, Corelight)
+
+  * cluster_backend_broker: Load policy scripts when enabled (Arne Welzel, Corelight)
+
+  * Update trace-summary submodule [nomail] (Tim Wojtulewicz, Corelight)
+
 2.6.0-35 | 2025-10-24 08:35:32 -0700
 
   * Update other btest baselines after af_packet plugin changes (Tim Wojtulewicz, Corelight)

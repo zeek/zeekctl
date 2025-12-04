@@ -4,10 +4,8 @@ XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
-XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 
     manager
-XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
@@ -18,16 +16,13 @@ XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
-XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 
    worker-1
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
-XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 
    worker-2
-XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED
 XXXXXXXXXX.XXXXXX peer=X host=X status=Broker::PEERED

@@ -24,7 +24,8 @@ echo "zeekport=41234" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
 zeekctl install
 
 # Verify that the test port number was installed
-grep -q 41234 $standalonelayout
+# Incremented by two because ZeroMQ XPUB/XSUB takes two from ZeekPort
+grep -q 41236 $standalonelayout
 
 # Test a cluster config with no logger node.
 
