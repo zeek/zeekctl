@@ -1,3 +1,31 @@
+2.6.0-31 | 2026-01-05 12:28:28 -0700
+
+  * install: Fix AttributeError in standalone mode with MetricsPort = 0 (Arne Welzel, Corelight)
+
+    Reported on Discourse by clopmz [1].
+
+    The fix uses the pattern as in non-standalone mode below as well: Just skip
+    the rendering of the metrics_port.
+
+    [1] https://community.zeek.org/t/errors-in-freebsd-15-using-zeromq/7917
+
+    (cherry picked from commit 60597842700d253117f246fade2707cf504feca1)
+
+  * zeekctl.cfg: Improve MetricsPort comment (Arne Welzel, Corelight)
+
+    A Prometheus server is prometheus-server, Zeek only starts HTTP
+    listeners that a Prometheus server can scrape
+
+    (cherry picked from commit 60597842700d253117f246fade2707cf504feca1)
+
+  * Switch trace-summary to a version that only requires Python 3.9 (Tim Wojtulewicz, Corelight)
+
+  * Bump trace-summary submodule (Tim Wojtulewicz, Corelight)
+
+    This is to fix two bugs:
+    - `unknown_transport` that was added in Zeek 7.0 is not supported
+    - A `ValueError` due to an invalid filter string
+
 2.6.0-28 | 2025-08-26 08:56:46 -0700
 
   * update-changes: Also update doc/zeekctl.rst version (Arne Welzel, Corelight)
