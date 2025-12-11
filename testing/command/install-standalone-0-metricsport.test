@@ -1,0 +1,22 @@
+# @TEST-DOC: Regression test for standalone node.cfg setup and MetricsPort = 0 resulting in a Python AttributeError for NoneType.
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: btest-diff standalone-layout.zeek
+
+. zeekctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/zeekctl.cfg__no_email
+bin/zeek__test
+EOF
+
+zeekctlconfig=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+clusterlayout=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/standalone-layout.zeek
+
+echo 'MetricsPort = 0' >> "$ZEEKCTL_INSTALL_PREFIX"/etc/zeekctl.cfg
+
+zeekctl install
+
+# Ensure no traces of Telemetry in the configuration.
+! grep Telemetry "$zeekctlconfig"
+cp "$clusterlayout" .

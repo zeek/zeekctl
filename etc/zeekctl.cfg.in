@@ -116,7 +116,7 @@ MetricsAddress = 0.0.0.0
 
 # The base port to use for Zeek's internal Prometheus server.
 #
-# Every node in a Zeek cluster starts a Prometheus server. The manager uses
+# Every node in a Zeek cluster starts a Prometheus HTTP listener. The manager uses
 # the port below. Other nodes will automatically be assigned a subsequent
 # port to listen on.
 #

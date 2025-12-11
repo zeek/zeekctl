@@ -1,3 +1,21 @@
+2.6.0-50 | 2025-12-11 19:31:07 +0100
+
+  * install: Fix AttributeError in standalone mode with MetricsPort = 0 (Arne Welzel, Corelight)
+
+    Reported on Discourse by clopmz [1].
+
+    The fix uses the pattern as in non-standalone mode below as well: Just skip
+    the rendering of the metrics_port.
+
+    [1] https://community.zeek.org/t/errors-in-freebsd-15-using-zeromq/7917
+
+  * zeectl.cfg: Improve MetricsPort comment (Arne Welzel, Corelight)
+
+    A Prometheus server is prometheus-server, Zeek only starts HTTP
+    listeners that a Prometheus server can scrape
+
+  * Updating submodule(s) [nomail] (Tim Wojtulewicz, Corelight)
+
 2.6.0-46 | 2025-12-09 14:37:24 -0700
 
   * Update submodule(s) [nomail] (Tim Wojtulewicz, Corelight)
