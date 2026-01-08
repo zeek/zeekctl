@@ -25,7 +25,7 @@ try:
 except ImportError as e:
     websockets_exceptions = None
     websockets_sync_client = None
-    websockets_errmsg = f"Failed to import websockets module - is it installed? ({e!r})"
+    websockets_errmsg = f"Failed to import websockets module ({e!r})"
 
 # Communication with running nodes.
 
