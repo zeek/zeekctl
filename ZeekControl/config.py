@@ -226,6 +226,9 @@ class Configuration:
                 self.ui.warn(
                     f"zeekctl option UseWebSocket is set, but websockets non-functional: {events.websockets_errmsg}"
                 )
+                self.ui.warn(
+                    "The print and netstats commands will be non-functional, please install the Python websockets package version 11.0 or later."
+                )
 
         if not self.config["usewebsocket"]:
             # If UseWebSocket isn't configured, then commands for non-Broker
