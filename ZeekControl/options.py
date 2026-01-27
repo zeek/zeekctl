@@ -762,6 +762,23 @@ options = [
         "Directories to search for custom plugins (i.e., plugins that are not included with zeekctl), separated by colons.",
     ),
     Option(
+        "XDPProgram",
+        "",
+        "string",
+        Option.USER,
+        False,
+        "An XDP program to load/unload when deploying the cluster.",
+    ),
+    Option(
+        "XDPPinPath",
+        "/sys/fs/bpf/zeek",
+        "string",
+        Option.USER,
+        False,
+        "The pin path for the XDP program's maps and program.",
+    ),
+    # TODO: Max size for maps?
+    Option(
         "PolicyDirSiteInstall",
         "${SpoolDir}/installed-scripts-do-not-touch/site",
         "string",
