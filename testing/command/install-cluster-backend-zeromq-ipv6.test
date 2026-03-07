@@ -1,0 +1,17 @@
+# @TEST-DOC: Test using IPv6 addresses enabled the Cluster::Backend::ZeroMQ::ipv6 option.
+#
+# @TEST-EXEC: bash %INPUT
+#
+# @TEST-EXEC: btest-diff zeekctl-config-redefs
+
+. zeekctl-test-setup
+
+config=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+installfile etc/node.cfg__cluster
+# Replace localhost with ::1 and verify that the ZeroMQ endpoints have
+# brackets and that the ipv6 option is set to T.
+sed -i 's/localhost/::1/g' $ZEEKCTL_INSTALL_PREFIX/etc/node.cfg
+zeekctl install
+
+grep -C2 'redef.*Cluster::Backend' $config > zeekctl-config-redefs
