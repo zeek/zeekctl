@@ -887,7 +887,7 @@ User Options
 
 .. _MetricsAddress:
 
-*MetricsAddress* (string, default "0.0.0.0")
+*MetricsAddress* (string, default "127.0.0.1")
     The address on which the Prometheus HTTP server listens on (Telemetry::metrics_address).
 
 .. _MetricsPort:

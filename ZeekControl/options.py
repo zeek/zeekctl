@@ -104,7 +104,7 @@ options = [
     ),
     Option(
         "MetricsAddress",
-        "0.0.0.0",
+        "127.0.0.1",
         "string",
         Option.USER,
         False,
