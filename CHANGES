@@ -1,3 +1,13 @@
+2.6.0-56 | 2026-03-09 17:46:22 +0100
+
+  * cluster_backend_zeromq: Set Cluster::Backend::ZeroMQ::ipv6=T when needed (Arne Welzel, Corelight)
+
+    Now that Cluster::Backend::ZeroMQ::ipv6 defaults to false, ensure it is
+    toggled to true if any of the node addresses resolves to an IPv6 address.
+
+    Also, add brackets around IPv6 addresses for the ZeroMQ endpoints as otherwise
+    ZeroMQ will consider the addresses as a device. Add a test for this, too.
+
 2.6.0-54 | 2026-03-09 16:40:35 +0100
 
   * GH-5224: options/zeekctl.cfg: Default MetricsAddress to 127.0.0.1 (Arne Welzel, Corelight)

@@ -46,6 +46,12 @@ class ClusterBackendZeroMQ(ZeekControl.plugin.Plugin):
         # The manager address is used for listening of the XPUB/XSUB proxy.
         self.xpub_xsub_addr = ZeekControl.config.Config.manager().addr
 
+        # If the address looks like an IPv6 address, put brackets around it
+        # so that libzmq does not interpret it as a device and instead as
+        # an IPv6 address.
+        if ":" in self.xpub_xsub_addr:
+            self.xpub_xsub_addr = "[" + self.xpub_xsub_addr + "]"
+
         # Check if this is a multi-node cluster (multiple IP addresses) and
         # tell the user about it.
         addrs = {n.addr for n in self.nodes()}
@@ -66,6 +72,12 @@ class ClusterBackendZeroMQ(ZeekControl.plugin.Plugin):
                 "\n    cluster_backend_zeromq.disable_unencrypted_warning = 1\n"
             )
 
+        # If any of the addresses used by nodes looks like an IPv6 address,
+        # enable ZeroMQ IPv6 support via the configuration knob.
+        self.ipv6 = False
+        if any(":" in a for a in addrs):
+            self.ipv6 = True
+
         return True
 
     def zeekctl_config(self):
@@ -85,6 +97,8 @@ class ClusterBackendZeroMQ(ZeekControl.plugin.Plugin):
                 f'redef Cluster::Backend::ZeroMQ::listen_xsub_endpoint = "tcp://{self.xpub_xsub_addr}:{self.xsub_port}";',
                 f'redef Cluster::Backend::ZeroMQ::connect_xpub_endpoint = "tcp://{self.xpub_xsub_addr}:{self.xsub_port}";',
                 f'redef Cluster::Backend::ZeroMQ::connect_xsub_endpoint = "tcp://{self.xpub_xsub_addr}:{self.xpub_port}";',
+                "",
+                f'redef Cluster::Backend::ZeroMQ::ipv6 = {"T" if self.ipv6 else "F"};',
                 "",
             ]
         )
