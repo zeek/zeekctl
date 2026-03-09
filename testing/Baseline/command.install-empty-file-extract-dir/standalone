@@ -13,7 +13,7 @@ redef Pcap::bufsize = 128;
 redef global_hash_seed = "XXXXXXXX";
 redef Cluster::default_store_dir = "XXXXXXXX";
 @if ( |Telemetry::metrics_address| == 0 )
-redef Telemetry::metrics_address = "0.0.0.0";
+redef Telemetry::metrics_address = "127.0.0.1";
 @endif
 
 # Begin code from cluster_backend_zeromq plugin
