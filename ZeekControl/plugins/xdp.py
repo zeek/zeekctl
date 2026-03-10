@@ -33,40 +33,68 @@ class XDPZeek(ZeekControl.plugin.Plugin):
 
         return True
 
-    def cmd_start_pre(self, nodes):
-        # Load the XDP program on each interface
-        interfaces = {node.interface.rpartition('::')[-1] for node in nodes if node.interface};
-        for interface in interfaces:
-            cmd = [
-                "xdp-loader",
-                "load",
-                interface,
-                self.getGlobalOption("XDPProgram"),
-                "-p",
-                self.getGlobalOption("XDPPinPath"),
-            ]
+    def uniq_nodes(self, nodes):
+        return {
+            (node.host, node.interface): node for node in nodes if node.interface
+        }.values()
 
-            res = subprocess.run(cmd, capture_output=True, text=True)
-            if res.returncode != 0:
-                print(f"Kernel rejected the program on {interface}: {res.stderr}")
-                continue
+    # Gets the interface without potential prefixes
+    def get_interface(self, node):
+        return node.interface.rpartition("::")[-1]
+
+    def cmd_start_pre(self, nodes):
+        # Load the XDP program on each unique interface
+        cmds = {
+            (
+                node,
+                " ".join(
+                    [
+                        "xdp-loader",
+                        "load",
+                        self.get_interface(node),
+                        self.getGlobalOption("XDPProgram"),
+                        "-p",
+                        self.getGlobalOption("XDPPinPath"),
+                    ]
+                ),
+            )
+            for node in self.uniq_nodes(nodes)
+        }
+
+        for node, success, output in self.executeParallel(cmds):
+            if success:
+                self.debug(f"Loaded XDP program on {self.get_interface(node)}")
+            else:
+                # This is an issue
+                self.error(f"Failed to load XDP program on {self.get_interface(node)}: {output}")
 
         return nodes
 
     def cmd_stop_post(self, nodes):
-        # Unload the XDP program on each interface
-        interfaces = {node[0].interface.rpartition('::')[-1] for node in nodes if node[0].interface};
-        for interface in interfaces:
-            cmd = [
-                "xdp-loader",
-                "unload",
-                interface,
-                "--all", # TODO: Don't unload all!
-            ]
+        # stop has different nodes
+        nodes = [node[0] for node in nodes]
 
-            res = subprocess.run(cmd, capture_output=True, text=True)
-            if res.returncode != 0:
-                print(f"Kernel could not unload programs on {interface}: {res.stderr}")
-                continue
+        # Unload the XDP program from each unique interface
+        cmds = {
+            (
+                node,
+                " ".join(
+                    [
+                        "xdp-loader",
+                        "unload",
+                        self.get_interface(node),
+                        "--all", # TODO: Don't unload all!
+                    ]
+                ),
+            )
+            for node in self.uniq_nodes(nodes)
+        }
+
+        for node, success, output in self.executeParallel(cmds):
+            if success:
+                self.debug(f"Unloaded XDP program on {self.get_interface(node)}")
+            else:
+                # Debug since this may not be an issue
+                self.debug(f"Failed to unload XDP program on {self.get_interface(node)}: {output}")
 
         return nodes
