@@ -1,6 +1,14 @@
 # @TEST-DOC: Test using IPv6 addresses enabled the Cluster::Backend::ZeroMQ::ipv6 option.
 #
-# @TEST-EXEC: bash %INPUT
+# Place a custom ifconfig command in a local ./bin directory and override PATH.
+# This makes the test use the ./bin/ifconfig command to determine the local
+# IP addresses which always produces  127.0.0.1 and ::1, even if the actual
+# container instance this test is running in doesn't have ::1 on lo.
+#
+# @TEST-EXEC: mkdir -p ./bin/
+# @TEST-EXEC: cp $SCRIPTS/fake-ifconfig-lo ./bin/ifconfig
+#
+# @TEST-EXEC: PATH=$(pwd)/bin:$PATH bash %INPUT
 #
 # @TEST-EXEC: btest-diff zeekctl-config-redefs
 
