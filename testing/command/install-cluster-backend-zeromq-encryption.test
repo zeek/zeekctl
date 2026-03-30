@@ -1,0 +1,26 @@
+# @TEST-DOC: Test enabling cluster_backend_zeromq.use_curve_encryption and observe the generated keys and redefs in the configuration file.
+#
+# @TEST-EXEC: PATH=$(pwd)/bin:$PATH bash %INPUT
+#
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="sed -E -e 's/\".{40}\";/\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"/g'" btest-diff found-keys
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="sed -E -e 's/\".{40}\";/\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"/g'" btest-diff zeekctl-config-redefs
+
+. zeekctl-test-setup
+
+config=$ZEEKCTL_INSTALL_PREFIX/spool/installed-scripts-do-not-touch/auto/zeekctl-config.zeek
+
+installfile etc/node.cfg__cluster
+# Enable CURVE encryption
+echo "cluster_backend_zeromq.use_curve_encryption = 1" >> $ZEEKCTL_INSTALL_PREFIX/etc/zeekctl.cfg
+zeekctl install
+
+# Check if the keys generated into spool/zeromq/curve appear in the
+# generated configuration file.
+for f in $ZEEKCTL_INSTALL_PREFIX/spool/zeromq/curve/* ; do
+	if ! grep -F -f $f $config >> found-keys; then
+		echo "Could not find key $f in $config" >&2
+		exit 1
+	fi
+done
+
+grep -C2 'redef.*Cluster::Backend' $config > zeekctl-config-redefs
