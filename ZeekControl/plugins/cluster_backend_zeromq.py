@@ -181,12 +181,8 @@ class ClusterBackendZeroMQ(ZeekControl.plugin.Plugin):
         """
         script = "\n".join(
             [
-                "# Enable ZeroMQ - the zeromq/connect script was deprecated with 8.1",
-                '@if ( Version::at_least("8.1.0") )',
-                "@load policy/frameworks/cluster/backend/zeromq",
-                "@else",
-                "@load policy/frameworks/cluster/backend/zeromq/connect",
-                "@endif",
+                "# Configure ZeroMQ",
+                "@load policy/frameworks/cluster/backend/zeromq/options",
                 "",
                 f'redef Cluster::Backend::ZeroMQ::listen_xpub_endpoint = "tcp://{self.xpub_xsub_addr}:{self.xpub_port}";',
                 f'redef Cluster::Backend::ZeroMQ::listen_xsub_endpoint = "tcp://{self.xpub_xsub_addr}:{self.xsub_port}";',
