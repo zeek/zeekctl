@@ -17,7 +17,7 @@ Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynami
 <...skipped...>
 
 ==== .cmdline
--U .status -p zeekctl -p zeekctl-live -p local -p manager local.zeek zeekctl base/frameworks/cluster zeekctl/auto
+-U .status -p zeekctl -p zeekctl-live -p local -p manager policy/frameworks/cluster/backend/zeromq local.zeek zeekctl zeekctl/auto
 
 ==== .env_vars
 PATH=<...>
@@ -52,7 +52,7 @@ Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynami
 <...skipped...>
 
 ==== .cmdline
--U .status -p zeekctl -p zeekctl-live -p local -p proxy-1 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
+-U .status -p zeekctl -p zeekctl-live -p local -p proxy-1 policy/frameworks/cluster/backend/zeromq local.zeek zeekctl zeekctl/auto
 
 ==== .env_vars
 PATH=<...>
@@ -87,7 +87,7 @@ Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynami
 <...skipped...>
 
 ==== .cmdline
--i eth0 -U .status -p zeekctl -p zeekctl-live -p local -p worker-1 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
+-i eth0 -U .status -p zeekctl -p zeekctl-live -p local -p worker-1 policy/frameworks/cluster/backend/zeromq local.zeek zeekctl zeekctl/auto
 
 ==== .env_vars
 PATH=<...>
@@ -122,7 +122,7 @@ Demo::Rot13 - Caesar cipher rotating a string's characters by 13 places. (dynami
 <...skipped...>
 
 ==== .cmdline
--i eth1 -U .status -p zeekctl -p zeekctl-live -p local -p worker-2 local.zeek zeekctl base/frameworks/cluster zeekctl/auto
+-i eth1 -U .status -p zeekctl -p zeekctl-live -p local -p worker-2 policy/frameworks/cluster/backend/zeromq local.zeek zeekctl zeekctl/auto
 
 ==== .env_vars
 PATH=<...>

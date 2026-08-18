@@ -25,19 +25,3 @@ class ClusterBackendBroker(ZeekControl.plugin.Plugin):
             ZeekControl.config.Config.set_option("ClusterTopicSeparator", "/")
 
         return True
-
-    def zeekctl_config(self):
-        """
-        If the version of Zeek already has the broker policy scripts, load
-        these, otherwise Broker is anyhow enabled by default.
-        """
-        script = "\n".join(
-            [
-                "# Load Broker's policy scripts if they exist.",
-                '@if ( can_load("policy/frameworks/cluster/backend/broker") )',
-                "@load policy/frameworks/cluster/backend/broker",
-                "@endif",
-            ]
-        )
-
-        return script
