@@ -1,3 +1,7 @@
+2.6.0-67 | 2026-08-20 09:02:29 -0700
+
+  * Bump `auxil/pysubnettree` for zeek/pysubnettree#47 (Benjamin Bannier, Corelight)
+
 2.6.0-65 | 2026-08-18 20:08:12 +0200
 
   * GH-108: control: Load cluster backend scripts unconditionally first (Arne Welzel, Corelight)
