@@ -5,7 +5,6 @@ redef Notice::mail_dest_pretty_printed = "root@localhost";
 redef Notice::sendmail = "/usr/sbin/sendmail";
 redef Notice::mail_subject_prefix = "[Zeek]";
 redef Notice::mail_from = "zeekctltestuser@mydomain";
-redef Broker::table_store_db_directory = "XXXXXXXX";
 redef Log::default_rotation_interval = 3600 secs;
 redef Log::default_mail_alarms_interval = 86400 secs;
 redef Pcap::snaplen = 9216;

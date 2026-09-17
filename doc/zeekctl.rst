@@ -1034,11 +1034,6 @@ Internal Options
 *BinDir* (string, default "$\{ZeekBase}/bin")
     Directory for executable files.
 
-.. _BrokerDBDir:
-
-*BrokerDBDir* (string, default "$\{ZeekBase}/spool/brokerstore")
-    Directory for data stores of persistent Broker-backed tables.
-
 .. _CapstatsPath:
 
 *CapstatsPath* (string, default "$\{bindir}/capstats")

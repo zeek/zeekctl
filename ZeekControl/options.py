@@ -581,14 +581,6 @@ options = [
         "Directory for run-time data.",
     ),
     Option(
-        "BrokerDBDir",
-        "${ZeekBase}/spool/brokerstore",
-        "string",
-        Option.AUTOMATIC,
-        False,
-        "Directory for data stores of persistent Broker-backed tables.",
-    ),
-    Option(
         "FileExtractDir",
         "${SpoolDir}/extract_files",
         "string",
