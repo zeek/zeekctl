@@ -70,10 +70,6 @@ LogDir = ${LOGS}
 # written are stored.
 SpoolDir = ${SPOOL}
 
-# Location of the directory in which the databases for Broker datastore backed
-# Zeek tables are stored.
-BrokerDBDir = ${SPOOL}/brokerstore
-
 # Default base directory for file extraction.
 #
 # The FileExtract module's prefix option will default be set to this

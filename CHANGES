@@ -1,3 +1,7 @@
+2.6.0-69 | 2026-09-23 11:11:51 -0700
+
+  * Remove references to Broker::table_store_db_directory (Tim Wojtulewicz, Corelight)
+
 2.6.0-67 | 2026-08-20 09:02:29 -0700
 
   * Bump `auxil/pysubnettree` for zeek/pysubnettree#47 (Benjamin Bannier, Corelight)
