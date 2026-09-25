@@ -4,9 +4,23 @@ import logging
 import os
 import sys
 
-from ZeekControl import cmdresult, config, control, execute, lock, pluginreg, version
+from ZeekControl import (
+    cmdresult,
+    config,
+    control,
+    events,
+    execute,
+    lock,
+    pluginreg,
+    version,
+)
 from ZeekControl import node as node_mod
-from ZeekControl.exceptions import InvalidNodeError, LockError, RuntimeEnvironmentError
+from ZeekControl.exceptions import (
+    ConfigurationError,
+    InvalidNodeError,
+    LockError,
+    RuntimeEnvironmentError,
+)
 
 
 class TermUI:
@@ -57,6 +71,31 @@ def check_config(func):
     def wrapper(self, *args, **kwargs):
         if config.Config.is_cfg_changed():
             self.ui.warn('Configuration has changed. Run the "deploy" command.')
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def check_websocket(func):
+    """
+    Decorator for commands that interact with the Zeek cluster through the
+    WebSocket API when using a non-Broker cluster backend.
+    """
+
+    def wrapper(self, *args, **kwargs):
+        if self.config.get_option("usewebsocket"):
+            if events.websockets_errmsg is not None:
+                raise RuntimeEnvironmentError(
+                    f"option UseWebSocket is set, but the websockets module is non-functional: {events.websockets_errmsg} - "
+                    "please install the Python websockets package (python3-websockets)"
+                )
+
+        backend = self.config.get_option("clusterbackend")
+        if backend.lower() != "broker" and not self.config.get_option("usewebsocket"):
+            raise ConfigurationError(
+                f"cluster backend '{backend}' requires UseWebSocket = 1"
+            )
+
         return func(self, *args, **kwargs)
 
     return wrapper
@@ -485,6 +524,7 @@ class ZeekCtl:
 
     @expose
     @check_config
+    @check_websocket
     @lock_required
     def print_id(self, id, node_list=None):
         nodes = self.node_args(node_list)
@@ -496,6 +536,7 @@ class ZeekCtl:
 
     @expose
     @check_config
+    @check_websocket
     @lock_required
     def peerstatus(self, node_list=None):
         nodes = self.node_args(node_list)
@@ -507,6 +548,7 @@ class ZeekCtl:
 
     @expose
     @check_config
+    @check_websocket
     @lock_required
     def netstats(self, node_list=None):
         if not node_list:

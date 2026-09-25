@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -12,19 +13,35 @@ except ImportError as e:
     broker = None
     errmsg = e
 
+
+def version_tuple(s):
+    """
+    Return a tuple of the first two parts of a version. E.g. "10.4.1" -> (10,4)
+    """
+    parts = []
+    for v in s.split(".")[:2]:
+        try:
+            v = int(v)
+        except ValueError:
+            v = 0
+        parts += [v]
+    return tuple(parts)
+
+
 try:
     websockets_errmsg = None
+    import websockets
     import websockets.exceptions as websockets_exceptions
-    import websockets.sync.client as websockets_sync_client
-    import websockets.version as websockets_version
 
-    # Tested with 11.0 and it seems to work well enough.
-    v = websockets_version.version
-    if v < "11.0":
-        websockets_errmsg = f"Need websockets package version 11.0 or later, have {v}"
+    # Tested with 10.4 on Ubuntu 24.04
+    websockets_version = version_tuple(websockets.__version__)
+    if websockets_version < (10, 4):
+        websockets_errmsg = f"Need websockets package version 10.4 or later, have {websockets.__version__}"
+
 except ImportError as e:
+    websockets = None
     websockets_exceptions = None
-    websockets_sync_client = None
+    websockets_version = (0, 0)
     websockets_errmsg = f"Failed to import websockets module ({e!r})"
 
 # Communication with running nodes.
@@ -48,7 +65,7 @@ except ImportError as e:
 def send_events_parallel(events, topic):
     clusterbackend = config.Config.clusterbackend
     if config.Config.usewebsocket:
-        return ws_send_events(events, topic)
+        return asyncio.run(ws_send_events(events, topic))
     elif clusterbackend.lower() == "broker":
         return broker_send_events_parallel(events, topic)
 
@@ -167,47 +184,66 @@ class WebSocketClient:
 
     DEFAULT_TIMEOUT = 10.0
 
-    def __init__(self, c, *, timeout=DEFAULT_TIMEOUT):
-        self.__c = c
+    def __init__(self, uri, *, application_name=None, timeout=DEFAULT_TIMEOUT):
+        self.__uri = uri
+        self.__application_name = application_name
         self.__timeout = timeout
 
-    def __enter__(self):
+        self.__c = None
+
+    async def __aenter__(self):
+        kwargs = {}
+        if self.__application_name:
+            headers = {"X-Application-Name": self.__application_name}
+            # websockets version 10.4 used extra_headers as kwarg and
+            # only in 14.0 started using additional_headers. Meh.
+            if websockets_version < (14, 0):
+                kwargs = {"extra_headers": headers}
+            else:
+                kwargs = {"additional_headers": headers}
+
+        self.__c = await websockets.connect(
+            uri=self.__uri,
+            open_timeout=self.__timeout,
+            close_timeout=self.__timeout,
+            **kwargs,
+        )
+
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.__c.__exit__(exc_type, exc_value, traceback)
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.__c.close()
 
-    def send_json(self, data):
+    async def send_json(self, data):
         try:
-            self.__c.send(json.dumps(data))
+            await self.__c.send(json.dumps(data))
         except (
             websockets_exceptions.ConnectionClosed,
             websockets_exceptions.ConnectionClosedError,
         ) as e:
             raise WebSocketError(e)
 
-    def recv_json(self):
+    async def recv_json(self):
         try:
-            return json.loads(self.__c.recv(timeout=self.__timeout))
+            return json.loads(await asyncio.wait_for(self.__c.recv(), self.__timeout))
         except (
-            TimeoutError,
+            asyncio.TimeoutError,
             websockets_exceptions.ConnectionClosed,
             websockets_exceptions.ConnectionClosedError,
         ) as e:
             raise WebSocketError(e)
 
-    def v1_hello(self, subscriptions):
+    async def v1_hello(self, subscriptions):
         """
         Send the initial subscription array for v1/messages/json.
         """
-        self.send_json(subscriptions)
-        ack = self.recv_json()
+        await self.send_json(subscriptions)
+        ack = await self.recv_json()
         if ack.get("type") != "ack":
             raise WebSocketError(f"Unexpected ack type {ack!r}")
-
         return ack
 
-    def v1_event(self, topic, name, args=None):
+    async def v1_event(self, topic, name, args=None):
         """
         Send an event in v1/messages/json format.
         """
@@ -229,15 +265,15 @@ class WebSocketClient:
             ],
         }
 
-        return self.send_json(d)
+        return await self.send_json(d)
 
-    def v1_recv_event(self):
+    async def v1_recv_event(self):
         """
         Wait for a JSON message and interpret it as v1/messages/json event.
 
         Returns a (topic, name, args) tuple.
         """
-        d = self.recv_json()
+        d = await self.recv_json()
         if d["type"] != "data-message":
             raise WebSocketError(f"unexpected event reply {d!r}")
 
@@ -266,27 +302,8 @@ class WebSocketClient:
             "data": data,
         }
 
-    @staticmethod
-    def connect(url, *, application_name=None, timeout=None):
-        additional_headers = {}
-        if application_name:
-            additional_headers["X-Application-Name"] = application_name
 
-        try:
-            return WebSocketClient(
-                websockets_sync_client.connect(
-                    uri=url,
-                    additional_headers=additional_headers,
-                    open_timeout=timeout,
-                    close_timeout=timeout,
-                ),
-                timeout=timeout,
-            )
-        except (ConnectionRefusedError, TimeoutError) as e:
-            raise WebSocketError(e)
-
-
-def ws_send_events(events, topic):
+async def ws_send_events(events, topic):
     """
     Use a short-lived WebSocket connection to the manager and send
     events serially to individual node topics and await the response.
@@ -311,69 +328,64 @@ def ws_send_events(events, topic):
         port = config.Config.websocketport
         url = f"ws://{host}:{port}/v1/messages/json"
 
+    timeout = config.Config.websockettimeout
+
+    # Include X-Application-Name as HTTP header so it shows up in cluster.log
+    application_name = f"zeekctl/{version.VERSION}/{websockets.__version__}"
+
     try:
-        ws = WebSocketClient.connect(
-            url=url,
-            application_name=f"zeekctl/{version.VERSION}",
-            timeout=config.Config.websockettimeout,
-        )
-    except WebSocketError as e:
+        async with WebSocketClient(
+            url, application_name=application_name, timeout=timeout
+        ) as ws:
+            await ws.v1_hello([topic])
+
+            for node, event, args, result_event in events:
+                # Use the topic separator configured by the backend for publishing
+                # to individual node topics.
+                topic_sep = config.Config.clustertopicseparator
+                topic = topic_sep.join(["zeek", "cluster", "node", node.name, ""])
+
+                try:
+                    await ws.v1_event(topic, event, args)
+                    rtopic, rname, rargs = await ws.v1_recv_event()
+                except WebSocketError as e:
+                    results += [(node, False, repr(e))]
+                    continue
+                else:
+                    # Did we even receive the right event?
+                    if result_event != rname:
+                        results += [
+                            (node, False, f"expected '{result_event}' got '{rname}'")
+                        ]
+                        continue
+
+                    # Figure out which node sent the reply. It's the last part
+                    # in the reply topic. The / is hard-coded in the control
+                    # scripts, so we try that first if it's found, else fallback
+                    # to topic_sep (e.g, could be "." for ZeroMQ, NATS or RabbitMQ)
+                    if "/" in rtopic:
+                        rnode = rtopic.rsplit("/", 1)[-1]
+                    else:
+                        rnode = rtopic.rsplit(topic_sep, 1)[-1]
+
+                    # Expect a reply from the addressed node, or an empty node if
+                    # this a standalone setup.
+                    if rnode != node.name and not (
+                        config.Config.standalone and rnode == ""
+                    ):
+                        results += [
+                            (
+                                node,
+                                False,
+                                f"'unexpected {rnode}' in '{topic}', expected '{node.name}'",
+                            )
+                        ]
+                        continue
+
+                    results += [(node, True, rargs)]
+
+    except (ConnectionRefusedError, asyncio.TimeoutError, WebSocketError) as e:
         for node, event, args, result_event in events:
             results += [(node, False, str(e))]
-        return results
-
-    with ws:
-        # Subscribe to the zeek/control reply topic.
-        try:
-            ws.v1_hello([topic])
-        except WebSocketError as e:
-            for node, event, args, result_event in events:
-                results += [(node, False, str(e))]
-            return results
-
-        for node, event, args, result_event in events:
-            # Use the topic separator configured by the backend for publishing
-            # to individual node topics.
-            topic_sep = config.Config.clustertopicseparator
-            topic = topic_sep.join(["zeek", "cluster", "node", node.name, ""])
-
-            try:
-                ws.v1_event(topic, event, args)
-                rtopic, rname, rargs = ws.v1_recv_event()
-            except WebSocketError as e:
-                results += [(node, False, repr(e))]
-                continue
-            else:
-                # Did we even receive the right event?
-                if result_event != rname:
-                    results += [
-                        (node, False, f"expected '{result_event}' got '{rname}'")
-                    ]
-                    continue
-
-                # Figure out which node sent the reply. It's the last part
-                # in the reply topic. The / is hard-coded in the control
-                # scripts, so we try that first if it's found, else fallback
-                # to topic_sep (e.g, could be "." for ZeroMQ, NATS or RabbitMQ)
-                if "/" in rtopic:
-                    rnode = rtopic.rsplit("/", 1)[-1]
-                else:
-                    rnode = rtopic.rsplit(topic_sep, 1)[-1]
-
-                # Expect a reply from the addressed node, or an empty node if
-                # this a standalone setup.
-                if rnode != node.name and not (
-                    config.Config.standalone and rnode == ""
-                ):
-                    results += [
-                        (
-                            node,
-                            False,
-                            f"'unexpected {rnode}' in '{topic}', expected '{node.name}'",
-                        )
-                    ]
-                    continue
-
-                results += [(node, True, rargs)]
 
     return results
